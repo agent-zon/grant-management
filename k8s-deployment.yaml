@@ -3,7 +3,7 @@ kind: Deployment
 
 metadata:
   name: grant-management
-  namespace: grant-management
+  namespace: grant-managment-dev
 
   labels:
     app: grant-management
@@ -34,7 +34,7 @@ spec:
             cpu: "200m"
         livenessProbe:
           httpGet:
-            path: /
+            path: /health
             port: 80
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -42,7 +42,7 @@ spec:
           failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /
+            path: /health
             port: 80
           initialDelaySeconds: 5
           periodSeconds: 5
@@ -58,6 +58,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: grant-management-service
+  namespace: grant-managment-dev
   labels:
     app: grant-management
 spec:
@@ -74,11 +75,12 @@ apiVersion: gateway.kyma-project.io/v1beta1
 kind: APIRule
 metadata:
   name: grant-management-api-rule
+  namespace: grant-managment-dev
   labels:
     app: grant-management
 spec:
   gateway: kyma-gateway.kyma-system.svc.cluster.local
-  host: grant-management
+  host: grants
   service:
     name: grant-management-service
     port: 80
