@@ -17,19 +17,7 @@ import {
   Globe,
   Database
 } from 'lucide-react';
-
-interface ConsentGrant {
-  id: string;
-  scope: string;
-  description: string;
-  granted: boolean;
-  grantedAt?: Date;
-  expiresAt?: Date;
-  sessionId?: string;
-  usage: number;
-  lastUsed?: Date;
-  toolsIncluded: string[];
-}
+import { grantAPI, Grant, GrantUtils } from '../services/api';
 
 interface SessionToken {
   id: string;
@@ -42,22 +30,6 @@ interface SessionToken {
   lastActivity?: Date;
 }
 
-interface ConsentRequest {
-  id: string;
-  agentId: string;
-  sessionId: string;
-  requestedScopes: string[];
-  tools: string[];
-  timestamp: Date;
-  status: 'pending' | 'approved' | 'denied' | 'expired';
-  authorizationLink?: string;
-  userResponse?: {
-    approvedScopes: string[];
-    deniedScopes: string[];
-    timestamp: Date;
-  };
-}
-
 interface ConsentManagementPageProps {
   authStatus: any;
   showAllGrants?: boolean;
@@ -67,131 +39,88 @@ const ConsentManagementPage: React.FC<ConsentManagementPageProps> = ({ authStatu
   const { sessionId, workloadFilter } = useParams<{ sessionId?: string; workloadFilter?: string }>();
   const effectiveWorkloadFilter = workloadFilter || (new URLSearchParams(window.location.search)).get('workload');
 
-  const [grants, setGrants] = useState<ConsentGrant[]>([
+  const [grants, setGrants] = useState<Grant[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Initialize API with auth token
+  useEffect(() => {
+    if (authStatus?.token) {
+      grantAPI.setToken(authStatus.token);
+    }
+  }, [authStatus]);
+
+  // Load grants from API
+  useEffect(() => {
+    const loadGrants = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const params: any = {};
+        if (effectiveWorkloadFilter) {
+          params.session_id = getSessionIdForWorkload(effectiveWorkloadFilter);
+        }
+        
+        const fetchedGrants = await grantAPI.getGrants(params);
+        setGrants(fetchedGrants);
+      } catch (err) {
+        console.error('Error loading grants:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load grants');
+        // Fallback to mock data if API fails
+        setGrants(mockGrants);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadGrants();
+  }, [effectiveWorkloadFilter]);
+
+  // Helper function to map workload IDs to session IDs
+  const getSessionIdForWorkload = (workloadId: string): string => {
+    const workloadSessionMap: Record<string, string> = {
+      'wl-001': 'S123', // Daily Work Analysis
+      'wl-002': 'S124', // System Anomaly Response
+      'wl-004': 'S125', // File Management Assistant
+      'wl-005': 'S126', // Payroll Assistance Chat
+    };
+    return workloadSessionMap[workloadId] || workloadId;
+  };
+
+  // Mock data for fallback
+  const mockGrants: Grant[] = [
     {
       id: '1',
+      client_id: 'demo-client',
+      user_id: 'demo-user',
       scope: 'tools:read',
-      description: 'Read access to file system tools (ListFiles, ReadFile)',
-      granted: true,
-      grantedAt: new Date(Date.now() - 3600000),
-      sessionId: 'S123',
-      usage: 15,
-      lastUsed: new Date(Date.now() - 300000),
-      toolsIncluded: ['ListFiles', 'ReadFile', 'GetFileInfo']
+      status: 'active',
+      created_at: new Date(Date.now() - 3600000).toISOString(),
+      updated_at: new Date(Date.now() - 300000).toISOString(),
+      session_id: 'S123',
     },
     {
       id: '2',
+      client_id: 'demo-client',
+      user_id: 'demo-user',
       scope: 'tools:write',
-      description: 'Write access to file system tools (CreateFile, UpdateFile, DeleteFile)',
-      granted: false,
-      usage: 0,
-      toolsIncluded: ['CreateFile', 'UpdateFile', 'DeleteFile', 'MoveFile']
+      status: 'revoked',
+      created_at: new Date(Date.now() - 7200000).toISOString(),
+      updated_at: new Date(Date.now() - 3600000).toISOString(),
     },
     {
       id: '3',
+      client_id: 'demo-client',
+      user_id: 'demo-user',
       scope: 'data:export',
-      description: 'Export user data and generate reports',
-      granted: true,
-      grantedAt: new Date(Date.now() - 7200000),
-      expiresAt: new Date(Date.now() + 86400000),
-      sessionId: 'S123',
-      usage: 3,
-      lastUsed: new Date(Date.now() - 1800000),
-      toolsIncluded: ['ExportData', 'GenerateReport', 'CreateBackup']
-    },
-    {
-      id: '4',
-      scope: 'system:analyze',
-      description: 'System analysis and monitoring tools (SystemCheck, AnalyzeAnomaly)',
-      granted: true,
-      grantedAt: new Date(Date.now() - 600000),
-      sessionId: 'S124',
-      usage: 8,
-      lastUsed: new Date(Date.now() - 360000),
-      toolsIncluded: ['GatherSystemInfo', 'AnalyzeAnomaly', 'SystemCheck', 'HealthMonitor']
-    },
-    {
-      id: '5',
-      scope: 'notifications:send',
-      description: 'Send notifications and alerts (CreateNotification, SendAlert)',
-      granted: true,
-      grantedAt: new Date(Date.now() - 420000),
-      sessionId: 'S124',
-      usage: 5,
-      lastUsed: new Date(Date.now() - 360000),
-      toolsIncluded: ['CreateNotification', 'SendAlert', 'NotifyStakeholders']
-    },
-    {
-      id: '6',
-      scope: 'deployment:hotfix',
-      description: 'Deploy emergency hotfixes and patches (DeployHotfix, RollbackPatch)',
-      granted: false,
-      usage: 0,
-      toolsIncluded: ['DeployHotfix', 'RollbackPatch', 'ValidateDeployment']
-    },
-    {
-      id: '7',
-      scope: 'payroll:access',
-      description: 'Access payroll system and employee data (PayrollQuery, EmployeeData)',
-      granted: true,
-      grantedAt: new Date(Date.now() - 180000),
-      sessionId: 'S126',
-      usage: 12,
-      lastUsed: new Date(Date.now() - 60000),
-      toolsIncluded: ['PayrollQuery', 'EmployeeData', 'SalaryCalculation', 'TaxComputation']
-    },
-    {
-      id: '8',
-      scope: 'network:access',
-      description: 'Access external APIs and network resources (HttpRequest, ApiCall)',
-      granted: true,
-      grantedAt: new Date(Date.now() - 3600000),
-      expiresAt: new Date(Date.now() + 300000),
-      sessionId: 'S125',
-      usage: 25,
-      lastUsed: new Date(Date.now() - 900000),
-      toolsIncluded: ['HttpRequest', 'ApiCall', 'WebhookTrigger', 'DataSync']
-    },
-    {
-      id: '9',
-      scope: 'system:admin',
-      description: 'Administrative system access (ConfigureSystem, ManageUsers)',
-      granted: false,
-      usage: 0,
-      toolsIncluded: ['ConfigureSystem', 'ManageUsers', 'SystemRestart', 'SecurityConfig']
-    },
-    {
-      id: '10',
-      scope: 'database:write',
-      description: 'Database write operations (UpdateRecord, DeleteRecord)',
-      granted: false,
-      usage: 0,
-      toolsIncluded: ['UpdateRecord', 'DeleteRecord', 'CreateTable', 'ModifySchema']
-    },
-    {
-      id: '11',
-      scope: 'file:backup',
-      description: 'File backup and archival operations (CreateBackup, ArchiveFiles)',
-      granted: true,
-      grantedAt: new Date(Date.now() - 86400000),
-      expiresAt: new Date(Date.now() + 7200000),
-      sessionId: 'S122',
-      usage: 3,
-      lastUsed: new Date(Date.now() - 3600000),
-      toolsIncluded: ['CreateBackup', 'ArchiveFiles', 'CompressData', 'VerifyBackup']
-    },
-    {
-      id: '12',
-      scope: 'analytics:generate',
-      description: 'Generate analytics reports and insights (AnalyzeData, CreateReport)',
-      granted: true,
-      grantedAt: new Date(Date.now() - 7200000),
-      sessionId: 'S123',
-      usage: 15,
-      lastUsed: new Date(Date.now() - 300000),
-      toolsIncluded: ['AnalyzeWorkDay', 'GenerateReport', 'CreateInsights', 'DataVisualization']
+      status: 'active',
+      created_at: new Date(Date.now() - 7200000).toISOString(),
+      updated_at: new Date(Date.now() - 1800000).toISOString(),
+      expires_at: new Date(Date.now() + 86400000).toISOString(),
+      session_id: 'S123',
     }
-  ]);
+  ];
 
   // Filter grants based on workload parameter
   const filteredGrants = effectiveWorkloadFilter 
@@ -203,16 +132,16 @@ const ConsentManagementPage: React.FC<ConsentManagementPageProps> = ({ authStatu
           'wl-004': 'S125', // File Management Assistant
           'wl-005': 'S126', // Payroll Assistance Chat
         };
-        return grant.sessionId === workloadSessionMap[effectiveWorkloadFilter];
+        return grant.session_id === workloadSessionMap[effectiveWorkloadFilter];
       })
     : grants;
 
-  const [displayedGrants, setDisplayedGrants] = useState(filteredGrants);
+  const [displayedGrants, setDisplayedGrants] = useState<Grant[]>([]);
 
   // Update displayed grants when filter changes
   useEffect(() => {
     setDisplayedGrants(filteredGrants);
-  }, [effectiveWorkloadFilter, grants]);
+  }, [filteredGrants]);
 
   // Get workload name for filter display
   const getWorkloadName = (workloadId: string) => {
@@ -225,20 +154,22 @@ const ConsentManagementPage: React.FC<ConsentManagementPageProps> = ({ authStatu
     return workloadNames[workloadId] || workloadId;
   };
 
-  const [tokens, setTokens] = useState<SessionToken[]>([
+  // Mock data for tokens (in real implementation, fetch from API)
+  const tokens = [
     {
       id: 'token-1',
       sessionId: 'S123',
       scopes: ['tools:read', 'data:export'],
       issuedAt: new Date(Date.now() - 3600000),
       expiresAt: new Date(Date.now() + 300000),
-      status: 'active',
+      status: 'active' as const,
       usage: 18,
       lastActivity: new Date(Date.now() - 300000)
     }
-  ]);
+  ];
 
-  const [requests, setRequests] = useState<ConsentRequest[]>([
+  // Mock data for requests (in real implementation, fetch from API)
+  const requests = [
     {
       id: 'req-1',
       agentId: 'agent-A1',
@@ -246,22 +177,41 @@ const ConsentManagementPage: React.FC<ConsentManagementPageProps> = ({ authStatu
       requestedScopes: ['tools:write', 'system:admin'],
       tools: ['CreateFile', 'ConfigureSystem'],
       timestamp: new Date(Date.now() - 300000),
-      status: 'pending',
+      status: 'pending' as const,
       authorizationLink: 'https://idp.example.com/auth?scopes=tools:write+system:admin&session=S125'
     }
-  ]);
+  ];
 
-  const toggleGrant = (grantId: string) => {
-    setGrants(prev => prev.map(grant => 
-      grant.id === grantId 
-        ? { 
-            ...grant, 
-            granted: !grant.granted,
-            grantedAt: !grant.granted ? new Date() : undefined,
-            sessionId: !grant.granted ? `S${Math.floor(Math.random() * 1000)}` : undefined
-          }
-        : grant
-    ));
+  const toggleGrant = async (grantId: string) => {
+    try {
+      const grant = grants.find(g => g.id === grantId);
+      if (!grant) return;
+
+      if (grant.status === 'active') {
+        // Revoke the grant
+        await grantAPI.revokeGrant(grantId);
+        setGrants(prev => prev.map(g => 
+          g.id === grantId 
+            ? { ...g, status: 'revoked' as const, updated_at: new Date().toISOString() }
+            : g
+        ));
+      } else {
+        // For demo purposes, we'll create a new grant instead of reactivating
+        // In a real system, you might have a reactivate endpoint
+        const newGrant = await grantAPI.createGrant({
+          user_id: grant.user_id,
+          scope: grant.scope,
+          session_id: grant.session_id,
+          workload_id: grant.workload_id
+        });
+        
+        // Remove old grant and add new one
+        setGrants(prev => prev.filter(g => g.id !== grantId).concat(newGrant));
+      }
+    } catch (err) {
+      console.error('Error toggling grant:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update grant');
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -320,96 +270,121 @@ const ConsentManagementPage: React.FC<ConsentManagementPageProps> = ({ authStatu
           )}
         </div>
         
-        <div className="space-y-4">
-          {displayedGrants.map((grant) => (
-            <div key={grant.id} className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  <div className={`p-2 rounded-lg ${
-                    grant.granted ? 'bg-green-500/20' : 'bg-red-500/20'
-                  }`}>
-                    {grant.granted ? 
-                      <Unlock className="w-5 h-5 text-green-400" /> : 
-                      <Lock className="w-5 h-5 text-red-400" />
-                    }
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-white">{grant.scope}</h4>
-                    <p className="text-xs text-gray-400">{grant.description}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <span className={`px-2 py-1 text-xs rounded ${
-                    grant.granted 
-                      ? 'bg-green-500/20 text-green-400' 
-                      : 'bg-red-500/20 text-red-400'
-                  }`}>
-                    {grant.granted ? 'Granted' : 'Denied'}
-                  </span>
-                  <button
-                    onClick={() => toggleGrant(grant.id)}
-                    className={`px-3 py-1 rounded text-xs transition-colors duration-200 ${
-                      grant.granted
-                        ? 'bg-red-600 hover:bg-red-700 text-white'
-                        : 'bg-green-600 hover:bg-green-700 text-white'
-                    }`}
-                  >
-                    {grant.granted ? 'Revoke' : 'Grant'}
-                  </button>
-                </div>
-              </div>
+        {loading && (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto"></div>
+            <p className="text-gray-400 mt-2">Loading grants...</p>
+          </div>
+        )}
 
-              {/* Grant Details */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                <div>
-                  <p className="text-xs text-gray-400">Usage Count</p>
-                  <p className="text-sm text-white font-mono">{grant.usage}</p>
-                </div>
-                {grant.grantedAt && (
-                  <div>
-                    <p className="text-xs text-gray-400">Granted At</p>
-                    <p className="text-sm text-white">{grant.grantedAt.toLocaleString()}</p>
-                  </div>
-                )}
-                {grant.sessionId && (
-                  <div>
-                    <p className="text-xs text-gray-400">Session</p>
-                    <div className="flex items-center space-x-2">
-                      <p className="text-sm text-white font-mono">{grant.sessionId}</p>
-                      <button
-                        onClick={() => {
-                          // Navigate to workloads page and highlight the specific workload
-                          window.dispatchEvent(new CustomEvent('navigateToWorkload', {
-                            detail: { sessionId: grant.sessionId }
-                          }));
-                        }}
-                        className="text-xs text-blue-400 hover:text-blue-300 underline transition-colors duration-200"
-                        title="View workload details"
-                      >
-                        View Workload
-                      </button>
+        {error && (
+          <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-4">
+            <p className="text-red-400">⚠️ {error}</p>
+            <p className="text-sm text-gray-400 mt-1">Showing cached data if available</p>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          {displayedGrants.map((grant) => {
+            const formattedGrant = GrantUtils.formatGrantForDisplay(grant);
+            const scopes = GrantUtils.parseScopes(grant.scope);
+            const isGranted = grant.status === 'active';
+            
+            return (
+              <div key={grant.id} className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2 rounded-lg ${
+                      isGranted ? 'bg-green-500/20' : 'bg-red-500/20'
+                    }`}>
+                      {isGranted ? 
+                        <Unlock className="w-5 h-5 text-green-400" /> : 
+                        <Lock className="w-5 h-5 text-red-400" />
+                      }
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-white">{grant.scope}</h4>
+                      <p className="text-xs text-gray-400">{GrantUtils.getScopeDescription(grant.scope)}</p>
                     </div>
                   </div>
-                )}
-              </div>
-
-              {/* Included Tools */}
-              <div>
-                <p className="text-xs text-gray-400 mb-2">Included Tools</p>
-                <div className="flex flex-wrap gap-1">
-                  {grant.toolsIncluded.map((tool, idx) => (
-                    <span
-                      key={idx}
-                      className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded"
-                    >
-                      {tool}
+                  
+                  <div className="flex items-center space-x-3">
+                    <span className={`px-2 py-1 text-xs rounded ${
+                      isGranted 
+                        ? 'bg-green-500/20 text-green-400' 
+                        : 'bg-red-500/20 text-red-400'
+                    }`}>
+                      {formattedGrant.effectiveStatus}
                     </span>
-                  ))}
+                    <button
+                      onClick={() => toggleGrant(grant.id)}
+                      className={`px-3 py-1 rounded text-xs transition-colors duration-200 ${
+                        isGranted
+                          ? 'bg-red-600 hover:bg-red-700 text-white'
+                          : 'bg-green-600 hover:bg-green-700 text-white'
+                      }`}
+                    >
+                      {isGranted ? 'Revoke' : 'Grant'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Grant Details */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                  <div>
+                    <p className="text-xs text-gray-400">Status</p>
+                    <p className="text-sm text-white font-mono capitalize">{formattedGrant.effectiveStatus}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">Created At</p>
+                    <p className="text-sm text-white">{new Date(grant.created_at).toLocaleString()}</p>
+                  </div>
+                  {grant.expires_at && (
+                    <div>
+                      <p className="text-xs text-gray-400">Expires At</p>
+                      <p className="text-sm text-white">{new Date(grant.expires_at).toLocaleString()}</p>
+                    </div>
+                  )}
+                  {grant.session_id && (
+                    <div>
+                      <p className="text-xs text-gray-400">Session</p>
+                      <div className="flex items-center space-x-2">
+                        <p className="text-sm text-white font-mono">{grant.session_id}</p>
+                        <button
+                          onClick={() => {
+                            // Navigate to workloads page and highlight the specific workload
+                            window.dispatchEvent(new CustomEvent('navigateToWorkload', {
+                              detail: { sessionId: grant.session_id }
+                            }));
+                          }}
+                          className="text-xs text-blue-400 hover:text-blue-300 underline transition-colors duration-200"
+                          title="View workload details"
+                        >
+                          View Workload
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Scopes */}
+                <div>
+                  <p className="text-xs text-gray-400 mb-2">Granted Scopes</p>
+                  <div className="flex flex-wrap gap-1">
+                    {scopes.map((scope, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded"
+                        title={GrantUtils.getScopeDescription(scope)}
+                      >
+                        {scope}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -423,7 +398,7 @@ const ConsentManagementPage: React.FC<ConsentManagementPageProps> = ({ authStatu
             <div>
               <p className="text-sm text-gray-400">Active Grants</p>
               <p className="text-xl font-bold text-white">
-                {displayedGrants.filter(g => g.granted).length}
+                {displayedGrants.filter(g => g.status === 'active').length}
               </p>
             </div>
           </div>
@@ -463,9 +438,9 @@ const ConsentManagementPage: React.FC<ConsentManagementPageProps> = ({ authStatu
               <Activity className="w-5 h-5 text-purple-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-400">Total Usage</p>
+              <p className="text-sm text-gray-400">Total Grants</p>
               <p className="text-xl font-bold text-white">
-                {displayedGrants.reduce((sum, g) => sum + g.usage, 0)}
+                {displayedGrants.length}
               </p>
             </div>
           </div>
