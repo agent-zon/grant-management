@@ -6,6 +6,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Database types (converted from TypeScript interfaces to JSDoc comments)
+
 // Initialize SQLite database
 const db = new Database(path.join(__dirname, '../data/grants.db'));
 
@@ -110,6 +112,8 @@ const statements = {
   
   getGrantsBySession: db.prepare('SELECT * FROM grants WHERE session_id = ? AND status = ?'),
   
+  getAllGrants: db.prepare('SELECT * FROM grants WHERE client_id = ?'),
+  
   updateGrantStatus: db.prepare('UPDATE grants SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'),
   
   updateGrant: db.prepare(`
@@ -176,9 +180,9 @@ const statements = {
 // Database service functions
 export const GrantDatabase = {
   // Grant management
-  createGrant: (clientId, userId, scope, sessionId = null, workloadId = null, expiresAt = null, grantData = null) => {
+  createGrant: (clientId, userId, scope, sessionId, workloadId, expiresAt, grantData) => {
     const id = uuidv4();
-    const result = statements.insertGrant.run(
+    statements.insertGrant.run(
       id, clientId, userId, scope, 'active', 
       expiresAt, grantData ? JSON.stringify(grantData) : null, 
       sessionId, workloadId
@@ -187,72 +191,56 @@ export const GrantDatabase = {
     // Log the creation
     GrantDatabase.logAction(id, 'create', userId, { scope, sessionId, workloadId });
     
-    return { id, ...result };
+    return { id };
   },
 
   getGrant: (grantId) => {
     const grant = statements.getGrant.get(grantId);
-    if (grant && grant.grant_data) {
-      grant.grant_data = JSON.parse(grant.grant_data);
-    }
     return grant;
   },
 
   getGrantsByClient: (clientId, status = 'active') => {
-    const grants = statements.getGrantsByClient.all(clientId, status);
-    return grants.map(grant => {
-      if (grant.grant_data) {
-        grant.grant_data = JSON.parse(grant.grant_data);
-      }
-      return grant;
-    });
+    if (status === 'all') {
+      return statements.getAllGrants.all(clientId);
+    }
+    return statements.getGrantsByClient.all(clientId, status);
   },
 
   getGrantsBySession: (sessionId, status = 'active') => {
-    const grants = statements.getGrantsBySession.all(sessionId, status);
-    return grants.map(grant => {
-      if (grant.grant_data) {
-        grant.grant_data = JSON.parse(grant.grant_data);
-      }
-      return grant;
-    });
+    return statements.getGrantsBySession.all(sessionId, status);
   },
 
   updateGrantStatus: (grantId, status, actor) => {
-    const result = statements.updateGrantStatus.run(status, grantId);
+    statements.updateGrantStatus.run(status, grantId);
     GrantDatabase.logAction(grantId, 'update_status', actor, { status });
-    return result;
   },
 
   updateGrant: (grantId, scope, grantData, actor) => {
-    const result = statements.updateGrant.run(
+    statements.updateGrant.run(
       scope, 
       grantData ? JSON.stringify(grantData) : null, 
       grantId
     );
     GrantDatabase.logAction(grantId, 'update', actor, { scope, grantData });
-    return result;
   },
 
   revokeGrant: (grantId, actor) => {
-    const result = statements.updateGrantStatus.run('revoked', grantId);
+    statements.updateGrantStatus.run('revoked', grantId);
     GrantDatabase.logAction(grantId, 'revoke', actor);
-    return result;
   },
 
   deleteGrant: (grantId, actor) => {
-    const result = statements.deleteGrant.run(grantId);
+    statements.deleteGrant.run(grantId);
     GrantDatabase.logAction(grantId, 'delete', actor);
-    return result;
   },
 
   // Consent request management
-  createConsentRequest: (agentId, sessionId, requestedScopes, tools, workloadId = null, reason = null) => {
+  createConsentRequest: (agentId, sessionId, requestedScopes, tools, workloadId, reason) => {
     const id = uuidv4();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
     const authorizationLink = `/consent/${id}`;
     
-    const result = statements.insertConsentRequest.run(
+    statements.insertConsentRequest.run(
       id, agentId, sessionId, 
       JSON.stringify(requestedScopes), 
       JSON.stringify(tools),
@@ -262,40 +250,24 @@ export const GrantDatabase = {
       reason
     );
     
-    return { id, authorization_link: authorizationLink, ...result };
+    return { id, authorization_link: authorizationLink };
   },
 
   getConsentRequest: (requestId) => {
     const request = statements.getConsentRequest.get(requestId);
-    if (request) {
-      request.requested_scopes = JSON.parse(request.requested_scopes);
-      request.tools = JSON.parse(request.tools);
-      if (request.user_response) {
-        request.user_response = JSON.parse(request.user_response);
-      }
-    }
     return request;
   },
 
   getPendingConsentRequests: () => {
-    const requests = statements.getConsentRequestsByStatus.all('pending');
-    return requests.map(request => {
-      request.requested_scopes = JSON.parse(request.requested_scopes);
-      request.tools = JSON.parse(request.tools);
-      if (request.user_response) {
-        request.user_response = JSON.parse(request.user_response);
-      }
-      return request;
-    });
+    return statements.getConsentRequestsByStatus.all('pending');
   },
 
-  updateConsentRequest: (requestId, status, userResponse = null) => {
-    const result = statements.updateConsentRequestStatus.run(
+  updateConsentRequest: (requestId, status, userResponse) => {
+    statements.updateConsentRequestStatus.run(
       status, 
       userResponse ? JSON.stringify(userResponse) : null, 
       requestId
     );
-    return result;
   },
 
   // Session token management
@@ -303,57 +275,41 @@ export const GrantDatabase = {
     const id = uuidv4();
     const expiresAt = new Date(Date.now() + expiresIn * 1000);
     
-    const result = statements.insertSessionToken.run(
+    statements.insertSessionToken.run(
       id, sessionId, JSON.stringify(scopes), expiresAt.toISOString(), clientId
     );
     
-    return { id, expires_at: expiresAt, ...result };
+    return { id, expires_at: expiresAt };
   },
 
   getSessionToken: (tokenId) => {
-    const token = statements.getSessionToken.get(tokenId);
-    if (token && token.scopes) {
-      token.scopes = JSON.parse(token.scopes);
-    }
-    return token;
+    return statements.getSessionToken.get(tokenId);
   },
 
   getSessionTokensBySession: (sessionId, status = 'active') => {
-    const tokens = statements.getSessionTokensBySession.all(sessionId, status);
-    return tokens.map(token => {
-      if (token.scopes) {
-        token.scopes = JSON.parse(token.scopes);
-      }
-      return token;
-    });
+    return statements.getSessionTokensBySession.all(sessionId, status);
   },
 
   updateTokenUsage: (tokenId) => {
-    return statements.updateTokenUsage.run(tokenId);
+    statements.updateTokenUsage.run(tokenId);
   },
 
   revokeSessionToken: (tokenId) => {
-    return statements.revokeSessionToken.run('revoked', tokenId);
+    statements.revokeSessionToken.run('revoked', tokenId);
   },
 
   // Audit logging
-  logAction: (grantId, action, actor, details = null, ipAddress = null, userAgent = null) => {
+  logAction: (grantId, action, actor, details, ipAddress, userAgent) => {
     const id = uuidv4();
-    return statements.insertAuditLog.run(
+    statements.insertAuditLog.run(
       id, grantId, action, actor, 
       details ? JSON.stringify(details) : null, 
       ipAddress, userAgent
     );
   },
 
-  getAuditLogs: (grantId = null, limit = 100) => {
-    const logs = statements.getAuditLogs.all(grantId, grantId, limit);
-    return logs.map(log => {
-      if (log.details) {
-        log.details = JSON.parse(log.details);
-      }
-      return log;
-    });
+  getAuditLogs: (grantId, limit = 100) => {
+    return statements.getAuditLogs.all(grantId, grantId, limit);
   },
 
   // Database maintenance
