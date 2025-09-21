@@ -1,0 +1,83 @@
+# yaml-language-server: $schema=./values.schema.json
+
+global:
+  domain: c-127c9ef.stage.kyma.ondemand.com
+  imagePullSecret:
+    name: docker-registry
+  image:
+    registry: scai-dev.common.repositories.cloud.sap
+    tag: latest
+srv:
+  runAsUser: 1993
+  bindings:
+    auth:
+      serviceInstanceName: identity
+      parameters:
+        credential-type: X509_GENERATED
+        app-identifier: srv
+    destination:
+      serviceInstanceName: destination
+  image:
+    repository: grant-management/api
+  resources:
+    limits:
+      ephemeral-storage: 1G
+      memory: 500M
+    requests:
+      ephemeral-storage: 1G
+      cpu: 500m
+      memory: 500M
+  health:
+    liveness:
+      path: /health
+    readiness:
+      path: /health
+  networkSecurity:
+    allowNamespaceInternal: true
+approuter:
+  bindings:
+    auth:
+      serviceInstanceName: identity
+      parameters:
+        credential-type: X509_GENERATED
+        app-identifier: approuter
+  image:
+    repository: grant-management/approuter
+  runAsUser: 1000
+  resources:
+    limits:
+      ephemeral-storage: 1G
+      memory: 500M
+    requests:
+      ephemeral-storage: 1G
+      cpu: 500m
+      memory: 500M
+  health:
+    liveness:
+      path: /
+    readiness:
+      path: /
+  envFrom:
+    - configMapRef:
+        name: "{{ .Release.Name }}-approuter-configmap"
+
+identity:
+  serviceOfferingName: identity
+  servicePlanName: application
+  parameters:
+    display-name: agent-grants
+    oauth2-configuration:
+      token-policy:
+        access-token-format: "jwt"
+      redirect-uris:
+        - https://*.{{ tpl .Values.global.domain . }}/login/callback
+      post-logout-redirect-uris:
+        - https://*.{{ tpl .Values.global.domain . }}/*/logout.html
+backendDestinations:
+  srv-api:
+    service: srv
+destination:
+  serviceOfferingName: destination
+  servicePlanName: lite
+  parameters:
+    version: 1.0.0

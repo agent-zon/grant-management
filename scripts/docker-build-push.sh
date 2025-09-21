@@ -2,39 +2,27 @@
 #  for mac build and push multi-arch images - workaround for  aspirate build images with platform
 
 # Build and Push Script for Kyma Deployment
-# Usage: ./scripts/build-and-push.sh [registry-url] [domain-name]
+# Usage: ./scripts/build-and-push.sh [registry-url] [domain-name] [version]
 set -e
 
 # Configuration
 REGISTRY_URL=${1:-"scai-dev.common.repositories.cloud.sap"}
-DOMAIN_NAME=${2:-"aspire-ai"}
+DOMAIN_NAME=${2:-"grant-management"}
 VERSION=${3:-"latest"}
 
 echo "🚀 Building and pushing images to $REGISTRY_URL"
 echo "🌐 Domain: $DOMAIN_NAME"
 echo "📦 Version: $VERSION"
 
-# Setup Docker Buildx for multi-platform builds
 echo "🔧 Setting up Docker Buildx for multi-platform builds..."
-docker buildx create --name multi-platform-builder --use --bootstrap || true
-
-# Generate Aspire Helm charts
-echo "🔧 Generating Aspire Helm charts..."
+docker buildx rm multi-platform-builder || true
+docker buildx create --name multi-platform-builder --use --bootstrap
 
 
-
-##build all components  and push to registry
-#aspirate generate --output-format helm --secret-password aiam --private-registry --non-interactive --include-dashboard --container-registry "$REGISTRY_URL" --container-build-arg "platform"="linux/amd64" --container-build-arg "version=$VERSION" 
-#aspirate build --non-interactive --container-registry "$REGISTRY_URL"   --container-build-arg "platform"="linux/amd64" --container-build-arg "version=$VERSION" 
+echo "📦 Building Grant Management Service..."
+docker buildx build --platform linux/amd64,linux/arm64 -t "$REGISTRY_URL/$DOMAIN_NAME/app:$VERSION" --push ./deno
 
 
-# fix platform for mcp-aggregator service
-echo "📦 Building MCP Aggregator Service..."
-docker buildx build --platform linux/amd64,linux/arm64 -t "$REGISTRY_URL/grant-management:$VERSION" --push .
-
-
-docker manifest inspect "$REGISTRY_URL/grant-management:$VERSION" || echo "Manifest not found, skipping inspection"
+docker manifest inspect "$REGISTRY_URL/$DOMAIN_NAME/app:$VERSION" || echo "Manifest not found, skipping inspection"
  
 
-echo "✅ Helm charts generated successfully!"
-echo "🎯 Ready to deploy to Kyma with: helm upgrade grant-management host/aspirate-output/Chart/ -n grant-management --install --create-namespace"

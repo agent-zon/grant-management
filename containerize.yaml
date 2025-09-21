@@ -1,0 +1,15 @@
+_schema-version: "1.0"
+repository: scai-dev.common.repositories.cloud.sap
+tag: latest
+before-all:
+  - npx cds build --production
+
+modules:
+  - name: grant-management/api
+    build-parameters:
+      commands:
+        - docker buildx build --platform linux/amd64 -t grant-management/api:latest  srv --load
+  - name: grant-management/approuter
+    build-parameters:
+      commands:
+        - docker buildx build --platform linux/amd64 -t grant-management/approuter:latest app/router --load

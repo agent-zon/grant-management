@@ -1,0 +1,88 @@
+_schema-version: 3.3.0
+ID: agent-grants
+version: 1.0.0
+description: "A simple CAP project."
+parameters:
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npm ci
+        - npx cds build --production
+modules:
+  - name: agent-grants-srv
+    type: nodejs
+    path: gen/srv
+    parameters:
+      instances: 1
+      buildpack: nodejs_buildpack
+      routes:
+        - route: "${default-url}"
+        - route: "${default-host}.cert.${default-domain}"
+    build-parameters:
+      builder: npm-ci
+    provides:
+      - name: srv-api # required by consumers of CAP services (e.g. approuter)
+        properties:
+          srv-url: ${default-url}
+          srv-cert-url: '${protocol}://${default-host}.cert.${default-domain}'
+    requires:
+      - name: agent-grants-auth
+        parameters:
+          config:
+            credential-type: X509_GENERATED
+            app-identifier: srv
+      - name: agent-grants-destination
+
+  - name: agent-grants
+    type: approuter.nodejs
+    path: app/router
+    requires:
+      - name: agent-grants-auth
+        parameters:
+          config:
+            credential-type: X509_GENERATED
+            app-identifier: approuter
+      - name: srv-api
+        group: destinations
+        properties:
+          url: ~{srv-cert-url}
+          forwardAuthCertificates: true
+          strictSSL: true
+      - name: agent-grants-destination
+    parameters:
+      keep-existing-routes: true
+      disk-quota: 256M
+      memory: 256M
+    provides:
+      - name: app-api
+        properties:
+          app-protocol: ${protocol}
+          app-uri: ${default-uri}
+
+resources:
+  - name: agent-grants-auth
+    type: org.cloudfoundry.managed-service
+    requires:
+      - name: app-api
+    parameters:
+      service: identity
+      service-name: agent-grants-auth
+      service-plan: application
+      config:
+        display-name: agent-grants
+        oauth2-configuration:
+          token-policy:
+            access-token-format: "jwt"
+          redirect-uris:
+            - ~{app-api/app-protocol}://*.~{app-api/app-uri}/login/callback
+            - ~{app-api/app-protocol}://~{app-api/app-uri}/login/callback
+          post-logout-redirect-uris:
+            - ~{app-api/app-protocol}://*.~{app-api/app-uri}/*/logout.html
+        xsuaa-cross-consumption: true
+  - name: agent-grants-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite

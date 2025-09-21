@@ -1,0 +1,6 @@
+ID,type,actions,locations,toolName,toolDescription,riskLevel,category,grant_ID
+135770e6-0f29-473f-b41a-00cc93c8b617,tool_access,"read,write,execute",https://api.example.com/tools,File Manager,Manages file operations,medium,file-system,86d45db0-2a33-409c-a292-ff7c7cec0036
+dcee929c-a880-4918-8ed3-1ecf42dc4434,data_access,"read,write,delete",https://api.example.com/data,Database Access,Access to user database,high,data-access,0a66f722-e3fa-4a00-82dc-3bcf9c0829a7
+644b3e08-446b-4431-b905-ded11c1a0910,system_admin,"admin,configure",https://api.example.com/admin,System Configuration,Admin system settings,high,system-admin,13fdcb5f-1a13-409a-809e-ada1f9a8c159
+8a33ceed-1f30-413b-840c-ade8a01b1321,network,"http_request,api_call",https://api.example.com/network,Network Tools,Network operations,medium,network,309006d8-1509-44ea-8dfb-4e658f7923d3
+baf6a4be-f7bc-444f-879d-f6f25a265084,analytics,"generate_report,export",https://api.example.com/analytics,Analytics Dashboard,Generate reports,low,analytics,f36ef30e-de51-48a6-b622-ad9a529426f2
