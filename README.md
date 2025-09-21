@@ -7,10 +7,6 @@ with the authorization server.
 ## Live Deployment
 The application is deployed on SAP BTP Kyma environment and can be accessed at:
 - https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com
-
-  - [Grant Management](https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com/grants)
-
-  - [Consent Vault](https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com/vault)
   
 
 
