@@ -12,7 +12,6 @@ The application is deployed on SAP BTP Kyma environment and can be accessed at:
 
   - [Consent Vault](https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com/vault)
   
-  - [Admin](https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com/admin)
 
 
 ## Features
