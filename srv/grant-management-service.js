@@ -1,51 +1,35 @@
-import cds from "@sap/cds";
+const cds = require('@sap/cds');
 
 class GrantManagementService extends cds.ApplicationService {
-  // GET /grants - Server metadata endpoint
+  // Default metadata for the Grant Management API
   async getMetadata(req) {
-    const metadata = await SELECT.one.from(GrantManagementMetadata).where({
-      id: "1",
-    });
-
-    if (!metadata) {
-      // Return default metadata if not configured
-      return {
-        grant_management_actions_supported: [
-          "query",
-          "revoke",
-          "create",
-          "update",
-          "replace",
-        ],
-        grant_management_endpoint: `${req.headers.host}/grants`,
-        grant_management_action_required: false,
-        server_info: {
-          name: "Agent Grants Authorization Server",
-          version: "1.0.0",
-          supported_scopes: [
-            "grant_management_query",
-            "grant_management_revoke",
-            "grant_management_create",
-            "grant_management_update",
-            "grant_management_replace",
-          ],
-        },
-      };
-    }
-
     return {
-      grant_management_actions_supported: JSON.parse(
-        metadata.grantManagementActionsSupported || "[]",
-      ),
-      grant_management_endpoint: metadata.grantManagementEndpoint,
-      grant_management_action_required: metadata.grantManagementActionRequired,
+      grant_management_actions_supported: [
+        'query',
+        'revoke',
+        'create',
+        'update',
+        'replace'
+      ],
+      grant_management_endpoint: `${req.headers.host}/grants`,
+      grant_management_action_required: false,
       server_info: {
-        name: metadata.serverName,
-        version: metadata.serverVersion,
-        supported_scopes: JSON.parse(metadata.supportedScopes || "[]"),
-      },
+        name: 'Agent Grants Authorization Server',
+        version: '1.0.0',
+        supported_scopes: [
+          'grant_management_query',
+          'grant_management_revoke',
+          'grant_management_create',
+          'grant_management_update',
+          'grant_management_replace'
+        ]
+      }
     };
   }
-}
 
-export default GrantManagementService;
+  init() {
+    // Bind the function name from CDS (getMetadata) to the handler
+    this.on('getMetadata', async (req) => this.getMetadata(req));
+    return super.init && super.init();
+  }
+} 

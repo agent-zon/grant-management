@@ -14,16 +14,15 @@ entity Grants : cuid, managed,temporal {
   status:  GrantStatus; 
   expiresAt: Timestamp;
   lastUsed: Timestamp;
-  sessionId: String(255);
+  sessionId: String(255); 
   ip: String(255);
   subject: Association to Identity;
   actor: Association to Identity;
   
   // Grant scopes relationship
-  scopes: Association to many GrantScopes;
-  
+  scopes: Association to many GrantScopes on scopes.grant = $self;
   // Authorization details relationship  
-  authorizationDetails: Association to many ToolGrantAuthorizationDetails;
+  authorizationDetails: Association to many ToolGrantAuthorizationDetails on authorizationDetails.grant = $self;
 }
 
 
@@ -106,4 +105,3 @@ entity ToolGrantAuthorizationDetails:cuid {
    riskLevel: String(20) enum { low; medium; high; }; // Risk level
    category: String(50); // Category (e.g., "file-system", "data-access", "system-admin", "network", "analytics")
  }
- 

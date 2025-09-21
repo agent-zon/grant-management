@@ -4,7 +4,8 @@
       "source": "^/(.*)$",
       "target": "$1",
       "destination": "srv-api",
-      "csrfProtection": false
+      "csrfProtection": false,
+      "authenticationType": "ias"
     }
   ]
 }

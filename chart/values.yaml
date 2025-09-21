@@ -34,7 +34,11 @@ srv:
       path: /health
   networkSecurity:
     allowNamespaceInternal: true
+    
 approuter:
+  expose: 
+    hosts: 
+      - "{{ .Release.Namespace }}"
   bindings:
     auth:
       serviceInstanceName: identity
@@ -81,3 +85,4 @@ destination:
   servicePlanName: lite
   parameters:
     version: 1.0.0
+  

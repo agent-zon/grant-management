@@ -9,7 +9,9 @@ modules:
     build-parameters:
       commands:
         - docker buildx build --platform linux/amd64 -t grant-management/api:latest  srv --load
+  
   - name: grant-management/approuter
     build-parameters:
       commands:
         - docker buildx build --platform linux/amd64 -t grant-management/approuter:latest app/router --load
+ 
