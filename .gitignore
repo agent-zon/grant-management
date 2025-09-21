@@ -26,3 +26,6 @@ dist-ssr
 
 secret.sh
 gen/
+
+# added by cds
+.cdsrc-private.json
