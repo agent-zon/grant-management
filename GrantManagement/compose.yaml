@@ -1,0 +1,7 @@
+﻿services:
+  grantmcplayer:
+    image: grantmcplayer
+    build:
+      context: .
+      dockerfile: GrantMcpLayer/Dockerfile
+

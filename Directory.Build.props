@@ -1,0 +1,21 @@
+<Project>
+	<PropertyGroup>
+		<Company>SAP SE</Company>
+		<Copyright>Copyright © SAP SE 2021</Copyright>
+		<Product>McpAggregator</Product>
+		<Description>McpAggregator</Description>
+		<VersionPrefix>0.0.1</VersionPrefix>
+	</PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Library</OutputType>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+	<PropertyGroup Label="GC configuration for service">
+		<ServerGarbageCollection>true</ServerGarbageCollection>
+		<ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+		<GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+	</PropertyGroup>
+</Project>
+
