@@ -8,7 +8,11 @@ with the authorization server.
 The application is deployed on SAP BTP Kyma environment and can be accessed at:
 - https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com
 
+  - [Grant Management](https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com/grants)
+
+  - [Consent Vault](https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com/vault)
   
+  - [Admin](https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com/admin)
 
 
 ## Features
@@ -34,27 +38,6 @@ The application is deployed on SAP BTP Kyma environment and can be accessed at:
 | `docs/`        | Documentation and consent scenarios       |
 | `package.json` | Project metadata and configuration        |
 
-- **OAuth 2.0 Grant Management API**: Full implementation of the Grant
-  Management specification using SAP CAP framework
-- **CDS Service**: Core Data Services implementation with proper entity modeling
-- **Authorization Details**: Model tools and operations as Rich Authorization
-  Request (RAR) authorization details
-- **Web-based UI**: User-friendly interface for managing consent grants
-- **RESTful API**: Programmatic access for OAuth clients
-- **Real-time Monitoring**: Live tracking of grant usage and status
-- **Security**: Proper authorization and token management
-
-## Project Structure
-
-| File or Folder | Purpose                                   |
-| -------------- |-------------------------------------------|
-| `app/`         | approuter configuration                   |
-| `db/`          | CDS entities, schema, and initial data    |
-| `srv/`         | CDS service definition and implementation |
-| `chart/`       | Kubernetes deployment configuration       |
-| `docs/`        | Documentation and consent scenarios       |
-| `package.json` | Project metadata and configuration        |
-
 ## API Documentation
 
 The application implements the OAuth 2.0 Grant Management API specification. See
@@ -83,34 +66,6 @@ documentation.
    npm install
    ```
 
-## API Documentation
-
-The application implements the OAuth 2.0 Grant Management API specification. See
-[GRANT_MANAGEMENT_API.md](GRANT_MANAGEMENT_API.md) for detailed API
-documentation.
-
-### Key Endpoints
-
-- `GET /api/grants` - Server metadata
-- `GET /api/grants/{grant_id}` - Query grant status
-- `DELETE /api/grants/{grant_id}` - Revoke grant
-
-### Web UI
-
-- `/grants` - Grant management dashboard
-- `/grants/{id}` - Individual grant details
-- `/grants/{id}/grant` - Grant consent
-- `/grants/{id}/revoke` - Revoke consent
-
-## Getting Started
-
-### Development
-
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-   
 2. Start the CDS development server:
    ```bash
    npm run dev
@@ -156,7 +111,6 @@ Retrieve environment variables from the remote service:
 ```bash
 npx cds env requires.auth --profile hybrid --resolve-bindings
 ```
-
 
 
 ## Learn More
