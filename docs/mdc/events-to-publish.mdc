@@ -1,0 +1,59 @@
+---
+alwaysApply: false
+---
+## 1) Event Envelope (SET) — Required Fields
+
+All events are JWTs with `typ=secevent+jwt` and a single `events` member.
+
+**Required envelope claims**
+
+* `iss` — issuer (our Authorization/Grant server base URL)
+* `iat` — issued-at (unix seconds)
+* `jti` — unique id (UUIDv4 recommended)
+* `aud` — intended audience (client id, webhook id, feed id)
+* `events` — object with exactly one event URI key
+
+**Recommended**
+
+* `toe` — time-of-event (unix seconds)
+* `sub` — subject when globally unique and stable
+
+**Header**
+
+* `typ: secevent+jwt`
+* `alg: RS256` (sign) and optionally JWE for encryption when PII present
+
+---
+
+## 2) Subject Identifiers (OAuth & RISC)
+
+Use the standardized subject identifier objects inside each event payload:
+
+* **Token subject** (`oauth_token`):
+
+  ```json
+  {
+    "subject_type": "oauth_token",
+    "token_type": "refresh_token|access_token|authorization_code",
+    "token_identifier_alg": "hash_sha256|plain|prefix",
+    "token": "...identifier or hash..."
+  }
+  ```
+* **Client subject** (`oauth_client`):
+
+  ```json
+  { "subject_type": "oauth_client", "client_id": "..." }
+  ```
+* **Account subject** (`iss-sub`) when we refer to an end-user/account:
+
+  ```json
+  { "subject_type": "iss-sub", "iss": "https://idp.example.com/", "sub": "..." }
+  ```
+
+> **Note:** Prefer **hashed token identifiers**. Never include raw secrets.
+
+---
+
+## 3) Canonical Event Catalog
+
+We publish the following event types. Each event is \*\*idem
