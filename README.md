@@ -5,15 +5,10 @@ Management API specification, allowing clients to explicitly manage their grants
 with the authorization server.
 
 ## Live Deployment
+
 The application is deployed on SAP BTP Kyma environment and can be accessed at:
+
 - https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com
-
-  - [Grant Management](https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com/grants)
-
-  - [Consent Vault](https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com/vault)
-  
-  - [Admin](https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com/admin)
-
 
 ## Features
 
@@ -30,7 +25,7 @@ The application is deployed on SAP BTP Kyma environment and can be accessed at:
 ## Project Structure
 
 | File or Folder | Purpose                                   |
-| -------------- |-------------------------------------------|
+| -------------- | ----------------------------------------- |
 | `app/`         | approuter configuration                   |
 | `db/`          | CDS entities, schema, and initial data    |
 | `srv/`         | CDS service definition and implementation |
@@ -46,7 +41,8 @@ documentation.
 
 ### Key Endpoints
 
-- `GET /api/grants` - Server metadata
+- `GET /api/grants` - Grants list
+- `GET /api/grants?$expand=authorization_details` - Grants list with authorization_details
 - `GET /api/grants/{grant_id}` - Query grant status
 - `DELETE /api/grants/{grant_id}` - Revoke grant
 
@@ -62,11 +58,13 @@ documentation.
 ### Development
 
 1. Install dependencies:
+
    ```bash
    npm install
    ```
 
 2. Start the CDS development server:
+
    ```bash
    npm run dev
    ```
@@ -80,7 +78,6 @@ The CDS server will automatically:
 - Start the Grant Management service
 - Serve the web UI
 
-
 ### Production Deployment
 
 Deploy the application to your SAP BTP Kyma environment using the provided
@@ -90,14 +87,15 @@ This will create the necessary Kubernetes resources, including deployments,
 services, and ingress rules.
 
 ### Hybrid Development
+
 For hybrid development, you can run the CDS server locally while connecting to
-a remote service in your Kyma environment. 
+a remote service in your Kyma environment.
 Example:
 
 ```bash
 #change default namespace to your namespace, this command works only in default namespace
 kubectl config set-context --current --namespace=grant-managment
-cds bind auth --to agent-grants-srv-auth --on k8s 
+cds bind auth --to agent-grants-srv-auth --on k8s
 ```
 
 Then start the CDS server locally:
@@ -111,7 +109,6 @@ Retrieve environment variables from the remote service:
 ```bash
 npx cds env requires.auth --profile hybrid --resolve-bindings
 ```
-
 
 ## Learn More
 

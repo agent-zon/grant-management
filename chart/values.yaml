@@ -8,13 +8,12 @@ global:
     registry: scai-dev.common.repositories.cloud.sap
     tag: latest
 srv:
-  runAsUser: 1993
   bindings:
     auth:
       serviceInstanceName: identity
       parameters:
         credential-type: X509_GENERATED
-        app-identifier: srv
+        app-identifier: grant-api
     destination:
       serviceInstanceName: destination
   image:
@@ -24,9 +23,9 @@ srv:
       ephemeral-storage: 1G
       memory: 500M
     requests:
-      ephemeral-storage: 1G
-      cpu: 500m
-      memory: 500M
+      ephemeral-storage: 512M
+      cpu: 250m
+      memory: 216M
   health:
     liveness:
       path: /health
@@ -34,7 +33,32 @@ srv:
       path: /health
   networkSecurity:
     allowNamespaceInternal: true
+  env:
+    - name: CDS_REQUIRES_AUTH_KIND
+      value: "ias"
+    - name: CDS_REQUIRES_DESTINATIONS_KIND
+      value: "destinations"
+
 approuter:
+  expose:
+    corsPolicy:
+      allowOrigins:
+        - regex: ".*-approuter-{{ .Release.Namespace }}.{{ .Values.global.domain }}"
+        - exact: "https://*.{{ tpl .Values.global.domain . }}"
+        - exact: "http://localhost:9000"
+        - exact: "http://localhost:4338"
+      allowMethods:
+        - "GET"
+        - "POST"
+        - "PUT"
+        - "DELETE"
+        - "OPTIONS"
+        - "PATCH"
+        - "HEAD"
+      allowHeaders:
+        - "*"
+      allowCredentials: true
+
   bindings:
     auth:
       serviceInstanceName: identity
@@ -50,7 +74,7 @@ approuter:
       memory: 500M
     requests:
       ephemeral-storage: 1G
-      cpu: 500m
+      cpu: 250m
       memory: 500M
   health:
     liveness:
@@ -60,6 +84,40 @@ approuter:
   envFrom:
     - configMapRef:
         name: "{{ .Release.Name }}-approuter-configmap"
+  env:
+    # TENANT_HOST_PATTERN: "^(.*)-{{ tpl .Values.global.domain . }}"
+    # TENANT_MODE: "shared"
+    OTEL_EXPORTER_OTLP_ENDPOINT: http://otlp-dashboard:18889
+    OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+    OTEL_SERVICE_NAME: approuter
+    OTEL_PROPAGATORS: tracecontext,baggage
+portal:
+  runAsUser: 1993
+  bindings:
+    auth:
+      serviceInstanceName: identity
+      parameters:
+        credential-type: X509_GENERATED
+        app-identifier: grant-portal
+    destination:
+      serviceInstanceName: destination
+  image:
+    repository: grant-management/portal
+  resources:
+    limits:
+      ephemeral-storage: 1G
+      memory: 500M
+    requests:
+      ephemeral-storage: 1G
+      cpu: 500m
+      memory: 500M
+  health:
+    liveness:
+      path: /
+    readiness:
+      path: /
+  networkSecurity:
+    allowNamespaceInternal: true
 
 identity:
   serviceOfferingName: identity
@@ -73,9 +131,15 @@ identity:
         - https://*.{{ tpl .Values.global.domain . }}/login/callback
       post-logout-redirect-uris:
         - https://*.{{ tpl .Values.global.domain . }}/*/logout.html
+
 backendDestinations:
   srv-api:
     service: srv
+    forwardAuthToken: true
+  user-portal:
+    service: portal
+    forwardAuthToken: true
+
 destination:
   serviceOfferingName: destination
   servicePlanName: lite

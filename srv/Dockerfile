@@ -1,37 +1,36 @@
-# Use Deno latest
-FROM denoland/deno:latest
+FROM --platform=$TARGETPLATFORM node:22-alpine AS build
+# FROM node:22-alpine AS build
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
 
-# Set working directory
+RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
+
+RUN npm install -g npm@11.6.0
+RUN npm i -g @sap/cds-dk
+
+# Create app directory and user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+
 WORKDIR /app
 
-# Copy dependency files
-# COPY server.ts deno.jsonc deno.lock* ./
-COPY . .
+# Copy package files
+COPY gen/srv/package*.json ./
+RUN npm install --omit=dev
 
-# Cache dependencies
-RUN deno install --allow-scripts=npm:@tailwindcss/oxide@4.1.13
-# Copy source code
+# Copy application code
+COPY gen/srv/ ./
 
-# RUN deno install --allow-scripts=npm:better-sqlite3@12.2.0
+# Change ownership to nodejs user
+RUN chown -R 1001:1001 /app
+USER 1001
 
-# RUN deno task build
+# USER node
 
- 
- 
-# Set environment variables
 ENV PORT=8080
-
+# Expose port
 EXPOSE $PORT
-ENV NODE_ENV=production
 
-
-RUN chown -R deno:deno /app/node_modules \
-    && chmod -R u+w /app/node_modules
-
-# Use existing deno user (already exists in denoland/deno image)
-# deno numeric representation 1993
-USER 1993
- 
-
-# Run the application
-CMD ["deno", "task", "start"]
+# Start the application
+CMD ["npm", "start"]

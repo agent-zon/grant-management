@@ -1,99 +1,39 @@
 {
   "name": "OAuth 2.0 Grant Management API",
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-20-bullseye",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
 
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
-    "ghcr.io/devcontainers/features/deno:1": {
-      "version": "latest"
-    },
     "ghcr.io/devcontainers/features/git:1": {},
-    "ghcr.io/devcontainers/features/github-cli:1": {}
-  },
-
-  "customizations": {
-    "vscode": {
-      "extensions": [
-        "ms-vscode.vscode-typescript-next",
-        "denoland.vscode-deno",
-        "bradlc.vscode-tailwindcss",
-        "esbenp.prettier-vscode",
-        "ms-vscode.vscode-json",
-        "redhat.vscode-yaml",
-        "ms-kubernetes-tools.vscode-kubernetes-tools",
-        "ms-vscode-remote.remote-containers",
-        "ms-vscode.vscode-docker",
-        "formulahendry.auto-rename-tag",
-        "christian-kohler.path-intellisense",
-        "ms-vscode.vscode-eslint",
-        "bradlc.vscode-tailwindcss",
-        "ms-vscode.vscode-typescript-next",
-        "ms-vscode.vscode-json"
-      ],
-      "settings": {
-        "deno.enable": true,
-        "deno.lint": true,
-        "deno.unstable": true,
-        "deno.suggest.imports.hosts": {
-          "https://deno.land": true,
-          "https://esm.sh": true,
-          "https://cdn.skypack.dev": true
-        },
-        "typescript.preferences.importModuleSpecifier": "relative",
-        "editor.formatOnSave": true,
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.codeActionsOnSave": {
-          "source.fixAll.eslint": "explicit"
-        },
-        "tailwindCSS.includeLanguages": {
-          "typescript": "typescript",
-          "typescriptreact": "typescriptreact"
-        },
-        "tailwindCSS.experimental.classRegex": [
-          ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
-          ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
-        ]
-      }
-    }
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainer-community/devcontainer-features/deno.com:1": {}
   },
 
   "forwardPorts": [3000, 4004, 8080, 5173],
   "portsAttributes": {
-    "3000": {
-      "label": "React Router Dev Server",
-      "onAutoForward": "notify"
-    },
-    "4004": {
-      "label": "CDS OData Service",
-      "onAutoForward": "notify"
-    },
-    "8080": {
-      "label": "Production Server",
-      "onAutoForward": "silent"
-    },
-    "5173": {
-      "label": "Vite Dev Server",
-      "onAutoForward": "notify"
+    "3000": { "label": "React Router Dev Server", "onAutoForward": "notify" },
+    "4004": { "label": "CDS OData Service", "onAutoForward": "notify" },
+    "8080": { "label": "Production Server", "onAutoForward": "silent" },
+    "5173": { "label": "Vite Dev Server", "onAutoForward": "notify" }
+  },
+  "customizations": {
+    "jetbrains": {
+      "settings": {
+        "Docker:app:DockerSettings.dockerComposePath": "/usr/local/bin/docker",
+        "Docker:app:DockerSettings.dockerPath": "/usr/local/bin/docker",
+        "Git4Idea:app:Git-Application-Settings.use_credential_helper": true,
+        "JavaScript:app:JSEditorOptions.automatically_replace_with_template_string_on_typing": false,
+        "JavaScript:app:JSEditorOptions.escape_pasted_text": false,
+        "JavaScript:app:JSEditorOptions.escape_doc_on_copy_paste": false,
+        "com.intellij:app:JsonEditorOptions.comma_on_enter": false,
+        "com.intellij:app:JsonEditorOptions.comma_on_matching_braces": false,
+        "com.intellij:app:JsonEditorOptions.comma_on_paste": false,
+        "com.intellij:app:JsonEditorOptions.auto_quote_prop_name": false,
+        "com.intellij:app:JsonEditorOptions.auto_whitespace_after_colon": false,
+        "com.intellij:app:JsonEditorOptions.escape_pasted_text": false,
+        "com.intellij:app:Vcs-Log-App-Settings.show_changes_from_parents": true
+      }
     }
-  },
-
-  "postCreateCommand": "bash .devcontainer/post-create.sh",
-
-  "remoteUser": "node",
-  "workspaceFolder": "/workspace",
-
-  "mounts": [
-    "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
-  ],
-
-  "containerEnv": {
-    "NODE_ENV": "development",
-    "CDS_ENV": "development",
-    "DENO_DIR": "/workspace/.deno"
-  },
-
-  "runArgs": ["--init"],
-
-  "shutdownAction": "stopContainer"
+  }
 }

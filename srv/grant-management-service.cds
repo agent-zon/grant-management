@@ -1,40 +1,48 @@
-using com.sap.agent.grants as grants from '../db/schema';
+using com.sap.agent.grants as entity from '../db/schema';
 
 @path: '/api'
 @requires: ['authenticated-user', 'system-user']
-@impl: 'srv/grant-management-service.js'
+@protocol: 'rest'
 service GrantManagementService {
   
   // OAuth 2.0 Grant Management API entities
   // Standard CRUD operations (GET, POST, PUT, DELETE) are automatically provided by CDS
-  
-  // Main grant entity - GET /grants/{grant_id} and DELETE /grants/{grant_id} are automatically available
-  @path: '/'
-  entity Grants as projection on grants.Grants;
+
+    // Main grant entity - GET /grants/{grant_id} and DELETE /grants/{grant_id} are automatically available
+  entity grants as projection on entity.Grants
+  {
+    ID as grant_id,
+    clientId as client_id,
+    actor.ID as act,
+    subject.ID as sub, 
+    sessionId as sid,
+    status,
+    createdAt as created_at,
+    modifiedAt as modified_at,
+    expiresAt as expires_at,
+    authorizationDetails as authorization_details,
+    scopes as scope,
+   {
+      ID as sub,
+      actor.type ,
+      actor.name ,
+    } as actor,
+    subject,
+  }
   
   // Supporting entities for grant management
-  entity Identity as projection on grants.Identity;
-  entity GrantScopes as projection on grants.GrantScopes;
-  entity ToolGrantAuthorizationDetails as projection on grants.ToolGrantAuthorizationDetails;
-  
+  entity Identity as projection on entity.Identity;
+  entity ToolGrantAuthorizationDetails as projection on entity.ToolGrantAuthorizationDetails;
+  entity GrantScopes as projection on entity.GrantScopes;
+
   // Server metadata endpoint (Section 7.1)
-  @requires: 'authenticated-user'
-  function getMetadata() returns GrantManagementMetadata;
+  function metadata() returns GrantManagementMetadata;
   
-  // Get available authorization detail types
-  @requires: 'grant_management_query'
-  function getAuthorizationDetailTypes() returns array of AuthorizationDetailTypeInfo;
   
   // Note: Token management (issuing/revoking access/refresh tokens) is NOT part of 
-  // the OAuth 2.0 Grant Management API specification. Tokens are managed through:
-  // - Standard OAuth 2.0 token endpoint for issuance
-  // - RFC 7009 token revocation endpoint for revocation
-  // - Grant Management API only handles grant lifecycle (query, revoke, update, replace)
-}
+ }
 
 // Response types for OAuth 2.0 Grant Management API specification
-
-// Server metadata as per Section 7.1 of OAuth 2.0 Grant Management spec
 type GrantManagementMetadata {
   grant_management_actions_supported: array of String;
   grant_management_endpoint: String;
@@ -48,16 +56,7 @@ type ServerInfo {
   supported_scopes: array of String;
 }
 
-// Authorization detail type information
-type AuthorizationDetailTypeInfo {
-  type: String;
-  name: String;
-  description: String;
-  risk_level: String;
-  category: String;
-  actions: array of String;
-  locations: array of String;
-}
+ 
 
 // Note: Entity projections automatically provide standard CRUD operations:
 // - GET /grants/{grant_id} - Query grant status (returns entity data)
