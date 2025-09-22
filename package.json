@@ -1,20 +1,25 @@
 {
-  "name": "grant-management",
+  "name": "v1",
   "version": "1.0.0",
   "description": "A simple CAP project.",
   "type": "module",
   "dependencies": {
+    "@cap-js/postgres": "^2",
+    "@cap-js/sqlite": "^2",
     "@sap/cds": "^9.3.1",
     "@sap/xssec": "^4",
+    "axios": "^1.12.2",
     "compression": "^1.8.1",
     "cross-env": "^10.0.0",
     "express": "^4.21.2",
     "isbot": "^5.1.27",
+    "jwt-decode": "^4.0.0",
     "morgan": "^1.10.1",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "redis": "^5.0.0"
   },
   "devDependencies": {
-    "@cap-js/sqlite": "^2",
+    "@sap/cds-dk": "^9.3.2",
     "@tailwindcss/vite": "^4.1.13",
     "@types/express": "^5.0.3",
     "@types/express-serve-static-core": "^5.0.7",
@@ -33,8 +38,8 @@
     "debug": "npx cds debug",
     "serve": "npm run serve:cds & npm run serve:approuter",
     "serve:cds": "npx cds serve --profile dev",
-    "serve:hybrid": "cds bind --exec -- npm run serve",
-    "serve:hybrid:approuter": "cds bind --exec -- npm run serve:approuter",
+    "serve:hybrid": "npx cds bind --exec -- npm run serve",
+    "serve:hybrid:approuter": "npx cds bind --exec -- npm run serve:approuter",
     "serve:hybrid:cds": "npm bind --exec -- cds serve",
     "serve:approuter": "node node_modules/@sap/approuter/approuter.js --workingDir app/router --port 9000",
     "build": "npx cds build --production",
@@ -68,15 +73,25 @@
     "compile:sql": "cds compile --to sql",
     "compile:java": "cds compile --to java",
     "compile:ts": "cds compile --to ts",
-    "dev": "npx cds watch"
+    "dev": "npx cds watch",
+    "test:auth": "npx cds bind --profile hybrid --exec -- node ./tests/auth.spec.js"
   },
   "private": true,
   "cds": {
     "requires": {
-      "[production]": {
-        "auth": "ias"
-      },
-      "destinations": true
+      "auth": {
+        "kind": "ias",
+        "config": {
+          "validation": {
+            "x5t": {
+              "enabled": false
+            },
+            "proofToken": {
+              "enabled": false
+            }
+          }
+        }
+      }
     }
   }
 }

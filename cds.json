@@ -1,47 +1,57 @@
 {
-    "cds": {
-        "requires": {
-            "db": {
-                "kind": "sqlite",
-                "credentials": {
-                    "database": "db.sqlite"
-                }
-            },
-            "auth": {
-                "kind": "mocked",
-                "users": {
-                    "alice": {
-                        "tenant": "t1",
-                        "roles": [
-                            "grant_management_create",
-                            "grant_management_update",
-                            "grant_management_replace",
-                            "grant_management_revoke",
-                            "grant_management_query"
-                        ]
-                    },
-                    "bob": {
-                        "tenant": "t2",
-                        "roles": [
-                            "grant_management_create",
-                            "grant_management_update",
-                            "grant_management_replace",
-                            "grant_management_revoke",
-                            "grant_management_query"
-                        ]
-                    }
-                }
-            }
-        },
-        "mocks": {
-            "auth": {
-                "kind": "mocked"
-            }
-        },
-        "features": {
-            "toggles": {
-                "auth": true
-            }
+  "cds": {
+    "requires": {
+      "auth": {
+        "kind": "ias"
+      },
+      "db": {
+        "kind": "postgres"
+      }
+    },
+    "destinations": true,
+    "[dev]": {
+      "db": {
+        "kind": "sqlite",
+        "credentials": {
+          "database": "db.sqlite"
         }
+      },
+
+      "auth": {
+        "kind": "mocked",
+        "users": {
+          "alice": {
+            "tenant": "t1",
+            "roles": [
+              "grant_management_create",
+              "grant_management_update",
+              "grant_management_replace",
+              "grant_management_revoke",
+              "grant_management_query"
+            ]
+          },
+          "bob": {
+            "tenant": "t2",
+            "roles": [
+              "grant_management_create",
+              "grant_management_update",
+              "grant_management_replace",
+              "grant_management_revoke",
+              "grant_management_query"
+            ]
+          }
+        }
+      }
+    },
+    "mocks": {
+      "auth": {
+        "kind": "mocked"
+      }
+    },
+    "features": {
+      "toggles": {
+        "auth": true
+      }
     }
+  }
 }

@@ -14,7 +14,7 @@ import { jwtDecode } from "jwt-decode";
 var credentials = cds.env.requires.auth.credentials;
 const authService = new IdentityService(credentials);
 const apiUrl =
-  "https://agents-approuter-researcher.c-127c9ef.stage.kyma.ondemand.com";
+  "https://v1-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com";
 class TokenService {
   constructor() {
     this.tokens = new Map();
@@ -89,8 +89,6 @@ class TokenService {
       throw error;
     }
   }
-
-
 
   async testUserService() {
     console.log("\n📡 Testing User Service with XSSEC Token...");

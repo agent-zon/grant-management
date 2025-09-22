@@ -36,3 +36,6 @@ gen/
 .react-router/
 build/
 
+mta_archives/
+mta-op-*
+temp/
