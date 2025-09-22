@@ -13,6 +13,4 @@ export default [
   route("chat", "routes/chat.tsx"),
   route("chat/:sessionId", "routes/chat.$sessionId.tsx"),
   // Grant Management API endpoints (OAuth 2.0 Grant Management specification)
-  route("api/grants", "routes/api.grants.tsx"),
-  route("api/grants/:id", "routes/api.grants.$id.tsx"),
 ] satisfies RouteConfig;

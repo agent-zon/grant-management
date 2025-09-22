@@ -26,7 +26,7 @@ modules:
       - name: srv-api # required by consumers of CAP services (e.g. approuter)
         properties:
           srv-url: ${default-url}
-          srv-cert-url: '${protocol}://${default-host}.cert.${default-domain}'
+          srv-cert-url: "${protocol}://${default-host}.cert.${default-domain}"
     requires:
       - name: agent-grants-auth
         parameters:
@@ -34,6 +34,8 @@ modules:
             credential-type: X509_GENERATED
             app-identifier: srv
       - name: agent-grants-destination
+      - name: grant-management-postgres
+      - name: v1-redis
 
   - name: agent-grants
     type: approuter.nodejs
@@ -48,7 +50,7 @@ modules:
         group: destinations
         properties:
           url: ~{srv-cert-url}
-          forwardAuthCertificates: true
+          forwardAuthToken: true
           strictSSL: true
       - name: agent-grants-destination
     parameters:
@@ -60,6 +62,19 @@ modules:
         properties:
           app-protocol: ${protocol}
           app-uri: ${default-uri}
+
+  - name: grant-management-postgres-deployer
+    type: nodejs
+    path: gen/pg
+    parameters:
+      buildpack: nodejs_buildpack
+      no-route: true
+      no-start: true
+      tasks:
+        - name: deploy-to-postgresql
+          command: npm start
+    requires:
+      - name: grant-management-postgres
 
 resources:
   - name: agent-grants-auth
@@ -86,3 +101,24 @@ resources:
     parameters:
       service: destination
       service-plan: lite
+  - name: grant-management-postgres
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: postgresql-db
+      service-plan: development
+  - name: v1-redis
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: redis-cache
+      service-plan: standard
+      # config:
+      # memory: 2 # GB, can be 2 or 4
+      # multi_az: true
+      # cluster_mode: true
+      # shard_count: 1
+      # node_count: 3 # per shard minimum is 3 (for standard plan)
+      # engine_version: "6.0" # can be "4.0" or "6.0"
+      # maintenance_window:
+      # day_of_week: Friday
+      # start_hour_utc: 0
+      # duration: 5 # hours

@@ -1,10 +1,40 @@
 {
   "routes": [
     {
+      "source": "^/auth/debug(.*)$",
+      "target": "/$1",
+      "localDir": "./auth",
+      "csrfProtection": false,
+      "cacheControl": "no-cache, no-store, must-revalidate",
+      "authenticationType": "ias"
+    },
+    {
+      "source": "^/auth/api/me",
+      "target": "/auth/me",
+      "destination": "srv-api",
+      "csrfProtection": false,
+      "authenticationType": "ias"
+    },
+    {
+      "source": "^/user-api(.*)",
+      "target": "$1",
+      "csrfProtection": false,
+      "authenticationType": "ias",
+      "service": "sap-approuter-userapi"
+    },
+    {
+      "source": "^/api/grants(.*)$",
+      "target": "/api/grants$1",
+      "destination": "srv-api",
+      "csrfProtection": false,
+      "authenticationType": "ias"
+    },
+    {
       "source": "^/(.*)$",
       "target": "$1",
-      "destination": "srv-api",
-      "csrfProtection": false
+      "destination": "user-portal",
+      "csrfProtection": false,
+      "authenticationType": "ias"
     }
   ]
 }

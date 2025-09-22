@@ -29,3 +29,13 @@ gen/
 
 # added by cds
 .cdsrc-private.json
+.deno/
+/node_modules/
+
+# React Router
+.react-router/
+build/
+
+mta_archives/
+mta-op-*
+temp/
