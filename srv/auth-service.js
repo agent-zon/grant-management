@@ -1,4 +1,4 @@
-const cds = require('@sap/cds')
+import cds from "@sap/cds";
 
 class UserService extends cds.ApplicationService {
     async me(req) {
@@ -11,10 +11,22 @@ class UserService extends cds.ApplicationService {
         return {
             correlationId: user.authInfo?.config?.correlationId,
             jwt: user.authInfo?.config?.jwt,
+            sid: user.authInfo?.config?.sid,
             skipValidation: user.authInfo?.config?.skipValidation,
             tokenDecodeCache: user.authInfo?.config?.tokenDecodeCache,
             user: user?.id,
             claims: user?.attr,
+            scopes: user?.scopes,
+            roles: user?.roles,
+            authInfo: user?.authInfo,
+            is: {
+                anonymous: user?.is('anonymous'),
+                authenticated: user?.is('authenticated'),
+                anyRole: user?.is('any-role'),
+                admin: user?.is('admin'),
+                identityZoneAdmin: user?.is('IdentityZoneAdmin')
+            },
+            // Redact sensitive information from the request headers
             request: {
                 method: req?.method,
                 url: req?.url,
@@ -28,4 +40,4 @@ class UserService extends cds.ApplicationService {
     }
 }
 
-module.exports = UserService
+export default UserService;

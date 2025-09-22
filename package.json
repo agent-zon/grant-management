@@ -2,14 +2,30 @@
   "name": "grant-management",
   "version": "1.0.0",
   "description": "A simple CAP project.",
+  "type": "module",
   "dependencies": {
+    "@sap/cds": "^9.3.1",
     "@sap/xssec": "^4",
-    "express": "^4",
+    "compression": "^1.8.1",
+    "cross-env": "^10.0.0",
+    "express": "^4.21.2",
+    "isbot": "^5.1.27",
+    "morgan": "^1.10.1",
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "@cap-js/sqlite": "^2",
-    "cap-js-mockdata": "^0.0.3"
+    "@tailwindcss/vite": "^4.1.13",
+    "@types/express": "^5.0.3",
+    "@types/express-serve-static-core": "^5.0.7",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^20",
+    "cap-js-mockdata": "^0.0.3",
+    "tailwindcss": "^4.1.4",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.6",
+    "vite-tsconfig-paths": "^5.1.4"
   },
   "scripts": {
     "start": "npx cds serve",

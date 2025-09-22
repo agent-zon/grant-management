@@ -13,6 +13,10 @@ dependencies:
   - name: web-application
     alias: approuter
     version: ">0.0.0"
+  - name: web-application
+    alias: portal
+    version: ">0.0.0"
+
   - name: service-instance
     alias: destination
     version: ">0.0.0"

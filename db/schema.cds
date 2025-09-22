@@ -20,9 +20,9 @@ entity Grants : cuid, managed,temporal {
   actor: Association to Identity;
   
   // Grant scopes relationship
-  scopes: Association to many GrantScopes on scopes.grant = $self;
+  scopes: Composition of many GrantScopes on scopes.grant = $self;
   // Authorization details relationship  
-  authorizationDetails: Association to many ToolGrantAuthorizationDetails on authorizationDetails.grant = $self;
+  authorizationDetails: Composition of many ToolGrantAuthorizationDetails on authorizationDetails.grant = $self;
 }
 
 
@@ -43,6 +43,13 @@ entity GrantScopes : cuid {
 
  entity Identity : managed, cuid {
   type: IdentityType;
+  name: String(255);
+  // Polymorphic associations to specific identity types
+  userIdentity: Association to UserIdentity;
+  agentIdentity: Association to AgentIdentity;
+  deviceIdentity: Association to DeviceIdentity;
+  systemIdentity: Association to SystemIdentity;
+  serviceIdentity: Association to ServiceIdentity;
   
 }
 

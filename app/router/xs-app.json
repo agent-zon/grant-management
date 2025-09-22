@@ -23,9 +23,16 @@
       "service": "sap-approuter-userapi"
     },
     {
+        "source": "^/api/grants(.*)$",
+        "target": "/api/grants$1",
+        "destination": "srv-api",
+        "csrfProtection": false,
+        "authenticationType": "ias"
+    },
+    {
       "source": "^/(.*)$",
       "target": "$1",
-      "destination": "srv-api",
+      "destination": "user-portal",
       "csrfProtection": false,
       "authenticationType": "ias"
     }

@@ -8,13 +8,12 @@ global:
     registry: scai-dev.common.repositories.cloud.sap
     tag: latest
 srv:
-  runAsUser: 1993
   bindings:
     auth:
       serviceInstanceName: identity
       parameters:
         credential-type: X509_GENERATED
-        app-identifier: srv
+        app-identifier: grant-api
     destination:
       serviceInstanceName: destination
   image:
@@ -24,9 +23,9 @@ srv:
       ephemeral-storage: 1G
       memory: 500M
     requests:
-      ephemeral-storage: 1G
-      cpu: 500m
-      memory: 500M
+      ephemeral-storage: 512M
+      cpu: 250m
+      memory: 216M
   health:
     liveness:
       path: /health
@@ -34,10 +33,10 @@ srv:
       path: /health
   networkSecurity:
     allowNamespaceInternal: true
-    
+
 approuter:
-  expose: 
-    hosts: 
+  expose:
+    hosts:
       - "{{ .Release.Namespace }}"
   bindings:
     auth:
@@ -54,7 +53,7 @@ approuter:
       memory: 500M
     requests:
       ephemeral-storage: 1G
-      cpu: 500m
+      cpu: 250m
       memory: 500M
   health:
     liveness:
@@ -64,6 +63,34 @@ approuter:
   envFrom:
     - configMapRef:
         name: "{{ .Release.Name }}-approuter-configmap"
+
+portal:
+  runAsUser: 1993
+  bindings:
+    auth:
+      serviceInstanceName: identity
+      parameters:
+        credential-type: X509_GENERATED
+        app-identifier: grant-portal
+    destination:
+      serviceInstanceName: destination
+  image:
+    repository: grant-management/portal
+  resources:
+    limits:
+      ephemeral-storage: 1G
+      memory: 500M
+    requests:
+      ephemeral-storage: 1G
+      cpu: 500m
+      memory: 500M  
+  health:
+    liveness:
+      path: /
+    readiness:
+      path: /
+  networkSecurity:
+    allowNamespaceInternal: true
 
 identity:
   serviceOfferingName: identity
@@ -77,12 +104,15 @@ identity:
         - https://*.{{ tpl .Values.global.domain . }}/login/callback
       post-logout-redirect-uris:
         - https://*.{{ tpl .Values.global.domain . }}/*/logout.html
+
 backendDestinations:
   srv-api:
     service: srv
+  user-portal:
+    service: portal
+    
 destination:
   serviceOfferingName: destination
   servicePlanName: lite
   parameters:
     version: 1.0.0
-  
