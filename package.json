@@ -38,15 +38,16 @@
     "debug": "npx cds debug",
     "serve": "npm run serve:cds & npm run serve:approuter",
     "serve:cds": "npx cds serve --profile dev",
-    "serve:hybrid": "npx cds bind --exec -- npm run serve",
-    "serve:hybrid:approuter": "npx cds bind --exec -- npm run serve:approuter",
-    "serve:hybrid:cds": "npm bind --exec -- cds serve",
     "serve:approuter": "node node_modules/@sap/approuter/approuter.js --workingDir app/router --port 9000",
+    "hybrid": "npx cds bind --exec -- npm run serve",
+    "hybrid:approuter": "npx cds bind --exec -- npm run serve:approuter",
+    "hybrid:portal": "npx cds bind --exec -- npm run dev -w portal",
+    "hybrid:cds": "npm bind --exec -- cds serve",
     "build": "npx cds build --production",
     "build:containers": "ctz containerize.yaml --log",
     "build:push": "ctz containerize.yaml --log --push",
-    "bind:srv": "cds bind --to-app-services router-srv --on k8s",
-    "bind:router": "cds bind --to-app-services router-app --on k8s",
+    "bind:srv": "cds bind --to-app-services v1-srv --on k8s",
+    "bind:router": "cds bind --to-app-services v1-approuter --on k8s",
     "bind:auth": "cds bind ias -2 router-srv-auth --on k8s",
     "bind:destination": "cds bind -2 router-srv-destination --on k8s",
     "bind:all": "npx cds bind -2 router-srv-auth --on k8s && cds bind -2 router-srv-destination --on k8s",
@@ -76,6 +77,10 @@
     "dev": "npx cds watch",
     "test:auth": "npx cds bind --profile hybrid --exec -- node ./tests/auth.spec.js"
   },
+  "workspaces": [
+    "app/portal",
+    "app/router"
+  ],
   "private": true,
   "cds": {
     "requires": {
