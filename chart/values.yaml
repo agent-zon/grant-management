@@ -38,6 +38,8 @@ srv:
       value: "ias"
     - name: CDS_REQUIRES_DESTINATIONS_KIND
       value: "destinations"
+    - name: DATABASE_URL
+      value: "postgresql://grantuser:grantpass@postgresql:5432/grantdb"
 
 approuter:
   expose:
@@ -118,6 +120,9 @@ portal:
       path: /
   networkSecurity:
     allowNamespaceInternal: true
+  env:
+    - name: DATABASE_URL
+      value: "postgresql://grantuser:grantpass@postgresql:5432/grantdb"
 
 identity:
   serviceOfferingName: identity
@@ -139,9 +144,37 @@ backendDestinations:
   user-portal:
     service: portal
     forwardAuthToken: true
+  postgresql:
+    service: postgresql
+    forwardAuthToken: false
 
 destination:
   serviceOfferingName: destination
   servicePlanName: lite
   parameters:
     version: 1.0.0
+
+postgresql:
+  auth:
+    enablePostgresUser: true
+    postgresPassword: "postgres"
+    username: "postgres"
+    password: "postgres"
+    database: "postgres"
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+    resources:
+      limits:
+        memory: 512Mi
+        cpu: 500m
+      requests:
+        memory: 256Mi
+        cpu: 250m
+    service:
+      type: ClusterIP
+      ports:
+        postgresql: 5432
+  metrics:
+    enabled: true
