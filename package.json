@@ -42,7 +42,7 @@
     "hybrid": "npx cds bind --exec -- npm run serve",
     "hybrid:approuter": "npx cds bind --exec -- npm run serve:approuter",
     "hybrid:portal": "npx cds bind --exec -- npm run dev -w portal",
-    "hybrid:cds": "npm bind --exec -- cds serve",
+    "hybrid:cds": "npx cds bind --profile hybrid --exec -- cds serve --profile hybrid",
     "build": "npx cds build --production",
     "build:containers": "ctz containerize.yaml --log",
     "build:push": "ctz containerize.yaml --log --push",
@@ -51,6 +51,7 @@
     "bind:auth": "cds bind ias -2 router-srv-auth --on k8s",
     "bind:destination": "cds bind -2 router-srv-destination --on k8s",
     "bind:all": "npx cds bind -2 router-srv-auth --on k8s && cds bind -2 router-srv-destination --on k8s",
+    "bind:resolve": "npx cds env requires --resolve-bindings --profile hybrid",
     "bind:list": "npx cds bind --list",
     "bind:remove": "npx cds bind --remove",
     "setup:local": "npm run bind:all && npm run serve:hybrid",
@@ -78,12 +79,14 @@
     "test:auth": "npx cds bind --profile hybrid --exec -- node ./tests/auth.spec.js"
   },
   "workspaces": [
-    "app/portal",
-    "app/router"
+    "app/*"
   ],
   "private": true,
   "cds": {
     "requires": {
+      "db": {
+        "kind": "postgres"
+      },
       "auth": {
         "kind": "ias",
         "config": {
