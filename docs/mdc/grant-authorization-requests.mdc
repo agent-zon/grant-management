@@ -1,0 +1,300 @@
+# Grant Authorization Requests
+
+## Overview
+
+This document describes the grant authorization request flow in the OAuth 2.0 Grant Management system. The system enables AI agents to request specific permissions from end-users before accessing MCP (Model Context Protocol) tools, ensuring that users maintain control over what actions agents can perform on their behalf.
+
+## Authorization Request Flow
+
+### 1. Agent Tool Call Attempt
+
+When an AI agent attempts to call an MCP tool that requires specific scopes, the system initiates an authorization request flow:
+
+```mermaid
+sequenceDiagram
+    participant Agent as AI Agent
+    participant Guard as MCP Guard
+    participant User as End User
+    participant IDP as Identity Provider
+    participant AuthZ as Authorization Server
+
+    Agent->>Guard: Call MCP Tool (e.g., ListFiles)
+    Guard->>Guard: Check required scopes
+    Guard->>Guard: Validate existing token
+    
+    alt No valid token or insufficient scopes
+        Guard->>User: Return authorization link
+        User->>IDP: Navigate to consent page
+        IDP->>User: Display scope consent UI
+        User->>IDP: Grant/Deny scopes
+        IDP->>AuthZ: Authorization code
+        AuthZ->>Guard: Issue access token
+        Guard->>Agent: Allow tool call
+    else Valid token with required scopes
+        Guard->>Agent: Allow tool call
+    end
+```
+
+### 2. Scope-Based Access Control
+
+The system implements granular scope-based access control for MCP tools:
+
+| Tool Category | Required Scope | Description |
+|---------------|----------------|-------------|
+| File Operations | `tools:read` | Read access to files and directories |
+| File Operations | `tools:write` | Write access to create/modify files |
+| System Operations | `system:admin` | Administrative system operations |
+| Network Operations | `network:access` | Network connectivity and API calls |
+| Data Operations | `data:analytics` | Data analysis and processing |
+
+### 3. Authorization Request Components
+
+#### 3.1 Scope Definitions
+
+```json
+{
+  "scopes": [
+    {
+      "scope": "tools:read",
+      "resources": [
+        "https://api.example.com/tools/listfiles",
+        "https://api.example.com/tools/readfile"
+      ]
+    },
+    {
+      "scope": "tools:write", 
+      "resources": [
+        "https://api.example.com/tools/createfile",
+        "https://api.example.com/tools/updatefile"
+      ]
+    }
+  ]
+}
+```
+
+#### 3.2 Authorization Details (RAR)
+
+The system uses Rich Authorization Requests (RAR) to specify detailed permissions:
+
+```json
+{
+  "authorization_details": [
+    {
+      "type": "tool_access",
+      "actions": ["list_files", "read_file"],
+      "locations": [
+        "https://api.example.com/tools/listfiles",
+        "https://api.example.com/tools/readfile"
+      ]
+    }
+  ]
+}
+```
+
+### 4. User Consent Interface
+
+#### 4.1 Consent Screen Components
+
+The user consent interface displays:
+
+- **Requested Scopes**: Clear description of what the agent wants to do
+- **Risk Level**: Visual indicators for permission risk (Low/Medium/High)
+- **Tool Categories**: Grouped permissions by functionality
+- **Session Context**: Information about the current chat session
+- **Grant Options**: Allow all, selective approval, or deny
+
+#### 4.2 Consent Screen Example
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Grant Authorization                   │
+├─────────────────────────────────────────────────────────┤
+│ Agent "AI Assistant" is requesting access to:          │
+│                                                         │
+│ 📁 File Operations (Risk: Medium)                       │
+│   ✓ Read files and directories                          │
+│   ✓ Create and modify files                             │
+│                                                         │
+│ 🌐 Network Operations (Risk: Low)                       │
+│   ✓ Access external APIs                                │
+│                                                         │
+│ Session: Chat #S123 | Expires: 15 minutes               │
+│                                                         │
+│ [Allow All] [Selective] [Deny]                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 5. Token Management
+
+#### 5.1 Session-Bound Tokens
+
+Tokens are bound to specific chat sessions to prevent cross-session token reuse:
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 900,
+  "scope": "tools:read tools:write",
+  "session_id": "S123",
+  "grant_id": "TSdqirmAxDa0_-DB_1bASQ"
+}
+```
+
+#### 5.2 Token Validation
+
+The MCP Guard validates tokens by checking:
+
+- **Token Signature**: Cryptographic validation
+- **Session Binding**: Token must match current session
+- **Scope Validation**: Required scopes must be present
+- **Expiration**: Token must not be expired
+- **Revocation Status**: Token must not be revoked
+
+### 6. Error Handling
+
+#### 6.1 Authorization Errors
+
+| Error Code | HTTP Status | Description |
+|------------|-------------|-------------|
+| `authorization_required` | 401 | No valid token for current session |
+| `insufficient_scope` | 403 | Token lacks required scopes |
+| `token_expired` | 401 | Token has expired |
+| `invalid_session` | 401 | Token bound to different session |
+| `authorization_denied` | 403 | User denied authorization request |
+
+#### 6.2 Error Response Format
+
+```json
+{
+  "error": "insufficient_scope",
+  "error_description": "The access token does not have the required scope 'tools:write'",
+  "authorization_url": "https://idp.example.com/auth?client_id=agent&scope=tools:write&session_id=S123",
+  "required_scopes": ["tools:write"]
+}
+```
+
+### 7. Security Considerations
+
+#### 7.1 Token Security
+
+- **Short-lived tokens**: Default 15-minute expiration
+- **Session binding**: Tokens cannot be used across sessions
+- **Scope minimization**: Only request necessary permissions
+- **Secure storage**: Tokens stored securely in memory only
+
+#### 7.2 Audit Logging
+
+All authorization events are logged for security monitoring:
+
+```json
+{
+  "timestamp": "2024-01-15T10:30:00Z",
+  "event": "authorization_granted",
+  "session_id": "S123",
+  "agent_id": "A1",
+  "user_id": "user123",
+  "scopes": ["tools:read", "tools:write"],
+  "ip_address": "192.168.1.100"
+}
+```
+
+### 8. Implementation Examples
+
+#### 8.1 MCP Guard Integration
+
+```javascript
+class MCPGuard {
+  async validateToolCall(toolName, sessionId) {
+    const requiredScopes = this.getRequiredScopes(toolName);
+    const token = await this.getSessionToken(sessionId);
+    
+    if (!token || !this.hasRequiredScopes(token, requiredScopes)) {
+      return {
+        allowed: false,
+        authorization_url: this.generateAuthUrl(requiredScopes, sessionId)
+      };
+    }
+    
+    return { allowed: true };
+  }
+}
+```
+
+#### 8.2 Authorization URL Generation
+
+```javascript
+function generateAuthUrl(requiredScopes, sessionId) {
+  const params = new URLSearchParams({
+    client_id: 'ai-agent',
+    scope: requiredScopes.join(' '),
+    session_id: sessionId,
+    response_type: 'code',
+    redirect_uri: 'https://agent.example.com/callback'
+  });
+  
+  return `https://idp.example.com/auth?${params}`;
+}
+```
+
+### 9. Configuration
+
+#### 9.1 Scope Configuration
+
+```yaml
+scopes:
+  tools:read:
+    description: "Read access to files and directories"
+    risk_level: "low"
+    category: "file-operations"
+    
+  tools:write:
+    description: "Create and modify files"
+    risk_level: "medium"
+    category: "file-operations"
+    
+  system:admin:
+    description: "Administrative system operations"
+    risk_level: "high"
+    category: "system-operations"
+```
+
+#### 9.2 Token Configuration
+
+```yaml
+tokens:
+  default_expiry: 900  # 15 minutes
+  max_expiry: 3600    # 1 hour
+  session_binding: true
+  scope_validation: true
+```
+
+### 10. Best Practices
+
+#### 10.1 For Agent Developers
+
+- Request only necessary scopes
+- Implement graceful error handling
+- Provide clear user feedback
+- Respect user consent decisions
+
+#### 10.2 For System Administrators
+
+- Configure appropriate token lifetimes
+- Monitor authorization patterns
+- Implement rate limiting
+- Regular security audits
+
+#### 10.3 For End Users
+
+- Review requested permissions carefully
+- Understand the implications of each scope
+- Use selective approval when possible
+- Report suspicious authorization requests
+
+## Related Documentation
+
+- [OAuth 2.0 Grant Management API](GRANT_MANAGEMENT_API.md)
+- [Consent Scenarios](CONSENT_SCENARIOS.md)
+- [Grant Management API Specification](https://tools.ietf.org/html/draft-ietf-oauth-grant-management)
+- [Rich Authorization Requests (RAR)](https://tools.ietf.org/html/draft-ietf-oauth-rar)
