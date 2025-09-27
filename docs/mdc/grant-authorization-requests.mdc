@@ -1,0 +1,471 @@
+# Grant Authorization Requests for MCP Integration
+
+## Overview
+
+This document describes the grant authorization request flow for the Model Context Protocol (MCP) integration with the Grant Management System. It outlines how agents request permissions, how users grant consent, and how the system enforces authorization for MCP tool calls.
+
+## Architecture
+
+The grant authorization system operates as a middleware layer between MCP agents and MCP servers:
+
+```
+MCP Agent → MCP Middleware → Grant Management API → MCP Server
+     ↓           ↓                    ↓
+Authorization → Consent UI ← Grant Management UI
+```
+
+### Key Components
+
+1. **MCP Middleware**: Intercepts tool calls and validates permissions
+2. **Grant Management API**: Manages grant lifecycle and consent decisions  
+3. **Consent UI**: User interface for granting/revoking permissions
+4. **Authorization Guard**: Enforces scope-based access control
+
+## Grant Authorization Request Flow
+
+### 1. Tool Call Interception
+
+When an MCP agent attempts to call a tool:
+
+```javascript
+// Agent makes tool call
+const toolCall = {
+  jsonrpc: '2.0',
+  method: 'tools/call',
+  params: {
+    name: 'CreateFile',
+    arguments: { path: '/tmp/test.txt', content: 'Hello World' }
+  },
+  id: 1
+};
+```
+
+### 2. Permission Check
+
+The MCP middleware checks if the agent has valid grants for the required scopes:
+
+```javascript
+// Check session authorization
+POST /mcp/session/{sessionId}/authorize
+{
+  "toolName": "CreateFile"
+}
+
+// Response if unauthorized
+{
+  "authorized": false,
+  "missingScopes": ["tools:write"],
+  "requiredScopes": ["tools:write"]
+}
+```
+
+### 3. Consent Request Generation
+
+If permissions are missing, the system generates a consent request:
+
+```javascript
+// Create consent request
+POST /mcp/consent/request
+{
+  "sessionId": "session-123",
+  "toolName": "CreateFile", 
+  "agentId": "agent-A1",
+  "reason": "Create configuration files for deployment",
+  "requiredScopes": ["tools:write"]
+}
+
+// Response
+{
+  "requestId": "req-456",
+  "consentUrl": "https://grants.example.com/grants/789/grant?session=session-123",
+  "expiresAt": "2024-01-15T11:00:00Z"
+}
+```
+
+### 4. User Consent Flow
+
+The user receives an authorization link and navigates to the consent interface:
+
+**Authorization Request Properties:**
+- **Grant ID**: Unique identifier for the permission grant
+- **Session ID**: Chat session requesting the permission
+- **Required Scopes**: List of OAuth 2.0 scopes needed
+- **Tool List**: Specific MCP tools requiring access
+- **Risk Level**: Security assessment (low/medium/high)
+- **Expiration**: Requested grant duration
+
+### 5. Consent Decision
+
+User approves or denies the consent request:
+
+```javascript
+// Approve consent
+POST /mcp/consent/{requestId}/decision
+{
+  "decision": "approve",
+  "approvedScopes": ["tools:write"],
+  "duration": "24h"
+}
+
+// Response
+{
+  "success": true,
+  "grantId": "789",
+  "accessToken": "mcp-token-xyz",
+  "expiresIn": 86400
+}
+```
+
+### 6. Authorized Tool Execution
+
+With valid grants, subsequent tool calls are authorized:
+
+```javascript
+// Tool call with session token
+POST /mcp
+Headers: {
+  "mcp-session-id": "session-123"
+}
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call", 
+  "params": {
+    "name": "CreateFile",
+    "arguments": { "path": "/tmp/test.txt", "content": "Hello World" }
+  }
+}
+```
+
+## Authorization Detail Types
+
+The system supports Rich Authorization Requests (RAR) with structured authorization details:
+
+### Tool Access Type
+
+```json
+{
+  "type": "tool_access",
+  "actions": ["create", "read", "update", "delete"],
+  "locations": ["https://api.example.com/tools/file-system"],
+  "toolName": "File Manager",
+  "toolDescription": "Manages file operations",
+  "riskLevel": "medium",
+  "category": "file-system"
+}
+```
+
+### Data Access Type
+
+```json
+{
+  "type": "data_access", 
+  "actions": ["read", "export", "analyze"],
+  "locations": ["https://api.example.com/data/user-records"],
+  "toolName": "Data Analytics",
+  "toolDescription": "Access to user database for analysis",
+  "riskLevel": "high",
+  "category": "data-access"
+}
+```
+
+### System Administration Type
+
+```json
+{
+  "type": "system_admin",
+  "actions": ["configure", "restart", "monitor"],
+  "locations": ["https://api.example.com/admin/system"],
+  "toolName": "System Configuration", 
+  "toolDescription": "Administrative system access",
+  "riskLevel": "high",
+  "category": "system-admin"
+}
+```
+
+## API Endpoints
+
+### Consent Request Management
+
+#### Create Consent Request
+```http
+POST /mcp/consent/request
+Content-Type: application/json
+
+{
+  "sessionId": "string",
+  "toolName": "string", 
+  "agentId": "string",
+  "reason": "string",
+  "requiredScopes": ["string"]
+}
+```
+
+#### Process Consent Decision
+```http
+POST /mcp/consent/{requestId}/decision
+Content-Type: application/json
+
+{
+  "decision": "approve|deny",
+  "approvedScopes": ["string"],
+  "duration": "1h|8h|24h|1w|permanent"
+}
+```
+
+### Session Authorization
+
+#### Check Authorization
+```http
+POST /mcp/session/{sessionId}/authorize
+Content-Type: application/json
+
+{
+  "toolName": "string"
+}
+```
+
+#### Get Tool Scope Requirements
+```http
+GET /mcp/tool/{toolName}/scopes
+```
+
+## Scope Mapping
+
+### Standard MCP Tool Scopes
+
+| Tool Category | Scope | Example Tools |
+|---------------|-------|---------------|
+| File System | `tools:read` | ListFiles, ReadFile, GetFileInfo |
+| File System | `tools:write` | CreateFile, UpdateFile, DeleteFile |
+| Data Access | `data:read` | QueryDatabase, ReadUserData |
+| Data Access | `data:write` | UpdateRecord, CreateRecord |
+| System Admin | `system:admin` | ConfigureSystem, RestartService |
+| Network | `network:access` | HttpRequest, ApiCall, WebhookTrigger |
+| Analytics | `analytics:generate` | GenerateReport, ExportData |
+
+### Risk Assessment
+
+**Low Risk** (`low`):
+- Read-only operations
+- Non-sensitive data access
+- Audited operations
+
+**Medium Risk** (`medium`):
+- Write operations on user data
+- File system modifications
+- Network requests
+
+**High Risk** (`high`):
+- System administration
+- Sensitive data access
+- Destructive operations
+
+## Security Considerations
+
+### Session Binding
+- Grants are bound to specific chat sessions
+- Tokens cannot be reused across sessions
+- Session expiration invalidates all grants
+
+### Temporal Constraints
+- Configurable grant expiration (1h to permanent)
+- Automatic cleanup of expired grants
+- User-controlled duration selection
+
+### Audit Trail
+- All authorization requests logged
+- Grant usage tracking
+- Consent decision history
+
+### Scope Enforcement
+- Granular permission model
+- Principle of least privilege
+- Runtime authorization checks
+
+## Error Handling
+
+### Common Error Responses
+
+#### Unauthorized Tool Call
+```json
+{
+  "jsonrpc": "2.0",
+  "error": {
+    "code": -32001,
+    "message": "Authorization required",
+    "data": {
+      "requiredScopes": ["tools:write"],
+      "consentUrl": "https://grants.example.com/grants/789/grant",
+      "sessionId": "session-123"
+    }
+  },
+  "id": 1
+}
+```
+
+#### Insufficient Scope
+```json
+{
+  "jsonrpc": "2.0", 
+  "error": {
+    "code": -32002,
+    "message": "Insufficient scope",
+    "data": {
+      "requiredScopes": ["tools:write"],
+      "grantedScopes": ["tools:read"],
+      "upgradeUrl": "https://grants.example.com/grants/789/grant"
+    }
+  },
+  "id": 1
+}
+```
+
+#### Expired Grant
+```json
+{
+  "jsonrpc": "2.0",
+  "error": {
+    "code": -32003,
+    "message": "Grant expired", 
+    "data": {
+      "expiredAt": "2024-01-15T10:30:00Z",
+      "renewUrl": "https://grants.example.com/grants/789/grant"
+    }
+  },
+  "id": 1
+}
+```
+
+## Implementation Examples
+
+### MCP Server Integration
+
+```javascript
+// MCP server tool definition with scope requirements
+const tools = {
+  CreateFile: {
+    description: "Create a new file",
+    inputSchema: {
+      type: "object",
+      properties: {
+        path: { type: "string" },
+        content: { type: "string" }
+      }
+    },
+    // Authorization metadata
+    requiredScopes: ["tools:write"],
+    riskLevel: "medium",
+    category: "file-system"
+  }
+};
+```
+
+### Grant Validation Middleware
+
+```javascript
+// Middleware to validate grants before tool execution
+async function validateToolAccess(sessionId, toolName) {
+  const response = await fetch(`/mcp/session/${sessionId}/authorize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ toolName })
+  });
+  
+  const result = await response.json();
+  
+  if (!result.authorized) {
+    throw new MCPError(-32001, "Authorization required", {
+      requiredScopes: result.requiredScopes,
+      consentUrl: result.consentUrl,
+      sessionId
+    });
+  }
+  
+  return result;
+}
+```
+
+### Consent UI Integration
+
+```javascript
+// React component for handling consent requests
+function ConsentRequest({ requestId, requiredScopes, toolName }) {
+  const handleApproval = async (decision) => {
+    await fetch(`/mcp/consent/${requestId}/decision`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        decision,
+        approvedScopes: decision === 'approve' ? requiredScopes : []
+      })
+    });
+  };
+  
+  return (
+    <div className="consent-modal">
+      <h2>Authorization Request</h2>
+      <p>Agent requests access to: {requiredScopes.join(', ')}</p>
+      <p>Tool: {toolName}</p>
+      <button onClick={() => handleApproval('approve')}>Grant</button>
+      <button onClick={() => handleApproval('deny')}>Deny</button>
+    </div>
+  );
+}
+```
+
+## Testing Strategy
+
+### Unit Tests
+- Grant CRUD operations
+- Scope validation logic
+- Session token management
+- Authorization detail processing
+
+### Integration Tests  
+- MCP middleware integration
+- Consent flow end-to-end
+- Error handling scenarios
+- Security enforcement
+
+### End-to-End Tests
+- Full agent workflow
+- Multi-tool scenarios
+- Permission escalation
+- Session management
+
+## Best Practices
+
+### For Developers
+
+1. **Scope Design**: Use granular, descriptive scopes
+2. **Error Handling**: Provide clear authorization URLs
+3. **Security**: Always validate session binding
+4. **UX**: Make consent requests user-friendly
+
+### For Agents
+
+1. **Minimal Permissions**: Request only necessary scopes
+2. **Clear Justification**: Explain why permissions are needed  
+3. **Graceful Degradation**: Handle denied permissions appropriately
+4. **Session Management**: Respect session boundaries
+
+### For Users
+
+1. **Informed Consent**: Review tool lists and risk levels
+2. **Time Limits**: Use shortest appropriate grant duration
+3. **Regular Review**: Audit active grants periodically
+4. **Immediate Revocation**: Revoke suspicious or unused grants
+
+## Related Documentation
+
+- [Consent Scenarios](../CONSENT_SCENARIOS.md) - User stories and acceptance criteria
+- [Grant Management API](../../GRANT_MANAGEMENT_API.md) - OAuth 2.0 Grant Management specification
+- [Development Guide](../../DEV-GUIDE.md) - Integration development plan
+
+## Compliance
+
+This implementation follows:
+- **OAuth 2.0 Grant Management** (RFC draft)
+- **Rich Authorization Requests** (RFC 9396)
+- **Model Context Protocol** specification
+- **Security best practices** for consent management
