@@ -135,12 +135,14 @@ app.get('/authorize', async (req, res) => {
     };
 
     const requestUri = req.query?.request_uri;
+    let parIdForConsent = null;
     if (requestUri && typeof requestUri === 'string') {
       const id = requestUri.split(':').pop();
       const entry = id && parRequestStore.get(id);
       if (!entry) return res.status(400).json({ error: 'invalid_request_uri' });
       if (Date.now() > entry.expiresAt) return res.status(400).json({ error: 'expired_request_uri' });
       params = entry.payload;
+      parIdForConsent = id;
     }
 
     const action = String(params.grant_management_action || '').toLowerCase() || 'create';
@@ -161,8 +163,26 @@ app.get('/authorize', async (req, res) => {
       authorizationDetails: params.authorization_details
     });
 
-    // For demo purposes, directly return a token-like response including grant_id
-    return res.json({ access_token: 'demo-access-token', refresh_token: 'demo-refresh-token', grant_id: grantId });
+    // Build requiredScopes summary for UI (best-effort, non-authoritative)
+    const details = Array.isArray(params.authorization_details) ? params.authorization_details : [];
+    const scopeParts = [];
+    for (const d of details) {
+      if (d?.type && Array.isArray(d?.actions) && d.actions.length) {
+        for (const act of d.actions) scopeParts.push(`${d.type}:${act}`);
+      } else if (d?.type) {
+        scopeParts.push(`${d.type}`);
+      }
+    }
+    const requiredScopes = scopeParts.join(',');
+
+    // Redirect to portal grant consent screen
+    const redirectUrl = typeof params.redirect_uri === 'string' ? params.redirect_uri : '';
+    const consentRequestId = parIdForConsent || generateId('consent_');
+    const portalUrl = new URL(req.protocol + '://' + req.get('host') + `/grants/${grantId}/grant`);
+    if (redirectUrl) portalUrl.searchParams.set('redirect_url', redirectUrl);
+    if (consentRequestId) portalUrl.searchParams.set('consentRequestId', consentRequestId);
+    if (requiredScopes) portalUrl.searchParams.set('requiredScopes', requiredScopes);
+    return res.redirect(302, portalUrl.toString());
   } catch (e) {
     const status = e?.status || 500;
     return res.status(status).json({ error: 'server_error', error_description: e?.message || 'Unexpected error' });
