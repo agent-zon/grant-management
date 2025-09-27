@@ -3,6 +3,7 @@ using com.sap.agent.grants as entity from '../db/schema';
 @path: '/api'
 @requires: ['authenticated-user', 'system-user']
 @protocol: 'rest'
+@impl: 'srv/grant-management-service.js'
 service GrantManagementService {
   
   // OAuth 2.0 Grant Management API entities
