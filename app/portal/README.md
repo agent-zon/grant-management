@@ -1,7 +1,6 @@
 # Welcome to React Router!
 
-A modern, production-ready template for building full-stack React applications
-using React Router.
+A modern, production-ready template for building full-stack React applications using React Router.
 
 ## Features
 
@@ -20,7 +19,7 @@ using React Router.
 Install the dependencies:
 
 ```bash
-deno install
+npm install
 ```
 
 ### Development
@@ -28,7 +27,7 @@ deno install
 Start the development server with HMR:
 
 ```bash
-deno task dev
+npm run dev
 ```
 
 Your application will be available at `http://localhost:5173`.
@@ -38,30 +37,41 @@ Your application will be available at `http://localhost:5173`.
 Create a production build:
 
 ```bash
-deno task build
+npm run build
 ```
 
 ## Deployment
 
-### Deno Deploy
+### Docker Deployment
 
-After running a build, deploy to https://deno.com/deploy with the following command:
+To build and run using Docker:
 
 ```bash
-deno run -A jsr:@deno/deployctl deploy --entrypoint server.ts
+docker build -t my-app .
+
+# Run the container
+docker run -p 3000:3000 my-app
 ```
+
+The containerized application can be deployed to any platform that supports Docker, including:
+
+- AWS ECS
+- Google Cloud Run
+- Azure Container Apps
+- Digital Ocean App Platform
+- Fly.io
+- Railway
 
 ### DIY Deployment
 
-If you're familiar with deploying Deno applications, the built-in app server is
-production-ready.
+If you're familiar with deploying Node applications, the built-in app server is production-ready.
 
-Make sure to deploy the output of `deno task build`
+Make sure to deploy the output of `npm run build`
 
 ```
-├── deno.jsonc
-├── deno.lock
-├── server.ts
+├── package.json
+├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
+├── server.js
 ├── build/
 │   ├── client/    # Static assets
 │   └── server/    # Server-side code
@@ -69,9 +79,7 @@ Make sure to deploy the output of `deno task build`
 
 ## Styling
 
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already
-configured for a simple default starting experience. You can use whatever CSS
-framework you prefer.
+This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
 
 ---
 

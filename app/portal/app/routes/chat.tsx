@@ -1,20 +1,40 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Code, Database, Globe, Zap, ExternalLink, Copy, Download, MessageCircle, Shield } from 'lucide-react';
-import { Form, useLoaderData, useActionData, useFetcher, Link, redirect } from 'react-router';
-import type { Route } from './+types/chat';
+import React, { useState, useRef, useEffect } from "react";
+import {
+  Send,
+  Bot,
+  User,
+  Code,
+  Database,
+  Globe,
+  Zap,
+  ExternalLink,
+  Copy,
+  Download,
+  MessageCircle,
+  Shield,
+} from "lucide-react";
+import {
+  Form,
+  useLoaderData,
+  useActionData,
+  useFetcher,
+  Link,
+  redirect,
+} from "react-router";
+import type { Route } from "./+types/chat";
 
 interface Message {
   id: string;
-  type: 'user' | 'agent' | 'system';
+  type: "user" | "agent" | "system";
   content: string;
   timestamp: string;
   tools?: string[];
-  status?: 'processing' | 'completed' | 'error';
+  status?: "processing" | "completed" | "error";
   artifacts?: DeploymentArtifact[];
 }
 
 interface DeploymentArtifact {
-  type: 'url' | 'config' | 'code' | 'documentation';
+  type: "url" | "config" | "code" | "documentation";
   title: string;
   content: string;
   description?: string;
@@ -25,20 +45,21 @@ interface ConsentRequest {
   workloadId: string;
   requiredScopes: string[];
   reason: string;
-  status: 'pending' | 'approved' | 'denied';
+  status: "pending" | "approved" | "denied";
 }
 
 // Store chat state in memory (in real app, this would be in database)
 let chatSessions: Record<string, Message[]> = {
-  'default': [
+  default: [
     {
-      id: '1',
-      type: 'system',
-      content: 'MCP Consent Agent initialized. Welcome! I can help you with file operations, data analysis, and system tasks - but I\'ll need your consent for specific tool access.',
+      id: "1",
+      type: "system",
+      content:
+        "MCP Consent Agent initialized. Welcome! I can help you with file operations, data analysis, and system tasks - but I'll need your consent for specific tool access.",
       timestamp: new Date().toISOString(),
-      status: 'completed'
-    }
-  ]
+      status: "completed",
+    },
+  ],
 };
 
 let pendingConsentRequests: ConsentRequest[] = [];
@@ -46,31 +67,36 @@ let pendingConsentRequests: ConsentRequest[] = [];
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "AI Chat - Agent Grants" },
-    { name: "description", content: "Chat with AI agent with consent-aware tool access" },
+    {
+      name: "description",
+      content: "Chat with AI agent with consent-aware tool access",
+    },
   ];
 }
 
 export function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
-  const sessionId = url.searchParams.get('session') || 'default';
-  
+  const sessionId = url.searchParams.get("session") || "default";
+
   return {
     messages: chatSessions[sessionId] || [],
     sessionId,
-    pendingRequests: pendingConsentRequests.filter(r => r.workloadId === sessionId)
+    pendingRequests: pendingConsentRequests.filter(
+      (r) => r.workloadId === sessionId
+    ),
   };
 }
 
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
-  const intent = formData.get('intent') as string;
+  const intent = formData.get("intent") as string;
 
-  if (intent === 'send-message') {
-    const message = formData.get('message') as string;
-    const sessionId = formData.get('sessionId') as string || 'default';
+  if (intent === "send-message") {
+    const message = formData.get("message") as string;
+    const sessionId = (formData.get("sessionId") as string) || "default";
 
     if (!message.trim()) {
-      return { success: false, error: 'Message cannot be empty' };
+      return { success: false, error: "Message cannot be empty" };
     }
 
     // Initialize session if it doesn't exist
@@ -81,36 +107,38 @@ export async function action({ request }: Route.ActionArgs) {
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
-      type: 'user',
+      type: "user",
       content: message,
       timestamp: new Date().toISOString(),
-      status: 'completed'
+      status: "completed",
     };
 
     chatSessions[sessionId].push(userMessage);
 
     // Check if message requires consent
-    const requiresWriteAccess = message.toLowerCase().includes('create') || 
-                               message.toLowerCase().includes('write') ||
-                               message.toLowerCase().includes('modify') ||
-                               message.toLowerCase().includes('update');
-    
-    const requiresExportAccess = message.toLowerCase().includes('export') || 
-                                message.toLowerCase().includes('download') ||
-                                message.toLowerCase().includes('backup');
+    const requiresWriteAccess =
+      message.toLowerCase().includes("create") ||
+      message.toLowerCase().includes("write") ||
+      message.toLowerCase().includes("modify") ||
+      message.toLowerCase().includes("update");
+
+    const requiresExportAccess =
+      message.toLowerCase().includes("export") ||
+      message.toLowerCase().includes("download") ||
+      message.toLowerCase().includes("backup");
 
     if (requiresWriteAccess || requiresExportAccess) {
       const requiredScopes = [];
-      if (requiresWriteAccess) requiredScopes.push('tools:write');
-      if (requiresExportAccess) requiredScopes.push('data:export');
+      if (requiresWriteAccess) requiredScopes.push("tools:write");
+      if (requiresExportAccess) requiredScopes.push("data:export");
 
       // Create consent request
       const consentRequest: ConsentRequest = {
         id: `consent-${Date.now()}`,
         workloadId: sessionId,
         requiredScopes,
-        reason: `Agent needs ${requiredScopes.join(', ')} permissions to complete: "${message}"`,
-        status: 'pending'
+        reason: `Agent needs ${requiredScopes.join(", ")} permissions to complete: "${message}"`,
+        status: "pending",
       };
 
       pendingConsentRequests.push(consentRequest);
@@ -118,22 +146,23 @@ export async function action({ request }: Route.ActionArgs) {
       // Add agent response requesting consent
       const agentMessage: Message = {
         id: (Date.now() + 1).toString(),
-        type: 'agent',
-        content: `I need your consent to access the following scopes to complete your request:\n\n` +
-                `${requiredScopes.map(scope => `• ${scope}`).join('\n')}\n\n` +
-                `This will allow me to use tools like ${requiresWriteAccess ? 'CreateFile, UpdateFile' : ''} ${requiresExportAccess ? 'ExportData, GenerateReport' : ''}.\n\n` +
-                `Please grant consent to proceed.`,
+        type: "agent",
+        content:
+          `I need your consent to access the following scopes to complete your request:\n\n` +
+          `${requiredScopes.map((scope) => `• ${scope}`).join("\n")}\n\n` +
+          `This will allow me to use tools like ${requiresWriteAccess ? "CreateFile, UpdateFile" : ""} ${requiresExportAccess ? "ExportData, GenerateReport" : ""}.\n\n` +
+          `Please grant consent to proceed.`,
         timestamp: new Date().toISOString(),
-        status: 'completed',
+        status: "completed",
         tools: requiredScopes,
         artifacts: [
           {
-            type: 'url',
-            title: 'Grant Consent',
+            type: "url",
+            title: "Grant Consent",
             content: `/consent-modal?request=${consentRequest.id}`,
-            description: `Grant ${requiredScopes.join(', ')} permissions`
-          }
-        ]
+            description: `Grant ${requiredScopes.join(", ")} permissions`,
+          },
+        ],
       };
 
       chatSessions[sessionId].push(agentMessage);
@@ -142,60 +171,62 @@ export async function action({ request }: Route.ActionArgs) {
         success: true,
         requiresConsent: true,
         consentRequestId: consentRequest.id,
-        requiredScopes
+        requiredScopes,
       };
     }
 
     // Add normal agent response
     const agentMessage: Message = {
       id: (Date.now() + 1).toString(),
-      type: 'agent',
+      type: "agent",
       content: `I've successfully processed your request using the available permissions. Here are the results:`,
       timestamp: new Date().toISOString(),
-      status: 'completed',
-      tools: ['ListFiles', 'ReadFile', 'GetFileInfo'],
+      status: "completed",
+      tools: ["ListFiles", "ReadFile", "GetFileInfo"],
       artifacts: [
         {
-          type: 'config',
-          title: 'Task Results',
+          type: "config",
+          title: "Task Results",
           content: `{
   "status": "completed",
   "permissions_used": ["tools:read"],
   "completion_time": "${new Date().toISOString()}",
   "result": "Task completed successfully"
 }`,
-          description: 'Task completed with available permissions'
-        }
-      ]
+          description: "Task completed with available permissions",
+        },
+      ],
     };
 
     chatSessions[sessionId].push(agentMessage);
 
     return {
       success: true,
-      requiresConsent: false
+      requiresConsent: false,
     };
   }
 
-  if (intent === 'approve-consent') {
-    const requestId = formData.get('requestId') as string;
-    const grantedScopes = formData.getAll('scopes') as string[];
+  if (intent === "approve-consent") {
+    const requestId = formData.get("requestId") as string;
+    const grantedScopes = formData.getAll("scopes") as string[];
 
     // Find and update consent request
-    const request = pendingConsentRequests.find(r => r.id === requestId);
+    const request = pendingConsentRequests.find((r) => r.id === requestId);
     if (request) {
-      request.status = 'approved';
+      request.status = "approved";
 
       // Add success message to chat
       const sessionId = request.workloadId;
       if (chatSessions[sessionId]) {
         const successMessage: Message = {
           id: `consent-approved-${Date.now()}`,
-          type: 'agent',
-          content: `✅ Consent granted! I now have access to: ${grantedScopes.join(', ')}\n\nTask completed successfully with your approved permissions.`,
+          type: "agent",
+          content: `✅ Consent granted! I now have access to: ${grantedScopes.join(", ")}\n\nTask completed successfully with your approved permissions.`,
           timestamp: new Date().toISOString(),
-          status: 'completed',
-          tools: grantedScopes.includes('tools:write') ? ['CreateFile', 'UpdateFile'] : ['ExportData', 'GenerateReport']
+          status: "completed",
+          tools: grantedScopes.includes("tools:write")
+            ? ["CreateFile", "UpdateFile"]
+            : ["ExportData", "GenerateReport"],
         };
 
         chatSessions[sessionId].push(successMessage);
@@ -203,12 +234,12 @@ export async function action({ request }: Route.ActionArgs) {
 
       return {
         success: true,
-        message: 'Consent approved and task completed',
-        grantedScopes
+        message: "Consent approved and task completed",
+        grantedScopes,
       };
     }
 
-    return { success: false, error: 'Consent request not found' };
+    return { success: false, error: "Consent request not found" };
   }
 
   return null;
@@ -217,11 +248,11 @@ export async function action({ request }: Route.ActionArgs) {
 export default function Chat({ loaderData }: Route.ComponentProps) {
   const { messages, sessionId, pendingRequests } = loaderData;
   const actionData = useActionData<typeof action>();
-  const [inputMessage, setInputMessage] = useState('');
+  const [inputMessage, setInputMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -230,20 +261,34 @@ export default function Chat({ loaderData }: Route.ComponentProps) {
 
   const getToolIcon = (tool: string) => {
     switch (tool) {
-      case 'ListFiles': return <Database className="w-3 h-3" />;
-      case 'ReadFile': return <Code className="w-3 h-3" />;
-      case 'CreateFile': return <Zap className="w-3 h-3" />;
-      case 'UpdateFile': return <Code className="w-3 h-3" />;
-      case 'DeleteFile': return <Globe className="w-3 h-3" />;
-      case 'ExportData': return <Database className="w-3 h-3" />;
-      case 'GenerateReport': return <Code className="w-3 h-3" />;
-      case 'mcp-guard': return <Globe className="w-3 h-3" />;
-      case 'scope-validator': return <Database className="w-3 h-3" />;
-      case 'consent-manager': return <Zap className="w-3 h-3" />;
-      case 'session-manager': return <MessageCircle className="w-3 h-3" />;
-      case 'token-validator': return <Zap className="w-3 h-3" />;
-      case 'HttpRequest': return <Globe className="w-3 h-3" />;
-      default: return <Zap className="w-3 h-3" />;
+      case "ListFiles":
+        return <Database className="w-3 h-3" />;
+      case "ReadFile":
+        return <Code className="w-3 h-3" />;
+      case "CreateFile":
+        return <Zap className="w-3 h-3" />;
+      case "UpdateFile":
+        return <Code className="w-3 h-3" />;
+      case "DeleteFile":
+        return <Globe className="w-3 h-3" />;
+      case "ExportData":
+        return <Database className="w-3 h-3" />;
+      case "GenerateReport":
+        return <Code className="w-3 h-3" />;
+      case "mcp-guard":
+        return <Globe className="w-3 h-3" />;
+      case "scope-validator":
+        return <Database className="w-3 h-3" />;
+      case "consent-manager":
+        return <Zap className="w-3 h-3" />;
+      case "session-manager":
+        return <MessageCircle className="w-3 h-3" />;
+      case "token-validator":
+        return <Zap className="w-3 h-3" />;
+      case "HttpRequest":
+        return <Globe className="w-3 h-3" />;
+      default:
+        return <Zap className="w-3 h-3" />;
     }
   };
 
@@ -253,21 +298,31 @@ export default function Chat({ loaderData }: Route.ComponentProps) {
 
   const getArtifactIcon = (type: string) => {
     switch (type) {
-      case 'url': return <ExternalLink className="w-4 h-4" />;
-      case 'config': return <Code className="w-4 h-4" />;
-      case 'code': return <Code className="w-4 h-4" />;
-      case 'documentation': return <Database className="w-4 h-4" />;
-      default: return <Code className="w-4 h-4" />;
+      case "url":
+        return <ExternalLink className="w-4 h-4" />;
+      case "config":
+        return <Code className="w-4 h-4" />;
+      case "code":
+        return <Code className="w-4 h-4" />;
+      case "documentation":
+        return <Database className="w-4 h-4" />;
+      default:
+        return <Code className="w-4 h-4" />;
     }
   };
 
   const getArtifactColor = (type: string) => {
     switch (type) {
-      case 'url': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'config': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'code': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
-      case 'documentation': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+      case "url":
+        return "bg-blue-500/20 text-blue-400 border-blue-500/30";
+      case "config":
+        return "bg-green-500/20 text-green-400 border-green-500/30";
+      case "code":
+        return "bg-purple-500/20 text-purple-400 border-purple-500/30";
+      case "documentation":
+        return "bg-orange-500/20 text-orange-400 border-orange-500/30";
+      default:
+        return "bg-gray-500/20 text-gray-400 border-gray-500/30";
     }
   };
 
@@ -292,7 +347,8 @@ export default function Chat({ loaderData }: Route.ComponentProps) {
             <div className="flex items-center space-x-2">
               <Shield className="w-5 h-5 text-yellow-400" />
               <p className="text-yellow-300">
-                Consent required for scopes: {actionData.requiredScopes?.join(', ')}
+                Consent required for scopes:{" "}
+                {actionData.requiredScopes?.join(", ")}
               </p>
             </div>
           </div>
@@ -317,8 +373,12 @@ export default function Chat({ loaderData }: Route.ComponentProps) {
                   <Bot className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-medium text-white">MCP Consent Assistant</h3>
-                  <p className="text-sm text-gray-400">AI Agent with consent-aware tool access</p>
+                  <h3 className="text-lg font-medium text-white">
+                    MCP Consent Assistant
+                  </h3>
+                  <p className="text-sm text-gray-400">
+                    AI Agent with consent-aware tool access
+                  </p>
                   <p className="text-xs text-blue-400">Session: {sessionId}</p>
                 </div>
               </div>
@@ -342,24 +402,28 @@ export default function Chat({ loaderData }: Route.ComponentProps) {
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}
               >
-                <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
-                  message.type === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : message.type === 'system'
-                    ? 'bg-gray-700 text-gray-300'
-                    : 'bg-gray-700 text-white'
-                }`}>
+                <div
+                  className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
+                    message.type === "user"
+                      ? "bg-blue-600 text-white"
+                      : message.type === "system"
+                        ? "bg-gray-700 text-gray-300"
+                        : "bg-gray-700 text-white"
+                  }`}
+                >
                   <div className="flex items-start space-x-2">
-                    {message.type !== 'user' && (
+                    {message.type !== "user" && (
                       <div className="w-6 h-6 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <Bot className="w-3 h-3 text-white" />
                       </div>
                     )}
                     <div className="flex-1">
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                      
+                      <p className="text-sm whitespace-pre-wrap">
+                        {message.content}
+                      </p>
+
                       {message.tools && (
                         <div className="mt-2 flex flex-wrap gap-1">
                           {message.tools.map((tool, index) => (
@@ -373,45 +437,69 @@ export default function Chat({ loaderData }: Route.ComponentProps) {
                           ))}
                         </div>
                       )}
-                      
-                      {message.status === 'processing' && (
+
+                      {message.status === "processing" && (
                         <div className="mt-2 flex items-center space-x-2">
                           <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-                          <span className="text-xs text-gray-400">Processing...</span>
+                          <span className="text-xs text-gray-400">
+                            Processing...
+                          </span>
                         </div>
                       )}
-                      
+
                       {/* Artifacts with Consent Modal Trigger */}
                       {message.artifacts && message.artifacts.length > 0 && (
                         <div className="mt-4 space-y-3">
-                          <h4 className="text-sm font-medium text-white">Generated Artifacts:</h4>
+                          <h4 className="text-sm font-medium text-white">
+                            Generated Artifacts:
+                          </h4>
                           {message.artifacts.map((artifact, index) => (
-                            <div key={index} className={`p-3 rounded-lg border ${getArtifactColor(artifact.type)}`}>
+                            <div
+                              key={index}
+                              className={`p-3 rounded-lg border ${getArtifactColor(artifact.type)}`}
+                            >
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center space-x-2">
                                   {getArtifactIcon(artifact.type)}
-                                  <span className="text-sm font-medium">{artifact.title}</span>
+                                  <span className="text-sm font-medium">
+                                    {artifact.title}
+                                  </span>
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                  {artifact.type === 'url' && artifact.content.includes('consent-modal') && (
-                                    <ConsentModal 
-                                      requestId={artifact.content.split('request=')[1]}
-                                      requiredScopes={message.tools || []}
-                                    />
-                                  )}
-                                  {artifact.type === 'url' && !artifact.content.includes('consent-modal') && (
-                                    <button
-                                      type="button"
-                                      onClick={() => globalThis.open(artifact.content, '_blank')}
-                                      className="p-1 hover:bg-white/10 rounded transition-colors duration-200"
-                                      title="Open URL"
-                                    >
-                                      <ExternalLink className="w-3 h-3" />
-                                    </button>
-                                  )}
+                                  {artifact.type === "url" &&
+                                    artifact.content.includes(
+                                      "consent-modal"
+                                    ) && (
+                                      <ConsentModal
+                                        requestId={
+                                          artifact.content.split("request=")[1]
+                                        }
+                                        requiredScopes={message.tools || []}
+                                      />
+                                    )}
+                                  {artifact.type === "url" &&
+                                    !artifact.content.includes(
+                                      "consent-modal"
+                                    ) && (
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          globalThis.open(
+                                            artifact.content,
+                                            "_blank"
+                                          )
+                                        }
+                                        className="p-1 hover:bg-white/10 rounded transition-colors duration-200"
+                                        title="Open URL"
+                                      >
+                                        <ExternalLink className="w-3 h-3" />
+                                      </button>
+                                    )}
                                   <button
                                     type="button"
-                                    onClick={() => copyToClipboard(artifact.content)}
+                                    onClick={() =>
+                                      copyToClipboard(artifact.content)
+                                    }
                                     className="p-1 hover:bg-white/10 rounded transition-colors duration-200"
                                     title="Copy to clipboard"
                                   >
@@ -420,12 +508,17 @@ export default function Chat({ loaderData }: Route.ComponentProps) {
                                 </div>
                               </div>
                               {artifact.description && (
-                                <p className="text-xs opacity-80 mb-2">{artifact.description}</p>
+                                <p className="text-xs opacity-80 mb-2">
+                                  {artifact.description}
+                                </p>
                               )}
-                              {!artifact.content.includes('consent-modal') && (
+                              {!artifact.content.includes("consent-modal") && (
                                 <div className="bg-black/20 rounded p-2 font-mono text-xs overflow-x-auto">
-                                  {artifact.type === 'code' || artifact.type === 'config' ? (
-                                    <pre className="whitespace-pre-wrap">{artifact.content}</pre>
+                                  {artifact.type === "code" ||
+                                  artifact.type === "config" ? (
+                                    <pre className="whitespace-pre-wrap">
+                                      {artifact.content}
+                                    </pre>
                                   ) : (
                                     <span>{artifact.content}</span>
                                   )}
@@ -465,16 +558,16 @@ export default function Chat({ loaderData }: Route.ComponentProps) {
                 <Send className="w-4 h-4" />
               </button>
             </Form>
-            
+
             <div className="mt-2 flex flex-wrap gap-2">
               {[
-                'Create a new configuration file',
-                'Export my project data',
-                'Can you list my files with current permissions?',
-                'Update my system settings',
-                'Show me my current tool access permissions',
-                'Generate a backup of my data',
-                'Modify the database configuration'
+                "Create a new configuration file",
+                "Export my project data",
+                "Can you list my files with current permissions?",
+                "Update my system settings",
+                "Show me my current tool access permissions",
+                "Generate a backup of my data",
+                "Modify the database configuration",
               ].map((suggestion, index) => (
                 <button
                   key={index}
@@ -493,7 +586,13 @@ export default function Chat({ loaderData }: Route.ComponentProps) {
 }
 
 // Consent Modal Component that uses the grants route
-function ConsentModal({ requestId, requiredScopes }: { requestId: string; requiredScopes: string[] }) {
+function ConsentModal({
+  requestId,
+  requiredScopes,
+}: {
+  requestId: string;
+  requiredScopes: string[];
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedGrantId, setSelectedGrantId] = useState<string | null>(null);
   const grantFetcher = useFetcher();
@@ -502,18 +601,18 @@ function ConsentModal({ requestId, requiredScopes }: { requestId: string; requir
   // Map scopes to grant IDs (this would be more sophisticated in a real app)
   const getGrantIdForScope = (scope: string): string => {
     const scopeToGrantMap: Record<string, string> = {
-      'tools:read': '1',
-      'tools:write': '2', 
-      'data:export': '3',
-      'system:analyze': '4',
-      'notifications:send': '5',
-      'deployment:hotfix': '6',
-      'payroll:access': '7',
-      'network:access': '8',
-      'system:admin': '9',
-      'database:write': '10'
+      "tools:read": "1",
+      "tools:write": "2",
+      "data:export": "3",
+      "system:analyze": "4",
+      "notifications:send": "5",
+      "deployment:hotfix": "6",
+      "payroll:access": "7",
+      "network:access": "8",
+      "system:admin": "9",
+      "database:write": "10",
     };
-    return scopeToGrantMap[scope] || '1';
+    return scopeToGrantMap[scope] || "1";
   };
 
   const handleGrantConsent = (scope: string) => {
@@ -529,11 +628,11 @@ function ConsentModal({ requestId, requiredScopes }: { requestId: string; requir
 
   const handleApprove = () => {
     const formData = new FormData();
-    formData.set('intent', 'approve-consent');
-    formData.set('requestId', requestId);
-    requiredScopes.forEach(scope => formData.append('scopes', scope));
-    
-    consentFetcher.submit(formData, { method: 'post' });
+    formData.set("intent", "approve-consent");
+    formData.set("requestId", requestId);
+    requiredScopes.forEach((scope) => formData.append("scopes", scope));
+
+    consentFetcher.submit(formData, { method: "post" });
     handleModalClose();
   };
 
@@ -559,7 +658,9 @@ function ConsentModal({ requestId, requiredScopes }: { requestId: string; requir
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
                   <Shield className="w-6 h-6 text-blue-400" />
-                  <h3 className="text-lg font-bold text-white">Grant Permission</h3>
+                  <h3 className="text-lg font-bold text-white">
+                    Grant Permission
+                  </h3>
                 </div>
                 <button
                   type="button"
@@ -567,14 +668,24 @@ function ConsentModal({ requestId, requiredScopes }: { requestId: string; requir
                   className="text-gray-400 hover:text-white transition-colors"
                   title="Close modal"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
-              
+
               {/* Load the grant form in modal */}
-              <GrantModalContent 
+              <GrantModalContent
                 grantId={selectedGrantId}
                 onApprove={handleApprove}
                 onClose={handleModalClose}
@@ -590,55 +701,63 @@ function ConsentModal({ requestId, requiredScopes }: { requestId: string; requir
 }
 
 // Component that loads the grant form content
-function GrantModalContent({ 
-  grantId, 
-  onApprove, 
-  onClose, 
-  requestId, 
-  requiredScopes 
-}: { 
-  grantId: string; 
-  onApprove: () => void; 
+function GrantModalContent({
+  grantId,
+  onApprove,
+  onClose,
+  requestId,
+  requiredScopes,
+}: {
+  grantId: string;
+  onApprove: () => void;
   onClose: () => void;
   requestId: string;
   requiredScopes: string[];
 }) {
-  const grantFetcher = useFetcher<{ grant: any; sessionId: string | null; success?: boolean; consentRequestId?: string }>();
+  const grantFetcher = useFetcher<{
+    grant: any;
+    sessionId: string | null;
+    success?: boolean;
+    consentRequestId?: string;
+  }>();
   const consentFetcher = useFetcher();
 
   // Load the grant data when component mounts
   React.useEffect(() => {
-    if (grantFetcher.state === 'idle' && !grantFetcher.data) {
+    if (grantFetcher.state === "idle" && !grantFetcher.data) {
       grantFetcher.load(`/grants/${grantId}/grant?modal=true`);
     }
   }, [grantId, grantFetcher]);
 
   const handleGrantSubmit = (formData: FormData) => {
     // Add the consent request info to the form
-    formData.set('consentRequestId', requestId);
-    formData.set('requiredScopes', requiredScopes.join(','));
-    
-    grantFetcher.submit(formData, { 
-      method: 'post',
-      action: `/grants/${grantId}/grant?modal=true`
+    formData.set("consentRequestId", requestId);
+    formData.set("requiredScopes", requiredScopes.join(","));
+
+    grantFetcher.submit(formData, {
+      method: "post",
+      action: `/grants/${grantId}/grant?modal=true`,
     });
   };
 
   // Handle successful grant submission
   React.useEffect(() => {
-    if (grantFetcher.data?.success && grantFetcher.data.consentRequestId === requestId) {
+    if (
+      grantFetcher.data?.success &&
+      grantFetcher.data.consentRequestId === requestId
+    ) {
       // Grant was successful, now approve the consent request
       const formData = new FormData();
-      formData.set('intent', 'approve-consent');
-      formData.set('requestId', requestId);
-      requiredScopes.forEach(scope => formData.append('scopes', scope));
-      
-      consentFetcher.submit(formData, { method: 'post' });
+      formData.set("intent", "approve-consent");
+      formData.set("requestId", requestId);
+      requiredScopes.forEach((scope) => formData.append("scopes", scope));
+
+      consentFetcher.submit(formData, { method: "post" });
       onClose();
     }
   }, [grantFetcher.data, requestId, requiredScopes, consentFetcher, onClose]);
 
-  if (grantFetcher.state === 'loading') {
+  if (grantFetcher.state === "loading") {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
@@ -647,7 +766,7 @@ function GrantModalContent({
     );
   }
 
-  if (grantFetcher.state === 'idle' && grantFetcher.data === undefined) {
+  if (grantFetcher.state === "idle" && grantFetcher.data === undefined) {
     return (
       <div className="text-center py-8">
         <p className="text-red-400 mb-4">Failed to load grant form</p>
@@ -665,7 +784,7 @@ function GrantModalContent({
   // If we have the grant data, render a simplified grant form
   if (grantFetcher.data?.grant) {
     const grant = grantFetcher.data.grant;
-    
+
     return (
       <div>
         <div className="mb-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
@@ -673,24 +792,30 @@ function GrantModalContent({
             <strong>Consent Request:</strong> {requestId}
           </p>
           <p className="text-sm text-blue-300">
-            <strong>Required Scopes:</strong> {requiredScopes.join(', ')}
+            <strong>Required Scopes:</strong> {requiredScopes.join(", ")}
           </p>
         </div>
 
         {/* Grant Information */}
         <div className="mb-6">
-          <h4 className="text-lg font-semibold text-white mb-2">{grant.scope}</h4>
+          <h4 className="text-lg font-semibold text-white mb-2">
+            {grant.scope}
+          </h4>
           <p className="text-gray-300 mb-4">{grant.description}</p>
-          
+
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <p className="text-xs text-gray-400">Requester</p>
-              <p className="text-sm text-white">{grant.requesterName || grant.requesterId}</p>
+              <p className="text-sm text-white">
+                {grant.requesterName || grant.requesterId}
+              </p>
             </div>
             <div>
               <p className="text-xs text-gray-400">Current Status</p>
-              <p className={`text-sm ${grant.granted ? 'text-green-400' : 'text-red-400'}`}>
-                {grant.granted ? 'Granted' : 'Not Granted'}
+              <p
+                className={`text-sm ${grant.granted ? "text-green-400" : "text-red-400"}`}
+              >
+                {grant.granted ? "Granted" : "Not Granted"}
               </p>
             </div>
           </div>
@@ -711,18 +836,27 @@ function GrantModalContent({
         </div>
 
         {/* Grant Form */}
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          const formData = new FormData(e.currentTarget);
-          handleGrantSubmit(formData);
-        }}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            handleGrantSubmit(formData);
+          }}
+        >
           <input type="hidden" name="modal" value="true" />
           <input type="hidden" name="consentRequestId" value={requestId} />
-          <input type="hidden" name="requiredScopes" value={requiredScopes.join(',')} />
-          
+          <input
+            type="hidden"
+            name="requiredScopes"
+            value={requiredScopes.join(",")}
+          />
+
           <div className="space-y-4">
             <div>
-              <label htmlFor="duration" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="duration"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Grant Duration
               </label>
               <select
@@ -740,7 +874,10 @@ function GrantModalContent({
             </div>
 
             <div>
-              <label htmlFor="reason" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="reason"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Reason for Grant
               </label>
               <textarea
@@ -764,10 +901,12 @@ function GrantModalContent({
             </button>
             <button
               type="submit"
-              disabled={grantFetcher.state !== 'idle'}
+              disabled={grantFetcher.state !== "idle"}
               className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50"
             >
-              {grantFetcher.state !== 'idle' ? 'Granting...' : 'Grant Permission'}
+              {grantFetcher.state !== "idle"
+                ? "Granting..."
+                : "Grant Permission"}
             </button>
           </div>
         </form>
