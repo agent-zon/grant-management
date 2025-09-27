@@ -1,0 +1,184 @@
+# Grant Authorization Requests
+
+This document describes how authorization (consent) requests are created, approved, and resolved into active grants in the Grant Management system. It covers the request data model, API contracts, expected error semantics, and the end‑to‑end flow from an unauthorized tool call through approval and session authorization.
+
+## Purpose
+
+When a tool invocation requires scopes that are not yet granted for a session or user, the system initiates a grant authorization request. An approver (the user or an admin, depending on policy) reviews and either approves or denies the request. Upon approval, a grant is persisted and the session becomes authorized to perform the requested operation(s).
+
+## Data Model
+
+Authorization Request (conceptual model):
+
+- id: string — Unique identifier of the authorization request
+- session_id: string — The active session requesting access
+- user_id: string | null — Requesting user (if known at time of request)
+- required_scopes: string[] — Space- or comma-separated scopes required by the tool
+- workload_id: string | null — Workload or client identifier associated with the request
+- reason: string — Human-readable reason/context for the request
+- status: "pending" | "approved" | "denied" | "expired" | "revoked"
+- created_at: ISO-8601 string
+- updated_at: ISO-8601 string
+- expires_at: ISO-8601 string | null — Optional expiry time for unattended requests
+
+Active Grant (persisted outcome):
+
+- id: string
+- user_id: string
+- session_id: string
+- workload_id: string | null
+- scope: string — Space-separated scopes (e.g. "tools:read tools:write")
+- status: "active" | "revoked"
+- created_at: ISO-8601 string
+- revoked_at: ISO-8601 string | null
+
+## API Endpoints
+
+The following endpoints are used by the consent/authorization flow and by the grant lifecycle. Paths are relative to the Grant Management service unless otherwise noted.
+
+### Create Authorization Request
+
+POST /mcp/consent/request
+
+Request body:
+
+```
+{
+  "sessionId": "string",
+  "requiredScopes": ["scope:a", "scope:b"],
+  "reason": "string (why is access needed?)",
+  "workloadId": "string (optional)",
+  "userId": "string (optional)"
+}
+```
+
+Response:
+
+```
+{
+  "requestId": "string"
+}
+```
+
+### Decide Authorization Request
+
+POST /mcp/consent/{requestId}/decision
+
+Request body:
+
+```
+{
+  "approve": true,
+  "actor": "string (approver id or username)",
+  "note": "string (optional)"
+}
+```
+
+Response:
+
+```
+{
+  "success": true
+}
+```
+
+Approving a request will create or update a corresponding active grant and may immediately authorize the session.
+
+### Check/Establish Session Authorization
+
+POST /mcp/session/{sessionId}/authorize
+
+Response:
+
+```
+{
+  "authorized": true
+}
+```
+
+### Grants API (persistence and admin)
+
+GET /api/grants — List grants (supports filters such as `?session_id=...`)
+
+POST /api/grants — Create a grant explicitly
+
+DELETE /api/grants/{id} — Revoke a grant
+
+Responses are JSON. A newly created grant returns fields including `id`, `user_id`, `scope`, `session_id`, `workload_id`, and `status` (expected to be `active`). A revoked grant will reflect `status: "revoked"`.
+
+## Error Semantics for Unauthorized Tool Calls
+
+When a tool call requires consent, clients should expect a JSON-RPC style error indicating consent is needed. The system returns an application error with a code and details to proceed with consent.
+
+Example shape (illustrative):
+
+```
+{
+  "error": {
+    "code": -32001,
+    "message": "Consent required",
+    "data": {
+      "requiredScopes": ["tools:write"],
+      "consentUrl": "http://localhost:3001/consent?request=..."
+    }
+  }
+}
+```
+
+Clients should surface the `requiredScopes` and direct the user to `consentUrl`, or programmatically call the consent endpoints above to create and decide the request.
+
+## End-to-End Flow
+
+1. A tool call is attempted that requires scopes the session does not have.
+2. The server responds with a consent-required error including `requiredScopes` and a `consentUrl`.
+3. The client initiates a request via `POST /mcp/consent/request` (or navigates the user to the consent UI).
+4. An approver approves the request via `POST /mcp/consent/{requestId}/decision` with `approve: true`.
+5. The system creates an active grant for the `session_id`/`user_id` and required scopes.
+6. The client confirms authorization via `POST /mcp/session/{sessionId}/authorize` and retries the tool call.
+
+## Examples
+
+Create request:
+
+```
+POST /mcp/consent/request
+{
+  "sessionId": "abc-session-123",
+  "requiredScopes": ["tools:read", "tools:write"],
+  "reason": "Add a task that modifies server state",
+  "workloadId": "mcp-middleware",
+  "userId": "demo-user"
+}
+```
+
+Approve request:
+
+```
+POST /mcp/consent/{requestId}/decision
+{
+  "approve": true,
+  "actor": "admin@example.com",
+  "note": "Approved for this session"
+}
+```
+
+Verify session authorization:
+
+```
+POST /mcp/session/abc-session-123/authorize
+{
+  "authorized": true
+}
+```
+
+## Operational Notes
+
+- Scope format: services typically represent scopes as space-separated strings when persisted in grants, while request payloads may use arrays of strings for clarity.
+- Expiration: pending requests may expire automatically; approved grants should be revocable via `DELETE /api/grants/{id}`.
+- Idempotency: approving the same request twice should be safe; creating duplicate grants for the same session/scope should be avoided by the server.
+- Security: all endpoints under `/api/grants` require authentication (e.g., `Authorization: Bearer ...`).
+
+## Related
+
+- See `docs/CONSENT_SCENARIOS.md` for user-facing flows and scenarios.
+
