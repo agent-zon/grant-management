@@ -10,6 +10,7 @@ import {
 import { Form, Link, redirect } from "react-router";
 import type { Route } from "./+types/grants.$id.revoke";
 import { grants } from "../grants.db";
+import { updateGrant } from "../cds-api";
 export { loader } from "./grants.$id._index";
 // Mock data - same as main consent route
 
@@ -23,12 +24,7 @@ export function meta({ params, data }: Route.MetaArgs) {
 export async function action({ request, params }: Route.ActionArgs) {
   const { id } = params;
   const formData = await request.formData();
-  const grant = grants.find((g) => g.id === id);
-  if (grant) {
-    grant.granted = false;
-    grant.revokedAt = new Date().toISOString();
-    grant.usage = 0;
-  }
+  await updateGrant(id as string, { status: "revoked" }, request);
 
   const grantUrl = new URL(request.url);
   grantUrl.pathname = grantUrl.pathname.replace(/\/grant$/, "");

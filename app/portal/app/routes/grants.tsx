@@ -17,6 +17,7 @@ import { useActionData, useFetcher, Link, useLocation } from "react-router";
 import type { Route } from "./+types/grants";
 import type { ConsentGrant } from "../grants.db";
 import { generateConsentData } from "../grants.db";
+import { getGrants } from "../cds-api";
 
 // interface ConsentGrant {
 //   id: string;
@@ -48,14 +49,14 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export function loader({ request }: Route.LoaderArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const workloadFilter = url.searchParams.get("workload");
   const sessionFilter = url.searchParams.get("session");
 
-  let filteredGrants = currentConsentData.grants;
+  const allGrants = await getGrants(request);
 
-  // Apply workload filter
+  let filteredGrants = allGrants;
   if (workloadFilter) {
     const workloadSessionMap: Record<string, string> = {
       "wl-001": "S123",
@@ -65,17 +66,12 @@ export function loader({ request }: Route.LoaderArgs) {
     };
     const targetSession = workloadSessionMap[workloadFilter];
     if (targetSession) {
-      filteredGrants = currentConsentData.grants.filter(
-        (grant) => grant.sessionId === targetSession
-      );
+      filteredGrants = allGrants.filter((grant) => grant.sessionId === targetSession);
     }
   }
 
-  // Apply session filter
   if (sessionFilter) {
-    filteredGrants = currentConsentData.grants.filter(
-      (grant) => grant.sessionId === sessionFilter
-    );
+    filteredGrants = allGrants.filter((grant) => grant.sessionId === sessionFilter);
   }
 
   return {
