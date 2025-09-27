@@ -1,196 +1,236 @@
-# Grant Authorization Requests for MCP Integration
+# MDC — Authorization Requests (Create & Merge) + Agent Flow & PAR
 
-## Overview
+**Version:** 1.0  
+**Repo:** `agent-grants/grant-management` (branch: `feature/request-api`)  
+**Owner:** Grants & Authorization  
+**Last updated:** 2025-01-15
 
-This document describes the grant authorization request flow for the Model Context Protocol (MCP) integration with the Grant Management System. It outlines how agents request permissions, how users grant consent, and how the system enforces authorization for MCP tool calls.
+> Additive to the other MDC docs: this file shows concrete **authorization requests** for **create** and **merge**, how the **agent flow** works (APIs + events), and how we use **Pushed Authorization Requests (PAR)** to produce short consent links. Types for `authorization_details` are open‑ended (e.g., `mcp-tools`, `fs`, `api`, or custom). Validation is done by the **consuming side**; this service provides secure grant lifecycle and consent rendering.
 
-## Architecture
+---
 
-The grant authorization system operates as a middleware layer between MCP agents and MCP servers:
+## 1) Quick visual
 
+**Create** (initial grant):
 ```
-MCP Agent → MCP Middleware → Grant Management API → MCP Server
-     ↓           ↓                    ↓
-Authorization → Consent UI ← Grant Management UI
-```
-
-### Key Components
-
-1. **MCP Middleware**: Intercepts tool calls and validates permissions
-2. **Grant Management API**: Manages grant lifecycle and consent decisions  
-3. **Consent UI**: User interface for granting/revoking permissions
-4. **Authorization Guard**: Enforces scope-based access control
-
-## Grant Authorization Request Flow
-
-### 1. Tool Call Interception
-
-When an MCP agent attempts to call a tool:
-
-```javascript
-// Agent makes tool call
-const toolCall = {
-  jsonrpc: '2.0',
-  method: 'tools/call',
-  params: {
-    name: 'CreateFile',
-    arguments: { path: '/tmp/test.txt', content: 'Hello World' }
-  },
-  id: 1
-};
+Agent → AS: /authorize (create + default auth_details) → grant_id=gnt_123
 ```
 
-### 2. Permission Check
+**Merge** (ask for more later):
+```
+Agent → Guard: blocked action → GM: stage request → PAR → consent → approve → updated grant
+```
 
-The MCP middleware checks if the agent has valid grants for the required scopes:
+## 2) Authorization Requests
 
-```javascript
-// Check session authorization
+### 2.1 Initial authorization (create)
+
+Client requests defaults (e.g., view cloud resources + application logs). The **grant** returned in the token response carries a `grant_id` and `authorization_details` snapshot persisted by our service.
+
+**Readable `authorization_details` JSON**
+
+```json
+[
+  { "type": "mcp-tools", "server": "https://mcp.example.net", "tools": ["cloud.view","logs.view"], "actions": ["run"], "locations": ["eu1"] },
+  { "type": "fs", "root": "/workspace", "resources": ["/workspace/logs/*"], "actions": ["read"] },
+  { "type": "api", "resources": ["urn:svc:cloud"], "actions": ["read"] }
+]
+```
+
+**Front‑channel (GET /authorize) example**
+
+```http
+GET /authorize?response_type=code&client_id=client-123&redirect_uri=https%3A%2F%2Fapp.example.com%2Fcb
+  &scope=openid%20grant_management_query
+  &grant_management_action=create
+  &authorization_details=%5B%7B%22type%22%3A%22mcp-tools%22%2C%22server%22%3A%22https%3A%2F%2Fmcp.example.net%22%2C%22tools%22%3A%5B%22cloud.view%22%2C%22logs.view%22%5D%2C%22actions%22%3A%5B%22run%22%5D%2C%22locations%22%3A%5B%22eu1%22%5D%7D%2C%7B%22type%22%3A%22fs%22%2C%22root%22%3A%22%2Fworkspace%22%2C%22resources%22%3A%5B%22%2Fworkspace%2Flogs%2F*%22%5D%2C%22actions%22%3A%5B%22read%22%5D%7D%2C%7B%22type%22%3A%22api%22%2C%22resources%22%3A%5B%22urn%3Asvc%3Acloud%22%5D%2C%22actions%22%3A%5B%22read%22%5D%7D%5D
+```
+
+**Token response (excerpt)**
+
+```json
+{ "access_token": "…", "refresh_token": "…", "grant_id": "gnt_123" }
+```
+
+### 2.2 Expanding later (merge)
+
+When the security guard detects the agent tries to **create** a new resource (not covered by the current grant), it triggers a **merge**.
+
+**Delta authorization we ask for**
+
+```json
+[
+  { "type": "mcp-tools", "server": "https://mcp.example.net", "tools": ["cloud.create"], "actions": ["run"], "locations": ["eu1"] },
+  { "type": "api", "resources": ["urn:svc:cloud:resource"], "actions": ["create","write"] }
+]
+```
+
+**Front‑channel (GET /authorize) merge**
+
+```http
+GET /authorize?response_type=code&client_id=client-123&redirect_uri=https%3A%2F%2Fapp.example.com%2Fcb
+  &scope=openid%20grant_management_query
+  &grant_id=gnt_123
+  &grant_management_action=merge
+  &authorization_details=%5B%7B%22type%22%3A%22mcp-tools%22%2C%22server%22%3A%22https%3A%2F%2Fmcp.example.net%22%2C%22tools%22%3A%5B%22cloud.create%22%5D%2C%22actions%22%3A%5B%22run%22%5D%2C%22locations%22%3A%5B%22eu1%22%5D%7D%2C%7B%22type%22%3A%22api%22%2C%22resources%22%3A%5B%22urn%3Asvc%3Acloud%3Aresource%22%5D%2C%22actions%22%3A%5B%22create%22%2C%22write%22%5D%7D%5D
+```
+
+**Token response (excerpt)**
+
+```json
+{ "access_token": "…", "refresh_token": "…", "grant_id": "gnt_123" }
+```
+
+> Use **replace** instead of merge to *narrow* the set (authoritative reset). See the Protocol‑Aligned Flows doc for semantics.
+
+### 2.3 PAR (pushed authorization request)
+
+For short, tamper‑proof consent links, push the same payload to the AS first, then redirect with the returned `request_uri`.
+
+**POST /as/par (create)**
+
+```http
+POST /as/par
+Content-Type: application/x-www-form-urlencoded
+
+response_type=code&client_id=client-123&redirect_uri=https%3A%2F%2Fapp.example.com%2Fcb&
+code_challenge=…&code_challenge_method=S256&
+grant_management_action=create&
+authorization_details=[{"type":"mcp-tools","server":"https://mcp.example.net","tools":["cloud.view","logs.view"],"actions":["run"],"locations":["eu1"]}]
+```
+
+**201** `{ "request_uri": "urn:…:request_uri:abc", "expires_in": 90 }`
+
+**Redirect**
+
+```http
+GET /authorize?client_id=client-123&request_uri=urn%3A…%3Arequest_uri%3Aabc
+```
+
+**POST /as/par (merge)**
+
+```http
+POST /as/par
+Content-Type: application/x-www-form-urlencoded
+
+response_type=code&client_id=client-123&redirect_uri=https%3A%2F%2Fapp.example.com%2Fcb&
+code_challenge=…&code_challenge_method=S256&
+grant_id=gnt_123&grant_management_action=merge&
+authorization_details=[{"type":"api","resources":["urn:svc:cloud:resource"],"actions":["create","write"]}]
+```
+
+**Short link pattern** (nice UX): `https://auth.example.com/c/abc` → resolves to the `request_uri` flow.
+
+---
+
+## 3) End‑to‑end Agent Flow (story)
+
+1. **Bootstrap** — Agent signs in and performs **create** with default tools (view cloud, view logs). Token contains `grant_id=gnt_123`. Our service stores the grant and `authorization_details` snapshot.
+2. **Operate** — Agent calls MCP tools and APIs that are **covered** (view/read). OK.
+3. **Guard check** — Agent attempts **create** (e.g., provision resource). Security guard compares intent vs current `authorization_details` and finds **missing** capability.
+4. **Stage request** (optional HITL) — `POST /api/requests` (delta). We send SET **Request Created** and render a **consent screen** showing the diff.
+5. **PAR** — We push the merge request to `/as/par` → `request_uri`, generate a **short link** and notify the user/admin UI.
+6. **Decision** — Approve → we complete authorization with **merge** using the same `grant_id`.
+7. **Persist & notify** — We update stored grant view and emit **Grant Updated (merge)** + OAuth **Token Issued**. (If denied/expired: send matching events.)
+8. **Resume** — Agent retries the action; now it's permitted.
+
+---
+
+## 4) Events (what we emit)
+
+* **SET envelope** for all events; one URI per `events` claim.
+* **Request lifecycle**: `request-created`, `request-approved|denied|expired` (our namespace)
+* **Grant lifecycle**: `grant-created|updated|replaced|revoked` (our namespace)
+* **Token lifecycle**: `token-issued`, `token-revoked`, `tokens-revoked` (OAuth Event Types)
+* **Consent (optional)**: a consent event payload including a `consentUri` list that references the approved terms/diff.
+
+*Minimal examples are in the Events MDC; reuse them here with the delta payloads for merge.*
+
+---
+
+## 5) `authorization_details` types (open set)
+
+Grant Management is **type‑agnostic**. Common patterns:
+
+* `mcp-tools` — fields: `server`, `tools[]`, `actions[]`, `locations[]`
+* `fs` — fields: `root`, `resources[]` (globs/URNs), `actions[]` (`read`, `write`, `create`, `delete`)
+* `api` — fields: `resources[]` (URNs or URLs), `actions[]`, optional `verbs[]`, `audience`
+* **custom** — any domain schema; consumers validate and enforce.
+
+> Consumers (MCP servers, file systems, APIs, Security Guards) are responsible for **enforcement**. This service ensures **secure lifecycle, audit, and consent UX**.
+
+---
+
+## 6) REST surface (this repo)
+
+* **Grant endpoint**: `GET /api/grants/{grant_id}`; `DELETE /api/grants/{grant_id}`
+* **Request staging**: `POST /api/requests`, `GET /api/requests/{id}`, `POST /api/requests/{id}/approve|deny`
+* **Discovery** (metadata): include grant mgmt actions supported; expose PAR capability via AS metadata (out of scope for this service, but we read it).
+
+---
+
+## 7) Mermaid (agent + PAR happy path)
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Agent
+  participant GM as Grant Mgmt
+  participant AS as Authorization Server
+  participant UI as User/Admin
+
+  Agent->>AS: /authorize (create + default authorization_details)
+  AS-->>Agent: code→token (grant_id=gnt_123)
+  GM->>GM: persist grant snapshot
+  Agent->>GM: action(create-resource) → guard says missing
+  GM->>GM: POST /api/requests (delta) → SET(Request Created)
+  GM->>AS: POST /as/par (merge+grant_id) → request_uri
+  GM-->>UI: short link to consent (render diff)
+  UI->>AS: approve via /authorize?request_uri=...
+  AS-->>Agent: code→token (updated)
+  GM->>GM: SET(Request Approved), SET(Grant Updated), SET(Token Issued)
+  Agent->>Resource: perform create (now allowed)
+```
+
+---
+
+## 8) Security notes
+
+* Treat `grant_id` / `request_id` as non‑secrets; **never** leak tokens via these APIs.
+* Prefer hashed token identifiers in SET payloads; sign all SETs; encrypt when PII present.
+* Ensure merge requests display a **clear diff** in consent UI.
+* For **replace**, consider token revocation cascade.
+
+---
+
+## 9) Checklist
+
+- [x] Authorization requests (create & merge) documented
+- [x] PAR integration with short consent links
+- [x] End-to-end agent flow described  
+- [x] SET events specification
+- [x] Open authorization_details types
+- [x] REST API surface documented
+- [x] Security considerations outlined
+- [x] Mermaid sequence diagram provided
+
+---
+
+## Legacy API Compatibility
+
+For backward compatibility with existing MCP integrations, the following legacy endpoints are still supported:
+
+### MCP Tool Authorization (Legacy)
+```http
 POST /mcp/session/{sessionId}/authorize
-{
-  "toolName": "CreateFile"
-}
-
-// Response if unauthorized
-{
-  "authorized": false,
-  "missingScopes": ["tools:write"],
-  "requiredScopes": ["tools:write"]
-}
+Content-Type: application/json
+{ "toolName": "string" }
 ```
 
-### 3. Consent Request Generation
-
-If permissions are missing, the system generates a consent request:
-
-```javascript
-// Create consent request
-POST /mcp/consent/request
-{
-  "sessionId": "session-123",
-  "toolName": "CreateFile", 
-  "agentId": "agent-A1",
-  "reason": "Create configuration files for deployment",
-  "requiredScopes": ["tools:write"]
-}
-
-// Response
-{
-  "requestId": "req-456",
-  "consentUrl": "https://grants.example.com/grants/789/grant?session=session-123",
-  "expiresAt": "2024-01-15T11:00:00Z"
-}
-```
-
-### 4. User Consent Flow
-
-The user receives an authorization link and navigates to the consent interface:
-
-**Authorization Request Properties:**
-- **Grant ID**: Unique identifier for the permission grant
-- **Session ID**: Chat session requesting the permission
-- **Required Scopes**: List of OAuth 2.0 scopes needed
-- **Tool List**: Specific MCP tools requiring access
-- **Risk Level**: Security assessment (low/medium/high)
-- **Expiration**: Requested grant duration
-
-### 5. Consent Decision
-
-User approves or denies the consent request:
-
-```javascript
-// Approve consent
-POST /mcp/consent/{requestId}/decision
-{
-  "decision": "approve",
-  "approvedScopes": ["tools:write"],
-  "duration": "24h"
-}
-
-// Response
-{
-  "success": true,
-  "grantId": "789",
-  "accessToken": "mcp-token-xyz",
-  "expiresIn": 86400
-}
-```
-
-### 6. Authorized Tool Execution
-
-With valid grants, subsequent tool calls are authorized:
-
-```javascript
-// Tool call with session token
-POST /mcp
-Headers: {
-  "mcp-session-id": "session-123"
-}
-{
-  "jsonrpc": "2.0",
-  "method": "tools/call", 
-  "params": {
-    "name": "CreateFile",
-    "arguments": { "path": "/tmp/test.txt", "content": "Hello World" }
-  }
-}
-```
-
-## Authorization Detail Types
-
-The system supports Rich Authorization Requests (RAR) with structured authorization details:
-
-### Tool Access Type
-
-```json
-{
-  "type": "tool_access",
-  "actions": ["create", "read", "update", "delete"],
-  "locations": ["https://api.example.com/tools/file-system"],
-  "toolName": "File Manager",
-  "toolDescription": "Manages file operations",
-  "riskLevel": "medium",
-  "category": "file-system"
-}
-```
-
-### Data Access Type
-
-```json
-{
-  "type": "data_access", 
-  "actions": ["read", "export", "analyze"],
-  "locations": ["https://api.example.com/data/user-records"],
-  "toolName": "Data Analytics",
-  "toolDescription": "Access to user database for analysis",
-  "riskLevel": "high",
-  "category": "data-access"
-}
-```
-
-### System Administration Type
-
-```json
-{
-  "type": "system_admin",
-  "actions": ["configure", "restart", "monitor"],
-  "locations": ["https://api.example.com/admin/system"],
-  "toolName": "System Configuration", 
-  "toolDescription": "Administrative system access",
-  "riskLevel": "high",
-  "category": "system-admin"
-}
-```
-
-## API Endpoints
-
-### Consent Request Management
-
-#### Create Consent Request
+### Consent Request Management (Legacy)  
 ```http
 POST /mcp/consent/request
 Content-Type: application/json
-
 {
   "sessionId": "string",
   "toolName": "string", 
@@ -200,272 +240,26 @@ Content-Type: application/json
 }
 ```
 
-#### Process Consent Decision
-```http
-POST /mcp/consent/{requestId}/decision
-Content-Type: application/json
-
-{
-  "decision": "approve|deny",
-  "approvedScopes": ["string"],
-  "duration": "1h|8h|24h|1w|permanent"
-}
-```
-
-### Session Authorization
-
-#### Check Authorization
-```http
-POST /mcp/session/{sessionId}/authorize
-Content-Type: application/json
-
-{
-  "toolName": "string"
-}
-```
-
-#### Get Tool Scope Requirements
+### Tool Scope Discovery (Legacy)
 ```http
 GET /mcp/tool/{toolName}/scopes
 ```
 
-## Scope Mapping
+> **Migration Note**: These legacy endpoints will be deprecated in favor of the standardized OAuth 2.0 Grant Management + PAR flow. Existing integrations should migrate to use `authorization_details` and the `/authorize` endpoint with `grant_management_action=create|merge`.
 
-### Standard MCP Tool Scopes
-
-| Tool Category | Scope | Example Tools |
-|---------------|-------|---------------|
-| File System | `tools:read` | ListFiles, ReadFile, GetFileInfo |
-| File System | `tools:write` | CreateFile, UpdateFile, DeleteFile |
-| Data Access | `data:read` | QueryDatabase, ReadUserData |
-| Data Access | `data:write` | UpdateRecord, CreateRecord |
-| System Admin | `system:admin` | ConfigureSystem, RestartService |
-| Network | `network:access` | HttpRequest, ApiCall, WebhookTrigger |
-| Analytics | `analytics:generate` | GenerateReport, ExportData |
-
-### Risk Assessment
-
-**Low Risk** (`low`):
-- Read-only operations
-- Non-sensitive data access
-- Audited operations
-
-**Medium Risk** (`medium`):
-- Write operations on user data
-- File system modifications
-- Network requests
-
-**High Risk** (`high`):
-- System administration
-- Sensitive data access
-- Destructive operations
-
-## Security Considerations
-
-### Session Binding
-- Grants are bound to specific chat sessions
-- Tokens cannot be reused across sessions
-- Session expiration invalidates all grants
-
-### Temporal Constraints
-- Configurable grant expiration (1h to permanent)
-- Automatic cleanup of expired grants
-- User-controlled duration selection
-
-### Audit Trail
-- All authorization requests logged
-- Grant usage tracking
-- Consent decision history
-
-### Scope Enforcement
-- Granular permission model
-- Principle of least privilege
-- Runtime authorization checks
-
-## Error Handling
-
-### Common Error Responses
-
-#### Unauthorized Tool Call
-```json
-{
-  "jsonrpc": "2.0",
-  "error": {
-    "code": -32001,
-    "message": "Authorization required",
-    "data": {
-      "requiredScopes": ["tools:write"],
-      "consentUrl": "https://grants.example.com/grants/789/grant",
-      "sessionId": "session-123"
-    }
-  },
-  "id": 1
-}
-```
-
-#### Insufficient Scope
-```json
-{
-  "jsonrpc": "2.0", 
-  "error": {
-    "code": -32002,
-    "message": "Insufficient scope",
-    "data": {
-      "requiredScopes": ["tools:write"],
-      "grantedScopes": ["tools:read"],
-      "upgradeUrl": "https://grants.example.com/grants/789/grant"
-    }
-  },
-  "id": 1
-}
-```
-
-#### Expired Grant
-```json
-{
-  "jsonrpc": "2.0",
-  "error": {
-    "code": -32003,
-    "message": "Grant expired", 
-    "data": {
-      "expiredAt": "2024-01-15T10:30:00Z",
-      "renewUrl": "https://grants.example.com/grants/789/grant"
-    }
-  },
-  "id": 1
-}
-```
-
-## Implementation Examples
-
-### MCP Server Integration
-
-```javascript
-// MCP server tool definition with scope requirements
-const tools = {
-  CreateFile: {
-    description: "Create a new file",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string" },
-        content: { type: "string" }
-      }
-    },
-    // Authorization metadata
-    requiredScopes: ["tools:write"],
-    riskLevel: "medium",
-    category: "file-system"
-  }
-};
-```
-
-### Grant Validation Middleware
-
-```javascript
-// Middleware to validate grants before tool execution
-async function validateToolAccess(sessionId, toolName) {
-  const response = await fetch(`/mcp/session/${sessionId}/authorize`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ toolName })
-  });
-  
-  const result = await response.json();
-  
-  if (!result.authorized) {
-    throw new MCPError(-32001, "Authorization required", {
-      requiredScopes: result.requiredScopes,
-      consentUrl: result.consentUrl,
-      sessionId
-    });
-  }
-  
-  return result;
-}
-```
-
-### Consent UI Integration
-
-```javascript
-// React component for handling consent requests
-function ConsentRequest({ requestId, requiredScopes, toolName }) {
-  const handleApproval = async (decision) => {
-    await fetch(`/mcp/consent/${requestId}/decision`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        decision,
-        approvedScopes: decision === 'approve' ? requiredScopes : []
-      })
-    });
-  };
-  
-  return (
-    <div className="consent-modal">
-      <h2>Authorization Request</h2>
-      <p>Agent requests access to: {requiredScopes.join(', ')}</p>
-      <p>Tool: {toolName}</p>
-      <button onClick={() => handleApproval('approve')}>Grant</button>
-      <button onClick={() => handleApproval('deny')}>Deny</button>
-    </div>
-  );
-}
-```
-
-## Testing Strategy
-
-### Unit Tests
-- Grant CRUD operations
-- Scope validation logic
-- Session token management
-- Authorization detail processing
-
-### Integration Tests  
-- MCP middleware integration
-- Consent flow end-to-end
-- Error handling scenarios
-- Security enforcement
-
-### End-to-End Tests
-- Full agent workflow
-- Multi-tool scenarios
-- Permission escalation
-- Session management
-
-## Best Practices
-
-### For Developers
-
-1. **Scope Design**: Use granular, descriptive scopes
-2. **Error Handling**: Provide clear authorization URLs
-3. **Security**: Always validate session binding
-4. **UX**: Make consent requests user-friendly
-
-### For Agents
-
-1. **Minimal Permissions**: Request only necessary scopes
-2. **Clear Justification**: Explain why permissions are needed  
-3. **Graceful Degradation**: Handle denied permissions appropriately
-4. **Session Management**: Respect session boundaries
-
-### For Users
-
-1. **Informed Consent**: Review tool lists and risk levels
-2. **Time Limits**: Use shortest appropriate grant duration
-3. **Regular Review**: Audit active grants periodically
-4. **Immediate Revocation**: Revoke suspicious or unused grants
+---
 
 ## Related Documentation
 
 - [Consent Scenarios](../CONSENT_SCENARIOS.md) - User stories and acceptance criteria
-- [Grant Management API](../../GRANT_MANAGEMENT_API.md) - OAuth 2.0 Grant Management specification
+- [Grant Management API](../../GRANT_MANAGEMENT_API.md) - OAuth 2.0 Grant Management specification  
 - [Development Guide](../../DEV-GUIDE.md) - Integration development plan
 
 ## Compliance
 
 This implementation follows:
 - **OAuth 2.0 Grant Management** (RFC draft)
-- **Rich Authorization Requests** (RFC 9396)
+- **Rich Authorization Requests** (RFC 9396) 
+- **Pushed Authorization Requests** (RFC 9126)
+- **Security Event Token** (RFC 8417) for events
 - **Model Context Protocol** specification
-- **Security best practices** for consent management
