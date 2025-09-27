@@ -107,3 +107,24 @@ entity ToolGrantAuthorizationDetails:cuid {
    category: String(50); // Category (e.g., "file-system", "data-access", "system-admin", "network", "analytics")
  }
  
+// Authorization Requests for staging create/merge/replace flows
+entity AuthorizationRequests : cuid, managed {
+  status: RequestStatus;
+  grant: Association to Grants;
+  sessionId: String(255);
+  userId: String(255);
+  workloadId: String(255);
+  reason: String(1000);
+  authorizationDetails: String(8000); // JSON array per RAR
+  requestUri: String(1000); // PAR request_uri if used
+  shortCode: String(100); // optional short code for UX
+  expiresAt: Timestamp;
+}
+
+type RequestStatus: String(20) enum {
+  pending;
+  approved;
+  denied;
+  expired;
+}
+

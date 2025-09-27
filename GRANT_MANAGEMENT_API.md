@@ -130,6 +130,32 @@ Authorization: Bearer <access_token>
 - `404 Not Found`: Grant not found
 
 ### 3. Revoke Grant
+### 4. Authorization Requests (create/merge)
+
+POST `/api/requests` → stage a request for create/merge/replace with `authorization_details`.
+
+Request body example:
+
+```
+{
+  "sessionId": "abc-session-123",
+  "userId": "demo-user",
+  "workloadId": "mcp-middleware",
+  "reason": "Add a task that modifies server state",
+  "authorization_details": [ { "type": "mcp-tools", "server": "https://mcp.example.net", "tools": ["cloud.view"], "actions": ["run"], "locations": ["eu1"] } ]
+}
+```
+
+Response:
+
+```
+{ "requestId": "..." }
+```
+
+POST `/api/requests/{id}/approve` or `/api/requests/{id}/deny`
+
+Response: `{ "success": true }`
+
 
 **DELETE** `/api/grants/{grant_id}`
 

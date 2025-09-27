@@ -16,6 +16,8 @@ service GrantManagementService {
   entity Identity as projection on grants.Identity;
   entity GrantScopes as projection on grants.GrantScopes;
   entity ToolGrantAuthorizationDetails as projection on grants.ToolGrantAuthorizationDetails;
+  @path: '/requests'
+  entity AuthorizationRequests as projection on grants.AuthorizationRequests;
   
   // Server metadata endpoint (Section 7.1)
   @requires: 'authenticated-user'
@@ -24,6 +26,10 @@ service GrantManagementService {
   // Get available authorization detail types
   @requires: 'grant_management_query'
   function getAuthorizationDetailTypes() returns array of AuthorizationDetailTypeInfo;
+  @requires: 'grant_management_create'
+  action CreateRequest(data: AuthorizationRequestInput) returns AuthorizationRequestResponse;
+  @requires: 'grant_management_update'
+  action DecideRequest(ID: String, approve: Boolean, actor: String, note: String) returns RequestDecisionResponse;
   
   // Note: Token management (issuing/revoking access/refresh tokens) is NOT part of 
   // the OAuth 2.0 Grant Management API specification. Tokens are managed through:
@@ -57,6 +63,24 @@ type AuthorizationDetailTypeInfo {
   category: String;
   actions: array of String;
   locations: array of String;
+}
+
+// Request and decision payloads
+type AuthorizationRequestInput {
+  sessionId: String;
+  userId: String;
+  workloadId: String;
+  reason: String;
+  grantId: String; // optional when merging into existing grant
+  authorization_details: LargeString; // JSON array per RAR
+}
+
+type AuthorizationRequestResponse {
+  requestId: String;
+}
+
+type RequestDecisionResponse {
+  success: Boolean;
 }
 
 // Note: Entity projections automatically provide standard CRUD operations:

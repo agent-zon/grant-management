@@ -46,6 +46,64 @@ class GrantManagementService extends cds.ApplicationService {
       },
     };
   }
+
+  async init() {
+    const { AuthorizationRequests, Grants } = this.entities;
+
+    this.on('CreateRequest', async (req) => {
+      const { sessionId, userId, workloadId, reason, grantId, authorization_details } = req.data;
+
+      const expiresAt = new Date(Date.now() + 1000 * 60 * 15); // 15 minutes default
+      const shortCode = Math.random().toString(36).slice(2, 8);
+
+      const request = await INSERT.into(AuthorizationRequests).entries({
+        status: 'pending',
+        sessionId,
+        userId,
+        workloadId,
+        reason,
+        authorizationDetails: authorization_details,
+        requestUri: null,
+        shortCode,
+        expiresAt,
+        grant_ID: grantId || null,
+      }).returning('ID');
+
+      return { requestId: request.ID };
+    });
+
+    this.on('DecideRequest', async (req) => {
+      const { ID, approve, actor } = req.data;
+      const request = await SELECT.one.from(AuthorizationRequests, ID);
+      if (!request) return req.error(404, 'not_found');
+
+      if (request.status !== 'pending') return { success: false };
+
+      if (!approve) {
+        await UPDATE(AuthorizationRequests, ID).with({ status: 'denied' });
+        return { success: true };
+      }
+
+      // Approve → create or update a Grant
+      let grantId = request.grant_ID;
+      if (!grantId) {
+        const created = await INSERT.into(Grants).entries({
+          status: 'active',
+          sessionId: request.sessionId,
+          subject_ID: null,
+        }).returning('ID');
+        grantId = created.ID;
+      }
+
+      // Persist authorization details rows (type-agnostic as JSON string on ToolGrantAuthorizationDetails)
+      // Keep simple: store as one blob on request; production may denormalize
+
+      await UPDATE(AuthorizationRequests, ID).with({ status: 'approved', grant_ID: grantId });
+      return { success: true };
+    });
+
+    await super.init();
+  }
 }
 
 export default GrantManagementService;
