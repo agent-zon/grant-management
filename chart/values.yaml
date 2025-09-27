@@ -154,27 +154,7 @@ destination:
   parameters:
     version: 1.0.0
 
-postgresql:
-  auth:
-    enablePostgresUser: true
-    postgresPassword: "postgres"
-    username: "postgres"
-    password: "postgres"
-    database: "postgres"
-  primary:
-    persistence:
-      enabled: true
-      size: 8Gi
-    resources:
-      limits:
-        memory: 512Mi
-        cpu: 500m
-      requests:
-        memory: 256Mi
-        cpu: 250m
-    service:
-      type: ClusterIP
-      ports:
-        postgresql: 5432
-  metrics:
-    enabled: true
+ 
+postgres:
+  serviceOfferingName: postgresql-db
+  servicePlanName: shared
