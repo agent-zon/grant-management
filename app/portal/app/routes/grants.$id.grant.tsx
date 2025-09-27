@@ -4,24 +4,26 @@ import { Form, Link, redirect } from "react-router";
 import type { Route } from "./+types/grants.$id.grant";
 export { loader } from "./grants.$id._index";
 import { type ConsentGrant, grants } from "../grants.db";
+import { getGrant, updateGrant } from "../cds-api";
 export async function action({ request, params }: Route.ActionArgs) {
   const id = (params as { id: string }).id;
   const formData = await request.formData();
   const duration = formData.get("duration") as string;
   const consentRequestId = formData.get("consentRequestId") as string;
   const requiredScopes = formData.get("requiredScopes") as string;
-  const grant = grants.find((g) => g.id === id);
-  if (grant) {
-    grant.granted = true;
-    grant.grantedAt = new Date().toISOString();
-    grant.expiresAt =
-      grant.expiresAt ||
-      new Date(Date.now() + parseInt(duration) * 60 * 60 * 1000).toISOString();
-    grant.sessionId = grant.sessionId || consentRequestId;
-    grant.usage = 0;
-    grant.lastUsed = new Date().toISOString();
-    grant.toolsIncluded = grant.toolsIncluded || requiredScopes.split(",");
-  }
+  const expiresAt =
+    duration === "permanent"
+      ? null
+      : new Date(Date.now() + parseInt(duration) * 60 * 60 * 1000).toISOString();
+  await updateGrant(
+    id,
+    {
+      status: "active",
+      expiresAt: expiresAt ?? undefined,
+      sessionId: consentRequestId || undefined,
+    },
+    request,
+  );
 
   const grantUrl = new URL(request.url);
   grantUrl.pathname = grantUrl.pathname.replace(/\/grant$/, "");

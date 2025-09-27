@@ -20,6 +20,7 @@ import {
 import { Form, useLoaderData, useActionData, Link } from "react-router";
 import type { Route } from "./+types/grants.$id._index";
 import { grants } from "../grants.db";
+import { getGrant, updateGrant } from "../cds-api";
 
 export function meta({ data }: Route.MetaArgs) {
   const grant = data?.grant;
@@ -32,28 +33,24 @@ export function meta({ data }: Route.MetaArgs) {
   ];
 }
 
-export function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params, request }: Route.LoaderArgs) {
   const { id } = params;
-  const grant = grants.find((g) => g.id === id);
-
-  if (!grant) {
-    throw new Response("Consent grant not found", { status: 404 });
-  }
-
+  if (!id) throw new Response("Missing id", { status: 400 });
+  const grant = await getGrant(id, request);
   return { grant };
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
   const { id } = params;
-  const data = await request.json(); // Extracts the JSON body
-  const item = grants.find((g) => g.id === id);
-  if (item) {
-    item.granted = data.granted;
-    item.grantedAt = data.grantedAt;
-    item.expiresAt = data.expiresAt;
-    item.sessionId = data.sessionId;
-  }
-  return item;
+  if (!id) throw new Response("Missing id", { status: 400 });
+  const payload = await request.json();
+  const status = payload.granted === true ? "active" : payload.granted === false ? "revoked" : undefined;
+  const body: any = {};
+  if (status) body.status = status;
+  if (payload.expiresAt !== undefined) body.expiresAt = payload.expiresAt;
+  if (payload.sessionId !== undefined) body.sessionId = payload.sessionId;
+  const updated = await updateGrant(id, body, request);
+  return updated;
 }
 
 export default function GrantDetail({ loaderData }: Route.ComponentProps) {
