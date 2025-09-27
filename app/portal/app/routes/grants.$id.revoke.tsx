@@ -7,14 +7,10 @@ import {
   Shield,
   XCircle,
 } from "lucide-react";
-import {
-  Form,
-  Link,
-  redirect
-} from "react-router";
-import type { Route } from "./+types/grants.$id.revoke.ts";
-import { grants } from "../grants.db.ts";
-export { loader } from "./grants.$id._index.tsx";
+import { Form, Link, redirect } from "react-router";
+import type { Route } from "./+types/grants.$id.revoke";
+import { grants } from "../grants.db";
+export { loader } from "./grants.$id._index";
 // Mock data - same as main consent route
 
 export function meta({ params, data }: Route.MetaArgs) {
@@ -41,7 +37,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   const toRedirect = requestUrl.searchParams.get("redirect");
   if (redirect_url || toRedirect) {
     return redirect(
-      redirect_url ? `${redirect_url}?revoked=${id}` : grantUrl.href,
+      redirect_url ? `${redirect_url}?revoked=${id}` : grantUrl.href
     );
   }
 
@@ -101,9 +97,11 @@ export default function RevokeConsent({ loaderData }: Route.ComponentProps) {
                       : "bg-red-500/20 text-red-400"
                   }`}
                 >
-                  {grant.granted
-                    ? <Shield className="w-4 h-4" />
-                    : <Lock className="w-4 h-4" />}
+                  {grant.granted ? (
+                    <Shield className="w-4 h-4" />
+                  ) : (
+                    <Lock className="w-4 h-4" />
+                  )}
                   <span className="text-sm">
                     {grant.granted ? "Currently Granted" : "Currently Denied"}
                   </span>
@@ -173,74 +171,70 @@ export default function RevokeConsent({ loaderData }: Route.ComponentProps) {
             </div>
 
             {/* Only show revoke form if currently granted */}
-            {grant.granted
-              ? (
-                <Form method="post" className="space-y-6">
-                  <input type="hidden" name="intent" value="revoke-consent" />
+            {grant.granted ? (
+              <Form method="post" className="space-y-6">
+                <input type="hidden" name="intent" value="revoke-consent" />
 
-                  <div>
-                    <label className="flex items-center space-x-3 mb-4">
-                      <input
-                        type="checkbox"
-                        name="immediate"
-                        value="true"
-                        defaultChecked
-                        className="w-4 h-4 text-red-600 bg-gray-700 border-gray-600 focus:ring-red-500"
-                      />
-                      <span className="text-sm text-gray-300">
-                        Revoke immediately and terminate active sessions
-                      </span>
-                    </label>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="reason"
-                      className="block text-sm font-medium text-gray-300 mb-2"
-                    >
-                      Reason for Revocation (Optional)
-                    </label>
-                    <textarea
-                      id="reason"
-                      name="reason"
-                      rows={3}
-                      placeholder="Explain why you're revoking this permission..."
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                <div>
+                  <label className="flex items-center space-x-3 mb-4">
+                    <input
+                      type="checkbox"
+                      name="immediate"
+                      value="true"
+                      defaultChecked
+                      className="w-4 h-4 text-red-600 bg-gray-700 border-gray-600 focus:ring-red-500"
                     />
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex justify-end space-x-4">
-                    <Link
-                      to="/grants"
-                      className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
-                    >
-                      Cancel
-                    </Link>
-                    <button
-                      type="submit"
-                      className="flex items-center space-x-2 px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                    >
-                      <Lock className="w-4 h-4" />
-                      <span>Revoke Consent</span>
-                    </button>
-                  </div>
-                </Form>
-              )
-              : (
-                <div className="text-center py-8">
-                  <Lock className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                  <p className="text-gray-400">
-                    This consent is already revoked
-                  </p>
-                  <Link
-                    to={`/grants/${grant.id}/grant`}
-                    className="inline-block mt-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                  >
-                    Grant Access Instead
-                  </Link>
+                    <span className="text-sm text-gray-300">
+                      Revoke immediately and terminate active sessions
+                    </span>
+                  </label>
                 </div>
-              )}
+
+                <div>
+                  <label
+                    htmlFor="reason"
+                    className="block text-sm font-medium text-gray-300 mb-2"
+                  >
+                    Reason for Revocation (Optional)
+                  </label>
+                  <textarea
+                    id="reason"
+                    name="reason"
+                    rows={3}
+                    placeholder="Explain why you're revoking this permission..."
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-4">
+                  <Link
+                    to="/grants"
+                    className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </Link>
+                  <button
+                    type="submit"
+                    className="flex items-center space-x-2 px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                  >
+                    <Lock className="w-4 h-4" />
+                    <span>Revoke Consent</span>
+                  </button>
+                </div>
+              </Form>
+            ) : (
+              <div className="text-center py-8">
+                <Lock className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+                <p className="text-gray-400">This consent is already revoked</p>
+                <Link
+                  to={`/grants/${grant.id}/grant`}
+                  className="inline-block mt-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                >
+                  Grant Access Instead
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Active Sessions Warning */}
@@ -253,9 +247,9 @@ export default function RevokeConsent({ loaderData }: Route.ComponentProps) {
                     Active Session Warning
                   </h4>
                   <p className="text-xs text-yellow-300">
-                    Session {grant.sessionId}{" "}
-                    is currently using this permission. Revoking will
-                    immediately terminate access for this session.
+                    Session {grant.sessionId} is currently using this
+                    permission. Revoking will immediately terminate access for
+                    this session.
                   </p>
                 </div>
               </div>

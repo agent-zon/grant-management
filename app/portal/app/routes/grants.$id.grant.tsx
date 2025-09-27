@@ -1,19 +1,9 @@
 import React from "react";
-import {
-  ArrowLeft,
-  CheckCircle,
-  Key,
-  Shield,
-  Unlock,
-} from "lucide-react";
-import {
-  Form,
-  Link,
-  redirect,
-} from "react-router";
-import type { Route } from "./+types/grants.$id.grant.ts";
-export { loader } from "./grants.$id._index.tsx";
-import { type ConsentGrant, grants } from "../grants.db.ts";
+import { ArrowLeft, CheckCircle, Key, Shield, Unlock } from "lucide-react";
+import { Form, Link, redirect } from "react-router";
+import type { Route } from "./+types/grants.$id.grant";
+export { loader } from "./grants.$id._index";
+import { type ConsentGrant, grants } from "../grants.db";
 export async function action({ request, params }: Route.ActionArgs) {
   const id = (params as { id: string }).id;
   const formData = await request.formData();
@@ -24,7 +14,8 @@ export async function action({ request, params }: Route.ActionArgs) {
   if (grant) {
     grant.granted = true;
     grant.grantedAt = new Date().toISOString();
-    grant.expiresAt = grant.expiresAt ||
+    grant.expiresAt =
+      grant.expiresAt ||
       new Date(Date.now() + parseInt(duration) * 60 * 60 * 1000).toISOString();
     grant.sessionId = grant.sessionId || consentRequestId;
     grant.usage = 0;
@@ -41,7 +32,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     return redirect(
       redirect_url
         ? `${redirect_url}?granted=${id}&scope=${requiredScopes}`
-        : grantUrl.href,
+        : grantUrl.href
     );
   }
 
@@ -55,12 +46,8 @@ export async function action({ request, params }: Route.ActionArgs) {
   };
 }
 
-export default function GrantConsent(
-  { loaderData, params }: Route.ComponentProps,
-) {
+export default function GrantConsent({ loaderData }: Route.ComponentProps) {
   const { grant } = loaderData;
-
-  const redirect_url = (params as { redirect_url: string }).redirect_url;
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -103,15 +90,14 @@ export default function GrantConsent(
                     Currently Active
                   </h4>
                   <p className="text-xs text-green-300">
-                    Granted {grant.grantedAt
+                    Granted{" "}
+                    {grant.grantedAt
                       ? new Date(grant.grantedAt).toLocaleString()
                       : "recently"}
                     {grant.expiresAt &&
-                      ` • Expires ${
-                        new Date(
-                          grant.expiresAt,
-                        ).toLocaleString()
-                      }`}
+                      ` • Expires ${new Date(
+                        grant.expiresAt
+                      ).toLocaleString()}`}
                   </p>
                 </div>
               </div>
@@ -140,9 +126,11 @@ export default function GrantConsent(
                   : "bg-red-500/20 text-red-400"
               }`}
             >
-              {grant.granted
-                ? <CheckCircle className="w-4 h-4" />
-                : <Shield className="w-4 h-4" />}
+              {grant.granted ? (
+                <CheckCircle className="w-4 h-4" />
+              ) : (
+                <Shield className="w-4 h-4" />
+              )}
               <span className="text-sm">
                 {grant.granted ? "Currently Granted" : "Currently Denied"}
               </span>
@@ -263,24 +251,12 @@ export default function GrantConsent(
 
           {/* Action Buttons */}
           <div className="flex justify-end space-x-4">
-            {redirect_url
-              ? (
-                <Link
-                  type="button"
-                  to={redirect_url}
-                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
-                >
-                  Cancel
-                </Link>
-              )
-              : (
-                <Link
-                  to="/grants"
-                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
-                >
-                  Cancel
-                </Link>
-              )}
+            <Link
+              to="/grants"
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+            >
+              Cancel
+            </Link>
             <button
               type="submit"
               className="flex items-center space-x-2 px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"

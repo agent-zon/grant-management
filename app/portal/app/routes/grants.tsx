@@ -14,10 +14,9 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useActionData, useFetcher, Link, useLocation } from "react-router";
-import type { Route } from "./+types/grants.ts";
-import type { ConsentGrant } from "./grants.$id._index.tsx";
-import { action as grantAction } from "./grants.$id.grant.tsx";
-import { generateConsentData } from "../grants.db.ts";
+import type { Route } from "./+types/grants";
+import type { ConsentGrant } from "../grants.db";
+import { generateConsentData } from "../grants.db";
 
 // interface ConsentGrant {
 //   id: string;
@@ -35,7 +34,6 @@ import { generateConsentData } from "../grants.db.ts";
 //   riskLevel: 'low' | 'medium' | 'high';
 //   category: 'file-system' | 'data-access' | 'system-admin' | 'network' | 'analytics';
 // }
-
 
 // Store current state in memory (in a real app, this would be in database)
 const currentConsentData = generateConsentData();
@@ -116,8 +114,8 @@ export default function ConsentManagement({
                 {workloadFilter
                   ? `Workload ${getWorkloadName(workloadFilter)} Grants`
                   : sessionFilter
-                  ? `Session ${sessionFilter} Grants`
-                  : "Grant Management Dashboard"}
+                    ? `Session ${sessionFilter} Grants`
+                    : "Grant Management Dashboard"}
               </h2>
               {(workloadFilter || sessionFilter) && (
                 <p className="text-sm text-blue-400 mt-1">
@@ -142,8 +140,6 @@ export default function ConsentManagement({
             </div>
           </div>
         </div>
-
-         
 
         {/* Consent Grants */}
         <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6">
@@ -323,7 +319,6 @@ export function GrantCard(grant: ConsentGrant) {
               <div>
                 <p className="text-xs text-gray-400">Session</p>
                 <div className="flex items-center space-x-2">
-                 
                   <Link
                     to={`/grants?session=${grant.sessionId}`}
                     className="text-sm text-blue-400 hover:text-blue-300 underline transition-colors duration-200"
@@ -340,7 +335,7 @@ export function GrantCard(grant: ConsentGrant) {
           <div>
             <p className="text-xs text-gray-400 mb-2">Included Tools</p>
             <div className="flex flex-wrap gap-1">
-              {grant.toolsIncluded.map((tool, idx) => (
+              {grant.toolsIncluded.map((tool: string, idx: number) => (
                 <span
                   key={idx}
                   className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded"
@@ -385,5 +380,4 @@ export function GrantCard(grant: ConsentGrant) {
         return "text-gray-500 bg-gray-100 dark:bg-gray-900/20";
     }
   }
- 
 }

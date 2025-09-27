@@ -1,6 +1,10 @@
 // Custom logo and branding for Agent Grants platform
 
-export function Welcome() {
+interface WelcomeProps {
+  nodeVersion: string;
+}
+
+export function Welcome({ nodeVersion }: WelcomeProps) {
   return (
     <main className="flex items-center justify-center pt-16 pb-4">
       <div className="flex-1 flex flex-col items-center gap-16 min-h-0">
@@ -57,7 +61,7 @@ export function Welcome() {
                   </p>
                 </div>
               </div>
-              
+
               {/* SAP AI Security Cloud Badge */}
               <div className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full border border-blue-200 dark:border-blue-700">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -84,10 +88,11 @@ export function Welcome() {
                 </span>
               </div>
             </div>
-            
+
             <div className="space-y-1">
               <p className="text-xs text-gray-500 dark:text-gray-400 text-center mb-4">
-                Secure AI agent permission management with consent-aware access control
+                Secure AI agent permission management with consent-aware access
+                control
               </p>
             </div>
             <ul className="space-y-2">
@@ -96,8 +101,8 @@ export function Welcome() {
                   <a
                     className="group flex items-center gap-3 self-stretch p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 border border-transparent hover:border-blue-200 dark:hover:border-blue-700"
                     href={href}
-                    target={href.startsWith('http') ? '_blank' : undefined}
-                    rel={href.startsWith('http') ? 'noreferrer' : undefined}
+                    target={href.startsWith("http") ? "_blank" : undefined}
+                    rel={href.startsWith("http") ? "noreferrer" : undefined}
                   >
                     <div className="flex-shrink-0 p-2 rounded-lg bg-white dark:bg-gray-600 shadow-sm group-hover:shadow-md transition-shadow">
                       {icon}
@@ -132,7 +137,7 @@ export function Welcome() {
               ))}
             </ul>
           </nav>
-          
+
           {/* Footer Information */}
           <div className="text-center space-y-3">
             <div className="flex items-center justify-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
@@ -143,6 +148,7 @@ export function Welcome() {
               <span>•</span>
               <span>v2.1.0</span>
               <span>•</span>
+              <span>Node {nodeVersion}</span>
             </div>
             <p className="text-xs text-gray-400 dark:text-gray-500">
               Enterprise-grade AI agent security and compliance platform
@@ -168,11 +174,11 @@ const resources = [
         fill="none"
         className="stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300"
       >
-        <path d="M9 12l2 2 4-4"/>
-        <path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3"/>
-        <path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3"/>
-        <path d="M13 12h3a2 2 0 0 1 2 2v1"/>
-        <path d="M13 12h-3a2 2 0 0 0-2 2v1"/>
+        <path d="M9 12l2 2 4-4" />
+        <path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3" />
+        <path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3" />
+        <path d="M13 12h3a2 2 0 0 1 2 2v1" />
+        <path d="M13 12h-3a2 2 0 0 0-2 2v1" />
       </svg>
     ),
   },
@@ -189,9 +195,9 @@ const resources = [
         fill="none"
         className="stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300"
       >
-        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
-        <circle cx="12" cy="16" r="1"/>
-        <path d="m7 11V7a5 5 0 0 1 10 0v4"/>
+        <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+        <circle cx="12" cy="16" r="1" />
+        <path d="m7 11V7a5 5 0 0 1 10 0v4" />
       </svg>
     ),
   },
@@ -208,11 +214,11 @@ const resources = [
         fill="none"
         className="stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300"
       >
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-        <path d="M8 12h.01"/>
-        <path d="M12 12h.01"/>
-        <path d="M16 12h.01"/>
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        <path d="M8 12h.01" />
+        <path d="M12 12h.01" />
+        <path d="M16 12h.01" />
       </svg>
     ),
-  }
+  },
 ];

@@ -1,19 +1,23 @@
-import type { Route } from "./+types/home.ts";
-import { Welcome } from "../welcome/welcome.tsx";
+import type { Route } from "./+types/home";
+import { Welcome } from "../welcome/welcome";
 
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Agent Grants - Grant Management Platform" },
-    { name: "description", content: "Secure AI agent permission management with consent-aware access control" },
+    {
+      name: "description",
+      content:
+        "Secure AI agent permission management with consent-aware access control",
+    },
   ];
 }
 
 export function loader() {
   return {
-    denoVersion: Deno.version.deno,
+    nodeVersion: process.version,
   };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  return <Welcome denoVersion={loaderData.denoVersion} />;
+  return <Welcome nodeVersion={loaderData.nodeVersion} />;
 }
