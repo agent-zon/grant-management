@@ -1,0 +1,490 @@
+# MDC — Authorization Requests (Create & Merge) + Agent Flow & PAR
+
+**Version:** 1.0  
+**Repo:** `agent-zon/grant-management` (branch: `feature/request-api`)  
+**Owner:** Grants & Authorization  
+**Last updated:** 2025-09-22
+
+> Additive to the other MDC docs: this file shows concrete **authorization requests** for **create** and **merge**, how the **agent flow** works (APIs + events), and how we use **Pushed Authorization Requests (PAR)** to produce short consent links. Types for `authorization_details` are open‑ended (e.g., `mcp-tools`, `fs`, `api`, or custom). Validation is done by the **consuming side**; this service provides secure grant lifecycle and consent rendering.
+
+---
+
+## 1) Quick visual
+
+**Create** (initial grant):
+
+```mermaid
+graph LR
+    A[Agent] --> B[Create Request]
+    B --> C[Default Tools]
+    C --> D[Grant ID]
+    D --> E[Token Response]
+```
+
+**Merge** (ask for more later):
+
+```mermaid
+graph LR
+    A[Agent] --> B[New Action]
+    B --> C[Guard Check]
+    C --> D[Missing Permission]
+    D --> E[Merge Request]
+    E --> F[Updated Grant]
+```
+
+---
+
+## 2) Authorization Requests
+
+### 2.1 Initial authorization (create)
+
+Client requests defaults (e.g., view cloud resources + application logs). The **grant** returned in the token response carries a `grant_id` and `authorization_details` snapshot persisted by our service.
+
+**Readable `authorization_details` JSON**
+
+```json
+[
+  { 
+    "type": "mcp-tools", 
+    "server": "https://mcp.example.net", 
+    "tools": ["cloud.view","logs.view"], 
+    "actions": ["run"], 
+    "locations": ["eu1"] 
+  },
+  { 
+    "type": "fs", 
+    "root": "/workspace", 
+    "resources": ["/workspace/logs/*"], 
+    "actions": ["read"] 
+  },
+  { 
+    "type": "api", 
+    "resources": ["urn:svc:cloud"], 
+    "actions": ["read"] 
+  }
+]
+```
+
+**Front‑channel (GET /authorize) example**
+
+```http
+GET /authorize?response_type=code&client_id=client-123&redirect_uri=https%3A%2F%2Fapp.example.com%2Fcb
+  &scope=openid%20grant_management_query
+  &grant_management_action=create
+  &authorization_details=%5B%7B%22type%22%3A%22mcp-tools%22%2C%22server%22%3A%22https%3A%2F%2Fmcp.example.net%22%2C%22tools%22%3A%5B%22cloud.view%22%2C%22logs.view%22%5D%2C%22actions%22%3A%5B%22run%22%5D%2C%22locations%22%3A%5B%22eu1%22%5D%7D%2C%7B%22type%22%3A%22fs%22%2C%22root%22%3A%22%2Fworkspace%22%2C%22resources%22%3A%5B%22%2Fworkspace%2Flogs%2F*%22%5D%2C%22actions%22%3A%5B%22read%22%5D%7D%2C%7B%22type%22%3A%22api%22%2C%22resources%22%3A%5B%22urn%3Asvc%3Acloud%22%5D%2C%22actions%22%3A%5B%22read%22%5D%7D%5D
+```
+
+**Token response (excerpt)**
+
+```json
+{ 
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", 
+  "refresh_token": "tGzv3JOkF0XG5Qx2TlKWIA", 
+  "grant_id": "gnt_123" 
+}
+```
+
+### 2.2 Expanding later (merge)
+
+When the security guard detects the agent tries to **create** a new resource (not covered by the current grant), it triggers a **merge**.
+
+**Delta authorization we ask for**
+
+```json
+[
+  { 
+    "type": "mcp-tools", 
+    "server": "https://mcp.example.net", 
+    "tools": ["cloud.create"], 
+    "actions": ["run"], 
+    "locations": ["eu1"] 
+  },
+  { 
+    "type": "api", 
+    "resources": ["urn:svc:cloud:resource"], 
+    "actions": ["create","write"] 
+  }
+]
+```
+
+**Front‑channel (GET /authorize) merge**
+
+```http
+GET /authorize?response_type=code&client_id=client-123&redirect_uri=https%3A%2F%2Fapp.example.com%2Fcb
+  &scope=openid%20grant_management_query
+  &grant_id=gnt_123
+  &grant_management_action=merge
+  &authorization_details=%5B%7B%22type%22%3A%22mcp-tools%22%2C%22server%22%3A%22https%3A%2F%2Fmcp.example.net%22%2C%22tools%22%3A%5B%22cloud.create%22%5D%2C%22actions%22%3A%5B%22run%22%5D%2C%22locations%22%3A%5B%22eu1%22%5D%7D%2C%7B%22type%22%3A%22api%22%2C%22resources%22%3A%5B%22urn%3Asvc%3Acloud%3Aresource%22%5D%2C%22actions%22%3A%5B%22create%22%2C%22write%22%5D%7D%5D
+```
+
+**Token response (excerpt)**
+
+```json
+{ 
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", 
+  "refresh_token": "tGzv3JOkF0XG5Qx2TlKWIA", 
+  "grant_id": "gnt_123" 
+}
+```
+
+> Use **replace** instead of merge to *narrow* the set (authoritative reset). See the Protocol‑Aligned Flows doc for semantics.
+
+### 2.3 PAR (pushed authorization request)
+
+For short, tamper‑proof consent links, push the same payload to the AS first, then redirect with the returned `request_uri`.
+
+**POST /as/par (create)**
+
+```http
+POST /as/par
+Content-Type: application/x-www-form-urlencoded
+
+response_type=code&client_id=client-123&redirect_uri=https%3A%2F%2Fapp.example.com%2Fcb&
+code_challenge=…&code_challenge_method=S256&
+grant_management_action=create&
+authorization_details=[{"type":"mcp-tools","server":"https://mcp.example.net","tools":["cloud.view","logs.view"],"actions":["run"],"locations":["eu1"]}]
+```
+
+**201** `{ "request_uri": "urn:…:request_uri:abc", "expires_in": 90 }`
+
+**Redirect**
+
+```http
+GET /authorize?client_id=client-123&request_uri=urn%3A…%3Arequest_uri%3Aabc
+```
+
+**POST /as/par (merge)**
+
+```http
+POST /as/par
+Content-Type: application/x-www-form-urlencoded
+
+response_type=code&client_id=client-123&redirect_uri=https%3A%2F%2Fapp.example.com%2Fcb&
+code_challenge=…&code_challenge_method=S256&
+grant_id=gnt_123&grant_management_action=merge&
+authorization_details=[{"type":"api","resources":["urn:svc:cloud:resource"],"actions":["create","write"]}]
+```
+
+**Short link pattern** (nice UX): `https://auth.example.com/c/abc` → resolves to the `request_uri` flow.
+
+---
+
+## 3) End‑to‑end Agent Flow (story)
+
+1. **Bootstrap** — Agent signs in and performs **create** with default tools (view cloud, view logs). Token contains `grant_id=gnt_123`. Our service stores the grant and `authorization_details` snapshot.
+2. **Operate** — Agent calls MCP tools and APIs that are **covered** (view/read). OK.
+3. **Guard check** — Agent attempts **create** (e.g., provision resource). Security guard compares intent vs current `authorization_details` and finds **missing** capability.
+4. **Stage request** (optional HITL) — `POST /api/requests` (delta). We send SET **Request Created** and render a **consent screen** showing the diff.
+5. **PAR** — We push the merge request to `/as/par` → `request_uri`, generate a **short link** and notify the user/admin UI.
+6. **Decision** — Approve → we complete authorization with **merge** using the same `grant_id`.
+7. **Persist & notify** — We update stored grant view and emit **Grant Updated (merge)** + OAuth **Token Issued**. (If denied/expired: send matching events.)
+8. **Resume** — Agent retries the action; now it's permitted.
+
+---
+
+## 4) Events (what we emit)
+
+* **SET envelope** for all events; one URI per `events` claim.
+* **Request lifecycle**: `request-created`, `request-approved|denied|expired` (our namespace)
+* **Grant lifecycle**: `grant-created|updated|replaced|revoked` (our namespace)
+* **Token lifecycle**: `token-issued`, `token-revoked`, `tokens-revoked` (OAuth Event Types)
+* **Consent (optional)**: a consent event payload including a `consentUri` list that references the approved terms/diff.
+
+*Minimal examples are in the Events MDC; reuse them here with the delta payloads for merge.*
+
+### 4.1 Request Created Event
+
+```json
+{
+  "iss": "https://grant-management.example.com",
+  "aud": "https://agent.example.com",
+  "iat": 1640995200,
+  "jti": "evt_123",
+  "events": {
+    "https://grant-management.example.com/events/request-created": {
+      "request_id": "req_456",
+      "grant_id": "gnt_123",
+      "authorization_details": [
+        {
+          "type": "mcp-tools",
+          "server": "https://mcp.example.net",
+          "tools": ["cloud.create"],
+          "actions": ["run"],
+          "locations": ["eu1"]
+        }
+      ],
+      "diff": {
+        "added": [
+          {
+            "type": "mcp-tools",
+            "tools": ["cloud.create"],
+            "actions": ["run"]
+          }
+        ],
+        "existing": [
+          {
+            "type": "mcp-tools",
+            "tools": ["cloud.view", "logs.view"],
+            "actions": ["run"]
+          }
+        ]
+      },
+      "consent_uri": "https://auth.example.com/c/abc"
+    }
+  }
+}
+```
+
+### 4.2 Grant Updated Event
+
+```json
+{
+  "iss": "https://grant-management.example.com",
+  "aud": "https://agent.example.com",
+  "iat": 1640995300,
+  "jti": "evt_124",
+  "events": {
+    "https://grant-management.example.com/events/grant-updated": {
+      "grant_id": "gnt_123",
+      "action": "merge",
+      "authorization_details": [
+        {
+          "type": "mcp-tools",
+          "server": "https://mcp.example.net",
+          "tools": ["cloud.view", "logs.view", "cloud.create"],
+          "actions": ["run"],
+          "locations": ["eu1"]
+        }
+      ],
+      "updated_at": "2024-01-15T10:30:00Z"
+    }
+  }
+}
+```
+
+---
+
+## 5) `authorization_details` types (open set)
+
+Grant Management is **type‑agnostic**. Common patterns:
+
+* `mcp-tools` — fields: `server`, `tools[]`, `actions[]`, `locations[]`
+* `fs` — fields: `root`, `resources[]` (globs/URNs), `actions[]` (`read`, `write`, `create`, `delete`)
+* `api` — fields: `resources[]` (URNs or URLs), `actions[]`, optional `verbs[]`, `audience`
+* **custom** — any domain schema; consumers validate and enforce.
+
+> Consumers (MCP servers, file systems, APIs, Security Guards) are responsible for **enforcement**. This service ensures **secure lifecycle, audit, and consent UX**.
+
+### 5.1 MCP Tools Type
+
+```json
+{
+  "type": "mcp-tools",
+  "server": "https://mcp.example.net",
+  "tools": ["cloud.view", "logs.view", "cloud.create"],
+  "actions": ["run"],
+  "locations": ["eu1", "us-west-2"]
+}
+```
+
+### 5.2 File System Type
+
+```json
+{
+  "type": "fs",
+  "root": "/workspace",
+  "resources": ["/workspace/logs/*", "/workspace/data/**"],
+  "actions": ["read", "write", "create", "delete"]
+}
+```
+
+### 5.3 API Type
+
+```json
+{
+  "type": "api",
+  "resources": ["urn:svc:cloud", "urn:svc:cloud:resource"],
+  "actions": ["read", "create", "write"],
+  "verbs": ["GET", "POST", "PUT"],
+  "audience": "https://api.example.com"
+}
+```
+
+### 5.4 Custom Type Example
+
+```json
+{
+  "type": "database",
+  "database": "production",
+  "tables": ["users", "orders"],
+  "operations": ["SELECT", "INSERT", "UPDATE"],
+  "conditions": ["tenant_id = ?"]
+}
+```
+
+---
+
+## 6) REST surface (this repo)
+
+* **Grant endpoint**: `GET /api/grants/{grant_id}`; `DELETE /api/grants/{grant_id}`
+* **Request staging**: `POST /api/requests`, `GET /api/requests/{id}`, `POST /api/requests/{id}/approve|deny`
+* **Discovery** (metadata): include grant mgmt actions supported; expose PAR capability via AS metadata (out of scope for this service, but we read it).
+
+### 6.1 Request Staging API
+
+**POST /api/requests**
+
+```http
+POST /api/requests
+Content-Type: application/json
+Authorization: Bearer <access_token>
+
+{
+  "grant_id": "gnt_123",
+  "authorization_details": [
+    {
+      "type": "mcp-tools",
+      "server": "https://mcp.example.net",
+      "tools": ["cloud.create"],
+      "actions": ["run"],
+      "locations": ["eu1"]
+    }
+  ],
+  "reason": "Agent needs to create cloud resources",
+  "expires_in": 3600
+}
+```
+
+**Response:**
+
+```json
+{
+  "request_id": "req_456",
+  "status": "pending",
+  "consent_uri": "https://auth.example.com/c/abc",
+  "expires_at": "2024-01-15T11:30:00Z"
+}
+```
+
+**GET /api/requests/{id}**
+
+```http
+GET /api/requests/req_456
+Authorization: Bearer <access_token>
+```
+
+**POST /api/requests/{id}/approve**
+
+```http
+POST /api/requests/req_456/approve
+Content-Type: application/json
+Authorization: Bearer <access_token>
+
+{
+  "approved_details": [
+    {
+      "type": "mcp-tools",
+      "server": "https://mcp.example.net",
+      "tools": ["cloud.create"],
+      "actions": ["run"],
+      "locations": ["eu1"]
+    }
+  ]
+}
+```
+
+---
+
+## 7) Mermaid (agent + PAR happy path)
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Agent
+  participant GM as Grant Mgmt
+  participant AS as Authorization Server
+  participant UI as User/Admin
+
+  Agent->>AS: /authorize (create + default authorization_details)
+  AS-->>Agent: code→token (grant_id=gnt_123)
+  GM->>GM: persist grant snapshot
+  Agent->>GM: action(create-resource) → guard says missing
+  GM->>GM: POST /api/requests (delta) → SET(Request Created)
+  GM->>AS: POST /as/par (merge+grant_id) → request_uri
+  GM-->>UI: short link to consent (render diff)
+  UI->>AS: approve via /authorize?request_uri=...
+  AS-->>Agent: code→token (updated)
+  GM->>GM: SET(Request Approved), SET(Grant Updated), SET(Token Issued)
+  Agent->>Resource: perform create (now allowed)
+```
+
+---
+
+## 8) Security notes
+
+* Treat `grant_id` / `request_id` as non‑secrets; **never** leak tokens via these APIs.
+* Prefer hashed token identifiers in SET payloads; sign all SETs; encrypt when PII present.
+* Ensure merge requests display a **clear diff** in consent UI.
+* For **replace**, consider token revocation cascade.
+
+### 8.1 Token Security
+
+- **Short-lived tokens**: Default 15-minute expiration for session-bound tokens
+- **Session binding**: Tokens cannot be used across different chat sessions
+- **Scope minimization**: Only request necessary permissions
+- **Secure storage**: Tokens stored securely in memory only, never persisted
+
+### 8.2 Audit Logging
+
+All authorization events are logged for security monitoring:
+
+```json
+{
+  "timestamp": "2024-01-15T10:30:00Z",
+  "event": "authorization_request_created",
+  "request_id": "req_456",
+  "grant_id": "gnt_123",
+  "agent_id": "agent_789",
+  "user_id": "user_123",
+  "authorization_details": [...],
+  "ip_address": "192.168.1.100",
+  "user_agent": "Agent/1.0"
+}
+```
+
+### 8.3 Consent UI Security
+
+- **Clear diff display**: Show exactly what new permissions are being requested
+- **Risk indicators**: Visual indicators for permission risk levels
+- **Session context**: Display current session information
+- **Timeout handling**: Automatic expiration of consent requests
+
+---
+
+## 9) Checklist
+
+- [ ] **Create flow**: Initial authorization with default tools
+- [ ] **Merge flow**: Expand permissions when needed
+- [ ] **PAR integration**: Short, tamper-proof consent links
+- [ ] **Event emission**: SET events for all lifecycle changes
+- [ ] **Request staging**: API for managing authorization requests
+- [ ] **Consent UI**: Clear diff display for merge requests
+- [ ] **Security**: Token security and audit logging
+- [ ] **Type system**: Open-ended authorization_details types
+- [ ] **Guard integration**: Security guard validation
+- [ ] **Error handling**: Comprehensive error responses
+- [ ] **Documentation**: Complete API and flow documentation
+- [ ] **Testing**: End-to-end flow validation
+- [ ] **Monitoring**: Event tracking and analytics
+- [ ] **Compliance**: OAuth 2.0 Grant Management specification adherence
+
+---
+
+## Related Documentation
+
+- [Grant Authorization Requests](grant-authorization-requests.mdc)
+- [OAuth 2.0 Grant Management API](GRANT_MANAGEMENT_API.md)
+- [Consent Scenarios](CONSENT_SCENARIOS.md)
+- [OAuth 2.0 Grant Management Specification](https://tools.ietf.org/html/draft-ietf-oauth-grant-management)
+- [Pushed Authorization Requests (PAR)](https://tools.ietf.org/html/rfc9126)
+- [Rich Authorization Requests (RAR)](https://tools.ietf.org/html/draft-ietf-oauth-rar)
