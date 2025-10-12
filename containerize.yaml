@@ -8,7 +8,7 @@ modules:
   - name: grant-management/api
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t grant-management/api:latest -f srv/Dockerfile . --load
+        - docker buildx build --platform linux/amd64 -t grant-management/api:latest -f Dockerfile . --load
 
   - name: grant-management/approuter
     id: grant-management-approuter
@@ -16,7 +16,7 @@ modules:
       commands:
         - docker buildx build --platform linux/amd64 -t grant-management/approuter:latest app/router --load
 
-  - name: grant-management/portal
-    build-parameters:
-      commands:
-        - docker buildx build --platform linux/amd64 -t grant-management/portal:latest  app/portal --load
+  # - name: grant-management/portal
+  #   build-parameters:
+  #     commands:
+  #       - docker buildx build --platform linux/amd64 -t grant-management/portal:latest  app/portal --load

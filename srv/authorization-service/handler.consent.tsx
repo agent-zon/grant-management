@@ -1,4 +1,4 @@
-import cds, { ApplicationService } from "@sap/cds";
+import cds from "@sap/cds";
 import AuthorizationService from "../authorization-service.tsx";
 
 export default function (srv: AuthorizationService) {
@@ -15,7 +15,7 @@ export default function (srv: AuthorizationService) {
 
     // Find previous consents for this grant to establish chain
     const previousConsents = await srv.run(
-      SELECT.from(Consents)
+      cds.ql.SELECT.from(Consents)
         .where({ grant_id: req.data.grant_id })
         .orderBy("createdAt desc")
         .limit(1)

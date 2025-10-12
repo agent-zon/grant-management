@@ -1,6 +1,6 @@
 import cds from "@sap/cds";
 import { renderToString } from "react-dom/server";
-import { initialTransition, SnapshotFrom } from "xstate";
+import { initialTransition, type SnapshotFrom } from "xstate";
 
 import type { AuthorizationDetail } from "#cds-models/grant/management";
 import permissionsElevationMachine from "./demo-service/permissions-elevation-machine.ts";
@@ -691,7 +691,14 @@ export default class DemoService extends cds.ApplicationService {
 
       console.log("✅ Demo Request - Sending HTML response");
       return await cds.context?.http?.res.send(htmlResponse);
-    } catch (error) {
+    } catch (e) {
+      const error = e as {
+        message: string;
+        code: string;
+        target: string;
+        args: string[];
+        stack: string;
+      };
       console.error("❌ Demo Request - Error occurred:", error);
       console.error("❌ Demo Request - Error stack:", error.stack);
       console.error("❌ Demo Request - Error details:", {
