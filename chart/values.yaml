@@ -154,7 +154,6 @@ destination:
   parameters:
     version: 1.0.0
 
- 
 postgres:
   serviceOfferingName: postgresql-db
   servicePlanName: shared

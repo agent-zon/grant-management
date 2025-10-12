@@ -1,5 +1,22 @@
 {
   "cds": {
+    "folders": {
+      "authorization": "./srv/authorization-service",
+      "grant-management": "./srv/grant-management-service",
+      "demo": "./srv/demo-service"
+    },
+    "typer": {
+      "strictPropertyInitialization": false,
+      "strictNullChecks": false,
+      "allowArbitraryExtensions": true
+    },
+    "log": {
+      "levels": {
+        "sql": "error",
+        "cds": "info",
+        "odata": "info"
+      }
+    },
     "requires": {
       "auth": {
         "kind": "ias"
@@ -9,7 +26,7 @@
       }
     },
     "destinations": true,
-    "[dev]": {
+    "[development]": {
       "db": {
         "kind": "sqlite",
         "credentials": {
