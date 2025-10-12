@@ -1,43 +1,58 @@
-import express from "express";
 import cds from "@sap/cds";
+import express from "express";
+import bodyParser from "body-parser";
+import methodOverride from "method-override";
+import { htmxMiddleware } from "./middleware/htmx.ts";
+import { htmlTemplate } from "./middleware/htmx.ts";
+import { renderToString } from "react-dom/server";
+import React from "react";
+import createUsageTracker from "./middleware/usage-tracker.ts";
 
-import compression from "compression";
-const app = express();
-// app.use(
-//   createRequestListener({
-//     build: rtlBuild,
-//   })
-// );
-// // needs to handle all verbs (GET, POST, etc.)
-app.use(compression());
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+cds.middlewares.before.push(htmxMiddleware);
 
-cds.serve("all").in(app);
-
-// eslint-disable-next-line import/no-anonymous-default-export
-/*
-
-export default (o) => {
-  const port = o.port || Number.parseInt(process.env.PORT || "4004");
-
-  o.from = "./grant-management-service.cds";
-  o.app = app;
-  o.port = process.env.PORT || "4004";
-  o.host = process.env.HOST || "0.0.0.0";
-  //   o.health = true;
-  o.static = "dist/client";
-  o.favicon = () => {
-    return express.static("app/portal/dist/client/favicon.ico");
-  };
-  o.index = () => {
-    return express.static("app/portal/dist/client/index.html");
-  };
-  o.logger = console;
-  o.server = app.listen(port, () => {
-    console.log(`Server listening on port ${port} (http://localhost:${port})`);
+function sendHtml(html) {
+    cds.context?.http?.res.setHeader("Content-Type", "text/html");
+    return cds.context?.http?.res.send(html);
+}
+cds.on("connect", (service) => {
+  service.before("*", async (req) => {
+    Object.assign(cds.context,{
+      render: (component) => sendHtml(htmlTemplate(renderToString(component))),
+      html: (htmlString) => sendHtml(htmlTemplate(htmlString))
+    });
+    return req.data;
   });
-  return cds.server(o); //> delegate to default server.js
-};
-*/
+});
+cds.on("bootstrap", (app) => {
+  // add your own middleware before any by cds are added
+  // for example, serve static resources incl. index.html
+  app.use(bodyParser.json({extended:true}));
+  app.use(bodyParser.urlencoded({ extended: true }));
+  
+  // Add usage tracking middleware for grant usage monitoring
+  app.use(createUsageTracker());
+
+  app.use((req, res, next) => {
+    if (
+      req.headers["content-type"]?.includes("application/x-www-form-urlencoded")
+    ) {
+      // Convert form data to JSON format expected by CDS
+      if (req.body && typeof req.body === "object") {
+        // Change content-type to JSON so CDS accepts it
+        req.headers["content-type"] = "application/json";
+      }
+    }
+    next();
+  });
+
+  app.use(methodOverride(function (req, res) {
+    if (req.body && typeof req.body === 'object' && '_method' in req.body) {
+      // look in urlencoded POST bodies and delete it
+      const method = req.body._method
+      delete req.body._method
+      return method
+    }
+  }))
+  
+});
