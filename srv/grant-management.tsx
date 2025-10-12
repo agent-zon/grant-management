@@ -1,6 +1,5 @@
 // Grant Detail Service - CDS service that serves individual grant UI directly
 import React from "react";
-import { renderToString } from "react-dom/server";
 import cds from "@sap/cds";
 import grantList from "./grant-management/handler.list.tsx";
 import grantEdit from "./grant-management/handler.edit.tsx";

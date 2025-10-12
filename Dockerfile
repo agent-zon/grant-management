@@ -7,6 +7,7 @@ RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
 
 RUN npm install -g npm@11.6.0
 RUN npm i -g @sap/cds-dk
+RUN npm i -g typescript ts-node tsx
 
 # Create app directory and user
 RUN addgroup -g 1001 -S nodejs && \

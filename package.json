@@ -95,7 +95,8 @@
   ],
   "private": true,
   "imports": {
-    "#cds-models/*": "./@cds-models/*/index.js"
+    "#cds-models/*": "./@cds-models/*/index.js",
+    "@/*": "./srv/*"
   },
   "cds": {
     "cds": {

@@ -1,12 +1,12 @@
-// Authorize Service - OAuth-style authorization endpoint with Rich Authorization Requests (RFC 9396)
 import cds from "@sap/cds";
 import par from "./authorization-service/handler.requests.tsx";
-
 import authorize from "./authorization-service/handler.authorize.tsx";
 import token from "./authorization-service/handler.token.tsx";
 import metadata from "./authorization-service/handler.metadata.tsx";
 import consent from "./authorization-service/handler.consent.tsx";
+import { type Grant } from "../@cds-models/grant/management/index.ts";
 
+///Authorization Service - OAuth-style authorization endpoint with Rich Authorization Requests (RFC 9396)
 class AuthorizationService extends cds.ApplicationService {
   init() {
     console.log("🔐 Initializing AuthorizationService...");
@@ -14,7 +14,7 @@ class AuthorizationService extends cds.ApplicationService {
       this.entities;
 
     // Auto-expand authorization_details for all Grants READ operations, probably can be done more efficiently
-    this.after("each", Grants, async (grant: any, req: typeof cds.Request) => {
+    this.after("each", Grants, async (grant: Grant) => {
       console.log(
         "🔧 After each Grants - processing authorization_details expansion"
       );

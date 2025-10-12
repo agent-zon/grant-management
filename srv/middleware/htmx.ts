@@ -1,5 +1,5 @@
 import cds from "@sap/cds";
-import React, { JSXElementConstructor } from "react";
+import React from "react";
 import { renderToString } from "react-dom/server";
 
 // Enhanced HTMX middleware that accepts both string and JSX components

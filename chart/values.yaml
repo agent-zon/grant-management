@@ -49,6 +49,17 @@ approuter:
         - exact: "https://*.{{ tpl .Values.global.domain . }}"
         - exact: "http://localhost:9000"
         - exact: "http://localhost:4338"
+        - regex: "https://*.euw.devtunnels.ms"
+        - regex: "https://*.oauth.pw"
+        - regex: "https://*.local.oauth.pw"
+        - regex: "https://*.oauth.pw:5000"
+        - regex: "https://*.local.oauth.pw:5000"
+        - regex: "https://*.authz.id"
+        - regex: "https://*.local.authz.id"
+        - regex: "https://*.authz.id:5000"
+        - regex: "https://*.local.authz.id:5000"
+        - regex: "https://*.localhost:5000"
+        - regex: "https://*.localhost:9000"
       allowMethods:
         - "GET"
         - "POST"
@@ -87,7 +98,7 @@ approuter:
     - configMapRef:
         name: "{{ .Release.Name }}-approuter-configmap"
   env:
-    # TENANT_HOST_PATTERN: "^(.*)-{{ tpl .Values.global.domain . }}"
+    TENANT_HOST_PATTERN: "^(.*)-{{ tpl .Values.global.domain . }}"
     # TENANT_MODE: "shared"
     OTEL_EXPORTER_OTLP_ENDPOINT: http://otlp-dashboard:18889
     OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
@@ -129,11 +140,26 @@ identity:
   servicePlanName: application
   parameters:
     display-name: agent-grants
+    multi-tenant: true
     oauth2-configuration:
       token-policy:
         access-token-format: "jwt"
       redirect-uris:
         - https://*.{{ tpl .Values.global.domain . }}/login/callback
+        - https://*.euw.devtunnels.ms/login/callback?authType=ias
+        - https://*.oauth.pw/login/callback?authType=ias
+        - https://*.local.oauth.pw/login/callback?authType=ias
+        - https://*.oauth.pw:5000/login/callback?authType=ias
+        - https://*.local.oauth.pw:5000/login/callback?authType=ias
+        - https://*.authz.id/login/callback?authType=ias
+        - https://*.local.authz.id/login/callback?authType=ias
+        - https://*.authz.id:5000/login/callback?authType=ias
+        - https://*.local.authz.id:5000/login/callback?authType=ias
+        - https://*.localhost:5000/login/callback?authType=ias
+        - https://*.localhost:5000/login/callback?authType=ias
+        - https://*.localhost:9000/login/callback?authType=ias
+        - https://*.localhost:9000/login/callback?authType=ias
+
       post-logout-redirect-uris:
         - https://*.{{ tpl .Values.global.domain . }}/*/logout.html
 

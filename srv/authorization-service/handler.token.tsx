@@ -1,6 +1,6 @@
 import cds, { SELECT } from "@sap/cds";
 import { ulid } from "ulid";
-import AuthorizationService from "../authorization-service.tsx";
+import AuthorizationService from "../authorization-service";
 export default function (srv: AuthorizationService) {
   const { Consents, Grants, AuthorizationRequests } = srv.entities;
   srv.on("token", async (req) => {

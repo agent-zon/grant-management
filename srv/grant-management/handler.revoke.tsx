@@ -1,8 +1,7 @@
 import cds from "@sap/cds";
-import { ApplicationService } from "@sap/cds";
-import { Grants } from "#cds-models/AuthorizationService";
+import type GrantManagementService from "../grant-management";
 
-export default function (srv: ApplicationService) {
+export default function (srv: GrantManagementService) {
   const { Grants } = srv.entities;
   srv.before("DELETE", Grants, async function (req) {
     const grant = await srv.update(Grants, req.data.ID).with({
