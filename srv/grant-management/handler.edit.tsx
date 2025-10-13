@@ -1,10 +1,7 @@
 import cds from "@sap/cds";
-import { Grant, Grants } from "#cds-models/AuthorizationService";
-import type { GrantManagementService } from "./index.d.ts";
-
-export default function (srv: GrantManagementService) {
-  const { Grants } = srv.entities;
-
+import { Grant, Grants } from "#cds-models/GrantsManagementService";
+import type { GrantsManagementService } from "../grant-management.tsx";
+export default function (srv: GrantsManagementService) {
   srv.after("READ", Grants, async (grants: Grants, req: typeof cds.Request) => {
     console.log(
       "🔧 Reading grant:",
@@ -31,9 +28,11 @@ export default function (srv: GrantManagementService) {
   });
 }
 
-export function grantEdit(grant: Grant, req: cds.Request) {
+export function grantEdit(grant: Grant, _: typeof cds.Request): Response {
   if (!grant) {
-    return cds.context?.render(<div>Grant not found</div>);
+    return cds.context?.render(
+      <div>Grant not found</div>
+    ) as unknown as Response;
   }
 
   const getRiskColor = (level: string) => {
@@ -370,5 +369,5 @@ export function grantEdit(grant: Grant, req: cds.Request) {
         </div>
       </div>
     </div>
-  );
+  ) as unknown as Response;
 }

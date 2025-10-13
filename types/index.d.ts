@@ -1,6 +1,6 @@
 import cds from "@sap/cds";
 
-export * from "../srv/authorization-service/index.d.ts";
+export * from "../srv/authorization-service/index.ts";
 declare module "@sap/cds" {
   interface EventContext {
     render: (

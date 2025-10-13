@@ -5,7 +5,7 @@ ARG BUILDPLATFORM
 
 RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
 
-RUN npm install -g npm@11.6.0
+RUN npm install -g npm@11.6.2
 RUN npm i -g @sap/cds-dk
 RUN npm i -g typescript ts-node tsx
 
@@ -22,6 +22,8 @@ RUN npm install --omit=dev
 
 # Copy application code
 COPY gen/srv/ ./
+COPY db.sqlite ./
+RUN npm install
 
 # Change ownership to nodejs user
 RUN chown -R 1001:1001 /app

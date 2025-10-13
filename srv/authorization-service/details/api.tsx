@@ -1,5 +1,5 @@
 import React from 'react';
-import type { AuthorizationDetailProps } from './types.d.ts';
+import type { AuthorizationDetailProps } from './types.tsx';
 import type { ApiAuthorizationDetailRequest } from '#cds-models/com/sap/agent/grants';
 
 
@@ -31,7 +31,7 @@ export default function APIAuthorizationDetail({ index, description, riskLevel, 
           riskLevel === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
           'bg-green-500/20 text-green-300'
         }`}>
-          {riskLevel.toUpperCase()} RISK
+          {riskLevel?.toUpperCase()} RISK
         </div>
       </div>
 

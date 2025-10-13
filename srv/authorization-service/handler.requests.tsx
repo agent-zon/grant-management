@@ -1,6 +1,6 @@
 import { ulid } from "ulid";
-import type { AuthorizationService } from "./index.d.ts";
- 
+import { AuthorizationService } from "../authorization-service.tsx";
+
 export default function par(srv: AuthorizationService) {
   const { AuthorizationRequests, Grants } = srv.entities;
 
@@ -28,9 +28,11 @@ export default function par(srv: AuthorizationService) {
         ...req.data,
         access: req.data.authorization_details
           ? parseAuthorizationDetails(req.data.authorization_details)
-          : undefined,
+          : [],
       })
       .into(AuthorizationRequests);
+
+    console.log("Request created", ID);
 
     req.reply({
       request_uri: `urn:ietf:params:oauth:request_uri:${ID}`,
@@ -40,12 +42,12 @@ export default function par(srv: AuthorizationService) {
 }
 
 function parseAuthorizationDetails(authorization_details: string) {
-  return JSON.parse(authorization_details).map(
-    ({ type, ...detail }: { type: string; [key: string]: any }) => {
+  return JSON.parse(authorization_details)
+    .filter(Boolean)
+    .map(({ type, ...detail }: { type: string; [key: string]: any }) => {
       return {
         type_code: type,
         ...detail,
       };
-    }
-  );
+    });
 }

@@ -1,7 +1,7 @@
 import React from "react";
-import type { AuthorizationDetailProps } from "./types.d.ts";
+import type { AuthorizationDetailProps } from "./types.tsx";
 import type { MCPToolAuthorizationDetailRequest } from "#cds-models/com/sap/agent/grants";
-import "./types.d.ts";
+import "./types.tsx";
 
 export default function MCPAuthorizationDetail({
   index,
@@ -45,7 +45,7 @@ export default function MCPAuthorizationDetail({
                 : "bg-green-500/20 text-green-300"
           }`}
         >
-          {riskLevel.toUpperCase()} RISK
+          {riskLevel?.toUpperCase()} RISK
         </div>
       </div>
 

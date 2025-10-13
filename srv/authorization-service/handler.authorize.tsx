@@ -1,12 +1,11 @@
 import cds from "@sap/cds";
 import { AuthorizationDetailRequest } from "#cds-models/com/sap/agent/grants";
-import * as templates from "./details/index.ts";
+import * as templates from "./details/index.tsx";
 import "./handler.authorize.tsx";
-import type { AuthorizationService } from "./index.d.ts";
-
+import type { AuthorizationService } from "../authorization-service.tsx";
+import { AuthorizationRequests } from "#cds-models/AuthorizationService";
+import type { AuthorizationDetailProps } from ".//details/types.tsx";
 export default function par(srv: AuthorizationService) {
-  const { AuthorizationRequests } = srv.entities;
-
   srv.on("authorize", async (req) => {
     console.log("🔐 Authorize action:", req.data);
 
@@ -36,11 +35,12 @@ export default function par(srv: AuthorizationService) {
 
     console.log("📋 Grant loaded for authorization:", grant.id);
 
-    const AuthorizationDetails = ({
+    const AuthorizationDetailsComponent = ({
       type_code,
       index,
       ...authorizationDetails
-    }: AuthorizationDetailRequest & { index: number }) => {
+    }: AuthorizationDetailRequest &
+      AuthorizationDetailProps & { index: number }) => {
       // Load metadata for the type
       const Component = templates[type_code as keyof typeof templates];
       console.log("🔧 Component:", Component);
@@ -55,9 +55,7 @@ export default function par(srv: AuthorizationService) {
 
           <Component
             index={index}
-            description=""
-            riskLevel="low"
-            category=""
+            type_code={type_code}
             {...authorizationDetails}
           />
         </>
@@ -173,7 +171,7 @@ export default function par(srv: AuthorizationService) {
                   )}
                   {request.access?.map((detail, index) => {
                     return (
-                      <AuthorizationDetails
+                      <AuthorizationDetailsComponent
                         {...detail}
                         key={index}
                         index={index}

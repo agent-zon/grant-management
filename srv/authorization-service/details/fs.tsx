@@ -4,13 +4,14 @@ import type {
   FileSystemAuthorizationDetailRequest,
   RARClaim,
 } from "#cds-models/com/sap/agent/grants";
-import type { AuthorizationDetailProps } from "./types.d.ts";
-import "./types.d.ts";
+import type { AuthorizationDetailProps } from "./types.tsx";
+import "./types.tsx";
 export default function FSAuthorizationDetail({
   index,
   description,
   riskLevel,
   category,
+  type_code,
   ...detail
 }: FileSystemAuthorizationDetailRequest & AuthorizationDetailProps) {
   return (
@@ -35,7 +36,7 @@ export default function FSAuthorizationDetail({
                   : "bg-green-500/20 text-green-300"
             }`}
           >
-            {detail.type_code}
+            {type_code}
           </div>
           <span className="text-sm text-gray-400">{category}</span>
         </div>
@@ -48,7 +49,7 @@ export default function FSAuthorizationDetail({
                 : "bg-green-500/20 text-green-300"
           }`}
         >
-          {riskLevel.toUpperCase()} RISK
+          {riskLevel?.toUpperCase()} RISK
         </div>
       </div>
 
