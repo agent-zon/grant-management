@@ -1,5 +1,5 @@
 import cds from "@sap/cds";
-import type GrantManagementService from "../grant-management";
+import type { GrantManagementService } from "./index.d.ts";
 
 export default function (srv: GrantManagementService) {
   const { Grants } = srv.entities;

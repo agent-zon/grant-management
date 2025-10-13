@@ -1,11 +1,11 @@
 import cds from "@sap/cds";
-import { ApplicationService } from "@sap/cds";
 import { Grant, Grants } from "#cds-models/AuthorizationService";
+import type { GrantManagementService } from "./index.d.ts";
 
-export default function (srv: ApplicationService) {
+export default function (srv: GrantManagementService) {
   const { Grants } = srv.entities;
 
-  srv.after("READ", Grants, async (grants: Grants, req: cds.Request) => {
+  srv.after("READ", Grants, async (grants: Grants, req: typeof cds.Request) => {
     console.log(
       "🔧 Reading grant:",
       grants,

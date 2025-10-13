@@ -1,5 +1,5 @@
 import cds from "@sap/cds";
-import AuthorizationService from "../authorization-service.tsx";
+import type { AuthorizationService } from "./index.d.ts";
 
 export default function (srv: AuthorizationService) {
   const { AuthorizationRequests, Consents, Grants } = srv.entities;

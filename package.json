@@ -41,8 +41,8 @@
     "typescript": "^5.9.2",
     "vite": "^7.1.6",
     "vite-tsconfig-paths": "^5.1.4",
-    "@cap-js/cds-types": "^0.14.0",
-    "@cap-js/cds-typer": ">=0.1"
+    "@cap-js/cds-types": "^0.15.0",
+    "@cap-js/cds-typer": "^0.38.0"
   },
   "scripts": {
     "start": "npx cds-tsx serve",
@@ -97,14 +97,5 @@
   "imports": {
     "#cds-models/*": "./@cds-models/*/index.js",
     "@/*": "./srv/*"
-  },
-  "cds": {
-    "cds": {
-      "folders": {
-        "authorization": "./srv/authorization-service",
-        "grant-management": "./srv/grant-management-service",
-        "demo": "./srv/demo-service"
-      }
-    }
   }
 }

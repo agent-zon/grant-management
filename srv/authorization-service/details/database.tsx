@@ -1,6 +1,6 @@
-import { DatabaseAuthorizationDetailRequest } from '#cds-models/grant/management';
+import { DatabaseAuthorizationDetailRequest } from '#cds-models/com/sap/agent/grants';
 import React from 'react';
-import { AuthorizationDetailProps } from './props';
+import type { AuthorizationDetailProps } from './types.d.ts';
 
   
 export default function DatabaseAuthorizationDetail({ index, description, riskLevel, category, ...detail }: DatabaseAuthorizationDetailRequest & AuthorizationDetailProps) {

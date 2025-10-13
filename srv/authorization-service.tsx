@@ -4,16 +4,18 @@ import authorize from "./authorization-service/handler.authorize.tsx";
 import token from "./authorization-service/handler.token.tsx";
 import metadata from "./authorization-service/handler.metadata.tsx";
 import consent from "./authorization-service/handler.consent.tsx";
-import { type Grant } from "../@cds-models/grant/management/index.ts";
+import ServiceModel, {
+  type Grant,
+  Consents,
+  Grants,
+} from "#cds-models/AuthorizationService";
 
 ///Authorization Service - OAuth-style authorization endpoint with Rich Authorization Requests (RFC 9396)
-class AuthorizationService extends cds.ApplicationService {
+export default class Service extends cds.ApplicationService {
   init() {
     console.log("🔐 Initializing AuthorizationService...");
-    const { Consents, Grants, AuthorizationRequests, AuthorizationDetailType } =
-      this.entities;
-
     // Auto-expand authorization_details for all Grants READ operations, probably can be done more efficiently
+    /*
     this.after("each", Grants, async (grant: Grant) => {
       console.log(
         "🔧 After each Grants - processing authorization_details expansion"
@@ -33,7 +35,7 @@ class AuthorizationService extends cds.ApplicationService {
         `🔧 Fetched ${authDetails?.length || 0} authorization details for grant ${grant.id}`
       );
     });
-
+     */
     // Register route handlers
     authorize(this);
     par(this);
@@ -46,4 +48,4 @@ class AuthorizationService extends cds.ApplicationService {
   }
 }
 
-export default AuthorizationService;
+export type AuthorizationService = Service & typeof cds.ApplicationService;

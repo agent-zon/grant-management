@@ -1,15 +1,12 @@
-import cds, { SELECT } from "@sap/cds";
+import cds from "@sap/cds";
 import { ulid } from "ulid";
-import AuthorizationService from "../authorization-service";
+import type { AuthorizationService } from "./index.d.ts";
+import type { Grant } from "#cds-models/AuthorizationService";
 export default function (srv: AuthorizationService) {
-  const { Consents, Grants, AuthorizationRequests } = srv.entities;
+  const { Grants, AuthorizationRequests } = srv.entities;
   srv.on("token", async (req) => {
     console.log("🔐 Token request:", req.data);
-    const {
-      grant_type,
-      code,
-      authorization_details: requestedAuthDetails,
-    } = req.data;
+    const { grant_type, code } = req.data;
 
     // Validate grant type
     if (grant_type !== "authorization_code") {
@@ -21,7 +18,7 @@ export default function (srv: AuthorizationService) {
 
     console.log("🔧 Grant Management Service:", req.user);
     // Read the grant first
-    const grant = await srv.read(Grants, request.grant_id);
+    const grant = (await srv.read(Grants, request.grant_id)) as Grant;
 
     // Manually fetch authorization_details for this grant
     if (grant) {

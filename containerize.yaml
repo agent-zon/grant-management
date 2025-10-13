@@ -15,7 +15,22 @@ modules:
     build-parameters:
       commands:
         - docker buildx build --platform linux/amd64 -t grant-management/approuter:latest app/router --load
-
+  - name: v1-approuter
+    build-parameters:
+      buildpack:
+        type: nodejs
+        builder: builder-jammy-base
+        path: app/router
+        env:
+          BP_NODE_RUN_SCRIPTS: ""
+  # - name: v1-approuter
+  #   build-parameters:
+  #     buildpack:
+  #       type: nodejs
+  #       builder: builder-jammy-base
+  #       path: app/router
+  #       env:
+  #         BP_NODE_RUN_SCRIPTS: ""
   # - name: grant-management/portal
   #   build-parameters:
   #     commands:

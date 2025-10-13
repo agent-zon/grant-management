@@ -4,18 +4,12 @@ import cds from "@sap/cds";
 import grantList from "./grant-management/handler.list.tsx";
 import grantEdit from "./grant-management/handler.edit.tsx";
 import grantRevoke from "./grant-management/handler.revoke.tsx";
-
-function NotFound() {
-  return <div>Grant not found</div>;
-}
-
+import { Grants } from "#cds-models/com/sap/agent/grants";
 // CDS ApplicationService for Grant Detail with path parameter support
-class GrantsManagementService extends cds.ApplicationService {
+export default class Service extends cds.ApplicationService {
   init() {
-    const { Grants, AuthorizationDetail } = this.entities;
-
     // Auto-expand authorization_details for all Grants READ operations
-    this.before("READ", Grants, (req: typeof cds.Request) => {
+    super.before("READ", Grants, (req) => {
       console.log(
         "🔧 Before READ Grants - Original query:",
         JSON.stringify(req.query, null, 2)
@@ -36,14 +30,14 @@ class GrantsManagementService extends cds.ApplicationService {
           req.query["$expand"]
         );
       }
+      return req.data;
     });
 
     grantRevoke(this);
     grantList(this);
     grantEdit(this);
 
-    return super.init && super.init();
-
+    return super.init();
     /*
     not in use now, to check - which one is better?  register to events in service and call the fucntion or use the functions to register themself?
     this.after("READ", Grants, async function (data, req) {
@@ -60,4 +54,4 @@ class GrantsManagementService extends cds.ApplicationService {
   }
 }
 
-export default GrantsManagementService;
+export type GrantsManagementService = Service & typeof cds.ApplicationService;

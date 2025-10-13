@@ -1,8 +1,8 @@
 import cds from "@sap/cds";
-import { AuthorizationDetailRequest } from "#cds-models/grant/management";
+import { AuthorizationDetailRequest } from "#cds-models/com/sap/agent/grants";
 import * as templates from "./details/index.ts";
 import "./handler.authorize.tsx";
-import type AuthorizationService from "./authorization-service.d.ts";
+import type { AuthorizationService } from "./index.d.ts";
 
 export default function par(srv: AuthorizationService) {
   const { AuthorizationRequests } = srv.entities;

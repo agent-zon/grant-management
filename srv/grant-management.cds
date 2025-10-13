@@ -36,15 +36,14 @@ annotate grants.Consents with @(restrict: [
 @impl: './grant-management.tsx'
 service GrantsManagementService {
    
-    @cds.redirection.target
-    entity Grants as projection on grants.Grants {
-        *
-    }; 
 
     entity AuthorizationDetail as projection on grants.AuthorizationDetail;
 
     entity ConsentGrant as projection on grants.ConsentGrant; 
  
+    @cds.redirection.target
+    entity Grants as projection on grants.Grants;
+
     @cds.redirection.target
     entity Consents as projection on grants.Consents; 
 }         

@@ -2,11 +2,16 @@ import cds from "@sap/cds";
 import { renderToString } from "react-dom/server";
 import { initialTransition, type SnapshotFrom } from "xstate";
 
-import type { AuthorizationDetail } from "#cds-models/grant/management";
-import permissionsElevationMachine from "./demo-service/permissions-elevation-machine.ts";
+import type {
+  AuthorizationDetailRequest,
+  AuthorizationDetail,
+} from "#cds-models/com/sap/agent/grants";
+import permissionsElevationMachine, {
+  PermissionsContext,
+} from "./demo-service/permissions-elevation-machine.ts";
 import { createActor } from "xstate";
 import { htmlTemplate } from "./middleware/htmx.ts";
-import type AuthorizationService from "#cds-models/AuthorizationService";
+import AuthorizationService from "#cds-models/AuthorizationService";
 
 import React from "react";
 
@@ -17,7 +22,7 @@ interface AuthorizationRequestButtonProps {
   requested_actor?: string;
   request_uri?: string;
   expires_in?: number;
-  authorization_details?: any;
+  authorization_details?: PermissionsContext["request"]["authorization_details"];
 }
 
 function AuthorizationRequestButton({
@@ -104,7 +109,7 @@ interface AuthorizationParamsProps {
   redirect_uri?: string;
   scope?: string | null;
   requested_actor?: string;
-  authorization_details?: any;
+  authorization_details?: AuthorizationDetailRequest;
   grant_id?: string;
 }
 
@@ -167,7 +172,7 @@ function AuthorizationParams({
                   ))
                 ) : (
                   <span className="text-white text-sm">
-                    {authorization_details}
+                    {JSON.stringify(authorization_details, null, 2)}
                   </span>
                 )}
               </div>
@@ -187,17 +192,14 @@ function AuthorizationParams({
             ? (() => {
                 // Group authorization details by type
                 const grouped = authorization_details.reduce(
-                  (
-                    acc: Record<string, AuthorizationDetail[]>,
-                    detail: AuthorizationDetail
-                  ) => {
+                  (acc, detail) => {
                     const detailType = detail.type;
                     if (detailType && !acc[detailType]) acc[detailType] = [];
                     if (detailType) acc[detailType].push(detail);
                     return acc;
                   },
-                  {} as Record<string, AuthorizationDetail[]>
-                );
+                  {} as Record<string, AuthorizationDetailRequest[]>
+                ) as Record<string, (AuthorizationDetailRequest & any)[]>;
 
                 return Object.entries(grouped).map(([type, details]) => (
                   <div
@@ -223,173 +225,169 @@ function AuthorizationParams({
                           {type} Access
                         </h5>
                         <p className="text-xs text-gray-400">
-                          {(details as AuthorizationDetail[]).length}{" "}
-                          {(details as AuthorizationDetail[]).length === 1
-                            ? "permission"
-                            : "permissions"}
+                          {details.length}{" "}
+                          {details.length === 1 ? "permission" : "permissions"}
                         </p>
                       </div>
                     </div>
 
                     <div className="space-y-4">
-                      {(details as AuthorizationDetail[]).map(
-                        (detail: AuthorizationDetail, index: number) => (
-                          <div
-                            key={index}
-                            className="bg-gray-700/40 rounded-lg p-4 border-l-4 border-blue-400/60"
-                          >
-                            {type === "mcp" && (
-                              <div className="space-y-2">
-                                <div className="flex items-center space-x-3 mb-3">
-                                  <span className="text-sm text-gray-400">
-                                    Server:
-                                  </span>
-                                  <span className="text-purple-400 font-mono">
-                                    {detail.server}
-                                  </span>
-                                  <span className="text-gray-500">•</span>
-                                  <span className="text-blue-400 text-sm">
-                                    {detail.transport}
-                                  </span>
-                                </div>
-                                {detail.tools && (
-                                  <div>
-                                    <span className="text-sm text-gray-400 block mb-2">
-                                      Available Tools:
-                                    </span>
-                                    <div className="flex flex-wrap gap-2">
-                                      {Object.keys(detail.tools).map(
-                                        (tool, i) => (
-                                          <span
-                                            key={i}
-                                            className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded border border-green-500/30"
-                                          >
-                                            {tool}
-                                          </span>
-                                        )
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                                {detail.locations &&
-                                  detail.locations.length > 0 && (
-                                    <div>
-                                      <span className="text-sm text-gray-400 block mb-2">
-                                        Locations:
-                                      </span>
-                                      <div className="flex flex-wrap gap-2">
-                                        {detail.locations.map(
-                                          (location: string, i: number) => (
-                                            <span
-                                              key={i}
-                                              className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded border border-blue-500/30"
-                                            >
-                                              {location}
-                                            </span>
-                                          )
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
+                      {details.map((detail, index: number) => (
+                        <div
+                          key={index}
+                          className="bg-gray-700/40 rounded-lg p-4 border-l-4 border-blue-400/60"
+                        >
+                          {type === "mcp" && (
+                            <div className="space-y-2">
+                              <div className="flex items-center space-x-3 mb-3">
+                                <span className="text-sm text-gray-400">
+                                  Server:
+                                </span>
+                                <span className="text-purple-400 font-mono">
+                                  {detail.server}
+                                </span>
+                                <span className="text-gray-500">•</span>
+                                <span className="text-blue-400 text-sm">
+                                  {detail.transport}
+                                </span>
                               </div>
-                            )}
-
-                            {type === "api" && (
-                              <div className="space-y-2">
-                                {detail.urls && (
-                                  <div>
-                                    <span className="text-sm text-gray-400 block mb-2">
-                                      API Endpoints:
-                                    </span>
-                                    <div className="space-y-2">
-                                      {detail.urls.map(
-                                        (url: string, i: number) => (
-                                          <div
-                                            key={i}
-                                            className="text-blue-300 text-sm font-mono bg-gray-800/50 rounded-lg px-3 py-2 border border-blue-500/20"
-                                          >
-                                            {url}
-                                          </div>
-                                        )
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                                {detail.protocols && (
-                                  <div>
-                                    <span className="text-sm text-gray-400 block mb-2">
-                                      Protocols:
-                                    </span>
-                                    <div className="flex flex-wrap gap-2">
-                                      {detail.protocols.map(
-                                        (protocol: string, i: number) => (
-                                          <span
-                                            key={i}
-                                            className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded border border-green-500/30"
-                                          >
-                                            {protocol}
-                                          </span>
-                                        )
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {type === "fs" && (
-                              <div className="space-y-2">
-                                {detail.roots && (
-                                  <div>
-                                    <span className="text-sm text-gray-400 block mb-2">
-                                      Root Directories:
-                                    </span>
-                                    <div className="space-y-2">
-                                      {detail.roots.map(
-                                        (root: string, i: number) => (
-                                          <div
-                                            key={i}
-                                            className="text-yellow-300 text-sm font-mono bg-gray-800/50 rounded-lg px-3 py-2 border border-yellow-500/20"
-                                          >
-                                            {root}
-                                          </div>
-                                        )
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
+                              {detail.tools && (
                                 <div>
                                   <span className="text-sm text-gray-400 block mb-2">
-                                    File Permissions:
+                                    Available Tools:
                                   </span>
                                   <div className="flex flex-wrap gap-2">
-                                    {detail.permissions_read && (
-                                      <span className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded border border-green-500/30">
-                                        read
-                                      </span>
-                                    )}
-                                    {detail.permissions_write && (
-                                      <span className="px-2 py-1 bg-yellow-500/20 text-yellow-300 text-xs rounded border border-yellow-500/30">
-                                        write
-                                      </span>
-                                    )}
-                                    {detail.permissions_execute && (
-                                      <span className="px-2 py-1 bg-red-500/20 text-red-300 text-xs rounded border border-red-500/30">
-                                        execute
-                                      </span>
-                                    )}
-                                    {detail.permissions_list && (
-                                      <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded border border-blue-500/30">
-                                        list
-                                      </span>
+                                    {Object.keys(detail.tools).map(
+                                      (tool, i) => (
+                                        <span
+                                          key={i}
+                                          className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded border border-green-500/30"
+                                        >
+                                          {tool}
+                                        </span>
+                                      )
                                     )}
                                   </div>
                                 </div>
+                              )}
+                              {detail.locations &&
+                                detail.locations.length > 0 && (
+                                  <div>
+                                    <span className="text-sm text-gray-400 block mb-2">
+                                      Locations:
+                                    </span>
+                                    <div className="flex flex-wrap gap-2">
+                                      {detail.locations.map(
+                                        (location: string, i: number) => (
+                                          <span
+                                            key={i}
+                                            className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded border border-blue-500/30"
+                                          >
+                                            {location}
+                                          </span>
+                                        )
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                            </div>
+                          )}
+
+                          {type === "api" && (
+                            <div className="space-y-2">
+                              {detail.urls && (
+                                <div>
+                                  <span className="text-sm text-gray-400 block mb-2">
+                                    API Endpoints:
+                                  </span>
+                                  <div className="space-y-2">
+                                    {detail.urls.map(
+                                      (url: string, i: number) => (
+                                        <div
+                                          key={i}
+                                          className="text-blue-300 text-sm font-mono bg-gray-800/50 rounded-lg px-3 py-2 border border-blue-500/20"
+                                        >
+                                          {url}
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              {detail.protocols && (
+                                <div>
+                                  <span className="text-sm text-gray-400 block mb-2">
+                                    Protocols:
+                                  </span>
+                                  <div className="flex flex-wrap gap-2">
+                                    {detail.protocols.map(
+                                      (protocol: string, i: number) => (
+                                        <span
+                                          key={i}
+                                          className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded border border-green-500/30"
+                                        >
+                                          {protocol}
+                                        </span>
+                                      )
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {type === "fs" && (
+                            <div className="space-y-2">
+                              {detail.roots && (
+                                <div>
+                                  <span className="text-sm text-gray-400 block mb-2">
+                                    Root Directories:
+                                  </span>
+                                  <div className="space-y-2">
+                                    {detail.roots.map(
+                                      (root: string, i: number) => (
+                                        <div
+                                          key={i}
+                                          className="text-yellow-300 text-sm font-mono bg-gray-800/50 rounded-lg px-3 py-2 border border-yellow-500/20"
+                                        >
+                                          {root}
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              <div>
+                                <span className="text-sm text-gray-400 block mb-2">
+                                  File Permissions:
+                                </span>
+                                <div className="flex flex-wrap gap-2">
+                                  {detail.permissions_read && (
+                                    <span className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded border border-green-500/30">
+                                      read
+                                    </span>
+                                  )}
+                                  {detail.permissions_write && (
+                                    <span className="px-2 py-1 bg-yellow-500/20 text-yellow-300 text-xs rounded border border-yellow-500/30">
+                                      write
+                                    </span>
+                                  )}
+                                  {detail.permissions_execute && (
+                                    <span className="px-2 py-1 bg-red-500/20 text-red-300 text-xs rounded border border-red-500/30">
+                                      execute
+                                    </span>
+                                  )}
+                                  {detail.permissions_list && (
+                                    <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded border border-blue-500/30">
+                                      list
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                            )}
-                          </div>
-                        )
-                      )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ));
@@ -430,7 +428,7 @@ function createPermissionsElevationActor(id: string) {
   return { actor, subscribtion, snapshot: actor.getSnapshot() };
 }
 
-export default class DemoService extends cds.ApplicationService {
+export default class Service extends cds.ApplicationService {
   public async main() {
     cds.context?.http?.res.setHeader("Content-Type", "text/html");
     cds.context?.http?.res.send(
@@ -639,9 +637,7 @@ export default class DemoService extends cds.ApplicationService {
 
       console.log("🔍 Demo Request - Config from state machine:", config);
 
-      const authorizationService = (await cds.connect.to(
-        "AuthorizationService"
-      )) as AuthorizationService;
+      const authorizationService = await cds.connect.to(AuthorizationService);
       console.log("🔍 Demo Request - Connected to AuthorizeService");
 
       const request = {
@@ -721,10 +717,7 @@ export default class DemoService extends cds.ApplicationService {
   }
 
   public async callback(code, code_verifier, redirect_uri) {
-    const authorizationService = (await cds.connect.to(
-      "AuthorizationService"
-    )) as AuthorizationService;
-
+    const authorizationService = await cds.connect.to(AuthorizationService);
     const { access_token, token_type, expires_in, grant_id, error, ...rest } =
       await authorizationService.token({
         grant_type: "authorization_code",
@@ -857,57 +850,47 @@ export default class DemoService extends cds.ApplicationService {
       `);
   }
 
-  async init() {
-    this.before("*", async (req) => {
-      process.env.AUTH_SERVER_URL = "http://localhost:4004/oauth-server";
-      req.headers.sid = req.headers.sid ?? "123";
-      return req.data;
-    });
+  public async elevate(req) {
+    const { actor } = createPermissionsElevationActor(req.data.grant_id);
+    const config = actor.getSnapshot().context.request;
+    const authorizationService = await cds.connect.to(AuthorizationService);
+    const request = {
+      response_type: "code",
+      client_id: "demo-client-app",
+      redirect_uri: `${cds.context?.http?.req.protocol}://${cds.context?.http?.req.get("host")}/demo/callback`,
+      grant_management_action: "merge",
+      grant_id: req.data.grant_id,
+      authorization_details: JSON.stringify(config.authorization_details),
+      requested_actor: "urn:agent:accounting-bot-v1",
+      scope: config.scope,
+      subject_token_type: "urn:ietf:params:oauth:token-type:access_token",
+      subject_token: req.user.id,
+    };
+    const response = await authorizationService.par(request);
 
-    this.on("elevate", async (req) => {
-      const { actor } = createPermissionsElevationActor(req.data.grant_id);
-      const config = actor.getSnapshot().context.request;
-      const authorizationService = (await cds.connect.to(
-        "AuthorizationService"
-      )) as AuthorizationService;
-      const request = {
-        response_type: "code",
-        client_id: "demo-client-app",
-        redirect_uri: `${cds.context?.http?.req.protocol}://${cds.context?.http?.req.get("host")}/demo/callback`,
-        grant_management_action: "merge",
-        grant_id: req.data.grant_id,
-        authorization_details: JSON.stringify(config.authorization_details),
-        requested_actor: "urn:agent:accounting-bot-v1",
-        scope: config.scope,
-        subject_token_type: "urn:ietf:params:oauth:token-type:access_token",
-        subject_token: req.user.id,
-      };
-      const response = await authorizationService.par(request);
-
-      if (!response) {
-        return await cds.context?.http?.res.send(
-          renderToString(<div>Authorization failed</div>)
-        );
-      }
-      const { request_uri, expires_in } = response;
-      cds.context?.http?.res.setHeader("Content-Type", "text/html");
-      cds.context?.http?.res.setHeader("HX-Trigger", "grant-updated");
-      cds.context?.http?.res.send(
-        htmlTemplate(`
-          ${renderToString(
-            <AuthorizationRequestButton
-              {...request}
-              request_uri={request_uri!}
-              expires_in={expires_in!}
-              authorization_details={config.authorization_details}
-            />
-          )},
-          <script async defer src="/demo/send_event?grant_id=${req.data.grant_id}&type=grant-updated">
-          </script>
-        `)
+    if (!response) {
+      return await cds.context?.http?.res.send(
+        renderToString(<div>Authorization failed</div>)
       );
-    });
-
-    await super.init();
+    }
+    const { request_uri, expires_in } = response;
+    cds.context?.http?.res.setHeader("Content-Type", "text/html");
+    cds.context?.http?.res.setHeader("HX-Trigger", "grant-updated");
+    cds.context?.http?.res.send(
+      htmlTemplate(`
+            ${renderToString(
+              <AuthorizationRequestButton
+                {...request}
+                request_uri={request_uri!}
+                expires_in={expires_in!}
+                authorization_details={config.authorization_details}
+              />
+            )},
+            <script async defer src="/demo/send_event?grant_id=${req.data.grant_id}&type=grant-updated">
+            </script>
+          `)
+    );
   }
 }
+
+export type DemoService = Service & typeof cds.ApplicationService;
