@@ -1,8 +1,8 @@
 import cds from "@sap/cds";
-import type { AuthorizationService } from "./index.d.ts";
+import type { AuthorizationService } from "../authorization-service.tsx";
+import { AuthorizationRequests, Consents } from "#cds-models/AuthorizationService"
 
 export default function (srv: AuthorizationService) {
-  const { AuthorizationRequests, Consents, Grants } = srv.entities;
 
   // Simple consent creation with grant update
   srv.before("POST", Consents, async (req) => {

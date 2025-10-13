@@ -3,7 +3,8 @@
     "folders": {
       "authorization": "./srv/authorization-service",
       "grant-management": "./srv/grant-management-service",
-      "demo": "./srv/demo-service"
+      "demo": "./srv/demo-service",
+      "srv": "./srv"
     },
     "typer": {
       "strictPropertyInitialization": false,
@@ -22,7 +23,12 @@
         "kind": "ias"
       },
       "db": {
-        "kind": "postgres"
+        "kind": "sqlite",
+        "url": "db.sqlite",
+        "credentials": {
+          "database": "db.sqlite",
+          "url": "db.sqlite"
+        }
       }
     },
     "destinations": true,
@@ -30,7 +36,8 @@
       "db": {
         "kind": "sqlite",
         "credentials": {
-          "database": "db.sqlite"
+          "database": "db.sqlite",
+          "url": "db.sqlite"
         }
       },
 

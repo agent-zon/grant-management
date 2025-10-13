@@ -1,6 +1,6 @@
 _schema-version: "1.0"
 repository: scai-dev.common.repositories.cloud.sap
-tag: latest
+tag: v8
 before-all:
   - npx cds build --production
 
@@ -8,21 +8,29 @@ modules:
   - name: grant-management/api
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t grant-management/api:latest -f Dockerfile . --load
+        - docker buildx build --platform linux/amd64 -t grant-management/api:v8 -f Dockerfile . --load
 
   - name: grant-management/approuter
-    id: grant-management-approuter
+    id: v1-approuter
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t grant-management/approuter:latest app/router --load
-  - name: v1-approuter
-    build-parameters:
-      buildpack:
-        type: nodejs
-        builder: builder-jammy-base
-        path: app/router
-        env:
-          BP_NODE_RUN_SCRIPTS: ""
+        - docker buildx build --platform linux/amd64 -t grant-management/approuter:v8 app/router --load
+  # - name: v1-approuter
+  #   build-parameters:
+  #     buildpack:
+  #       type: nodejs
+  #       builder: builder-jammy-base
+  #       path: app/router
+  #       env:
+  #         BP_NODE_RUN_SCRIPTS: ""
+  # - name: v1-approuter
+  #   build-parameters:
+  #     buildpack:
+  #       type: nodejs
+  #       builder: builder-jammy-base
+  #       path: app/router
+  #       env:
+  #         BP_NODE_RUN_SCRIPTS: ""
   # - name: v1-approuter
   #   build-parameters:
   #     buildpack:

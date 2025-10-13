@@ -2,8 +2,8 @@ import cds from "@sap/cds";
 import express from "express";
 import bodyParser from "body-parser";
 import methodOverride from "method-override";
-import { htmxMiddleware } from "./middleware/htmx.ts";
-import { htmlTemplate } from "./middleware/htmx.ts";
+import { htmxMiddleware } from "./middleware/htmx.tsx";
+import { htmlTemplate } from "./middleware/htmx.tsx";
 import { renderToString } from "react-dom/server";
 import React from "react";
 

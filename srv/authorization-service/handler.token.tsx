@@ -1,9 +1,13 @@
 import cds from "@sap/cds";
 import { ulid } from "ulid";
-import type { AuthorizationService } from "./index.d.ts";
-import type { Grant } from "#cds-models/AuthorizationService";
+import type { AuthorizationService } from "../authorization-service.tsx";
+import {
+  Grants,
+  Grant,
+  AuthorizationRequests,
+} from "#cds-models/AuthorizationService";
+
 export default function (srv: AuthorizationService) {
-  const { Grants, AuthorizationRequests } = srv.entities;
   srv.on("token", async (req) => {
     console.log("🔐 Token request:", req.data);
     const { grant_type, code } = req.data;

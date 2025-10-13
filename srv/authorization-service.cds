@@ -2,6 +2,7 @@ using com.sap.agent.grants as grants from '../db/grants.cds';
 
 @path: '/oauth-server'
 @impl: './authorization-service.tsx'
+@protocol: 'rest' 
 service AuthorizationService {   
     entity AuthorizationRequests as projection on grants.AuthorizationRequests;
     entity Grants as projection on grants.Grants {

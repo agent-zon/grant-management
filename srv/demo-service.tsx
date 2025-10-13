@@ -8,9 +8,9 @@ import type {
 } from "#cds-models/com/sap/agent/grants";
 import permissionsElevationMachine, {
   PermissionsContext,
-} from "./demo-service/permissions-elevation-machine.ts";
+} from "./demo-service/permissions-elevation-machine.tsx";
 import { createActor } from "xstate";
-import { htmlTemplate } from "./middleware/htmx.ts";
+import { htmlTemplate } from "./middleware/htmx.tsx";
 import AuthorizationService from "#cds-models/AuthorizationService";
 
 import React from "react";
@@ -23,9 +23,11 @@ interface AuthorizationRequestButtonProps {
   request_uri?: string;
   expires_in?: number;
   authorization_details?: PermissionsContext["request"]["authorization_details"];
+  authServerUrl?: string;
 }
 
 function AuthorizationRequestButton({
+  authServerUrl,
   request_uri,
   expires_in,
   authorization_details,
@@ -54,7 +56,7 @@ function AuthorizationRequestButton({
           </div>
         </div>
       </div>
-      <form action={`${process.env.AUTH_SERVER_URL}/authorize`} method="post">
+      <form action={`${authServerUrl}/authorize`} method="post">
         <input type="hidden" name="client_id" value="demo-client-app" />
         <input type="hidden" name="request_uri" value={request_uri!} />
         <button
@@ -72,7 +74,7 @@ function AuthorizationRequestButton({
             request
           </div>
           <div className="text-gray-500 text-sm text-center text-pretty font-mono ">
-            Endpoint: {`${process.env.AUTH_SERVER_URL}/par`}
+            Endpoint: {`${authServerUrl}/par`}
           </div>
         </div>
         <div className="space-y-3">
@@ -643,7 +645,10 @@ export default class Service extends cds.ApplicationService {
       const request = {
         response_type: "code",
         client_id: "demo-client-app",
-        redirect_uri: `${cds.context?.http?.req.protocol}://${cds.context?.http?.req.get("host")}/demo/callback`,
+        redirect_uri: new URL(
+          "/demo/callback",
+          cds.context?.http?.req.headers.referer
+        ).href,
         grant_management_action: "create",
         authorization_details: JSON.stringify(config.authorization_details),
         requested_actor: "urn:agent:analytics-bot-v1",
@@ -673,9 +678,16 @@ export default class Service extends cds.ApplicationService {
       }
 
       console.log("🔍 Demo Request - Preparing HTML response");
+      const authServerUrl =
+        (await cds.connect.to(AuthorizationService).then((service) => {
+          return service.baseUrl;
+        })) || "/oauth-server";
+
+      console.log("🔍 Demo Request - Auth server URL:", authServerUrl);
       cds.context?.http?.res.setHeader("Content-Type", "text/html");
       const htmlResponse = htmlTemplate(`${renderToString(
         <AuthorizationRequestButton
+          authServerUrl={authServerUrl}
           {...request}
           request_uri={response.request_uri!}
           expires_in={response.expires_in!}
@@ -850,21 +862,24 @@ export default class Service extends cds.ApplicationService {
       `);
   }
 
-  public async elevate(req) {
-    const { actor } = createPermissionsElevationActor(req.data.grant_id);
+  public async elevate(grant_id) {
+    const { actor } = createPermissionsElevationActor(grant_id);
     const config = actor.getSnapshot().context.request;
     const authorizationService = await cds.connect.to(AuthorizationService);
     const request = {
       response_type: "code",
       client_id: "demo-client-app",
-      redirect_uri: `${cds.context?.http?.req.protocol}://${cds.context?.http?.req.get("host")}/demo/callback`,
+      redirect_uri: new URL(
+        "/demo/callback",
+        cds.context?.http?.req.headers.referer
+      ).href,
       grant_management_action: "merge",
-      grant_id: req.data.grant_id,
+      grant_id: grant_id,
       authorization_details: JSON.stringify(config.authorization_details),
       requested_actor: "urn:agent:accounting-bot-v1",
       scope: config.scope,
       subject_token_type: "urn:ietf:params:oauth:token-type:access_token",
-      subject_token: req.user.id,
+      subject_token: cds.context?.user?.id,
     };
     const response = await authorizationService.par(request);
 
@@ -876,17 +891,22 @@ export default class Service extends cds.ApplicationService {
     const { request_uri, expires_in } = response;
     cds.context?.http?.res.setHeader("Content-Type", "text/html");
     cds.context?.http?.res.setHeader("HX-Trigger", "grant-updated");
+    const authServerUrl =
+      (await cds.connect.to(AuthorizationService).then((service) => {
+        return service.baseUrl;
+      })) || "/oauth-server";
     cds.context?.http?.res.send(
       htmlTemplate(`
             ${renderToString(
               <AuthorizationRequestButton
+                authServerUrl={authServerUrl}
                 {...request}
                 request_uri={request_uri!}
                 expires_in={expires_in!}
                 authorization_details={config.authorization_details}
               />
             )},
-            <script async defer src="/demo/send_event?grant_id=${req.data.grant_id}&type=grant-updated">
+            <script async defer src="/demo/send_event?grant_id=${grant_id}&type=grant-updated">
             </script>
           `)
     );

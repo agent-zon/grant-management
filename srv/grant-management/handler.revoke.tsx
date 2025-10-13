@@ -1,7 +1,7 @@
 import cds from "@sap/cds";
-import type { GrantManagementService } from "./index.d.ts";
+import type { GrantsManagementService } from "../grant-management.tsx";
 
-export default function (srv: GrantManagementService) {
+export default function (srv: GrantsManagementService) {
   const { Grants } = srv.entities;
   srv.before("DELETE", Grants, async function (req) {
     const grant = await srv.update(Grants, req.data.ID).with({

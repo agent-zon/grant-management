@@ -1,4 +1,4 @@
-import type { AuthorizationService } from "./index.d.ts";
+import type { AuthorizationService } from "../authorization-service.tsx";
 
 export default function (srv: AuthorizationService) {
   srv.on("metadata", async (req) => {

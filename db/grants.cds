@@ -134,28 +134,28 @@ entity AuthorizationDetail:cuid,managed, AuthorizationDetailMcpTools, Authorizat
 
 
 aspect AuthorizationDetailDatabase {
-  type: String enum { database };
+  // type: String enum { database };
   databases: array of String; // Database names
   schemas: array of String;   // Schema names
   tables: array of String;    // Table names
 }
 
 aspect AuthorizationDetailApi {
-  type: String enum { api };
+  // type: String enum { api };
   urls: array of String;    // API endpoint URLs
   protocols: array of String; // HTTP, HTTPS, WebSocket, gRPC, etc.
 }
  
 aspect AuthorizationDetailMcpTools {
-  type: String enum { mcp };
-  server: String enum { mcp };           // MCP server URL
+  // type: String enum { mcp };
   transport: String;        // Transport protocol
   tools: Map;              // tool_name -> boolean (granted/denied)
+  server: String;
 }
 
 
 aspect AuthorizationDetailFileSystem {
-  type: String enum { fs };
+  // type: String enum { fs };
   roots: array of String;   // File system root paths
   permissions:  {
     read: Boolean;

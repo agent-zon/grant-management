@@ -1,7 +1,7 @@
 import cds from "@sap/cds";
 import { Grants } from "#cds-models/GrantsManagementService";
+import type { GrantsManagementService } from "../grant-management.tsx";
 // import type GrantsManagementService from "#cds-models/GrantsManagementService";
-import type { GrantManagementService } from "./index.d.ts";
 
 // type InstanceGrant = InstanceType<typeof Grants>;
 // type AfterGrant = (
@@ -9,7 +9,7 @@ import type { GrantManagementService } from "./index.d.ts";
 //   req: InstanceType<typeof cds.Request>
 // ) => InstanceGrant[] | Response | void;
 
-export default function grantList(srv: GrantManagementService) {
+export default function grantList(srv: GrantsManagementService) {
   //@ts-ignore
   srv.after("READ", Grants, function (grants, req) {
     if (cds.context?.http?.req.accepts("html") && grants && !req.data.id) {
