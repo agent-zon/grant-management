@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "ES2022",
-    "moduleResolution": "Bundler",
+    "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
@@ -14,22 +14,47 @@
     "baseUrl": ".",
     "resolveJsonModule": true,
     "outDir": "./dist",
-    "rootDirs": [".", "@cds-models", "types"],
-    "typeRoots": ["./types", "./node_modules/@types"],
+    "rootDirs": [
+      ".",
+      "@cds-models",
+      "types"
+    ],
+    "typeRoots": [
+      "./types",
+      "./node_modules/@types"
+    ],
     "composite": true,
-    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2022"
+    ],
     "noImplicitAny": false,
     "noPropertyAccessFromIndexSignature": false,
     "noImplicitReturns": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "exactOptionalPropertyTypes": false,
-
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
     "paths": {
-      "#cds-models/*": ["./@cds-models/*"],
-      "@/*": ["./srv/*"]
+      "#cds-models/*": [
+        "./@cds-models/*"
+      ],
+      "@/*": [
+        "./*"
+      ]
     }
   },
-  "include": ["srv/**/*", "@cds-models/**/*", "types/**/*"],
-  "exclude": ["node_modules", "gen", "dist", "**/*.js"]
+  "include": [
+    "types/**/*",
+    "srv/**/*",
+    "@cds-models/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "gen",
+    "dist",
+    "**/*.js"
+  ]
 }

@@ -1,13 +1,20 @@
 import cds from "@sap/cds";
-import { ApplicationService } from "@sap/cds";
-import { Grant } from "#cds-models/AuthorizationService";
-export default function grantList(srv: ApplicationService) {
-  const { Grants } = srv.entities;
+import { Grants } from "#cds-models/GrantsManagementService";
+// import type GrantsManagementService from "#cds-models/GrantsManagementService";
+import type { GrantManagementService } from "./index.d.ts";
 
-  srv.after("READ", Grants, async (grants: Grant[], req: cds.Request) => {
-    if (cds.context?.http?.req.accepts("html") && !req.data.id) {
-      const activeGrants = grants.filter((g) => g.status === "active").length;
+// type InstanceGrant = InstanceType<typeof Grants>;
+// type AfterGrant = (
+//   grants: InstanceGrant[],
+//   req: InstanceType<typeof cds.Request>
+// ) => InstanceGrant[] | Response | void;
+
+export default function grantList(srv: GrantManagementService) {
+  //@ts-ignore
+  srv.after("READ", Grants, function (grants, req) {
+    if (cds.context?.http?.req.accepts("html") && grants && !req.data.id) {
       const totalGrants = grants.length;
+      const activeGrants = grants.filter(Boolean).length;
       return cds.context?.render(
         <div className="min-h-screen bg-gray-950 text-white">
           <div className="container mx-auto px-4 py-8 space-y-6">

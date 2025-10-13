@@ -19,7 +19,7 @@ export function createUsageTracker() {
           const { GrantUsage } = cds.entities("grant.management");
 
           await cds.run(
-            INSERT.into(GrantUsage).entries({
+            cds.ql.INSERT.into(GrantUsage).entries({
               grant_id: grant_id,
               ip: req.ip || req.connection.remoteAddress,
               user_agent: req.headers["user-agent"],
@@ -31,7 +31,7 @@ export function createUsageTracker() {
 
           // Update grant usage count and last_used
           await cds.run(
-            UPDATE("com.sap.agent.grants.Grants", grant_id).with({
+            cds.ql.UPDATE("com.sap.agent.grants.Grants", grant_id).with({
               usage_count: { "+=": 1 },
               last_used: new Date().toISOString(),
             })

@@ -28,21 +28,22 @@ export const htmlTemplate = (reactContent: string) => `
 </html>
 `;
 
-
-
 // Middleware function to add to CDS context with auto-detection
 export const htmxMiddleware = (req: any, res: any, next: any) => {
-    if (cds.context) {
-      Object.assign(cds.context!,{
-         render: (component: React.ReactNode) => sendHtml(htmlTemplate(renderToString(component))),
-         html: (htmlString: string) => sendHtml(htmlTemplate(htmlString))
-        });
-    }
-  
+  if (cds.context) {
+    Object.assign(cds.context!, {
+      render: (component: React.ReactNode) =>
+        sendHtml(htmlTemplate(renderToString(component))),
+      html: (htmlString: string) => sendHtml(htmlTemplate(htmlString)),
+    });
+  }
+
   next();
 };
 
-function sendHtml(html: string): any {
-    cds.context?.http?.res.setHeader("Content-Type", "text/html");
-    cds.context?.http?.res.send(html);
+export function sendHtml(html: string) {
+  cds.context?.http?.res.setHeader("Content-Type", "text/html");
+  return cds.context?.http?.res.send(html);
 }
+
+

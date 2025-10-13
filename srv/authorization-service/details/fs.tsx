@@ -1,44 +1,58 @@
-import { FileSystemAuthorizationDetailRequest } from '#cds-models/grant/management';
-import React from 'react';
-import { AuthorizationDetailProps } from './props';
-import './types.d.ts';
-
-export default function FSAuthorizationDetail({ index, description, riskLevel, category, ...detail }: FileSystemAuthorizationDetailRequest & AuthorizationDetailProps) {
+//preserve react import to avoid runtime error
+import React from "react";
+import type {
+  FileSystemAuthorizationDetailRequest,
+  RARClaim,
+} from "#cds-models/com/sap/agent/grants";
+import type { AuthorizationDetailProps } from "./types.d.ts";
+import "./types.d.ts";
+export default function FSAuthorizationDetail({
+  index,
+  description,
+  riskLevel,
+  category,
+  ...detail
+}: FileSystemAuthorizationDetailRequest & AuthorizationDetailProps) {
   return (
     <div
       className={`bg-gray-700/30 rounded-lg p-6 border-l-4 ${
-        riskLevel === 'high' ? 'border-red-500' :
-        riskLevel === 'medium' ? 'border-yellow-500' :
-        'border-green-500'
+        riskLevel === "high"
+          ? "border-red-500"
+          : riskLevel === "medium"
+            ? "border-yellow-500"
+            : "border-green-500"
       }`}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <div className={`px-3 py-1 rounded text-sm font-medium ${
-            riskLevel === 'high' ? 'bg-red-500/20 text-red-300' :
-            riskLevel === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
-            'bg-green-500/20 text-green-300'
-          }`}>
+          <div
+            className={`px-3 py-1 rounded text-sm font-medium ${
+              riskLevel === "high"
+                ? "bg-red-500/20 text-red-300"
+                : riskLevel === "medium"
+                  ? "bg-yellow-500/20 text-yellow-300"
+                  : "bg-green-500/20 text-green-300"
+            }`}
+          >
             {detail.type_code}
           </div>
-          <span className="text-sm text-gray-400">
-            {category}
-          </span>
+          <span className="text-sm text-gray-400">{category}</span>
         </div>
-        <div className={`px-2 py-1 rounded text-xs font-bold ${
-          riskLevel === 'high' ? 'bg-red-500/20 text-red-300' :
-          riskLevel === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
-          'bg-green-500/20 text-green-300'
-        }`}>
+        <div
+          className={`px-2 py-1 rounded text-xs font-bold ${
+            riskLevel === "high"
+              ? "bg-red-500/20 text-red-300"
+              : riskLevel === "medium"
+                ? "bg-yellow-500/20 text-yellow-300"
+                : "bg-green-500/20 text-green-300"
+          }`}
+        >
           {riskLevel.toUpperCase()} RISK
         </div>
       </div>
 
-      <p className="text-sm text-gray-300 mb-4">
-        {description}
-      </p>
-
+      <p className="text-sm text-gray-300 mb-4">{description}</p>
 
       {/* File System Configuration */}
       <div className="mb-4">
@@ -51,14 +65,14 @@ export default function FSAuthorizationDetail({ index, description, riskLevel, c
               <div className="text-xs text-gray-400 uppercase">Root Paths</div>
               <div className="text-sm text-white">
                 {detail.roots.map((root, rootIndex) => (
-                  <input 
-                    key={root} 
-                    title='Root Path'
-                    name={`authorization_details[${index}].roots[${rootIndex}]`} 
-                    type='text' 
-                    className="inline-block bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded text-xs mr-1 mb-1" 
-                    value={`📁 ${root}`} 
-                    readOnly 
+                  <input
+                    key={root}
+                    title="Root Path"
+                    name={`authorization_details[${index}].roots[${rootIndex}]`}
+                    type="text"
+                    className="inline-block bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded text-xs mr-1 mb-1"
+                    value={`📁 ${root}`}
+                    readOnly
                   />
                 ))}
               </div>
@@ -69,14 +83,14 @@ export default function FSAuthorizationDetail({ index, description, riskLevel, c
               <div className="text-xs text-gray-400 uppercase">Actions</div>
               <div className="text-sm text-white">
                 {detail.actions.map((action, actionIndex) => (
-                  <input 
-                    key={action} 
-                    title='Action'
-                    name={`authorization_details[${index}].actions[${actionIndex}]`} 
-                    type='text' 
-                    className="inline-block bg-green-500/20 text-green-300 px-2 py-1 rounded text-xs mr-1 mb-1" 
-                    value={`⚡ ${action}`} 
-                    readOnly 
+                  <input
+                    key={action}
+                    title="Action"
+                    name={`authorization_details[${index}].actions[${actionIndex}]`}
+                    type="text"
+                    className="inline-block bg-green-500/20 text-green-300 px-2 py-1 rounded text-xs mr-1 mb-1"
+                    value={`⚡ ${action}`}
+                    readOnly
                   />
                 ))}
               </div>
@@ -86,26 +100,41 @@ export default function FSAuthorizationDetail({ index, description, riskLevel, c
       </div>
 
       {/* File Permissions */}
-        <div className="mb-4">
-          <h5 className="text-sm font-medium text-gray-400 mb-3">
-            File Permissions:
-          </h5>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {detail.permissions && Object.entries(detail.permissions).map(([permName, permission]) => (
-              <div key={permName} className="flex items-center space-x-3 p-3 bg-gray-600/30 rounded">
+      <div className="mb-4">
+        <h5 className="text-sm font-medium text-gray-400 mb-3">
+          File Permissions:
+        </h5>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {detail.permissions &&
+            Object.entries(
+              detail.permissions as Record<
+                string,
+                { essential: true } | boolean | null
+              >
+            ).map(([permName, permission]) => (
+              <div
+                key={permName}
+                className="flex items-center space-x-3 p-3 bg-gray-600/30 rounded"
+              >
                 <input
                   type="checkbox"
                   name={`authorization_details[${index}].permissions_${permName}`}
                   id={`perm_${permName}_${index}`}
-                  defaultChecked={Boolean(permission && permission.essential)}
-                  disabled={Boolean(permission && permission.essential)}
+                  defaultChecked={Boolean(
+                    permission instanceof Object
+                      ? permission?.essential
+                      : permission
+                  )}
+                  disabled={Boolean(
+                    permission instanceof Object ? permission?.essential : false
+                  )}
                   className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
                 />
                 <label htmlFor={`perm_${permName}_${index}`} className="flex-1">
                   <div className="text-sm text-white font-medium">
                     {permName}
                   </div>
-                  {permission && permission.essential ? (
+                  {permission instanceof Object && permission?.essential ? (
                     <div className="text-xs text-red-300 bg-red-500/20 px-2 py-1 rounded mt-1 inline-block">
                       REQUIRED
                     </div>
@@ -117,9 +146,8 @@ export default function FSAuthorizationDetail({ index, description, riskLevel, c
                 </label>
               </div>
             ))}
-          </div>
         </div>
+      </div>
     </div>
   );
 }
-

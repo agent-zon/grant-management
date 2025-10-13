@@ -1,4 +1,6 @@
-import type express from "express";
+import cds from "@sap/cds";
+
+export * from "../srv/authorization-service/index.d.ts";
 declare module "@sap/cds" {
   interface EventContext {
     render: (

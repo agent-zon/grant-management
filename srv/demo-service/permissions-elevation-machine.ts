@@ -1,6 +1,8 @@
-import { AuthorizationDetailRequest } from "#cds-models/grant/management";
+import type {
+  AuthorizationDetailRequest,
+  AuthorizationRequest,
+} from "#cds-models/com/sap/agent/grants";
 import { createMachine, assign } from "xstate";
-import { AuthorizationRequest } from "#cds-models/grant/management";
 
 // Types for the state machine context
 export interface PermissionsContext {
@@ -14,7 +16,9 @@ export interface PermissionsContext {
   step: number;
   error?: string;
   request: Omit<AuthorizationRequest, "authorization_details"> & {
-    authorization_details: AuthorizationDetailRequest[];
+    authorization_details: (Omit<AuthorizationDetailRequest, "type"> & {
+      type: string;
+    })[];
   };
 }
 

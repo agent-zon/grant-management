@@ -1,6 +1,6 @@
 import React from 'react';
-import { AuthorizationDetailProps } from './props';
-import { ApiAuthorizationDetailRequest } from '#cds-models/grant/management';
+import type { AuthorizationDetailProps } from './types.d.ts';
+import type { ApiAuthorizationDetailRequest } from '#cds-models/com/sap/agent/grants';
 
 
 export default function APIAuthorizationDetail({ index, description, riskLevel, category, ...detail }: ApiAuthorizationDetailRequest & AuthorizationDetailProps) {

@@ -1,6 +1,6 @@
 import { ulid } from "ulid";
-import AuthorizationService from "#cds-models/AuthorizationService";
-
+import type { AuthorizationService } from "./index.d.ts";
+ 
 export default function par(srv: AuthorizationService) {
   const { AuthorizationRequests, Grants } = srv.entities;
 
