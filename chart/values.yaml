@@ -6,7 +6,7 @@ global:
     name: docker-registry
   image:
     registry: scai-dev.common.repositories.cloud.sap
-    tag: v8
+    tag: v10
     imagePullPolicy: always
 srv:
   bindings:
