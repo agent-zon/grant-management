@@ -2,6 +2,7 @@
 @path: '/demo' 
 @protocol: 'rest' 
 @impl: './demo-service.tsx' 
+@requires: ['authenticated-user','system-user']
 service DemoService {
     @method: [PUT, POST, GET]
     function request(config: String) returns String;
