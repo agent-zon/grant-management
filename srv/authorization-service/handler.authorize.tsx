@@ -1,4 +1,5 @@
 import cds from "@sap/cds";
+import React from "react";
 import { AuthorizationDetailRequest } from "#cds-models/com/sap/agent/grants";
 import * as templates from "./details/index.tsx";
 import "./handler.authorize.tsx";

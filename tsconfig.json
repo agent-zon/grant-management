@@ -4,6 +4,7 @@
     "module": "ES2022",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
+    "jsxImportSource": "react",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -14,7 +15,7 @@
     "baseUrl": ".",
     "resolveJsonModule": true,
     "outDir": "./dist",
-    
+
     "rootDirs": [".", "@cds-models", "types"],
     "typeRoots": ["./types", "./node_modules/@types"],
     "composite": true,
@@ -32,7 +33,7 @@
       "@/*": ["./*"]
     }
   },
-  
+
   "include": ["types/**/*", "srv/**/*", "@cds-models/**/*"],
   "exclude": ["node_modules", "gen", "dist"]
 }

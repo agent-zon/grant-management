@@ -22,7 +22,12 @@ RUN npm install --omit=dev
 
 # Copy application code
 COPY gen/srv/ ./
+COPY srv/server.js ./srv/server.js
 COPY db.sqlite ./
+COPY tsconfig.json ./
+COPY tsconfig.cdsbuild.json ./
+COPY types/ ./types/
+COPY @cds-models/ ./@cds-models/
 RUN npm install
 
 # Change ownership to nodejs user
