@@ -1,3 +1,4 @@
+import React from "react";
 import cds from "@sap/cds";
 import { Grant, Grants } from "#cds-models/GrantsManagementService";
 import type { GrantsManagementService } from "../grant-management.tsx";

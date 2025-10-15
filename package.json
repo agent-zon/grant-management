@@ -51,7 +51,6 @@
     "serve": "npm run serve:cds & npm run serve:approuter",
     "serve:cds": "npx cds serve --profile dev",
     "dev:approuter": "node node_modules/@sap/approuter/approuter.js --workingDir app/router --port 9000",
-
     "serve:approuter": "node node_modules/@sap/approuter/approuter.js --workingDir app/router --port 9000",
     "hybrid": "npx cds bind --exec -- npm run serve",
     "hybrid:approuter": "npx cds bind --exec -- npm run serve:approuter",
@@ -71,7 +70,7 @@
     "setup:local": "npm run bind:all && npm run serve:hybrid",
     "setup:dev": "npm install && npm run bind:auth && npm run serve",
     "deploy": "npx cds up -2 k8s",
-    "deploy:helm": "npm run build && helm upgrade v7 ./gen/chart --install --create-namespace",
+    "deploy:helm": "npm run build && helm upgrade v9 ./gen/chart --install --create-namespace",
     "deploy:to:sqlite": "npx cds deploy --to sqlite",
     "copy-docker-secret": "./scripts/copy-docker-secret.sh",
     "setup-namespace": "./scripts/setup-namespace.sh",
