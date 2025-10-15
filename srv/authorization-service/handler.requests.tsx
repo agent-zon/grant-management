@@ -1,9 +1,10 @@
 import { ulid } from "ulid";
 import { AuthorizationService } from "../authorization-service.tsx";
-
+import {
+  AuthorizationRequests,
+  Grants,
+} from "#cds-models/AuthorizationService";
 export default function par(srv: AuthorizationService) {
-  const { AuthorizationRequests, Grants } = srv.entities;
-
   srv.on("par", async (req) => {
     //todo:extract subject from token
     //  const {subject_token_type, subject_token} = req.data;

@@ -21,7 +21,6 @@ service AuthorizationService {
 
     ) returns String;
 
-    
     // PAR (Pushed Authorization Request) endpoint with Rich Authorization Requests support
     action par(
         response_type: String,
