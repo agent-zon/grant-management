@@ -1,5 +1,5 @@
 apiVersion: v2
-name: grant-management
+name: cds
 description: A simple CAP project.
 type: application
 version: 1.0.0
