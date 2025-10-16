@@ -15,7 +15,7 @@ entity Grants: managed {
   client_id: String=max(requests.client_id);
   risk_level:String=max(requests.risk_level);
   status: String='active';
-  subject: User=max(consents.subject);
+  subject: User;
   actor: String=consents.request.requested_actor;
   scope:String;
   consents: Composition of many Consents on consents.grant_id = $self.id;

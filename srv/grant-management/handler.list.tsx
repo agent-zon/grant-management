@@ -1,6 +1,11 @@
 import React from "react";
 import cds from "@sap/cds";
-import { Grants } from "#cds-models/GrantsManagementService";
+import {
+  Grants,
+  Consents,
+  AuthorizationDetail,
+  Consent,
+} from "#cds-models/GrantsManagementService";
 import type { GrantsManagementService } from "../grant-management.tsx";
 // import type GrantsManagementService from "#cds-models/GrantsManagementService";
 
@@ -12,10 +17,69 @@ import type { GrantsManagementService } from "../grant-management.tsx";
 
 export default function grantList(srv: GrantsManagementService) {
   //@ts-ignore
-  srv.after("READ", Grants, function (grants, req) {
-    if (cds.context?.http?.req.accepts("html") && grants && !req.data.id) {
-      const totalGrants = grants.length;
-      const activeGrants = grants.filter(Boolean).length;
+  srv.after("READ", Grants, async function (data, req) {
+    if (cds.context?.http?.req.accepts("html") && data && !req.data.id) {
+      const totalGrants = data.length;
+      const activeGrants = (await srv.run(
+        cds.ql.SELECT.columns(["*", "authorization_details"]).from(Consents)
+      )) as Consents;
+      const authorization_details = await srv.run(
+        cds.ql.SELECT.from(AuthorizationDetail)
+      );
+
+      const grants = Object.values(
+        activeGrants.reduce(
+          (acc, consent) => {
+            const consents = [
+              ...(acc[consent.grant_id]?.consents || []),
+              consent,
+            ];
+            acc[consent.grant_id] = {
+              id: consent.grant_id,
+              consents: consents,
+              authorization_details: [
+                ...(acc[consent.grant_id]?.authorization_details || []),
+                ...authorization_details.filter(
+                  (detail) => detail.consent_grant_id === consent.grant_id
+                ),
+              ],
+              scope: consents
+                .map((c) => c.scope)
+                .filter(unique)
+                .join(" "),
+              subject: consents
+                .map((c) => c.subject)
+                .filter(unique)
+                .join(" "),
+              actor: consents
+                .map((c) => c.actor)
+                .filter(unique)
+                .join(" "),
+              risk_level: consents
+                .map((c) => c.risk_level)
+                .filter(unique)
+                .join(" "),
+              status: consents
+                .map((c) => c.status)
+                .filter(unique)
+                .join(" "),
+              createdAt: consent[0]?.createdAt,
+              updatedAt: consent[0]?.updatedAt,
+            };
+            return acc;
+          },
+          {} as Record<
+            string,
+            {
+              consents: Consent[];
+              authorization_details: AuthorizationDetail[];
+            }
+          >
+        )
+      );
+
+      console.log("🔧 Active grants:", activeGrants, authorization_details);
+      console.log("🔧 Active grants:", activeGrants.length);
       return cds.context?.render(
         <div className="min-h-screen bg-gray-950 text-white">
           <div className="container mx-auto px-4 py-8 space-y-6">
@@ -54,7 +118,7 @@ export default function grantList(srv: GrantsManagementService) {
                   <div>
                     <p className="text-sm text-gray-400">Active Grants</p>
                     <p className="text-xl font-bold text-white">
-                      {activeGrants}
+                      {activeGrants.length}
                     </p>
                   </div>
                 </div>
@@ -110,7 +174,7 @@ export default function grantList(srv: GrantsManagementService) {
                   Your Consent Grants
                 </h3>
                 <span className="text-sm text-gray-400">
-                  {totalGrants} grants • {activeGrants} active
+                  {totalGrants} grants • {activeGrants.length || 0} active
                 </span>
               </div>
 
@@ -254,35 +318,41 @@ export default function grantList(srv: GrantsManagementService) {
                             Authorization Details
                           </p>
                           <div className="space-y-2">
-                            {grant.authorization_details.map(
-                              (detail: any, idx: number) => (
+                            {grant.authorization_details
+                              .map((d) => d.type)
+                              .filter(unique)
+                              .map((type: string, idx: number) => (
                                 <div
                                   key={idx}
                                   className="bg-gray-600/30 rounded p-2 border border-gray-600"
                                 >
                                   <div className="flex items-center justify-between">
                                     <span className="text-xs font-medium text-purple-300">
-                                      {detail.type}
+                                      {type}
                                     </span>
                                     <span className="text-xs text-gray-400">
-                                      {detail.actions?.join(", ") ||
-                                        "No actions"}
+                                      {grant.authorization_details
+                                        .filter((d) => d.type === type)
+                                        .map((d) => d.locations)
+                                        .filter(Boolean)
+                                        .flat()
+                                        .filter(unique)
+                                        .join(", ") || "No locations"}
                                     </span>
                                   </div>
-                                  {detail.locations &&
-                                    detail.locations.length > 0 && (
-                                      <div className="mt-1">
-                                        <span className="text-xs text-gray-500">
-                                          Locations:{" "}
-                                        </span>
-                                        <span className="text-xs text-gray-300">
-                                          {detail.locations.join(", ")}
-                                        </span>
-                                      </div>
-                                    )}
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs text-gray-400">
+                                      {grant.authorization_details
+                                        .filter((d) => d.type === type)
+                                        .map((d) => d.actions)
+                                        .filter(Boolean)
+                                        .flat()
+                                        .filter(unique)
+                                        .join(", ") || "No actions"}
+                                    </span>
+                                  </div>
                                 </div>
-                              )
-                            )}
+                              ))}
                           </div>
                         </div>
                       )}
@@ -309,6 +379,10 @@ export default function grantList(srv: GrantsManagementService) {
       );
     }
 
-    return grants;
+    return data;
   });
+}
+
+function unique(value: any, index: number, array: any[]): value is any {
+  return array.indexOf(value) === index;
 }

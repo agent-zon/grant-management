@@ -640,7 +640,10 @@ export default class Service extends cds.ApplicationService {
       console.log("🔍 Demo Request - Config from state machine:", config);
 
       const authorizationService = await cds.connect.to(AuthorizationService);
-      console.log("🔍 Demo Request - Connected to AuthorizeService");
+      console.log(
+        "🔍 Demo Request - Connected to AuthorizeService",
+        cds.context?.user?.authInfo
+      );
 
       const request = {
         response_type: "code",
@@ -653,6 +656,7 @@ export default class Service extends cds.ApplicationService {
         authorization_details: JSON.stringify(config.authorization_details),
         requested_actor: "urn:agent:analytics-bot-v1",
         scope: config.scope,
+        subject: cds.context?.user?.id,
         subject_token_type: "urn:ietf:params:oauth:token-type:basic",
       };
 
@@ -879,7 +883,7 @@ export default class Service extends cds.ApplicationService {
       requested_actor: "urn:agent:accounting-bot-v1",
       scope: config.scope,
       subject_token_type: "urn:ietf:params:oauth:token-type:access_token",
-      subject_token: cds.context?.user?.id,
+      subject: cds.context?.user?.id,
     };
     const response = await authorizationService.par(request);
 

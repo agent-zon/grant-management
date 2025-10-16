@@ -36,6 +36,7 @@ service AuthorizationService {
         requested_actor: String, // OAuth on-behalf-of: actor URN
         subject_token_type: String,
         subject_token: String,
+        subject: String
 
     ) returns { request_uri: String; expires_in: Integer; };
     

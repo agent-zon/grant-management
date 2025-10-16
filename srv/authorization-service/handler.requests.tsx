@@ -4,6 +4,7 @@ import {
   AuthorizationRequests,
   Grants,
 } from "#cds-models/AuthorizationService";
+import cds from "@sap/cds";
 export default function par(srv: AuthorizationService) {
   srv.on("par", async (req) => {
     //todo:extract subject from token
@@ -15,12 +16,13 @@ export default function par(srv: AuthorizationService) {
     console.log("🔑 Grant ID for request:", grantId);
 
     // Create or update grant using upsert (only basic info, no scopes/auth details yet)
-    const grant =
-      (await srv.read(Grants, grantId)) ||
-      (await srv.create(Grants, {
-        id: grantId,
-      }));
-    console.log("🆕 Grant created/updated:", grantId);
+    // const _grant = await srv
+    //   .upsert({
+    //     id: grantId,
+    //     subject: req.data.subject ? cds.User(req.data.subject) : undefined,
+    //   })
+    //   .into(Grants);
+    // console.log("🆕 Grant created/updated:", grantId);
 
     // Create authorization request linked to grant
     const { ID } = await srv
@@ -45,7 +47,7 @@ export default function par(srv: AuthorizationService) {
 function parseAuthorizationDetails(authorization_details: string) {
   return JSON.parse(authorization_details)
     .filter(Boolean)
-    .map(({ type, ...detail }: { type: string; [key: string]: any }) => {
+    .map(({ type, ...detail }: { type: string; [key: string]: unknown }) => {
       return {
         type_code: type,
         ...detail,
