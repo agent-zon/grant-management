@@ -1,0 +1,484 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+Sidebar menu
+Search
+Write
+Notifications
+
+Dina Vinter
+Home
+Library
+Profile
+Stories
+Stats
+Following
+The Medium Blog
+The Medium Blog
+Strategy, Architecture, Continuous Delivery, and DDD
+Strategy, Architecture, Continuous Delivery, and DDD
+Nick Tune
+Nick Tune
+Better Programming
+Better Programming
+Nikola Schou
+Nikola Schou
+Find writers and publications to follow.
+
+See suggestions
+Your payment method has expired.Update to keep your membership
+
+Frontend Weekly
+Frontend Weekly
+It's really hard to keep up with all the front-end development news out there. Let us help you. We hand-pick interesting articles related to front-end development. You can also subscribe to our weekly newsletter at http://frontendweekly.co
+
+Follow publication
+
+Top highlight
+
+
+1
+
+
+1
+
+Server side rendering with React and Express
+Roilan Salinas
+Roilan Salinas
+
+Follow
+6 min read
+·
+Jul 7, 2016
+2.6K
+
+
+30
+
+
+
+
+
+This weekend I started a side project where I wanted to render from the server. I didn’t need anything special or fancy like Redux or React Router (If you are looking for a Redux and React Router boilerplate, I’ll be creating one live on twitch. You can find part one here). All the tutorials and suggestions I’ve found online went way too deep. It seemed nothing covered just good ol React.
+
+
+I’m going to assume you have a build step in place. If not, I’ll provide a link to the repo below which includes a webpack config and you can just run `npm run build`.
+
+Roilan/react-server-boilerplate
+react-server-boilerplate - React server side rendering boilerplate
+github.com
+
+To start, we’ll need to setup our folder structure. Our folder structure will be look like this:
+
+/
+ /dist -- build files
+  /assets -- assets bundled from our build step
+   index.css
+   bundle.js
+  server.js -- bundled server
+ /src -- source files
+  /app -- our React components
+   index.js -- root React component
+   browser.js -- root component wrapped with `react-dom/render`
+  index.js -- our express server
+  template.js -- our basic HTML template
+Ignore creating the files inside the `dist` folder since those come from our build step. Once you’ve created these, you’ll need to install the following modules:
+
+npm install --save react react-dom express
+We’ll start by setting up our root React component and rendering for the browser. In our `app/index.js` file, we’ll just write a hello world component.
+
+// app/index.js
+import React, { Component } from 'react';
+
+export default class App extends Component {
+  render() {
+    return (
+      <div>
+        <h1>hello world</h1>
+      </div>
+    );
+  }
+}
+We’ll take this component, import it into `app/browser.js` and render it to the DOM.
+
+// app/browser.js
+import React from 'react';
+import { render } from 'react-dom';
+import App from './index';
+
+render(<App />, document.getElementById('root'));
+You’re probably think “why do we need to separate these out and not just keep it as one?”, I’ll get to this soon and trust me it will make sense.
+
+Let’s head over to our `src/template.js` file and create our initial HTML that will be sent down from the server. `template.js` is simply a function that’s returning a string of HTML that we’re going to render our component into. Similar to what’s happening in `app/browser.js` but for the server. Our template will look like this:
+
+// src/template.js
+export default ({ body, title }) => {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>${title}</title>
+        <link rel="stylesheet" href="/assets/index.css" />
+      </head>
+      
+      <body>
+        <div id="root">${body}</div>
+      </body>
+      
+      <script src="/assets/bundle.js"></script>
+    </html>
+  `;
+};
+All we’re doing is passing in our `body` and `title` into the HTML string. Our `body` would be our React component and our `title` would be the title of the current page we’re on. You’ll also see two additional assets, `index.css` and `bundle.js`. `index.css` would be our compiled CSS and `bundle.js` would our client side React bundle that we’ll be including when we send this from the server. The client side React bundle picks up once the server is done rendering.
+
+Heading over to `src/server.js` we’re finally ready to make the magic happen and send down a React component to our client. We’re going to start by importing our libraries, component and template.
+
+// src/server.js
+import express from 'express';
+import React from 'react';
+import { renderToString } from 'react-dom/server';
+import App from './app';
+import template from './template';
+You’ll notice we have something new, `renderToString` from `react-dom/server`. `renderToString` renders our React component to HTML and preserves it if we call `ReactDOM.render` from client. This is great since we don’t want to cause unnecessary renders on the client and lose benefits from server side render. All we have left is to tell express to send our component down on the initial route.
+
+const server = express();
+
+server.use('/assets', express.static('assets'));
+
+server.get('/', (req, res) => {
+  const appString = renderToString(<App />);
+
+  res.send(template({
+    body: appString,
+    title: 'Hello World from the server'
+  }));
+});
+
+server.listen(8080);
+You’ll see three main things going on. We specify that we want to use our `assets` folder in an `assets` route so we can easily include our CSS and JS bundles. You’ll see `renderToString` in action and all we pass in is our root React component. This is why we separated our root component earlier, all we care about is rendering the root component to a string on the server. Lastly, we pass in our `body` and `title` to the template file and the result string gets sent to our client.
+
+What if we wanted to send props from the server to the client? Let’s say we wanted to detect if it was a mobile device and render a different view.
+
+Let’s change our get request to include an `isMobile` prop and update our root React component.
+
+// src/server.js
+server.get('/', (req, res) => {
+  const isMobile = true; // assume it's mobile
+  const appString = renderToString(<App isMobile={isMobile} />);
+
+  res.send(template({
+    body: appString,
+    title: 'Hello World from the server'
+  }));
+});
+
+// app/index.js
+export default class App extends Component {
+  render() {
+    const { isMobile } = this.props;
+
+    return (
+      <div>
+        <h1>hello world {isMobile ? 'mobile' : 'desktop'}</h1>
+      </div>
+    );
+  }
+}
+Press enter or click to view image in full size
+
+Oh no, what does this mean?!
+We’re not getting the result we expected. It should actually say `hello world mobile`. Well, React is really smart about making sure everything matches on the client and server. The error message is clear about why they injected new markup and it’s not magic hidden from us. Looking at the error message, we know that the client was expecting different markup, which points us to look at our initial state.
+
+So, what happened? When we generate from the server, our client has no idea that it’s suppose to receive the `isMobile`prop and be set to true. We need to give it an initial state where it can pull from and have it match on the client from the server.
+
+All we need to do is make some small changes and we’re good to go. We’ll start by going to our `server.js` file and passing our template some initial state.
+
+// src/server.js
+server.get('/', (req, res) => {
+  const isMobile = true;
+  const initialState = { isMobile };
+  const appString = renderToString(<App {...initialState} />);
+
+  res.send(template({
+    body: appString,
+    title: 'Hello World from the server',
+    initialState: JSON.stringify(initialState)
+  }));
+});
+We’re start by creating an `initialState` object and spreading that to our root component and pass it down to our template. In our template, we’re going to pass this changes over to the client. Our template would look like this:
+
+// src/template.js
+export default ({ body, title, initialState }) => {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <script>window.__APP_INITIAL_STATE__ = ${initialState}</script>
+        <title>${title}</title>
+        <link rel="stylesheet" href="/assets/index.css" />
+      </head>
+      
+      <body>
+        <div id="root">${body}</div>
+      </body>
+      
+      <script src="/assets/bundle.js"></script>
+    </html>
+  `;
+};
+Notice the initial state object we set on the window. Our last change would be to spread this initial state object on our `browser.js` file and into our root component and have the client and server initial state match.
+
+// app/browser.js
+import React from 'react';
+import { render } from 'react-dom';
+import App from './index';
+
+render(<App {...window.__APP_INITIAL_STATE__} />, document.getElementById('root'));
+If we run our app and log the initial state, we’ll get the results we expected the first time.
+
+Press enter or click to view image in full size
+
+It works!!!
+If anyone has feedback I’d love to hear it or have suggestions on what they would like to learn next. Feel free to leave a response or send me a tweet @roilan14
+
+You can also catch me streaming live on twitch. https://twitch.tv/roilan_
+
+React
+JavaScript
+Express
+Nodejs
+2.6K
+
+
+30
+
+
+
+
+Frontend Weekly
+Published in Frontend Weekly
+27K followers
+·
+Last published 4 days ago
+It's really hard to keep up with all the front-end development news out there. Let us help you. We hand-pick interesting articles related to front-end development. You can also subscribe to our weekly newsletter at http://frontendweekly.co
+
+
+Follow
+Roilan Salinas
+Written by Roilan Salinas
+160 followers
+·
+49 following
+I write code and stuff.
+
+
+Follow
+Responses (30)
+Dina Vinter
+Dina Vinter
+﻿
+
+Cancel
+Respond
+Jarko Vihriälä
+Jarko Vihriälä
+
+Oct 9, 2017
+
+
+Great article, thanks a million. Reading this is a true 101 on server-side rendering.
+3
+
+Reply
+
+Brooks Dulla
+Brooks Dulla
+
+May 26, 2017
+
+
+Wasted over an hour looking at other explanations with way too much boilerplate, this was simple and to the point. Very helpful, thanks!
+3
+
+Reply
+
+Feng Yu
+Feng Yu
+
+Mar 24, 2017
+
+
+<link rel="stylesheet" href="/assets/index.css" />
+
+6
+1
+Hello, Roilan! There isn’t a index.css file in your project.
+
+See all responses
+More from Roilan Salinas and Frontend Weekly
+Smack: Mic’s Slack Bot for Live SMS Coverage
+Mic Product Blog
+In
+
+Mic Product Blog
+
+by
+
+Roilan Salinas
+
+Smack: Mic’s Slack Bot for Live SMS Coverage
+A few weeks ago, the Mic Product team were testing the idea of sending our users a series of SMS messages as a part of a story. We wanted…
+Jul 29, 2016
+10
+
+
+Playwright vs Puppeteer: Choosing the Right Browser Automation Tool in 2024
+Frontend Weekly
+In
+
+Frontend Weekly
+
+by
+
+Shanika Wickramasinghe
+
+Playwright vs Puppeteer: Choosing the Right Browser Automation Tool in 2024
+What are the origins of Playwright and Puppeteer?
+May 15, 2024
+167
+5
+
+
+Absolute Centering in CSS
+Frontend Weekly
+In
+
+Frontend Weekly
+
+by
+
+Manisha Basra
+
+Absolute Centering in CSS
+If you want to center something horizontally in CSS you can do it just by, using the text-align: center; (when working with inline…
+Jan 9, 2019
+1.5K
+8
+
+
+Creating and Sending Reusable Emails with React
+Mic Product Blog
+In
+
+Mic Product Blog
+
+by
+
+Roilan Salinas
+
+Creating and Sending Reusable Emails with React
+A couple weeks ago, I was tasked with coding emails. Oh, great… emails. I didn’t want to spend the next couple weeks coding tables for…
+May 11, 2016
+216
+3
+
+
+See all from Roilan Salinas
+See all from Frontend Weekly
+Recommended from Medium
+How to Fix CORS Error in Express (Node.js)
+Syeda Taqvi
+Syeda Taqvi
+
+How to Fix CORS Error in Express (Node.js)
+Once and For All
+Apr 5
+23
+1
+
+
+Image Preloading in Next.js 15: Make your website load ultra-fast
+Thomas Augot
+Thomas Augot
+
+Image Preloading in Next.js 15: Make your website load ultra-fast
+When building modern web applications, image loading performance can make or break the user experience. Slow-loading images create…
+May 15
+51
+
+
+Building a High-Performance Content Delivery Network
+Anh Trần Tuấn
+Anh Trần Tuấn
+
+Building a High-Performance Content Delivery Network
+
+May 19
+
+
+🚀 Next.js Advanced Concepts in 2025: Building Smarter, Faster, and Scalable Applications
+The NewGenCoder
+The NewGenCoder
+
+🚀 Next.js Advanced Concepts in 2025: Building Smarter, Faster, and Scalable Applications
+Next.js has evolved far beyond just being a “React framework.” In 2025, it stands as a complete ecosystem for building full-stack…
+
+Sep 21
+34
+
+
+Understanding MDX: A Behind-the-Scenes Look at Markdown + JSX
+JavaScript in Plain English
+In
+
+JavaScript in Plain English
+
+by
+
+Jagadhiswaran D
+
+Understanding MDX: A Behind-the-Scenes Look at Markdown + JSX
+In modern web development, there’s a growing need to blend static content with dynamic interactivity. Markdown offers a quick and efficient…
+
+May 3
+4
+
+
+Don’t Use Arrow Functions in Event Listeners (And What to Do Instead)
+Morteza Ebrahimi
+Morteza Ebrahimi
+
+Don’t Use Arrow Functions in Event Listeners (And What to Do Instead)
+Ever added an event listener like this?
+
+Jun 6
+50
+1
+
+
+See more recommendations
+Help
+
+Status
+
+About
+
+Careers
+
+Press
+
+Blog
+
+Privacy
+
+Rules
+
+Terms
+
+Text to speech
+
+All your favorite parts of Medium are now in one sidebar for easy access.
+Okay, got it
+

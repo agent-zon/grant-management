@@ -39,3 +39,5 @@ build/
 mta_archives/
 mta-op-*
 temp/
+
+@cds-models
