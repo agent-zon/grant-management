@@ -4,7 +4,10 @@ import { AuthorizationDetailRequest } from "#cds-models/com/sap/agent/grants";
 import * as templates from "./details/index.tsx";
 import "./handler.authorize.tsx";
 import type { AuthorizationService } from "../authorization-service.tsx";
-import { AuthorizationRequests } from "#cds-models/AuthorizationService";
+import {
+  AuthorizationRequests,
+  Grants,
+} from "#cds-models/AuthorizationService";
 import type { AuthorizationDetailProps } from ".//details/types.tsx";
 export default function par(srv: AuthorizationService) {
   srv.on("authorize", async (req) => {
@@ -20,19 +23,19 @@ export default function par(srv: AuthorizationService) {
     }
 
     // Load the grant associated with this request
-    const { Grants } = srv.entities;
     console.log("🔧 Reading grant:", request);
-    const grant =
-      (await srv.read(Grants, request.grant_id)) ||
-      (await srv
-        .upsert({
+    const grant = await srv
+      .upsert([
+        {
           id: request.grant_id,
           client_id: request.client_id,
           risk_level: request.risk_level,
-          subject: req.user.id,
           actor: request.requested_actor,
-        })
-        .into(Grants));
+          subject: request.subject,
+          request_ID: request.ID,
+        },
+      ])
+      .into(Grants);
 
     console.log("📋 Grant loaded for authorization:", grant.id);
 

@@ -1,9 +1,12 @@
 import cds from "@sap/cds";
 import type { AuthorizationService } from "../authorization-service.tsx";
-import { AuthorizationRequests, Consents } from "#cds-models/AuthorizationService"
+import {
+  AuthorizationRequests,
+  Consents,
+  Grants,
+} from "#cds-models/AuthorizationService";
 
 export default function (srv: AuthorizationService) {
-
   // Simple consent creation with grant update
   srv.before("POST", Consents, async (req) => {
     console.log("🔐 Creating consent:", req.data);
@@ -12,6 +15,16 @@ export default function (srv: AuthorizationService) {
     if (!req.data.grant_id) {
       return req.error(400, "Grant ID is required for consent");
     }
+
+    // // Update the grant's subject if not already set
+    // const grant = await srv.read(Grants, req.data.grant_id);
+    // if (grant && !grant.subject && req.data.subject) {
+    //   console.log("📝 Updating grant subject to:", req.data.subject);
+    //   await srv.update(Grants, req.data.grant_id).with({
+    //     subject: req.data.subject,
+    //     scope: req.data.scope || grant.scope,
+    //   });
+    // }
 
     // Find previous consents for this grant to establish chain
     const previousConsents = await srv.run(
