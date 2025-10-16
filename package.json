@@ -1,5 +1,5 @@
 {
-  "name": "v1",
+  "name": "v3",
   "version": "1.0.0",
   "description": "A simple CAP project.",
   "type": "module",
@@ -16,7 +16,17 @@
     "jwt-decode": "^4.0.0",
     "morgan": "^1.10.1",
     "sqlite3": "^5.1.7",
-    "redis": "^5.0.0"
+    "redis": "^5.0.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
+    "ulid": "^3.0.1",
+    "xstate": "^5.22.1",
+    "mustache": "^4.2.0",
+    "@types/mustache": "^4.2.6",
+    "body-parser": "^2.2.0",
+    "method-override": "^3.0.0"
   },
   "devDependencies": {
     "@sap/cds-dk": "^9.3.2",
@@ -30,32 +40,38 @@
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
     "vite": "^7.1.6",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "@cap-js/cds-types": "^0.15.0",
+    "@cap-js/cds-typer": "^0.38.0"
   },
   "scripts": {
-    "start": "npx cds serve",
-    "watch": "npx cds watch",
-    "debug": "npx cds debug",
+    "start": "npx cds-tsx serve",
+    "watch": "npx cds-tsx watch --profile dev",
+    "debug": "npx cds debug ",
     "serve": "npm run serve:cds & npm run serve:approuter",
     "serve:cds": "npx cds serve --profile dev",
-    "serve:hybrid": "npx cds bind --exec -- npm run serve",
-    "serve:hybrid:approuter": "npx cds bind --exec -- npm run serve:approuter",
-    "serve:hybrid:cds": "npm bind --exec -- cds serve",
+    "dev:approuter": "node node_modules/@sap/approuter/approuter.js --workingDir app/router --port 9000",
     "serve:approuter": "node node_modules/@sap/approuter/approuter.js --workingDir app/router --port 9000",
+    "hybrid": "npx cds bind --exec -- npm run serve",
+    "hybrid:approuter": "npx cds bind --exec -- npm run serve:approuter",
+    "hybrid:portal": "npx cds bind --exec -- npm run dev -w portal",
+    "hybrid:cds": "npx cds bind --profile hybrid --exec -- cds serve --profile hybrid",
     "build": "npx cds build --production",
     "build:containers": "ctz containerize.yaml --log",
     "build:push": "ctz containerize.yaml --log --push",
-    "bind:srv": "cds bind --to-app-services router-srv --on k8s",
-    "bind:router": "cds bind --to-app-services router-app --on k8s",
+    "bind:srv": "cds bind --to-app-services v1-srv --on k8s",
+    "bind:router": "cds bind --to-app-services v5-approuter --on k8s",
     "bind:auth": "cds bind ias -2 router-srv-auth --on k8s",
     "bind:destination": "cds bind -2 router-srv-destination --on k8s",
     "bind:all": "npx cds bind -2 router-srv-auth --on k8s && cds bind -2 router-srv-destination --on k8s",
+    "bind:resolve": "npx cds env requires --resolve-bindings --profile hybrid",
     "bind:list": "npx cds bind --list",
     "bind:remove": "npx cds bind --remove",
     "setup:local": "npm run bind:all && npm run serve:hybrid",
     "setup:dev": "npm install && npm run bind:auth && npm run serve",
     "deploy": "npx cds up -2 k8s",
-    "deploy:helm": "npm run build && helm upgrade v1 ./gen/chart --install --create-namespace",
+    "deploy:helm": "npm run build && helm upgrade cds ./gen/chart --install --create-namespace",
+    "deploy:to:sqlite": "npx cds deploy --to sqlite",
     "copy-docker-secret": "./scripts/copy-docker-secret.sh",
     "setup-namespace": "./scripts/setup-namespace.sh",
     "add:approuter": "cds add approuter",
@@ -73,25 +89,15 @@
     "compile:sql": "cds compile --to sql",
     "compile:java": "cds compile --to java",
     "compile:ts": "cds compile --to ts",
-    "dev": "npx cds watch",
+    "dev": "npx cds-tsx watch",
     "test:auth": "npx cds bind --profile hybrid --exec -- node ./tests/auth.spec.js"
   },
+  "workspaces": [
+    "app/*"
+  ],
   "private": true,
-  "cds": {
-    "requires": {
-      "auth": {
-        "kind": "ias",
-        "config": {
-          "validation": {
-            "x5t": {
-              "enabled": false
-            },
-            "proofToken": {
-              "enabled": false
-            }
-          }
-        }
-      }
-    }
+  "imports": {
+    "#cds-models/*": "./@cds-models/*/index.js",
+    "@/*": "./srv/*"
   }
 }

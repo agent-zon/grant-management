@@ -6,7 +6,8 @@ global:
     name: docker-registry
   image:
     registry: scai-dev.common.repositories.cloud.sap
-    tag: latest
+    tag: v11
+    imagePullPolicy: always
 srv:
   bindings:
     auth:
@@ -41,12 +42,24 @@ srv:
 
 approuter:
   expose:
+    enabled: true
     corsPolicy:
       allowOrigins:
         - regex: ".*-approuter-{{ .Release.Namespace }}.{{ .Values.global.domain }}"
         - exact: "https://*.{{ tpl .Values.global.domain . }}"
         - exact: "http://localhost:9000"
         - exact: "http://localhost:4338"
+        - regex: ".*.euw.devtunnels.ms"
+        - regex: ".*.oauth.pw"
+        - regex: ".*.local.oauth.pw"
+        - regex: ".*.oauth.pw:5000"
+        - regex: ".*.local.oauth.pw:5000"
+        - regex: ".*.authz.id"
+        - regex: ".*.local.authz.id"
+        - regex: ".*.authz.id:5000"
+        - regex: ".*.local.authz.id:5000"
+        - regex: ".*.localhost:5000"
+        - regex: ".*.localhost:9000"
       allowMethods:
         - "GET"
         - "POST"
@@ -124,11 +137,27 @@ identity:
   servicePlanName: application
   parameters:
     display-name: agent-grants
+    multi-tenant: true
     oauth2-configuration:
       token-policy:
         access-token-format: "jwt"
       redirect-uris:
+        - https://{{ tpl .Values.global.domain . }}/login/callback
         - https://*.{{ tpl .Values.global.domain . }}/login/callback
+        - https://*.euw.devtunnels.ms/login/callback?authType=ias
+        - https://*.oauth.pw/login/callback?authType=ias
+        - https://*.local.oauth.pw/login/callback?authType=ias
+        - https://*.oauth.pw:5000/login/callback?authType=ias
+        - https://*.local.oauth.pw:5000/login/callback?authType=ias
+        - https://*.authz.id/login/callback?authType=ias
+        - https://*.local.authz.id/login/callback?authType=ias
+        - https://*.authz.id:5000/login/callback?authType=ias
+        - https://*.local.authz.id:5000/login/callback?authType=ias
+        - http://localhost:5000/login/callback?authType=ias
+        - http://localhost:5000/login/callback?authType=ias
+        - http://localhost:9000/login/callback?authType=ias
+        - http://localhost:9000/login/callback?authType=ias
+
       post-logout-redirect-uris:
         - https://*.{{ tpl .Values.global.domain . }}/*/logout.html
 
@@ -136,12 +165,17 @@ backendDestinations:
   srv-api:
     service: srv
     forwardAuthToken: true
-  user-portal:
-    service: portal
-    forwardAuthToken: true
+  # user-portal:
+  #   service: portal
+  #   forwardAuthToken: true
 
 destination:
   serviceOfferingName: destination
   servicePlanName: lite
   parameters:
     version: 1.0.0
+
+postgresql:
+  serviceOfferingName: postgresql-db
+  servicePlanName: development
+  fullnameOverride: grants-postgres

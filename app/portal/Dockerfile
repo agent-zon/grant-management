@@ -1,37 +1,22 @@
-# Use Deno latest
-FROM denoland/deno:latest
-
-# Set working directory
+FROM node:20-alpine AS development-dependencies-env
+COPY . /app
 WORKDIR /app
+RUN npm ci
 
-# Copy dependency files
-# COPY server.ts deno.jsonc deno.lock* ./
-COPY . .
+FROM node:20-alpine AS production-dependencies-env
+COPY ./package.json package-lock.json /app/
+WORKDIR /app
+RUN npm ci --omit=dev
 
-# Cache dependencies
-RUN deno install --allow-scripts=npm:@tailwindcss/oxide@4.1.13
-# Copy source code
+FROM node:20-alpine AS build-env
+COPY . /app/
+COPY --from=development-dependencies-env /app/node_modules /app/node_modules
+WORKDIR /app
+RUN npm run build
 
-# RUN deno install --allow-scripts=npm:better-sqlite3@12.2.0
-
-# RUN deno task build
-
- 
- 
-# Set environment variables
-ENV PORT=8080
-
-EXPOSE $PORT
-ENV NODE_ENV=production
-
-
-RUN chown -R deno:deno /app/node_modules \
-    && chmod -R u+w /app/node_modules
-
-# Use existing deno user (already exists in denoland/deno image)
-# deno numeric representation 1993
-USER 1993
- 
-
-# Run the application
-CMD ["deno", "task", "start"]
+FROM node:20-alpine
+COPY ./package.json package-lock.json server.js /app/
+COPY --from=production-dependencies-env /app/node_modules /app/node_modules
+COPY --from=build-env /app/build /app/build
+WORKDIR /app
+CMD ["npm", "run", "start"]

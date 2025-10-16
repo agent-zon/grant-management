@@ -1,0 +1,316 @@
+---
+alwaysApply: true
+---
+
+# MDC Rule — Grant Management Protocol Alignment
+
+**Version:** 1.0
+**Applies to:** `agent-zon/grant-management` (branch: `feature/request-api`)
+**Owner:** Grants & Authorization
+**Last updated:** 2025-09-22
+
+## 1) Purpose
+
+This MDC (Model/Methods, Data, Compliance) rule defines how our implementation aligns with the **OAuth 2.0 Grant Management** extension and related profiles. It sets normative expectations for API surfaces, eventing, data shapes, and security so that agents, tools, and dashboards remain interoperable and auditable across environments.
+
+## 2) Scope
+
+* The CAP/CDS service that exposes Grant Management endpoints and the web UI.
+* Token/authorization metadata and Rich Authorization Request (RAR) `authorization_details`.
+* Eventing based on **Security Event Tokens (SET)** and **OAuth Event Types**.
+
+## 3) Normative References
+
+* **Grant Management for OAuth 2.0** — actions: `query`, `revoke`, `update`, `replace`, `create`; parameters: `grant_id`, `grant_management_action`; metadata and endpoint discovery.
+* **Security Event Token (SET)** — JWT profile (`typ=secevent+jwt`, `events` claim, `iss/iat/jti/aud/sub/toe`).
+* **OAuth Event Types 1.0** — token-lifecycle events (`token-issued`, `token-revoked`, `tokens-revoked`) and subject identifiers.
+
+## 4) Alignment Summary
+
+* We expose **Grant Management API** endpoints for **query** and **revoke**, and provide **metadata** that advertises capabilities.
+* We model tools/operations as **RAR authorization\_details**, and persist grant composition (scopes, claims, auth details).
+* We emit (or accept) **SET**s for security/audit and adopt **OAuth Event Types** for token lifecycle signals.
+* The README and live deployment references are consistent with the API and UI routes.
+
+## 5) Endpoint & Spec Mapping
+
+| Capability                        | Spec Source            | Required Behavior                                                           | Our Endpoint / Behavior                                                                                                           |                                                                                                             |                                                                                                                                                             |
+| --------------------------------- | ---------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Server Metadata**               | Grant Mgmt §Metadata   | Publish grant mgmt endpoint, supported actions, and requiredness            | `GET /api/grants` returns capabilities + server info (includes `grant_management_actions_supported`, `grant_management_endpoint`) |                                                                                                             |                                                                                                                                                             |
+| **Query Grant**                   | Grant Mgmt §Query      | Authz token with `grant_management_query`; fetch status by `grant_id`       | `GET /api/grants/{grant_id}` returns status, scopes, claims, `authorization_details`, timestamps, usage stats                     |                                                                                                             |                                                                                                                                                             |
+| **Revoke Grant**                  | Grant Mgmt §Revoke     | Authz token with `grant_management_revoke`; revoke grant and related tokens | `DELETE /api/grants/{grant_id}` → `204` and cascades revocation logic for refresh/access tokens as configured                     |                                                                                                             |                                                                                                                                                             |
+| **Create/Update/Replace**         | Grant Mgmt §Authz Flow | Use \`grant\_management\_action=create                                      | update                                                                                                                            | replace`with`grant\_id`(when needed) in **authorization request**; return`grant\_id\` in **token response** | Token response includes `grant_id`; lifecycle semantics observed in our flow docs; future SDK hook points provided (UI surfaces under `/grants/{id}/grant`) |
+| **RAR (`authorization_details`)** | RAR / Grant Mgmt       | Represent fine-grained access (tools/actions/resources/locations)           | Persisted as `GrantAuthorizationDetails`; exposed via `$expand=authorization_details` and grant status payloads                   |                                                                                                             |                                                                                                                                                             |
+| **Dashboard & UX**                | Impl                   | Human-readable grant list/detail, consent/revoke                            | `/grants`, `/grants/{id}`, `/grants/{id}/grant`, `/grants/{id}/revoke` map 1:1 with API lifecycle                                 |                                                                                                             |                                                                                                                                                             |
+
+## 6) Data & Model Invariants
+
+### 6.1 Entities (CDS)
+
+* **Grants**, **GrantScopes**, **GrantClaims**, **GrantAuthorizationDetails**, **AccessTokens**, **RefreshTokens** must be persisted with referential integrity, and `grant_id` is non-secret, globally unique **per AS**.
+* **Authorization Details** entries MUST capture: `type`, `actions[]`, `locations[]` (and optional resource identifiers), and be retrievable in grant status.
+
+### 6.2 API Payloads (Required Fields)
+
+* **Status Response** MUST include: `grant_id`, `status`, `authorization_details[]` (when present), associated scopes/claims, and timestamps (`created_at`, `expires_at`, `last_used` if available).
+* **Token Response** MUST include `grant_id` if the AS supports any of `query`, `revoke`, `update`, or `replace`.
+
+## 7) Authorization, Scopes, and Discovery
+
+* Access to the Grant Management API requires tokens scoped to `grant_management_query` and/or `grant_management_revoke`. Clients use server metadata (`grant_management_endpoint`, `grant_management_actions_supported`) to discover capabilities.
+
+## 8) Lifecycle Semantics
+
+* **Creation** — Grant is created by successful authorization; considered active when tokens are claimed; unclaimed grants may be purged by timeout.
+* **Modification** — `update` merges, `replace` overwrites; requires `grant_id` present in the authorization request.
+* **Deletion** — `DELETE /api/grants/{grant_id}` revokes grant and associated refresh tokens (and optionally access tokens).
+
+## 9) Eventing & Telemetry (SET + OAuth Event Types)
+
+### 9.1 Security Event Token (SET) Envelope
+
+* Produce/consume JWTs with `typ=secevent+jwt` and an `events` claim; include `iss`, `iat`, `jti`, and `aud` (recommended). Use `sub` when the subject is directly identified, or embed subject details inside the event payload per profile.
+
+### 9.2 Event Types to Support
+
+* **Token Issued** — `https://schemas.openid.net/secevent/oauth/event-type/token-issued`
+* **Token Revoked** — `https://schemas.openid.net/secevent/oauth/event-type/token-revoked`
+* **Tokens Revoked** — `https://schemas.openid.net/secevent/oauth/event-type/tokens-revoked`
+
+### 9.3 Example (illustrative)
+
+```json
+{
+  "iss": "https://grant.example.as",
+  "iat": 1710000000,
+  "jti": "b3a7da92-1c2a-4a8e-8c0d-93b0a1c0f7a0",
+  "aud": "client-123",
+  "events": {
+    "https://schemas.openid.net/secevent/oauth/event-type/token-revoked": {
+      "subject": {
+        "subject_type": "oauth_token",
+        "token_type": "refresh_token",
+        "token_identifier_alg": "hash_sha256",
+        "token": "h.a9f2...redacted"
+      },
+      "reason": "api"
+    }
+  }
+}
+```
+
+## 10) Privacy & Security
+
+* **Grant IDs are public identifiers**: treat as non-secrets; do not leak tokens via Grant Management API.
+* **Authorization**: enforce that clients can only access grants they own; scopes gate `query`/`revoke`.
+* **Cache Control**: prevent caching of sensitive responses.
+* **SET Handling**: sign and/or encrypt as appropriate; avoid confusing SETs with ID/Access tokens; consider `toe` for ordering.
+
+## 11) Error Semantics
+
+* **`invalid_grant_id`** — unknown or invalid `grant_id` in authorization flow.
+* **`invalid_request`** — unsupported/required `grant_management_action` combination.
+* Propagate 401/403/404 from Grant Management API per endpoint rules.
+
+## 12) UI & Operational Surfaces
+
+* **Web UI**: `/grants`, `/grants/{id}`, `/grants/{id}/grant`, `/grants/{id}/revoke`.
+* **API**: `GET /api/grants`, `GET /api/grants?$expand=authorization_details`, `GET /api/grants/{grant_id}`, `DELETE /api/grants/{grant_id}`.
+
+## 13) Validation Checklist (MUST/SHOULD)
+
+* [ ] Token responses include `grant_id` whenever actions are supported.
+* [ ] `GET /api/grants/{grant_id}` returns `authorization_details` (when present) and timestamps.
+* [ ] `DELETE /api/grants/{grant_id}` revokes the grant and associated refresh tokens.
+* [ ] Metadata advertises `grant_management_endpoint` and actions.
+* [ ] SETs use correct `typ`, `events` claim URIs, and envelope fields.
+* [ ] OAuth Event Types payloads use correct subject identifiers.
+
+## 14) Backwards Compatibility & Future Work
+
+* **Planned**: Expand UI to initiate **update/replace** auth flows; add feed/webhook for SETs; enrich `authorization_details` types for common tool patterns.
+* **Non-Goals**: Historical legal consent archives and cross-party consent sharing are **out of scope** for Grant Management.
+
+---
+
+### Appendix A — Endpoint Examples
+
+**Query a grant**
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  https://host/api/grants/$GRANT_ID
+```
+
+**Revoke a grant**
+
+```bash
+curl -X DELETE -H "Authorization: Bearer $TOKEN" \
+  https://host/api/grants/$GRANT_ID
+```
+
+### Appendix B — Minimal Metadata Example
+
+```json
+{
+  "grant_management_actions_supported": ["query","revoke","update","replace","create"],
+  "grant_management_endpoint": "https://host/api/grants",
+  "grant_management_action_required": false
+}
+```
+# MDC Rule — Grant Management Protocol Alignment
+
+**Version:** 1.0
+**Applies to:** `agent-zon/grant-management` (branch: `feature/request-api`)
+**Owner:** Grants & Authorization
+**Last updated:** 2025-09-22
+
+## 1) Purpose
+
+This MDC (Model/Methods, Data, Compliance) rule defines how our implementation aligns with the **OAuth 2.0 Grant Management** extension and related profiles. It sets normative expectations for API surfaces, eventing, data shapes, and security so that agents, tools, and dashboards remain interoperable and auditable across environments.
+
+## 2) Scope
+
+* The CAP/CDS service that exposes Grant Management endpoints and the web UI.
+* Token/authorization metadata and Rich Authorization Request (RAR) `authorization_details`.
+* Eventing based on **Security Event Tokens (SET)** and **OAuth Event Types**.
+
+## 3) Normative References
+
+* **Grant Management for OAuth 2.0** — actions: `query`, `revoke`, `update`, `replace`, `create`; parameters: `grant_id`, `grant_management_action`; metadata and endpoint discovery.
+* **Security Event Token (SET)** — JWT profile (`typ=secevent+jwt`, `events` claim, `iss/iat/jti/aud/sub/toe`).
+* **OAuth Event Types 1.0** — token-lifecycle events (`token-issued`, `token-revoked`, `tokens-revoked`) and subject identifiers.
+
+## 4) Alignment Summary
+
+* We expose **Grant Management API** endpoints for **query** and **revoke**, and provide **metadata** that advertises capabilities.
+* We model tools/operations as **RAR authorization\_details**, and persist grant composition (scopes, claims, auth details).
+* We emit (or accept) **SET**s for security/audit and adopt **OAuth Event Types** for token lifecycle signals.
+* The README and live deployment references are consistent with the API and UI routes.
+
+## 5) Endpoint & Spec Mapping
+
+| Capability                        | Spec Source            | Required Behavior                                                           | Our Endpoint / Behavior                                                                                                           |                                                                                                             |                                                                                                                                                             |
+| --------------------------------- | ---------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Server Metadata**               | Grant Mgmt §Metadata   | Publish grant mgmt endpoint, supported actions, and requiredness            | `GET /api/grants` returns capabilities + server info (includes `grant_management_actions_supported`, `grant_management_endpoint`) |                                                                                                             |                                                                                                                                                             |
+| **Query Grant**                   | Grant Mgmt §Query      | Authz token with `grant_management_query`; fetch status by `grant_id`       | `GET /api/grants/{grant_id}` returns status, scopes, claims, `authorization_details`, timestamps, usage stats                     |                                                                                                             |                                                                                                                                                             |
+| **Revoke Grant**                  | Grant Mgmt §Revoke     | Authz token with `grant_management_revoke`; revoke grant and related tokens | `DELETE /api/grants/{grant_id}` → `204` and cascades revocation logic for refresh/access tokens as configured                     |                                                                                                             |                                                                                                                                                             |
+| **Create/Update/Replace**         | Grant Mgmt §Authz Flow | Use \`grant\_management\_action=create                                      | update                                                                                                                            | replace`with`grant\_id`(when needed) in **authorization request**; return`grant\_id\` in **token response** | Token response includes `grant_id`; lifecycle semantics observed in our flow docs; future SDK hook points provided (UI surfaces under `/grants/{id}/grant`) |
+| **RAR (`authorization_details`)** | RAR / Grant Mgmt       | Represent fine-grained access (tools/actions/resources/locations)           | Persisted as `GrantAuthorizationDetails`; exposed via `$expand=authorization_details` and grant status payloads                   |                                                                                                             |                                                                                                                                                             |
+| **Dashboard & UX**                | Impl                   | Human-readable grant list/detail, consent/revoke                            | `/grants`, `/grants/{id}`, `/grants/{id}/grant`, `/grants/{id}/revoke` map 1:1 with API lifecycle                                 |                                                                                                             |                                                                                                                                                             |
+
+## 6) Data & Model Invariants
+
+### 6.1 Entities (CDS)
+
+* **Grants**, **GrantScopes**, **GrantClaims**, **GrantAuthorizationDetails**, **AccessTokens**, **RefreshTokens** must be persisted with referential integrity, and `grant_id` is non-secret, globally unique **per AS**.
+* **Authorization Details** entries MUST capture: `type`, `actions[]`, `locations[]` (and optional resource identifiers), and be retrievable in grant status.
+
+### 6.2 API Payloads (Required Fields)
+
+* **Status Response** MUST include: `grant_id`, `status`, `authorization_details[]` (when present), associated scopes/claims, and timestamps (`created_at`, `expires_at`, `last_used` if available).
+* **Token Response** MUST include `grant_id` if the AS supports any of `query`, `revoke`, `update`, or `replace`.
+
+## 7) Authorization, Scopes, and Discovery
+
+* Access to the Grant Management API requires tokens scoped to `grant_management_query` and/or `grant_management_revoke`. Clients use server metadata (`grant_management_endpoint`, `grant_management_actions_supported`) to discover capabilities.
+
+## 8) Lifecycle Semantics
+
+* **Creation** — Grant is created by successful authorization; considered active when tokens are claimed; unclaimed grants may be purged by timeout.
+* **Modification** — `update` merges, `replace` overwrites; requires `grant_id` present in the authorization request.
+* **Deletion** — `DELETE /api/grants/{grant_id}` revokes grant and associated refresh tokens (and optionally access tokens).
+
+## 9) Eventing & Telemetry (SET + OAuth Event Types)
+
+### 9.1 Security Event Token (SET) Envelope
+
+* Produce/consume JWTs with `typ=secevent+jwt` and an `events` claim; include `iss`, `iat`, `jti`, and `aud` (recommended). Use `sub` when the subject is directly identified, or embed subject details inside the event payload per profile.
+
+### 9.2 Event Types to Support
+
+* **Token Issued** — `https://schemas.openid.net/secevent/oauth/event-type/token-issued`
+* **Token Revoked** — `https://schemas.openid.net/secevent/oauth/event-type/token-revoked`
+* **Tokens Revoked** — `https://schemas.openid.net/secevent/oauth/event-type/tokens-revoked`
+
+### 9.3 Example (illustrative)
+
+```json
+{
+  "iss": "https://grant.example.as",
+  "iat": 1710000000,
+  "jti": "b3a7da92-1c2a-4a8e-8c0d-93b0a1c0f7a0",
+  "aud": "client-123",
+  "events": {
+    "https://schemas.openid.net/secevent/oauth/event-type/token-revoked": {
+      "subject": {
+        "subject_type": "oauth_token",
+        "token_type": "refresh_token",
+        "token_identifier_alg": "hash_sha256",
+        "token": "h.a9f2...redacted"
+      },
+      "reason": "api"
+    }
+  }
+}
+```
+
+## 10) Privacy & Security
+
+* **Grant IDs are public identifiers**: treat as non-secrets; do not leak tokens via Grant Management API.
+* **Authorization**: enforce that clients can only access grants they own; scopes gate `query`/`revoke`.
+* **Cache Control**: prevent caching of sensitive responses.
+* **SET Handling**: sign and/or encrypt as appropriate; avoid confusing SETs with ID/Access tokens; consider `toe` for ordering.
+
+## 11) Error Semantics
+
+* **`invalid_grant_id`** — unknown or invalid `grant_id` in authorization flow.
+* **`invalid_request`** — unsupported/required `grant_management_action` combination.
+* Propagate 401/403/404 from Grant Management API per endpoint rules.
+
+## 12) UI & Operational Surfaces
+
+* **Web UI**: `/grants`, `/grants/{id}`, `/grants/{id}/grant`, `/grants/{id}/revoke`.
+* **API**: `GET /api/grants`, `GET /api/grants?$expand=authorization_details`, `GET /api/grants/{grant_id}`, `DELETE /api/grants/{grant_id}`.
+
+## 13) Validation Checklist (MUST/SHOULD)
+
+* [ ] Token responses include `grant_id` whenever actions are supported.
+* [ ] `GET /api/grants/{grant_id}` returns `authorization_details` (when present) and timestamps.
+* [ ] `DELETE /api/grants/{grant_id}` revokes the grant and associated refresh tokens.
+* [ ] Metadata advertises `grant_management_endpoint` and actions.
+* [ ] SETs use correct `typ`, `events` claim URIs, and envelope fields.
+* [ ] OAuth Event Types payloads use correct subject identifiers.
+
+## 14) Backwards Compatibility & Future Work
+
+* **Planned**: Expand UI to initiate **update/replace** auth flows; add feed/webhook for SETs; enrich `authorization_details` types for common tool patterns.
+* **Non-Goals**: Historical legal consent archives and cross-party consent sharing are **out of scope** for Grant Management.
+
+---
+
+### Appendix A — Endpoint Examples
+
+**Query a grant**
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  https://host/api/grants/$GRANT_ID
+```
+
+**Revoke a grant**
+
+```bash
+curl -X DELETE -H "Authorization: Bearer $TOKEN" \
+  https://host/api/grants/$GRANT_ID
+```
+
+### Appendix B — Minimal Metadata Example
+
+```json
+{
+  "grant_management_actions_supported": ["query","revoke","update","replace","create"],
+  "grant_management_endpoint": "https://host/api/grants",
+  "grant_management_action_required": false
+}
+```

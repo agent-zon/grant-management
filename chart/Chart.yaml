@@ -1,5 +1,5 @@
 apiVersion: v2
-name: grant-management
+name: cds
 description: A simple CAP project.
 type: application
 version: 1.0.0
@@ -13,9 +13,9 @@ dependencies:
   - name: web-application
     alias: approuter
     version: ">0.0.0"
-  - name: web-application
-    alias: portal
-    version: ">0.0.0"
+  # - name: web-application
+  #   alias: portal
+  #   version: ">0.0.0"
 
   - name: service-instance
     alias: destination
@@ -23,3 +23,6 @@ dependencies:
   - name: service-instance
     alias: identity
     version: ">0.0.0"
+  # - name: service-instance
+  #   version: ">0.0.0"
+  #   alias: "postgresql"
