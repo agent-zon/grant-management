@@ -8,7 +8,15 @@ with the authorization server.
 
 The application is deployed on SAP BTP Kyma environment and can be accessed at:
 
-- https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com
+### Simulation Dashboard
+
+- **Dashboard**: https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com
+
+### With CDS Backend
+
+- **OAuth Flow Step-by-Step Demo**: https://v11-approuter-grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com/demo/index
+- **Grant Management with CAP Backend**: https://v11-approuter-grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com/grants-management/Grants
+- **API Browser**: https://v11-approuter-grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com/
 
 ## Features
 
