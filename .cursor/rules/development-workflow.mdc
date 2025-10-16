@@ -1,0 +1,210 @@
+# Development Workflow Rules
+
+**Version:** 1.0  
+**Created:** 2025-10-09  
+**Owner:** Development Team  
+
+## 1) Purpose
+
+This rule defines the mandatory development workflow to ensure code quality, prevent production issues, and maintain a reliable deployment process.
+
+## 2) Core Principle
+
+**NEVER commit or deploy code without local testing first.**
+
+## 3) Mandatory Workflow
+
+### 3.1 Local Testing Requirements
+
+**BEFORE any commit or deployment, you MUST:**
+
+1. **Test locally** using `npm run dev`
+2. **Verify the application starts** without errors
+3. **Test the specific functionality** you modified
+4. **Check server logs** for any errors or warnings
+5. **Validate the full user flow** works end-to-end
+
+### 3.2 Local Testing Commands
+
+```bash
+# Start development server
+npm run dev
+
+# Test specific endpoints (example)
+curl -H "Accept: text/html" http://localhost:4004/demo/index
+curl -H "Accept: text/html" http://localhost:4004/demo/request
+
+# Check for linting errors
+npm run lint
+
+# Run any available tests
+npm test
+```
+
+### 3.3 Deployment Commands
+
+**For this project, use:**
+
+```bash
+# Deploy to Cloud Foundry
+npm run deploy
+
+# Alternative (if npm script not available)
+mbt build && cf deploy mta_archives/[latest-mtar-file]
+```
+
+## 4) Commit Guidelines
+
+### 4.1 Commit Message Format
+
+```
+<type>: <short description>
+
+<detailed description>
+- <change 1>
+- <change 2>
+- <change 3>
+
+✅ Local testing confirmed:
+- <test 1 passed>
+- <test 2 passed>
+- <test 3 passed>
+```
+
+### 4.2 Required Testing Evidence
+
+**Every commit MUST include evidence of local testing:**
+
+- ✅ Server starts without errors
+- ✅ Modified functionality works
+- ✅ No new console errors
+- ✅ User flow complete
+- ✅ Database operations successful (if applicable)
+
+## 5) Error Prevention
+
+### 5.1 Common Issues to Check
+
+- **Database schema mismatches** - verify entity relationships
+- **Missing dependencies** - check package.json
+- **TypeScript/linting errors** - run linters
+- **API endpoint errors** - test with curl/browser
+- **Authentication issues** - verify auth flows
+
+### 5.2 Red Flags (Stop and Fix)
+
+- ❌ Server won't start
+- ❌ 500 errors in logs
+- ❌ TypeScript compilation errors
+- ❌ Database constraint violations
+- ❌ Missing environment variables
+
+## 6) Deployment Checklist
+
+**Before running `npm run deploy`:**
+
+- [ ] Code committed to git
+- [ ] Local testing completed successfully
+- [ ] No linting errors
+- [ ] Server logs clean
+- [ ] All modified endpoints tested
+- [ ] Database operations verified
+- [ ] User flows validated
+
+## 7) Post-Deployment Verification
+
+**After deployment:**
+
+1. **Check application status**: Verify apps are running
+2. **Test live endpoints**: Confirm functionality works in production
+3. **Monitor logs**: `cf logs [app-name]` for any issues
+4. **Validate user flows**: Test critical paths
+
+## 8) Rollback Procedure
+
+**If deployment fails or causes issues:**
+
+```bash
+# Check deployment logs
+cf logs [app-name] --recent
+
+# Rollback if needed (revert commit and redeploy)
+git revert [commit-hash]
+npm run deploy
+```
+
+## 9) Development Environment Setup
+
+### 9.1 Required Tools
+
+- Node.js (version specified in package.json)
+- npm or yarn
+- Cloud Foundry CLI (`cf`)
+- MTA Build Tool (`mbt`)
+
+### 9.2 Environment Variables
+
+Ensure all required environment variables are set for local development.
+
+## 10) Enforcement
+
+**This workflow is MANDATORY for all developers.**
+
+- **Violations**: Committing untested code or deploying broken functionality
+- **Consequences**: Code review rejection, deployment rollback, additional testing requirements
+
+## 11) Examples
+
+### 11.1 Good Commit Example
+
+```
+Fix database schema mismatch in authorization handlers
+
+- Fixed PAR handler to use correct grant_id foreign key field
+- Updated authorize and token handlers to use request.grant_id consistently  
+- Resolved 500 error in /demo/request endpoint
+
+✅ Local testing confirmed: 
+- Server starts without errors
+- Grant creation successful
+- Authorization flow complete
+- Token exchange working
+- State machine progression functional
+```
+
+### 11.2 Bad Commit Example (DON'T DO THIS)
+
+```
+Fix authorization issue
+
+- Changed some fields
+- Should work now
+```
+
+**Problems:**
+- No specific description
+- No testing evidence
+- Vague changes
+- No verification
+
+## 12) Tools Integration
+
+### 12.1 IDE Setup
+
+Configure your IDE to:
+- Run linters on save
+- Show TypeScript errors
+- Auto-format code
+- Highlight syntax errors
+
+### 12.2 Git Hooks (Recommended)
+
+Set up pre-commit hooks to:
+- Run linters
+- Check TypeScript compilation
+- Prevent commits with console.log statements
+- Validate commit message format
+
+---
+
+**Remember: A few minutes of local testing saves hours of debugging production issues!**
