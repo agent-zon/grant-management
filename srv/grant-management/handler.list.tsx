@@ -20,9 +20,9 @@ export default function grantList(srv: GrantsManagementService) {
   srv.after("READ", Grants, async function (data, req) {
     if (cds.context?.http?.req.accepts("html") && data && !req.data.id) {
       const totalGrants = data.length;
-      const activeGrants = (await srv.run(
+      const activeGrants = await srv.run(
         cds.ql.SELECT.columns(["*", "authorization_details"]).from(Consents)
-      )) as Consents;
+      );
       const authorization_details = await srv.run(
         cds.ql.SELECT.from(AuthorizationDetail)
       );
@@ -146,7 +146,7 @@ export default function grantList(srv: GrantsManagementService) {
                   <div>
                     <p className="text-sm text-gray-400">Expired</p>
                     <p className="text-xl font-bold text-white">
-                      {grants.filter((g) => g.status === "expired").length}
+                      {grants.filter((g: any) => g.status === "expired").length}
                     </p>
                   </div>
                 </div>
@@ -160,7 +160,7 @@ export default function grantList(srv: GrantsManagementService) {
                   <div>
                     <p className="text-sm text-gray-400">Revoked</p>
                     <p className="text-xl font-bold text-white">
-                      {grants.filter((g) => g.status === "revoked").length}
+                      {grants.filter((g: any) => g.status === "revoked").length}
                     </p>
                   </div>
                 </div>
@@ -179,7 +179,7 @@ export default function grantList(srv: GrantsManagementService) {
               </div>
 
               <div className="space-y-4">
-                {grants.map((grant) => (
+                {grants.map((grant: any) => (
                   <div
                     key={grant.id}
                     className="bg-gray-700/50 rounded-lg p-4 border border-gray-600"
