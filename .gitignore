@@ -41,3 +41,4 @@ mta-op-*
 temp/
 
 @cds-models
+*-secret.*
