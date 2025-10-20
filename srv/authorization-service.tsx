@@ -4,18 +4,28 @@ import authorize from "./authorization-service/handler.authorize.tsx";
 import token from "./authorization-service/handler.token.tsx";
 import metadata from "./authorization-service/handler.metadata.tsx";
 import consent from "./authorization-service/handler.consent.tsx";
-import ServiceModel, {
-  type Grant,
-  Consents,
-  Grants,
-} from "#cds-models/AuthorizationService";
 
 ///Authorization Service - OAuth-style authorization endpoint with Rich Authorization Requests (RFC 9396)
 export default class Service extends cds.ApplicationService {
   init() {
     console.log("🔐 Initializing AuthorizationService...");
-    // Auto-expand authorization_details for all Grants READ operations, probably can be done more efficiently
-    /*
+
+    // Register route handlers
+    this.on("token", token);
+    this.on("authorize", authorize);
+    this.on("par", par);
+    this.on("metadata", metadata);
+    consent(this as unknown as AuthorizationService);
+
+    console.log("✅ AuthorizationService initialized");
+    return super.init && super.init();
+  }
+}
+
+export type AuthorizationService = Service & typeof cds.ApplicationService;
+
+// Auto-expand authorization_details for all Grants READ operations, probably can be done more efficiently
+/*
     this.after("each", Grants, async (grant: Grant) => {
       console.log(
         "🔧 After each Grants - processing authorization_details expansion"
@@ -36,16 +46,3 @@ export default class Service extends cds.ApplicationService {
       );
     });
      */
-    // Register route handlers
-    authorize(this);
-    par(this);
-    token(this);
-    metadata(this);
-    consent(this);
-
-    console.log("✅ AuthorizationService initialized");
-    return super.init && super.init();
-  }
-}
-
-export type AuthorizationService = Service & typeof cds.ApplicationService;

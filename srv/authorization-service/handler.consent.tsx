@@ -3,7 +3,6 @@ import type { AuthorizationService } from "../authorization-service.tsx";
 import {
   AuthorizationRequests,
   Consents,
-  Grants,
 } from "#cds-models/AuthorizationService";
 
 export default function (srv: AuthorizationService) {
