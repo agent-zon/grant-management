@@ -31,33 +31,31 @@ export default async function token(
       .read("com.sap.agent.grants.AuthorizationDetail")
       .where(`consent.grant_id = '${request.grant_id}'`);
     (grant as any).authorization_details = authDetails || [];
-    console.log(
-      `🔧 Fetched ${authDetails?.length || 0} authorization details for grant ${request.grant_id}`
+    console.debug(
+      `🔧 Fetched ${authDetails?.length || 0} authorization details for grant ${request.grant_id}`,
+      grant
     );
   }
-
-  console.log("🔧 Grant with authorization_details:", grant);
 
   if (!grant) {
     return req.error(400, "invalid_grant");
   }
   console.log("token response", {
-    access_token: `at_${ulid()}:${request.grant_id}`,
     token_type: "Bearer",
     expires_in: 3600,
-    scope: (grant as any).scope,
+    scope: grant.scope || "",
     grant_id: request.grant_id,
-    authorization_details: (grant as any).authorization_details,
-    actor: (grant as any).actor,
+    authorization_details: grant.authorization_details || [],
+    actor: grant.actor || "",
   });
 
   return {
     access_token: `at_${ulid()}:${request.grant_id}`,
     token_type: "Bearer",
     expires_in: 3600,
-    scope: (grant as any).scope || "",
+    scope: grant.scope || "",
     grant_id: request.grant_id,
     authorization_details: (grant as any).authorization_details,
-    actor: (grant as any).actor,
+    actor: grant.actor,
   };
 }
