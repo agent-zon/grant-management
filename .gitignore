@@ -42,3 +42,4 @@ temp/
 
 @cds-models
 *-secret.*
+secret/
