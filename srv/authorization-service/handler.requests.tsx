@@ -1,47 +1,50 @@
-import { ulid } from "ulid";
-import { AuthorizationService } from "../authorization-service.tsx";
-import {
-  AuthorizationRequests,
-  Grants,
-} from "#cds-models/AuthorizationService";
 import cds from "@sap/cds";
-export default function par(srv: AuthorizationService) {
-  srv.on("par", async (req) => {
-    //todo:extract subject from token
-    //  const {subject_token_type, subject_token} = req.data;
-    //  const subject = await cds.auth.authenticate(subject_token_type, subject_token);
+import { ulid } from "ulid";
+import type { AuthorizationService } from "../authorization-service.tsx";
+import { AuthorizationRequests } from "#cds-models/AuthorizationService";
 
-    // Generate or use existing grant ID
-    const grantId = req.data.grant_id || `gnt_${ulid()}`;
-    console.log("🔑 Grant ID for request:", grantId);
+export default async function push(
+  this: AuthorizationService,
+  req: cds.Request<{
+    grant_id?: string;
+    subject?: string;
+    authorization_details?: string;
+    client_id?: string;
+    scope?: string;
+  }>
+) {
+  //todo:extract subject from token
+  //  const {subject_token_type, subject_token} = req.data;
+  //  const subject = await cds.auth.authenticate(subject_token_type, subject_token);
 
-    // Create or update grant using upsert (only basic info, no scopes/auth details yet)
-    // const _grant = await srv
-    //   .upsert({
-    //     id: grantId,
-    //     subject: req.data.subject ? cds.User(req.data.subject) : undefined,
-    //   })
-    //   .into(Grants);
-    // console.log("🆕 Grant created/updated:", grantId);
+  // Generate or use existing grant ID
+  const grantId = req.data.grant_id || `gnt_${ulid()}`;
+  console.log("🔑 Grant ID for request:", grantId);
 
-    // Create authorization request linked to grant
-    const { ID } = await srv
-      .insert({
-        grant_id: grantId,
-        ...req.data,
-        access: req.data.authorization_details
-          ? parseAuthorizationDetails(req.data.authorization_details)
-          : [],
-      })
-      .into(AuthorizationRequests);
+  // Create or update grant using upsert (only basic info, no scopes/auth details yet)
+  // const _grant = await this
+  //   .upsert({
+  //     id: grantId,
+  //     subject: req.data.subject ? cds.User(req.data.subject) : undefined,
+  //   })
+  //   .into(Grants);
+  // console.log("🆕 Grant created/updated:", grantId);
 
-    console.log("Request created", ID);
+  // Create authorization request linked to grant
+  const { ID } = await this.insert({
+    grant_id: grantId,
+    ...req.data,
+    access: req.data.authorization_details
+      ? parseAuthorizationDetails(req.data.authorization_details)
+      : [],
+  }).into(AuthorizationRequests);
 
-    req.reply({
-      request_uri: `urn:ietf:params:oauth:request_uri:${ID}`,
-      expires_in: 90,
-    });
-  });
+  console.log("Request created", ID);
+
+  return {
+    request_uri: `urn:ietf:params:oauth:request_uri:${ID}`,
+    expires_in: 90,
+  };
 }
 
 function parseAuthorizationDetails(authorization_details: string) {
