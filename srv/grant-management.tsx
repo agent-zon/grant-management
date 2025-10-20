@@ -1,10 +1,10 @@
 // Grant Detail Service - CDS service that serves individual grant UI directly
-import React from "react";
 import cds from "@sap/cds";
-import grantList from "./grant-management/handler.list.tsx";
-import grantEdit from "./grant-management/handler.edit.tsx";
-import grantRevoke from "./grant-management/handler.revoke.tsx";
-import { Grants, Consents } from "#cds-models/com/sap/agent/grants";
+import { LIST } from "./grant-management/handler.list.tsx";
+import { GET, POST } from "./grant-management/handler.edit.tsx";
+import { DELETE } from "./grant-management/handler.revoke.tsx";
+import { Grants, Consents } from "#cds-models/GrantsManagementService";
+
 // CDS ApplicationService for Grant Detail with path parameter support
 export default class Service extends cds.ApplicationService {
   init() {
@@ -58,24 +58,13 @@ export default class Service extends cds.ApplicationService {
       }
     });
 
-    grantRevoke(this);
-    grantList(this);
-    grantEdit(this);
+    // Register grant handlers
+    this.on("DELETE", Grants, DELETE);
 
+    this.after("GET", Grants, LIST);
+    this.after("GET", Grants, GET);
+    this.after("UPDATE", Grants, POST);
     return super.init();
-    /*
-    not in use now, to check - which one is better?  register to events in service and call the fucntion or use the functions to register themself?
-    this.after("READ", Grants, async function (data, req) {
-      if(req.data.ID ) {
-        return grantEdit(data[0], req);
-      }
-      return grantList(data, req);
-    });
-
-    this.after("UPDATE", Grants, async function (data, req) {
-      return grantEdit(data[0], req);
-    });
-   */
   }
 }
 

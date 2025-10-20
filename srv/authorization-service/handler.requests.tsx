@@ -21,14 +21,6 @@ export default async function push(
   const grantId = req.data.grant_id || `gnt_${ulid()}`;
   console.log("🔑 Grant ID for request:", grantId);
 
-  // Create or update grant using upsert (only basic info, no scopes/auth details yet)
-  // const _grant = await this
-  //   .upsert({
-  //     id: grantId,
-  //     subject: req.data.subject ? cds.User(req.data.subject) : undefined,
-  //   })
-  //   .into(Grants);
-  // console.log("🆕 Grant created/updated:", grantId);
 
   // Create authorization request linked to grant
   const { ID } = await this.insert({

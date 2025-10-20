@@ -1,18 +1,16 @@
-import React from "react";
 import cds from "@sap/cds";
 import type { GrantsManagementService } from "../grant-management.tsx";
+import { Grants } from "#cds-models/GrantsManagementService";
 
-export default function (srv: GrantsManagementService) {
-  const { Grants } = srv.entities;
-  srv.before("DELETE", Grants, async function (req) {
-    const grant = await srv.update(Grants, req.data.ID).with({
-      status: "revoked",
-      modifiedBy: req.user,
-    });
+export async function DELETE(this: GrantsManagementService, req: cds.Request) {
+  const grant = await this.upsert({
+    id: req.data.id,
+    revoked_by: req.user,
+    revoked_at: new Date(),
+  }).into(Grants);
 
-    if (cds.context?.http?.req.accepts("html")) {
-      return cds.context?.render(<div>Grant revoked</div>);
-    }
-    return grant;
-  });
+  if (cds.context?.http?.req.accepts("html")) {
+    return cds.context?.http?.res.redirect(`/grants-management/Grants`);
+  }
+  return grant;
 }
