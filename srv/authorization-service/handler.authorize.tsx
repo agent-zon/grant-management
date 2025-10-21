@@ -1,7 +1,7 @@
 import cds from "@sap/cds";
 import AuthorizationDetailsComponent from "./details/index.tsx";
 import "./handler.authorize.tsx";
-import type { AuthorizationService } from "../authorization-service.tsx";
+import type { AuthorizationService } from "./authorization-service.tsx";
 import {
   AuthorizationRequests,
   Grants,

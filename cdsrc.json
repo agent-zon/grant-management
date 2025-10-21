@@ -45,9 +45,7 @@
       },
       "db": {
         "kind": "sqlite",
-        "url": "db.sqlite",
         "credentials": {
-          "database": "db.sqlite",
           "url": "db.sqlite"
         }
       }
@@ -57,7 +55,6 @@
       "db": {
         "kind": "sqlite",
         "credentials": {
-          "database": "db.sqlite",
           "url": "db.sqlite"
         }
       },
