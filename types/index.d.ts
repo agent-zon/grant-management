@@ -15,9 +15,7 @@ declare module "#cds-models/AuthorizationService" {
     redirect_uri: string;
     scope: string;
     client_id: string;
-    user_id: string;
-    user_name: string;
-    user_email: string;
+    grant_id: string;
   }
   export interface AuthorizationRequest {
     request_ID: string;
@@ -30,18 +28,45 @@ declare module "#cds-models/AuthorizationService" {
   export interface AuthorizationRequests {
     redirect_uri: string;
   }
-
-  export interface Consent {
-    request_ID: string;
-    scope: string;
-    client_id: string;
-    grant_id: string;
-  }
 }
 
 declare module "#cds-models/com/sap/agent/grants" {
   export interface Consent {
     request_ID: string;
+    scope: string;
+    client_id: string;
+    redirect_uri: string;
+    grant_id: string;
+  }
+}
+
+declare module "#cds-models/GrantsManagementService" {
+  export interface Grant {
+    id: string;
+    client_id: string;
+    risk_level: string;
+    actor: string;
+    subject: string;
+  }
+  export interface Grants {
+    id: string;
+    client_id: string;
+    risk_level: string;
+    actor: string;
+    subject: string;
+    consents: Consent[];
+    authorization_details: AuthorizationDetail[];
+    scope: string;
+    subject: string;
+    actor: string;
+    risk_level: string;
+    status: string;
+    createdAt: Date;
+    modifiedAt: Date;
+  }
+  export interface Consent {
+    id: string;
+    grant_id: string;
     scope: string;
     client_id: string;
     redirect_uri: string;
