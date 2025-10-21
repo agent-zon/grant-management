@@ -29,8 +29,6 @@ export async function LIST(
     return await next(req);
   }
 
-  // const grants = await getGrants(this, req.data as Grants);
-
   const response = await next(req);
 
   console.log("🔧 Grants:", response);
@@ -39,6 +37,7 @@ export async function LIST(
     !isNativeError(response) &&
     cds.context?.http?.req.accepts("html")
   ) {
+    console.log("🔧 Grants:", response);
     const grants = await getGrants(this, response);
     const totalGrants = grants.length;
     const activeGrants = grants.filter((g) => g.status === "active");
@@ -322,41 +321,37 @@ async function getGrants(srv: GrantsManagementService, data: Grants) {
     cds.ql.SELECT.from(AuthorizationDetail)
   );
 
-  const grants = Object.values(
-    consentRecords.reduce(
-      (acc, consent) => {
-        const consents = [...(acc[consent.grant_id]?.consents || []), consent];
-        const grant = data.find((g) => g.id === consent.grant_id);
-        acc[consent.grant_id] = {
-          consents: consents,
-          authorization_details: [
-            ...(acc[consent.grant_id]?.authorization_details || []),
-            ...authorization_details.filter(
-              (detail) => detail.consent_grant_id === consent.grant_id
-            ),
-          ],
-          scope: consents
-            .map((c) => c.scope)
-            .filter(unique)
-            .join(" "),
-          createdAt: consent[0]?.createdAt,
-          modifiedAt: consent[0]?.modifiedAt,
-          risk_level: consent[0]?.risk_level,
-          actor: consent[0]?.actor,
-          subject: consent[0]?.subject,
-          scope: consent[0]?.scope,
-          createdAt: consent[0]?.createdAt,
-          modifiedAt: consent[0]?.modifiedAt,
-          ...grant!,
-          id: consent.grant_id,
-        };
+  const grants = consentRecords.reduce(
+    (acc, consent) => {
+      const consents = [...(acc[consent.grant_id]?.consents || []), consent];
+      const grant = data?.find((g) => g.id === consent.grant_id);
+      acc[consent.grant_id] = {
+        consents: consents,
+        authorization_details: [
+          ...(acc[consent.grant_id]?.authorization_details || []),
+          ...authorization_details.filter(
+            (detail) => detail.consent_grant_id === consent.grant_id
+          ),
+        ],
+        scope: consents
+          .map((c) => c.scope)
+          .filter(unique)
+          .join(" "),
+        createdAt: consent[0]?.createdAt,
+        modifiedAt: consent[0]?.modifiedAt,
+        risk_level: consent[0]?.risk_level,
+        actor: consent[0]?.actor,
+        subject: consent[0]?.subject,
+        ...(grant || {}),
+        id: consent.grant_id,
+      };
 
-        return acc;
-      },
-      {} as Record<string, Grant>
-    )
+      return acc;
+    },
+    {} as Record<string, Grant>
   );
-  return grants;
+
+  return Object.values(grants).reverse();
 }
 
 function unique<T>(value: T, index: number, array: T[]): value is T {
