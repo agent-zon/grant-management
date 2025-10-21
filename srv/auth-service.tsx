@@ -5,7 +5,7 @@ class AuthService extends cds.ApplicationService {
     console.log("cds.context.user", cds.context?.user);
 
     // Get user from CDS context (this is the authenticated user)
-    const user = cds.context?.user;
+    const user = cds.context?.user as any;
 
     return {
       correlationId: user?.authInfo?.config?.correlationId,

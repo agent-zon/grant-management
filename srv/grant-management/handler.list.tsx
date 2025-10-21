@@ -101,7 +101,7 @@ export async function LIST(
               <div>
                 <p className="text-sm text-gray-400">Expired</p>
                 <p className="text-xl font-bold text-white">
-                  {grants.filter((g) => g.status === "expired").length}
+                  {grants.filter((g) => (g.status as any) === "expired").length}
                 </p>
               </div>
             </div>
@@ -192,7 +192,7 @@ export async function LIST(
                       className={`px-2 py-1 text-xs rounded ${
                         grant.status === "active"
                           ? "bg-green-500/20 text-green-400"
-                          : grant.status === "expired"
+                          : (grant.status as any) === "expired"
                             ? "bg-yellow-500/20 text-yellow-400"
                             : "bg-red-500/20 text-red-400"
                       }`}
@@ -344,6 +344,7 @@ async function getGrants(srv: GrantsManagementService, data: Grants) {
         subject: consent[0]?.subject,
         ...(grant || {}),
         id: consent.grant_id,
+        client_id: grant?.client_id || consent.grant_id,
       };
 
       return acc;
