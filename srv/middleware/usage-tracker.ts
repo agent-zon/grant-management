@@ -30,12 +30,10 @@ export function createUsageTracker() {
           );
 
           // Update grant usage count and last_used
-          await cds.run(
-            cds.ql.UPDATE("com.sap.agent.grants.Grants", grant_id).with({
-              usage_count: { "+=": 1 },
-              last_used: new Date().toISOString(),
-            })
-          );
+          const { Grants } = cds.entities("com.sap.agent.grants");
+          await cds.update(Grants, grant_id).with({
+            last_used: new Date().toISOString(),
+          });
 
           console.log("📊 Tracked usage for grant:", grant_id);
         }

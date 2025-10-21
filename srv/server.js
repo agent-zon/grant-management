@@ -1,3 +1,17 @@
+// CRITICAL: Filter Kubernetes service environment variables BEFORE CDS initializes
+// Kubernetes injects variables like AGENTS_SRV_SERVICE_PORT=tcp://10.105.88.213:8080
+// which CDS cannot parse correctly and causes: "Cannot create property '8080' on string"
+Object.keys(process.env).forEach((key) => {
+  const value = process.env[key];
+  // Remove any env vars that look like Kubernetes service URLs (tcp://host:port)
+  if (typeof value === "string" && value.startsWith("tcp://")) {
+    console.log(
+      `[ENV FILTER] Removing problematic K8s env var: ${key}=${value}`
+    );
+    delete process.env[key];
+  }
+});
+
 import cds from "@sap/cds";
 import bodyParser from "body-parser";
 import methodOverride from "method-override";
