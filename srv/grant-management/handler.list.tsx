@@ -269,7 +269,7 @@ export async function LIST(
                                 </span>
                                 <span className="text-xs text-gray-400">
                                   {grant.authorization_details
-                                    .filter((d) => d.type === type)
+                                    ?.filter((d) => d.type === type)
                                     .map((d) => d.locations)
                                     .filter(Boolean)
                                     .flat()
@@ -280,7 +280,7 @@ export async function LIST(
                               <div className="flex items-center justify-between">
                                 <span className="text-xs text-gray-400">
                                   {grant.authorization_details
-                                    .filter((d) => d.type === type)
+                                    ?.filter((d) => d.type === type)
                                     .map((d) => d.actions)
                                     .filter(Boolean)
                                     .flat()
@@ -339,6 +339,12 @@ async function getGrants(srv: GrantsManagementService, data: Grants) {
             .map((c) => c.scope)
             .filter(unique)
             .join(" "),
+          createdAt: consent[0]?.createdAt,
+          modifiedAt: consent[0]?.modifiedAt,
+          risk_level: consent[0]?.risk_level,
+          actor: consent[0]?.actor,
+          subject: consent[0]?.subject,
+          scope: consent[0]?.scope,
           createdAt: consent[0]?.createdAt,
           modifiedAt: consent[0]?.modifiedAt,
           ...grant!,
