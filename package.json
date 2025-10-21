@@ -46,8 +46,8 @@
   },
   "scripts": {
     "start": "npx cds-tsx serve",
-    "watch": "npx cds-tsx watch --profile dev",
-    "debug": "npx cds debug ",
+    "watch": "npx cds-tsx watch --profile development",
+    "debug": "npx cds debug --profile development",
     "serve": "npm run serve:cds & npm run serve:approuter",
     "serve:cds": "npx cds serve --profile dev",
     "dev:approuter": "node node_modules/@sap/approuter/approuter.js --workingDir app/router --port 9000",
@@ -70,6 +70,7 @@
     "setup:local": "npm run bind:all && npm run serve:hybrid",
     "setup:dev": "npm install && npm run bind:auth && npm run serve",
     "deploy": "npm run build:push && npm run deploy:helm",
+    "deploy:sqlite": "npx cds deploy --to sqlite --profile development",
     "deploy:helm": "npm run build && helm upgrade agents ./gen/chart --install --create-namespace",
     "deploy:to:sqlite": "npx cds deploy --to sqlite",
     "copy-docker-secret": "./scripts/copy-docker-secret.sh",
@@ -100,5 +101,16 @@
     "#cds-models/*": "./@cds-models/*/index.js",
     "@/*": "./srv/*",
     "@types": "./types/index.d.ts"
+  },
+  "cds": {
+    "requires": {
+      "db": {
+        "kind": "sqlite",
+        "url": "db.sqlite",
+        "credentials": {
+          "url": "db.sqlite"
+        }
+      }
+    }
   }
 }
