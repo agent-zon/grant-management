@@ -2,6 +2,7 @@ import cds from "@sap/cds";
 import { Grants } from "#cds-models/GrantsManagementService";
 import type { GrantsManagementService } from "../grant-management.tsx";
 import { Grant } from "#cds-models/GrantsManagementService";
+type GrantHandler = cds.CRUDEventHandler.On<Grant, void | Grant | Error>;
 
 export function GET(
   this: GrantsManagementService,
@@ -348,8 +349,7 @@ export function GET(
 
 export function POST(
   this: GrantsManagementService,
-  grant: Grant,
-  req: cds.Request
+  ...[req, next]: Parameters<GrantHandler>
 ) {
   console.log("🔑 Grant updated");
   return cds.context?.http?.res.redirect(`/grants-management/Grants`);

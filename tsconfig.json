@@ -15,9 +15,8 @@
     "baseUrl": ".",
     "resolveJsonModule": true,
     "outDir": "./dist",
-
     "rootDirs": [".", "@cds-models", "types"],
-    "typeRoots": ["./types", "./node_modules/@types"],
+    "typeRoots": ["./types", "./node_modules/@types", "./@cds-models"],
     "composite": true,
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "noImplicitAny": false,
@@ -30,10 +29,11 @@
     "noEmit": true,
     "paths": {
       "#cds-models/*": ["./@cds-models/*"],
-      "@/*": ["./*"]
+      "@/*": ["./srv/*"],
+      "@types": ["./types/index.d.ts"],
+      "@sap/cds": ["./node_modules/@cap-js/cds-types"]
     }
   },
-
   "include": ["types/**/*", "srv/**/*", "@cds-models/**/*"],
   "exclude": ["node_modules", "gen", "dist"]
 }
