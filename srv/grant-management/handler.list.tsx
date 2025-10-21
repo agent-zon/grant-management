@@ -44,41 +44,15 @@ export async function LIST(
               .map((c) => c.subject)
               .filter(unique)
               .join(" "),
-            actor: consents
-              .map((c) => c.actor)
-              .filter(unique)
-              .join(" "),
-            risk_level: consents
-              .map((c) => c.risk_level)
-              .filter(unique)
-              .join(" "),
-            status: consents
-              .map((c) => c.status)
-              .filter(unique)
-              .join(" "),
             createdAt: consent[0]?.createdAt,
-            updatedAt: consent[0]?.updatedAt,
+            modifiedAt: consent[0]?.modifiedAt,
             client_id: consent[0]?.client_id,
             //@ts-ignore
             ...(data.find((g) => g.id === consent.grant_id) || {}),
           };
           return acc;
         },
-        {} as Record<
-          string,
-          {
-            id: string;
-            consents: ConsentRecord[];
-            authorization_details: AuthorizationDetailRecord[];
-            scope: string;
-            subject: string;
-            actor: string;
-            risk_level: string;
-            status: string;
-            createdAt: Date;
-            updatedAt: Date;
-          } & GrantRecord
-        >
+        {} as Record<string, Grant>
       )
     );
     const totalGrants = grants.length;
@@ -209,9 +183,6 @@ export async function LIST(
                         <p className="text-sm font-medium text-white">
                           {grant.scope}
                         </p>
-                        <p className="text-xs text-gray-400">
-                          Client: {grant.client_id}
-                        </p>
                         <p className="text-xs text-purple-400">
                           👤 Subject: {grant.subject}
                         </p>
@@ -296,29 +267,6 @@ export async function LIST(
                         </p>
                       </div>
                     )}
-                    <div>
-                      <p className="text-xs text-gray-400">Risk Level</p>
-                      <p className="text-sm text-white capitalize">
-                        {grant.risk_level}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Scope Details */}
-                  <div>
-                    <p className="text-xs text-gray-400 mb-2">Granted Scopes</p>
-                    <div className="flex flex-wrap gap-1">
-                      {grant.scope
-                        ?.split(" ")
-                        .map((scope: string, idx: number) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded"
-                          >
-                            {scope}
-                          </span>
-                        ))}
-                    </div>
                   </div>
 
                   {/* Authorization Details */}
@@ -332,6 +280,7 @@ export async function LIST(
                           {grant.authorization_details
                             .map((d) => d.type)
                             .filter(unique)
+                            .filter((type) => !!type)
                             .map((type: string, idx: number) => (
                               <div
                                 key={idx}

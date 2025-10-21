@@ -23,26 +23,3 @@ export default class Service extends cds.ApplicationService {
 }
 
 export type AuthorizationService = Service & typeof cds.ApplicationService;
-
-// Auto-expand authorization_details for all Grants READ operations, probably can be done more efficiently
-/*
-    this.after("each", Grants, async (grant: Grant) => {
-      console.log(
-        "🔧 After each Grants - processing authorization_details expansion"
-      );
-      const authDetails = await cds
-        .read("com.sap.agent.grants.AuthorizationDetail")
-        .where(`consent.grant_id = '${grant.id}'`);
-      grant.authorization_details = authDetails || [];
-      console.log("🔧 authorization_details:", grant.authorization_details);
-      const consent = await cds
-        .read(Consents)
-        .where(`grant_id = '${grant.id}'`);
-      console.log("🔧 select scope:", consent);
-      grant.scope = consent.map((c: any) => c.scope).join(" ");
-      console.log("🔧 set scope:", grant.scope);
-      console.log(
-        `🔧 Fetched ${authDetails?.length || 0} authorization details for grant ${grant.id}`
-      );
-    });
-     */
