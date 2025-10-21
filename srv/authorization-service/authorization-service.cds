@@ -1,4 +1,4 @@
-using com.sap.agent.grants as grants from '../db/grants.cds';
+using com.sap.agent.grants as grants from '../../db/grants.cds';
 
 @path: '/oauth-server'
 @impl: './authorization-service.tsx'
@@ -69,4 +69,4 @@ service AuthorizationService {
         code_challenge_methods_supported: String;
     }; 
 }   
- 
+

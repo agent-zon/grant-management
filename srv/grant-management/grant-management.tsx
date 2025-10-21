@@ -1,8 +1,8 @@
 // Grant Detail Service - CDS service that serves individual grant UI directly
 import cds from "@sap/cds";
-import { LIST } from "./grant-management/handler.list.tsx";
-import { GET, POST } from "./grant-management/handler.edit.tsx";
-import { DELETE } from "./grant-management/handler.revoke.tsx";
+import { LIST } from "./handler.list.tsx";
+import { GET, POST } from "./handler.edit.tsx";
+import { DELETE } from "./handler.revoke.tsx";
 import { Grants, Consents, Grant } from "#cds-models/GrantsManagementService";
 
 // CDS ApplicationService for Grant Detail with path parameter support

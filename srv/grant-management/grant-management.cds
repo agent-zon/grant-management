@@ -1,4 +1,4 @@
-using com.sap.agent.grants as grants from '../db/grants.cds';
+using com.sap.agent.grants as grants from '../../db/grants.cds';
 
 annotate grants.Grants with @ams.attributes: {
   subject: (subject),

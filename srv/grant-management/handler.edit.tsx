@@ -4,7 +4,7 @@ import type {
   GrantHandler,
   GrantsHandler,
   GrantsManagementService,
-} from "../grant-management.tsx";
+} from "./grant-management.tsx";
 import { isNativeError } from "node:util/types";
 
 export function POST(
