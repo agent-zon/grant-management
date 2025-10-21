@@ -1,5 +1,5 @@
 import cds from "@sap/cds";
-import type { GrantsManagementService } from "../grant-management.tsx";
+import type { GrantsManagementService } from "./grant-management.tsx";
 import { Grants } from "#cds-models/GrantsManagementService";
 
 export async function DELETE(this: GrantsManagementService, req: cds.Request) {

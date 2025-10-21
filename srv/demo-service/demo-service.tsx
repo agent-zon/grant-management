@@ -8,9 +8,9 @@ import type {
 } from "#cds-models/com/sap/agent/grants";
 import permissionsElevationMachine, {
   PermissionsContext,
-} from "./demo-service/permissions-elevation-machine.tsx";
+} from "./permissions-elevation-machine.tsx";
 import { createActor } from "xstate";
-import { htmlTemplate } from "./middleware/htmx.tsx";
+import { htmlTemplate } from "../middleware/htmx.tsx";
 import AuthorizationService from "#cds-models/AuthorizationService";
 
 import React from "react";

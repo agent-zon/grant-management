@@ -9,7 +9,7 @@ import {
 import type {
   GrantsHandler,
   GrantsManagementService,
-} from "../grant-management.tsx";
+} from "./grant-management.tsx";
 import { isNativeError } from "node:util/types";
 import e from "express";
 
