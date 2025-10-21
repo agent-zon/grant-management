@@ -98,6 +98,7 @@
   "private": true,
   "imports": {
     "#cds-models/*": "./@cds-models/*/index.js",
-    "@/*": "./srv/*"
+    "@/*": "./srv/*",
+    "@types": "./types/index.d.ts"
   }
 }

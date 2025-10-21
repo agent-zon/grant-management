@@ -33,37 +33,14 @@ export default class Service extends cds.ApplicationService {
       return req.data;
     });
 
-    this.before("POST", Consents, async (req) => {
-      console.log("🔐 Creating consent:", req.data);
-
-      // Ensure we have a grant association
-      if (!req.data.grant_id) {
-        return req.error(400, "Grant ID is required for consent");
-      }
-
-      // Find previous consents for this grant to establish chain
-      const previousConsents = await this.run(
-        cds.ql.SELECT.from(Consents)
-          .where({ grant_id: req.data.grant_id })
-          .orderBy("createdAt desc")
-          .limit(1)
-      );
-
-      if (previousConsents.length > 0) {
-        const previousConsent = previousConsents[0];
-        console.log("🔗 Found previous consent:", previousConsent.ID);
-
-        // Link to previous consent for chain
-        req.data.previous_consent_ID = previousConsent.ID;
-      }
-    });
+ 
 
     // Register grant handlers
     this.on("DELETE", Grants, DELETE);
+    this.on("POST", Grants, POST);
 
     this.after("GET", Grants, LIST);
     this.after("GET", Grants, GET);
-    this.after("UPDATE", Grants, POST);
     return super.init();
   }
 }

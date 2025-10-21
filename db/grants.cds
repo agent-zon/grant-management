@@ -110,6 +110,8 @@ entity Consents:cuid,managed {
   duration: Timespan;
   subject: User; //@cds.on.insert: $user;
   previous_consent: Association to Consents; // Reference to the previous consent for this grant
+  @calculated
+  redirect_uri: String=request.redirect_uri;
   
  }
 

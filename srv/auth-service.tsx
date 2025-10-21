@@ -8,11 +8,11 @@ class AuthService extends cds.ApplicationService {
     const user = cds.context?.user;
 
     return {
-      correlationId: user.authInfo?.config?.correlationId,
-      jwt: user.authInfo?.config?.jwt,
-      sid: user.authInfo?.config?.sid,
-      skipValidation: user.authInfo?.config?.skipValidation,
-      tokenDecodeCache: user.authInfo?.config?.tokenDecodeCache,
+      correlationId: user?.authInfo?.config?.correlationId,
+      jwt: user?.authInfo?.config?.jwt,
+      sid: user?.authInfo?.config?.sid,
+      skipValidation: user?.authInfo?.config?.skipValidation,
+      tokenDecodeCache: user?.authInfo?.config?.tokenDecodeCache,
       user: user?.id,
       claims: user?.attr,
       scopes: user?.scopes,
