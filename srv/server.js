@@ -5,7 +5,6 @@ import { htmxMiddleware } from "./middleware/htmx.tsx";
 import { htmlTemplate } from "./middleware/htmx.tsx";
 import { renderToString } from "react-dom/server";
 import React from "react";
-
 // Make React available globally for JSX in handlers
 global.React = React;
 
@@ -40,18 +39,7 @@ cds.on("bootstrap", (app) => {
       `[MIDDLEWARE] ${req.method} ${req.path} - Content-Type: ${contentType}`
     );
 
-    // OAuth endpoints that must accept form-urlencoded
-    const oauthPaths = [
-      "/oauth-server/authorize",
-      "/oauth-server/token",
-      "/oauth-server/par",
-    ];
-    const isOAuthEndpoint = oauthPaths.some((path) => req.path.includes(path));
-
-    if (
-      isOAuthEndpoint &&
-      contentType.includes("application/x-www-form-urlencoded")
-    ) {
+    if (contentType.includes("application/x-www-form-urlencoded")) {
       console.log(
         "[MIDDLEWARE] OAuth endpoint detected - Converting form-urlencoded to JSON",
         {
@@ -105,3 +93,5 @@ cds.on("bootstrap", (app) => {
     next(err);
   });
 });
+
+// cds.serve(ConsentService).at("/consent").in(app);

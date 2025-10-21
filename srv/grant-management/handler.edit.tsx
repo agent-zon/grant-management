@@ -1,60 +1,30 @@
-import React from "react";
 import cds from "@sap/cds";
-import { Grant, Grants } from "#cds-models/GrantsManagementService";
-import type { GrantsManagementService } from "../grant-management.tsx";
-export default function (srv: GrantsManagementService) {
-  srv.after("READ", Grants, async (grants: Grants, req: typeof cds.Request) => {
-    console.log(
-      "🔧 Reading grant:",
-      grants,
-      req.params,
-      req.path,
-      req.subject,
-      req.target
-    );
+import { type Grant, Grants } from "#cds-models/GrantsManagementService";
+import type {
+  GrantHandler,
+  GrantsManagementService,
+} from "../grant-management.tsx";
 
-    if (cds.context?.http?.req.accepts("html") && req.data.id) {
-      return grantEdit(grants[0], req);
-    }
-
+export function GET(
+  this: GrantsManagementService,
+  grants: any,
+  req: cds.Request
+) {
+  // Only handle single grant requests with HTML accept header
+  if (!req.data.id || !cds.context?.http?.req.accepts("html") || !grants?.[0]) {
     return grants;
-  });
-
-  srv.after("UPDATE", Grants, async function (data, req) {
-    console.log("🔑 Grant updated");
-    if (cds.context?.http?.req.accepts("html")) {
-      return grantEdit(data[0], req);
-    }
-    return data;
-  });
-}
-
-export function grantEdit(grant: Grant, _: typeof cds.Request): Response {
-  if (!grant) {
-    return cds.context?.render(
-      <div>Grant not found</div>
-    ) as unknown as Response;
   }
 
-  const getRiskColor = (level: string) => {
-    switch (level) {
-      case "low":
-        return "text-green-400 bg-green-500/20 border-green-500/30";
-      case "medium":
-        return "text-yellow-400 bg-yellow-500/20 border-yellow-500/30";
-      case "high":
-        return "text-red-400 bg-red-500/20 border-red-500/30";
-      default:
-        return "text-gray-400 bg-gray-500/20 border-gray-500/30";
-    }
-  };
-
-  const getScopeIcon = (scope: string) => {
-    if (scope?.includes("tools")) return "🔧";
-    if (scope?.includes("data")) return "📊";
-    if (scope?.includes("file")) return "📁";
-    if (scope?.includes("system")) return "⚙️";
-    return "🛡️";
+  const grant = grants[0] as Grant & {
+    status: string;
+    client_id: string;
+    actor: string;
+    risk_level: string;
+    id: string;
+    createdAt: string;
+    subject: string;
+    request_ID: string;
+    scope: string;
   };
 
   return cds.context?.render(
@@ -78,10 +48,10 @@ export function grantEdit(grant: Grant, _: typeof cds.Request): Response {
           </div>
           <div className="flex items-center space-x-2">
             <div
-              className={`w-3 h-3 rounded-full ${grant.status === "active" ? "bg-emerald-400" : "bg-red-400"}`}
+              className={`w-3 h-3 rounded-full ${grant.status !== "revoked" ? "bg-emerald-400" : "bg-red-400"}`}
             ></div>
             <span className="text-sm text-slate-300 capitalize">
-              {grant.status}
+              {grant.status !== "revoked" ? "Active" : "Revoked"}
             </span>
           </div>
         </div>
@@ -338,6 +308,7 @@ export function grantEdit(grant: Grant, _: typeof cds.Request): Response {
             <form
               method="POST"
               action={`/grants-management/Grants/${grant.id}`}
+              hx-swap="innerHTML"
               className="inline"
             >
               <input type="hidden" name="_method" value="PATCH" />
@@ -352,8 +323,11 @@ export function grantEdit(grant: Grant, _: typeof cds.Request): Response {
 
             {grant.status === "active" && (
               <form
-                method="POST"
                 action={`/grants-management/Grants/${grant.id}`}
+                method="POST"
+                // hx-swap="innerHTML"
+                // hx-delete={`/grants-management/Grants/${grant.id}`}
+                // hx-target={`#grant-${grant.id}`}
                 className="inline"
               >
                 <input type="hidden" name="_method" value="DELETE" />
@@ -370,5 +344,33 @@ export function grantEdit(grant: Grant, _: typeof cds.Request): Response {
         </div>
       </div>
     </div>
-  ) as unknown as Response;
+  );
+}
+
+export function POST(
+  this: GrantsManagementService,
+  ...[req, next]: Parameters<GrantHandler>
+) {
+  console.log("🔑 Grant updated");
+  return cds.context?.http?.res.redirect(`/grants-management/Grants`);
+}
+
+function getRiskColor(level: string) {
+  switch (level) {
+    case "low":
+      return "text-green-400 bg-green-500/20 border-green-500/30";
+    case "medium":
+      return "text-yellow-400 bg-yellow-500/20 border-yellow-500/30";
+    case "high":
+      return "text-red-400 bg-red-500/20 border-red-500/30";
+  }
+  return "text-gray-400 bg-gray-500/20 border-gray-500/30";
+}
+
+function getScopeIcon(scope: string) {
+  if (scope?.includes("tools")) return "🔧";
+  if (scope?.includes("data")) return "📊";
+  if (scope?.includes("file")) return "📁";
+  if (scope?.includes("system")) return "⚙️";
+  return "🛡️";
 }
