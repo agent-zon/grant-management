@@ -8,6 +8,26 @@ import React from "react";
 // Make React available globally for JSX in handlers
 global.React = React;
 
+// Process-level error handlers to prevent crashes
+process.on("uncaughtException", (error) => {
+  console.error("[UNCAUGHT EXCEPTION] Service will continue running:", {
+    error: error.message,
+    stack: error.stack,
+    timestamp: new Date().toISOString(),
+  });
+  // Don't exit the process - keep the service running
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("[UNHANDLED REJECTION] Service will continue running:", {
+    reason: reason instanceof Error ? reason.message : reason,
+    stack: reason instanceof Error ? reason.stack : undefined,
+    promise: promise,
+    timestamp: new Date().toISOString(),
+  });
+  // Don't exit the process - keep the service running
+});
+
 cds.middlewares.before.push(htmxMiddleware);
 
 function sendHtml(html) {
@@ -80,8 +100,8 @@ cds.on("bootstrap", (app) => {
     })
   );
 
-  // Add error handler to log all errors including 415
-  app.use((err, req, _res, next) => {
+  // Add global error handler to catch all errors and prevent service crashes
+  app.use((err, req, res, next) => {
     console.error("[ERROR HANDLER]", {
       error: err.message,
       stack: err.stack,
@@ -89,8 +109,61 @@ cds.on("bootstrap", (app) => {
       method: req.method,
       path: req.path,
       contentType: req.headers["content-type"],
+      body: req.body,
     });
-    next(err);
+
+    // Don't crash the service - send appropriate error response
+    const statusCode = err.statusCode || err.status || 500;
+    const errorMessage = err.message || "Internal Server Error";
+
+    // Check if headers have already been sent
+    if (res.headersSent) {
+      console.error(
+        "[ERROR HANDLER] Headers already sent, delegating to default error handler"
+      );
+      return next(err);
+    }
+
+    // Send JSON error response for API requests
+    if (req.accepts("json")) {
+      return res.status(statusCode).json({
+        error: errorMessage,
+        statusCode,
+        path: req.path,
+      });
+    }
+
+    // Send HTML error response for browser requests
+    if (req.accepts("html")) {
+      return res.status(statusCode).send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Error ${statusCode}</title>
+            <style>
+              body { font-family: system-ui; padding: 40px; max-width: 600px; margin: 0 auto; }
+              .error { background: #fee; border: 1px solid #fcc; padding: 20px; border-radius: 8px; }
+              h1 { color: #c33; }
+              .details { margin-top: 20px; color: #666; font-size: 14px; }
+            </style>
+          </head>
+          <body>
+            <div class="error">
+              <h1>Error ${statusCode}</h1>
+              <p>${errorMessage}</p>
+              <div class="details">
+                <p><strong>Path:</strong> ${req.path}</p>
+                <p><strong>Method:</strong> ${req.method}</p>
+              </div>
+              <a href="/">← Go back to home</a>
+            </div>
+          </body>
+        </html>
+      `);
+    }
+
+    // Fallback plain text response
+    res.status(statusCode).send(`Error ${statusCode}: ${errorMessage}`);
   });
 });
 
