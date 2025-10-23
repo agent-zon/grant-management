@@ -1,6 +1,20 @@
 {
   "routes": [
     {
+      "source": "^/resources/openapi/(.*)$",
+      "target": "/$1",
+      "localDir": "./resources/openapi",
+      "csrfProtection": false,
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/api-docs(.*)$",
+      "target": "/api-docs$1",
+      "destination": "user-portal",
+      "csrfProtection": false,
+      "authenticationType": "none"
+    },
+    {
       "source": "^/auth/debug(.*)$",
       "target": "/$1",
       "localDir": "./auth",
