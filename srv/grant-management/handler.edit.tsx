@@ -1,5 +1,4 @@
 import cds from "@sap/cds";
-import { type Grant, Grants } from "#cds-models/GrantsManagementService";
 import type {
   GrantHandler,
   GrantsHandler,

@@ -257,38 +257,40 @@ export async function LIST(
                           .map((d) => d.type)
                           .filter(unique)
                           .filter((type) => !!type)
-                          .map((type: string, idx: number) => (
-                            <div
-                              key={idx}
-                              className="bg-gray-600/30 rounded p-2 border border-gray-600"
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-medium text-purple-300">
-                                  {type}
-                                </span>
-                                <span className="text-xs text-gray-400">
-                                  {grant.authorization_details
-                                    ?.filter((d) => d.type === type)
-                                    .map((d) => d.locations)
-                                    .filter(Boolean)
-                                    .flat()
-                                    .filter(unique)
-                                    .join(", ") || "No locations"}
-                                </span>
+                          .map(
+                            (type: string | null | undefined, idx: number) => (
+                              <div
+                                key={idx}
+                                className="bg-gray-600/30 rounded p-2 border border-gray-600"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-medium text-purple-300">
+                                    {type}
+                                  </span>
+                                  <span className="text-xs text-gray-400">
+                                    {grant.authorization_details
+                                      ?.filter((d) => d.type === type)
+                                      .map((d) => d.locations)
+                                      .filter(Boolean)
+                                      .flat()
+                                      .filter(unique)
+                                      .join(", ") || "No locations"}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-gray-400">
+                                    {grant.authorization_details
+                                      ?.filter((d) => d.type === type)
+                                      .map((d) => d.actions)
+                                      .filter(Boolean)
+                                      .flat()
+                                      .filter(unique)
+                                      .join(", ") || "No actions"}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-400">
-                                  {grant.authorization_details
-                                    ?.filter((d) => d.type === type)
-                                    .map((d) => d.actions)
-                                    .filter(Boolean)
-                                    .flat()
-                                    .filter(unique)
-                                    .join(", ") || "No actions"}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
+                            )
+                          )}
                       </div>
                     </div>
                   )}

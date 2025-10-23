@@ -3,7 +3,10 @@ import par from "./handler.requests.tsx";
 import authorize from "./handler.authorize.tsx";
 import token from "./handler.token.tsx";
 import metadata from "./handler.metadata.tsx";
-import { Consent, Consents } from "#cds-models/AuthorizationService";
+import {
+  Consent,
+  Consents,
+} from "#cds-models/sap/scai/grants/AuthorizationService";
 import { POST as consent } from "./handler.consent.tsx";
 ///Authorization Service - OAuth-style authorization endpoint with Rich Authorization Requests (RFC 9396)
 export default class Service extends cds.ApplicationService {
@@ -23,4 +26,3 @@ export default class Service extends cds.ApplicationService {
 }
 
 export type AuthorizationService = Service & typeof cds.ApplicationService;
-
