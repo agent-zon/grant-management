@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Documentation</title>
+  <meta name="description" content="Interactive OpenAPI documentation" />
+  <style>
+    :root { color-scheme: dark; }
+    html, body { height: 100%; background: #0b0f19; margin: 0; }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji"; color: #e5e7eb; }
+    .header { display:flex; align-items:center; padding: 16px 20px; border-bottom: 1px solid #1f2937; background: linear-gradient(180deg, rgba(30,41,59,0.5), rgba(2,6,23,0)); position: sticky; top: 0; z-index: 10; }
+    .header a { color: #93c5fd; text-decoration: none; margin-right: 12px; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 16px 20px; }
+    .cards { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .card { background: rgba(15,23,42,0.6); border: 1px solid #334155; border-radius: 12px; padding: 12px; }
+    .title { font-size: 20px; font-weight: 700; margin: 8px 0 2px; }
+    .muted { color: #94a3b8; font-size: 12px; }
+    .scalar-root { border: 1px solid #334155; border-radius: 12px; overflow: hidden; background: rgba(15,23,42,0.5); }
+  </style>
+  <script>
+    const isDev = location.port === '5173';
+    const OPENAPI_BASE = isDev ? '/openapi' : '/resources/openapi';
+    const services = [
+      { id: 'grants', name: 'Grants Management Service', description: 'OAuth 2.0 Grant Management API', spec: 'GrantsManagementService.openapi3.json' },
+      { id: 'authorization', name: 'Authorization Service', description: 'OAuth 2.0 Authorization Server', spec: 'AuthorizationService.openapi3.json' },
+      { id: 'auth', name: 'Auth Service', description: 'Authentication and user information', spec: 'AuthService.openapi3.json' },
+      { id: 'demo', name: 'Demo Service', description: 'Demo and testing endpoints', spec: 'DemoService.openapi3.json' }
+    ];
+    function selectSpec(id) {
+      const s = services.find(x => x.id === id) || services[0];
+      const specUrl = `${OPENAPI_BASE}/${s.spec}`;
+      const host = document.getElementById('scalar-host');
+      host.innerHTML = '';
+      const placeholder = document.createElement('div');
+      placeholder.style.padding = '24px';
+      placeholder.innerHTML = '<div class="muted">Loading documentation...</div>';
+      host.appendChild(placeholder);
+      setTimeout(() => {
+        host.innerHTML = `<script id="api-reference" data-url="${specUrl}"></script>`;
+      }, 0);
+      const current = document.querySelectorAll('.card');
+      current.forEach(c => c.style.borderColor = '#334155');
+      const active = document.getElementById(`card-${s.id}`);
+      if (active) active.style.borderColor = '#3b82f6';
+    }
+    window.addEventListener('DOMContentLoaded', () => {
+      const grid = document.getElementById('service-cards');
+      services.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.id = `card-${s.id}`;
+        div.role = 'button';
+        div.tabIndex = 0;
+        div.onclick = () => selectSpec(s.id);
+        div.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') selectSpec(s.id); };
+        div.innerHTML = `<div class="title">${s.name}</div><div class="muted">${s.description}</div>`;
+        grid.appendChild(div);
+      });
+      selectSpec(services[0].id);
+    });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference" async></script>
+</head>
+<body>
+  <div class="header">
+    <a href="/">← Back to Home</a>
+    <div class="muted">API Documentation</div>
+  </div>
+  <div class="container">
+    <div class="cards" id="service-cards"></div>
+    <div class="scalar-root" id="scalar-host">
+      <!-- Scalar mounts here via <script id="api-reference" ...> -->
+    </div>
+  </div>
+</body>
+</html>
