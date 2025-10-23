@@ -1,4 +1,4 @@
-using com.sap.agent.grants as grants from './grants.cds';
+using sap.scai.grants as grants from './grants.cds';
 
 
 annotate grants.Grants with {

@@ -5,7 +5,7 @@ import {
   Consents,
   Consent,
   AuthorizationDetailType,
-} from "#cds-models/AuthorizationService";
+} from "#cds-models/sap/scai/grants/AuthorizationService";
 import { isNativeError } from "node:util/types";
 
 type ConsentHandler = cds.CRUDEventHandler.On<Consent, void | Consent | Error>;

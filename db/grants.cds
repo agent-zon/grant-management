@@ -1,4 +1,4 @@
-namespace com.sap.agent.grants;
+namespace sap.scai.grants;
 using { managed, cuid } from '@sap/cds/common';
 using { sap,User } from '@sap/cds/common';
 /*

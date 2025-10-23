@@ -5,13 +5,13 @@ import { initialTransition, type SnapshotFrom } from "xstate";
 import type {
   AuthorizationDetailRequest,
   AuthorizationDetail,
-} from "#cds-models/com/sap/agent/grants";
+} from "#cds-models/sap/scai/grants";
 import permissionsElevationMachine, {
   PermissionsContext,
 } from "./permissions-elevation-machine.tsx";
 import { createActor } from "xstate";
 import { htmlTemplate } from "../middleware/htmx.tsx";
-import AuthorizationService from "#cds-models/AuthorizationService";
+import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
 
 import React from "react";
 

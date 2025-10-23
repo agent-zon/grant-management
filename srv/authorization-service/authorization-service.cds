@@ -1,18 +1,13 @@
-using com.sap.agent.grants as grants from '../../db/grants.cds';
+namespace sap.scai.grants;
 
+using sap.scai.grants as grants from '../../db/grants.cds';
 @path: '/oauth-server'
 @impl: './authorization-service.tsx'
 @protocol: 'rest' 
 service AuthorizationService {   
     entity AuthorizationRequests as projection on grants.AuthorizationRequests;
-    entity Grants as projection on grants.Grants {
-        *
-    };
- 
-
-    @requires: ['authenticated-user','system-user']
+    @requires: ['authenticated-user', 'system-user'] 
     entity Consents as projection on grants.Consents;
-    
     @requires: ['authenticated-user']
     // OAuth authorize endpoint with Rich Authorization Requests support
     action authorize(

@@ -3,7 +3,7 @@ import cds from "@sap/cds";
 import { LIST } from "./handler.list.tsx";
 import { GET, POST } from "./handler.edit.tsx";
 import { DELETE } from "./handler.revoke.tsx";
-import { Grants, Consents, Grant } from "#cds-models/GrantsManagementService";
+import { Grants, Consents, Grant } from "#cds-models/sap/scai/grants/GrantsManagementService";
 
 // CDS ApplicationService for Grant Detail with path parameter support
 export default class Service extends cds.ApplicationService {
