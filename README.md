@@ -16,7 +16,7 @@ The application is deployed on SAP BTP Kyma environment and can be accessed at:
 
 - **OAuth Flow Step-by-Step Demo**: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/demo/index
 - **Grant Management with CAP Backend**: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/grants-management/Grants
-- **API Browser**: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/
+- **API Docs**: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/api/docs
 
 ## Features
 

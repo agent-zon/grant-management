@@ -7,6 +7,7 @@ using sap.scai.grants as grants from '../../db/grants.cds';
 @title: 'Authorization Server API'
 @Core.Description: 'OAuth 2.0 endpoints and metadata'
 @Core.LongDescription: 'Authorization Server endpoints for authorization, PAR, and token exchange with Rich Authorization Requests (RAR) support and grant_id propagation.'
+@OpenAPI.externalDocs: { description: 'API Docs', url: 'https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/api/docs' }
 service AuthorizationService {
      @cds. redirection.target
     entity AuthorizationRequests as projection on grants.AuthorizationRequests;
