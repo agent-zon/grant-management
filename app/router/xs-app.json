@@ -1,23 +1,16 @@
 {
   "routes": [
     {
-      "source": "^/resources/openapi/(.*)$",
-      "target": "/$1",
-      "localDir": "./resources/openapi",
-      "csrfProtection": false,
-      "authenticationType": "none"
-    },
-    {
       "source": "^/api-docs$",
       "target": "/index.html",
-      "localDir": "./resources/api-docs",
+      "localDir": "./api-docs",
       "csrfProtection": false,
       "authenticationType": "none"
     },
     {
       "source": "^/api-docs/(.*)$",
       "target": "/$1",
-      "localDir": "./resources/api-docs",
+      "localDir": "./api-docs",
       "csrfProtection": false,
       "authenticationType": "none"
     },
