@@ -1,13 +1,8 @@
 {
   "recommendations": [
     "sapse.vscode-cds",
-    "denoland.vscode-deno",
     "ms-kubernetes-tools.vscode-kubernetes-tools",
-
-  ],
-  "unwantedRecommendations": [
     "ms-vscode.vscode-typescript",
-    "hookyqr.beautify",
     "ms-vscode.vscode-json"
   ]
 }
