@@ -23,7 +23,7 @@ entity Grants: managed {
   consents: Composition of many Consents on consents.grant_id = $self.id;
   requests: Composition of many AuthorizationRequests on requests.grant = $self;
   authorization: Composition of many ConsentGrant on authorization.grant_id = $self.id;
-  authorization_details: Composition of many AuthorizationDetail on authorization_details.consent.grant_id = $self.id;
+  authorization_details: Composition of many AuthorizationDetail on authorization_details.grant = $self;
 }
 
 
@@ -102,11 +102,10 @@ entity GrantUsage:cuid,managed {
 @cds.autoexpose :true
 entity Consents:cuid,managed {
   key grant_id: String;
-  // Association to Grant (primary relationship)
+  // Deprecated: kept for backward compatibility. New design links AuthorizationDetail directly to Grants and AuthorizationRequests.
   grant: Association to Grants on grant.id = $self.grant_id; 
   request: Association to AuthorizationRequests;
   scope: String; 
-  authorization_details: Composition of many AuthorizationDetail on authorization_details.consent = $self;
   duration: Timespan;
   subject: User; //@cds.on.insert: $user;
   previous_consent: Association to Consents; // Reference to the previous consent for this grant
@@ -118,8 +117,15 @@ entity Consents:cuid,managed {
 
 
 @cds.autoexpose :true
-entity AuthorizationDetail:cuid,managed, AuthorizationDetailMcpTools, AuthorizationDetailFileSystem, AuthorizationDetailDatabase, AuthorizationDetailApi {
-  consent: Association to Consents;
+entity AuthorizationDetail: managed, AuthorizationDetailMcpTools, AuthorizationDetailFileSystem, AuthorizationDetailDatabase, AuthorizationDetailApi {
+  // Composite identifier derived from grant and per-detail identifier
+  key id: String;
+  // Business identifier supplied by clients (unique per grant)
+  identifier: String;
+
+  // New relations
+  grant: Association to Grants;               // owning grant
+  request: Association to AuthorizationRequests; // originating request
 
   type: String enum {
                 fs;
@@ -131,7 +137,6 @@ entity AuthorizationDetail:cuid,managed, AuthorizationDetailMcpTools, Authorizat
   tools: Map; 
   locations: array of String;
   actions: array of String;
-  // identifier: String;
   // privileges: array of String;
   // resources: array of String;
 }
@@ -187,6 +192,7 @@ type AuthorizationDetailRequest: MCPToolAuthorizationDetailRequest, FileSystemAu
   type: Association to AuthorizationDetailType;
   locations: array of String;
   actions: array of String;
+  identifier: String; // Business identifier for deduplication per grant
 
 }
  

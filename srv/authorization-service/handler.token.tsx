@@ -29,7 +29,7 @@ export default async function token(
   if (grant) {
     const authDetails = await cds
       .read("com.sap.agent.grants.AuthorizationDetail")
-      .where(`consent.grant_id = '${request.grant_id}'`);
+      .where(`grant_ID = '${request.grant_id}'`);
     (grant as any).authorization_details = authDetails || [];
     console.debug(
       `🔧 Fetched ${authDetails?.length || 0} authorization details for grant ${request.grant_id}`,

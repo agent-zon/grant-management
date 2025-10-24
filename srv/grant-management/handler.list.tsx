@@ -330,7 +330,7 @@ async function getGrants(srv: GrantsManagementService, data: Grants) {
         authorization_details: [
           ...(acc[consent.grant_id]?.authorization_details || []),
           ...authorization_details.filter(
-            (detail) => detail.consent_grant_id === consent.grant_id
+            (detail) => detail.grant_ID === consent.grant_id
           ),
         ],
         scope: consents
