@@ -34,6 +34,9 @@ annotate grants.Consents with @(restrict: [
 @path: '/grants-management' 
 @requires: ['authenticated-user']
 @impl: './grant-management.tsx'
+@title: 'Grant Management API'
+@Core.Description: 'Manage, query, and revoke OAuth grants'
+@Core.LongDescription: 'Implements OAuth 2.0 Grant Management including query and revoke actions, with persisted authorization_details and timestamps for auditability.'
 service GrantsManagementService {
    
 

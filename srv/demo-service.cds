@@ -3,6 +3,9 @@
 @protocol: 'rest' 
 @impl: './demo-service.tsx' 
 @requires: ['authenticated-user','system-user']
+@title: 'Demo Service'
+@Core.Description: 'Demonstration endpoints and UI helpers'
+@Core.LongDescription: 'Provides interactive demo flows and helper HTML to showcase grant flows, events, and integrations.'
 service DemoService {
     @method: [PUT, POST, GET]
     function request(config: String) returns String;
