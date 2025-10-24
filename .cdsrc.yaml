@@ -1,0 +1,50 @@
+
+folders:
+  srv: "./srv"
+typer:
+  strictPropertyInitialization: false
+  strictNullChecks: false
+  allowArbitraryExtensions: true
+log:
+  levels:
+    sql: error
+    cds: info
+    odata: info
+requires:
+  auth:
+    kind: ias
+  db:
+    kind: sqlite
+    credentials:
+      url: db.sqlite
+  destinations: true
+  "[development]":
+    db:
+      kind: sqlite
+      credentials:
+        url: db.sqlite
+    auth:
+      kind: mocked
+      users:
+        alice:
+          tenant: t1
+          roles:
+            - grant_management_create
+            - grant_management_update
+            - grant_management_replace
+            - grant_management_revoke
+            - grant_management_query
+        bob:
+          tenant: t2
+          roles:
+            - grant_management_create
+            - grant_management_update
+            - grant_management_replace
+            - grant_management_revoke
+            - grant_management_query
+mocks:
+  auth:
+    kind: mocked
+features:
+  toggles:
+    auth: true

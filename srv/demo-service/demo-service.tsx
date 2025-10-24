@@ -745,7 +745,7 @@ export default class Service extends cds.ApplicationService {
       tokenResponse;
 
     if (error) {
-      return await cds.context?.http?.res.send(
+      return  cds.context?.http?.res.send(
         renderToString(
           <div>
             <div>Authorization failed: {error}</div>
@@ -759,7 +759,7 @@ export default class Service extends cds.ApplicationService {
       );
     }
     const { actor } = createPermissionsElevationActor(grant_id);
-
+    
     actor.send({
       type: "GRANT_UPDATED",
       access_token,
@@ -768,14 +768,10 @@ export default class Service extends cds.ApplicationService {
       grant_id,
       ...rest,
     });
-
-    // const grant_details = await (
-    //   await cds.connect.to(AuthorizationService)
-    // ).get("Grants", grant_id);
-    // console.log(grant_details);
     cds.context?.http?.res.setHeader("HX-Trigger", "grant-updated");
     cds.context?.http?.res.setHeader("Content-Type", "text/html");
-    return await cds.context?.http?.res?.send(`<body>${renderToString(
+
+    return  cds.context?.http?.res?.status(201).send(`<body>${renderToString(
       <div>
         {/* <a
             href={`/demo/elevate?grant_id=${grant_id}`}
@@ -825,7 +821,7 @@ export default class Service extends cds.ApplicationService {
       </div>
     )} <script async defer src="/demo/send_event?grant_id=${grant_id}&type=grant-requested">
       </script></body>
-     `);
+     `)
   }
 
   public async event_handlers(req) {

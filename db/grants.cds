@@ -20,16 +20,10 @@ entity Grants: managed {
   scope:String;
   consents: Composition of many Consents on consents.grant_id = $self.id;
   requests: Composition of many AuthorizationRequests on requests.grant = $self;
-  authorization: Composition of many ConsentGrant on authorization.grant_id = $self.id;
   authorization_details: Composition of many AuthorizationDetail on authorization_details.consent.grant_id = $self.id;
 }
 
 
-
- 
- // Simple Grants view - one row per grant with latest consent details
-// Note: Simplified for PostgreSQL compatibility
-entity ConsentGrant as projection on Consents;
  
  entity AuthorizationRequests: cuid, managed {
   //raw request fields
@@ -83,6 +77,7 @@ entity GrantUsage:cuid,managed {
  
 @cds.autoexpose :true
 entity Consents:cuid,managed {
+  @mandatory
   key grant_id: String;
   // Association to Grant (primary relationship)
   grant: Association to Grants on grant.id = $self.grant_id; 

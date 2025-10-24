@@ -2,7 +2,7 @@ import cds from "@sap/cds";
 import AuthorizationDetailsComponent from "./details/index.tsx";
 import "./handler.authorize.tsx";
 import type { AuthorizationService } from "./authorization-service.tsx";
-import { AuthorizationRequests } from "#cds-models/AuthorizationService";
+import { AuthorizationRequests } from "#cds-models/sap/scai/grants/AuthorizationService";
 import GrantsManagementService, {
   Grants,
 } from "#cds-models/sap/scai/grants/GrantsManagementService";
@@ -29,7 +29,7 @@ export default async function authorize(
   const grantManagement = await cds.connect.to(GrantsManagementService);
 
   const grant = await grantManagement
-    .insert({
+    .upsert({
       id: request.grant_id,
       client_id: request.client_id,
       risk_level: request.risk_level,
