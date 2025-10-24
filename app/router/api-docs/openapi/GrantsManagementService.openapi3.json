@@ -2,7 +2,7 @@
   "openapi": "3.0.2",
   "info": {
     "title": "Grant Management API",
-    "description": "Implements OAuth 2.0 Grant Management including query and revoke actions, with persisted authorization_details and timestamps for auditability.",
+    "description": "Implements OAuth 2.0 Grant Management including query and revoke actions, with persisted authorization_details and timestamps for auditability. \n\n Visit the [Grant Management User Dashboard](/grants-management/Grants).",
     "version": ""
   },
   "x-sap-api-type": "ODATAV4",

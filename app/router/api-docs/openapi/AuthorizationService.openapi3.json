@@ -2,7 +2,7 @@
   "openapi": "3.0.2",
   "info": {
     "title": "Authorization Server API",
-    "description": "Authorization Server endpoints for authorization, PAR, and token exchange with Rich Authorization Requests (RAR) support and grant_id propagation.",
+    "description": "Authorization Server endpoints for authorization, PAR, and token exchange with Rich Authorization Requests (RAR) support and grant_id propagation. \n\nVisit [Playground](/demo/index) to interact with auth api with grant id and permission elevation \n\n",
     "version": ""
   },
   "x-sap-api-type": "REST",

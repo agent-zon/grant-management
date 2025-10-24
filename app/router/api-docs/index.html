@@ -105,16 +105,10 @@
         },
         {
           id: "demo",
-          name: "Demo Service",
+          name: "Playground / Demo Service",
           description: "Demo and testing endpoints",
           spec: "DemoService.openapi3.json",
-        },
-        {
-          id: "auth",
-          name: "Auth Debug Service",
-          description: "Authentication and user information",
-          spec: "AuthService.openapi3.json",
-        },
+        }
       ];
       function selectSpec(id) {
         const s = services.find((x) => x.id === id) || services[0];
