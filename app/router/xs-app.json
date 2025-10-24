@@ -8,16 +8,9 @@
       "authenticationType": "none"
     },
     {
-      "source": "^/api-docs$",
-      "target": "/index.html",
-      "localDir": "./resources/api-docs",
-      "csrfProtection": false,
-      "authenticationType": "none"
-    },
-    {
-      "source": "^/api-docs/(.*)$",
-      "target": "/$1",
-      "localDir": "./resources/api-docs",
+      "source": "^/api-docs(.*)$",
+      "target": "/api-docs$1",
+      "destination": "srv-api",
       "csrfProtection": false,
       "authenticationType": "none"
     },
