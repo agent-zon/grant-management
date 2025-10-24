@@ -15,832 +15,28 @@
   ],
   "tags": [
     {
-      "name": "Grants"
+      "name": "Grant Management"
     },
     {
       "name": "Consents"
     },
     {
       "name": "AuthorizationDetail"
+    },
+    {
+      "name": "Grants"
     }
   ],
   "paths": {
-    "/Consents": {
-      "get": {
-        "summary": "Retrieves a list of consents.",
-        "tags": ["Consents"],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/top"
-          },
-          {
-            "$ref": "#/components/parameters/skip"
-          },
-          {
-            "$ref": "#/components/parameters/search"
-          },
-          {
-            "name": "$filter",
-            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "$ref": "#/components/parameters/count"
-          },
-          {
-            "name": "$orderby",
-            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": [
-                  "ID",
-                  "ID desc",
-                  "createdAt",
-                  "createdAt desc",
-                  "createdBy",
-                  "createdBy desc",
-                  "modifiedAt",
-                  "modifiedAt desc",
-                  "modifiedBy",
-                  "modifiedBy desc",
-                  "grant_id",
-                  "grant_id desc",
-                  "request_ID",
-                  "request_ID desc",
-                  "scope",
-                  "scope desc",
-                  "duration",
-                  "duration desc",
-                  "subject",
-                  "subject desc",
-                  "previous_consent_ID",
-                  "previous_consent_ID desc",
-                  "previous_consent_grant_id",
-                  "previous_consent_grant_id desc",
-                  "redirect_uri",
-                  "redirect_uri desc"
-                ]
-              }
-            }
-          },
-          {
-            "name": "$select",
-            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": [
-                  "ID",
-                  "createdAt",
-                  "createdBy",
-                  "modifiedAt",
-                  "modifiedBy",
-                  "grant_id",
-                  "request_ID",
-                  "scope",
-                  "duration",
-                  "subject",
-                  "previous_consent_ID",
-                  "previous_consent_grant_id",
-                  "redirect_uri"
-                ]
-              }
-            }
-          },
-          {
-            "name": "$expand",
-            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": [
-                  "*",
-                  "grant",
-                  "request",
-                  "authorization_details",
-                  "previous_consent"
-                ]
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Retrieved consents",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "title": "Collection of Consents",
-                  "properties": {
-                    "@count": {
-                      "$ref": "#/components/schemas/count"
-                    },
-                    "value": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/GrantsManagementService.Consents"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "4XX": {
-            "$ref": "#/components/responses/error"
-          }
-        }
-      },
-      "post": {
-        "summary": "Creates a single consent.",
-        "tags": ["Consents"],
-        "requestBody": {
-          "description": "New consent",
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GrantsManagementService.Consents-create"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Created consent",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GrantsManagementService.Consents"
-                }
-              }
-            }
-          },
-          "4XX": {
-            "$ref": "#/components/responses/error"
-          }
-        }
-      }
-    },
-    "/Consents(ID={ID},grant_id='{grant_id}')": {
-      "parameters": [
-        {
-          "description": "key: ID",
-          "in": "path",
-          "name": "ID",
-          "required": true,
-          "schema": {
-            "type": "string",
-            "format": "uuid",
-            "example": "01234567-89ab-cdef-0123-456789abcdef"
-          }
-        },
-        {
-          "description": "key: grant_id",
-          "in": "path",
-          "name": "grant_id",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "get": {
-        "summary": "Retrieves a single consent.",
-        "tags": ["Consents"],
-        "parameters": [
-          {
-            "name": "$select",
-            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": [
-                  "ID",
-                  "createdAt",
-                  "createdBy",
-                  "modifiedAt",
-                  "modifiedBy",
-                  "grant_id",
-                  "request_ID",
-                  "scope",
-                  "duration",
-                  "subject",
-                  "previous_consent_ID",
-                  "previous_consent_grant_id",
-                  "redirect_uri"
-                ]
-              }
-            }
-          },
-          {
-            "name": "$expand",
-            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": [
-                  "*",
-                  "grant",
-                  "request",
-                  "authorization_details",
-                  "previous_consent"
-                ]
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Retrieved consent",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GrantsManagementService.Consents"
-                }
-              }
-            }
-          },
-          "4XX": {
-            "$ref": "#/components/responses/error"
-          }
-        }
-      },
-      "patch": {
-        "summary": "Changes a single consent.",
-        "tags": ["Consents"],
-        "requestBody": {
-          "description": "New property values",
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GrantsManagementService.Consents-update"
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "Success"
-          },
-          "4XX": {
-            "$ref": "#/components/responses/error"
-          }
-        }
-      },
-      "delete": {
-        "summary": "Deletes a single consent.",
-        "tags": ["Consents"],
-        "responses": {
-          "204": {
-            "description": "Success"
-          },
-          "4XX": {
-            "$ref": "#/components/responses/error"
-          }
-        }
-      }
-    },
-    "/Consents(ID={ID},grant_id='{grant_id}')/authorization_details": {
-      "parameters": [
-        {
-          "description": "key: ID",
-          "in": "path",
-          "name": "ID",
-          "required": true,
-          "schema": {
-            "type": "string",
-            "format": "uuid",
-            "example": "01234567-89ab-cdef-0123-456789abcdef"
-          }
-        },
-        {
-          "description": "key: grant_id",
-          "in": "path",
-          "name": "grant_id",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "get": {
-        "summary": "Retrieves a list of authorization_details of a consent.",
-        "tags": ["Consents", "AuthorizationDetail"],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/top"
-          },
-          {
-            "$ref": "#/components/parameters/skip"
-          },
-          {
-            "$ref": "#/components/parameters/search"
-          },
-          {
-            "name": "$filter",
-            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "$ref": "#/components/parameters/count"
-          },
-          {
-            "name": "$orderby",
-            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": [
-                  "ID",
-                  "ID desc",
-                  "createdAt",
-                  "createdAt desc",
-                  "createdBy",
-                  "createdBy desc",
-                  "modifiedAt",
-                  "modifiedAt desc",
-                  "modifiedBy",
-                  "modifiedBy desc",
-                  "transport",
-                  "transport desc",
-                  "server",
-                  "server desc",
-                  "roots",
-                  "roots desc",
-                  "permissions_read",
-                  "permissions_read desc",
-                  "permissions_write",
-                  "permissions_write desc",
-                  "permissions_execute",
-                  "permissions_execute desc",
-                  "permissions_delete",
-                  "permissions_delete desc",
-                  "permissions_list",
-                  "permissions_list desc",
-                  "permissions_create",
-                  "permissions_create desc",
-                  "databases",
-                  "databases desc",
-                  "schemas",
-                  "schemas desc",
-                  "tables",
-                  "tables desc",
-                  "urls",
-                  "urls desc",
-                  "protocols",
-                  "protocols desc",
-                  "consent_ID",
-                  "consent_ID desc",
-                  "consent_grant_id",
-                  "consent_grant_id desc",
-                  "type",
-                  "type desc",
-                  "locations",
-                  "locations desc",
-                  "actions",
-                  "actions desc"
-                ]
-              }
-            }
-          },
-          {
-            "name": "$select",
-            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": [
-                  "ID",
-                  "createdAt",
-                  "createdBy",
-                  "modifiedAt",
-                  "modifiedBy",
-                  "transport",
-                  "tools",
-                  "server",
-                  "roots",
-                  "permissions_read",
-                  "permissions_write",
-                  "permissions_execute",
-                  "permissions_delete",
-                  "permissions_list",
-                  "permissions_create",
-                  "databases",
-                  "schemas",
-                  "tables",
-                  "urls",
-                  "protocols",
-                  "consent_ID",
-                  "consent_grant_id",
-                  "type",
-                  "locations",
-                  "actions"
-                ]
-              }
-            }
-          },
-          {
-            "name": "$expand",
-            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": ["*", "consent"]
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Retrieved authorization_details",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "title": "Collection of AuthorizationDetail",
-                  "properties": {
-                    "@count": {
-                      "$ref": "#/components/schemas/count"
-                    },
-                    "value": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/GrantsManagementService.AuthorizationDetail"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "4XX": {
-            "$ref": "#/components/responses/error"
-          }
-        }
-      },
-      "post": {
-        "summary": "Creates a single authorization_detail of a consent.",
-        "tags": ["Consents", "AuthorizationDetail"],
-        "requestBody": {
-          "description": "New authorization_detail",
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GrantsManagementService.AuthorizationDetail-create"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Created authorization_detail",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GrantsManagementService.AuthorizationDetail"
-                }
-              }
-            }
-          },
-          "4XX": {
-            "$ref": "#/components/responses/error"
-          }
-        }
-      }
-    },
-    "/Consents(ID={ID},grant_id='{grant_id}')/grant": {
-      "parameters": [
-        {
-          "description": "key: ID",
-          "in": "path",
-          "name": "ID",
-          "required": true,
-          "schema": {
-            "type": "string",
-            "format": "uuid",
-            "example": "01234567-89ab-cdef-0123-456789abcdef"
-          }
-        },
-        {
-          "description": "key: grant_id",
-          "in": "path",
-          "name": "grant_id",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "get": {
-        "summary": "Retrieves grant of a consent.",
-        "tags": ["Consents", "Grants"],
-        "parameters": [
-          {
-            "name": "$select",
-            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": [
-                  "createdAt",
-                  "createdBy",
-                  "modifiedAt",
-                  "modifiedBy",
-                  "id",
-                  "client_id",
-                  "risk_level",
-                  "status",
-                  "revoked_at",
-                  "revoked_by",
-                  "subject",
-                  "actor",
-                  "scope"
-                ]
-              }
-            }
-          },
-          {
-            "name": "$expand",
-            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": [
-                  "*",
-                  "consents",
-                  "requests",
-                  "authorization",
-                  "authorization_details"
-                ]
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Retrieved grant",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GrantsManagementService.Grants"
-                }
-              }
-            }
-          },
-          "4XX": {
-            "$ref": "#/components/responses/error"
-          }
-        }
-      }
-    },
-    "/Consents(ID={ID},grant_id='{grant_id}')/previous_consent": {
-      "parameters": [
-        {
-          "description": "key: ID",
-          "in": "path",
-          "name": "ID",
-          "required": true,
-          "schema": {
-            "type": "string",
-            "format": "uuid",
-            "example": "01234567-89ab-cdef-0123-456789abcdef"
-          }
-        },
-        {
-          "description": "key: grant_id",
-          "in": "path",
-          "name": "grant_id",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "get": {
-        "summary": "Retrieves previous_consent of a consent.",
-        "tags": ["Consents"],
-        "parameters": [
-          {
-            "name": "$select",
-            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": [
-                  "ID",
-                  "createdAt",
-                  "createdBy",
-                  "modifiedAt",
-                  "modifiedBy",
-                  "grant_id",
-                  "request_ID",
-                  "scope",
-                  "duration",
-                  "subject",
-                  "previous_consent_ID",
-                  "previous_consent_grant_id",
-                  "redirect_uri"
-                ]
-              }
-            }
-          },
-          {
-            "name": "$expand",
-            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": [
-                  "*",
-                  "grant",
-                  "request",
-                  "authorization_details",
-                  "previous_consent"
-                ]
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Retrieved previous_consent",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GrantsManagementService.Consents"
-                }
-              }
-            }
-          },
-          "4XX": {
-            "$ref": "#/components/responses/error"
-          }
-        }
-      }
-    },
-    "/Consents(ID={ID},grant_id='{grant_id}')/request": {
-      "parameters": [
-        {
-          "description": "key: ID",
-          "in": "path",
-          "name": "ID",
-          "required": true,
-          "schema": {
-            "type": "string",
-            "format": "uuid",
-            "example": "01234567-89ab-cdef-0123-456789abcdef"
-          }
-        },
-        {
-          "description": "key: grant_id",
-          "in": "path",
-          "name": "grant_id",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "get": {
-        "summary": "Retrieves request of a consent.",
-        "tags": ["Consents", "AuthorizationRequests"],
-        "parameters": [
-          {
-            "name": "$select",
-            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": [
-                  "ID",
-                  "createdAt",
-                  "createdBy",
-                  "modifiedAt",
-                  "modifiedBy",
-                  "client_id",
-                  "redirect_uri",
-                  "request_uri",
-                  "scope",
-                  "state",
-                  "code_challenge",
-                  "code_challenge_method",
-                  "grant_management_action",
-                  "authorization_details",
-                  "requested_actor",
-                  "expires_at",
-                  "status",
-                  "response_type",
-                  "risk_level",
-                  "subject_token_type",
-                  "subject_token",
-                  "subject",
-                  "expires_in",
-                  "grant_id",
-                  "access"
-                ]
-              }
-            }
-          },
-          {
-            "name": "$expand",
-            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": ["*", "grant", "consent", "access/type"]
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Retrieved request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GrantsManagementService.AuthorizationRequests"
-                }
-              }
-            }
-          },
-          "4XX": {
-            "$ref": "#/components/responses/error"
-          }
-        }
-      }
-    },
     "/Grants": {
       "get": {
+        "operationId": "grants.list",
         "summary": "Retrieves a list of grants.",
-        "tags": ["Grants"],
+        "tags": ["Grant Management"],
         "parameters": [
+          {
+            "$ref": "#/components/parameters/accept"
+          },
           {
             "$ref": "#/components/parameters/top"
           },
@@ -971,6 +167,11 @@
                     }
                   }
                 }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
@@ -980,6 +181,7 @@
         }
       },
       "post": {
+        "operationId": "grants.create",
         "summary": "Creates a single grant.",
         "tags": ["Grants"],
         "requestBody": {
@@ -1020,11 +222,15 @@
           "schema": {
             "type": "string"
           }
+        },
+        {
+          "$ref": "#/components/parameters/accept"
         }
       ],
       "get": {
-        "summary": "Retrieves a single grant.",
-        "tags": ["Grants"],
+        "operationId": "grants.query",
+        "summary": "Queries a grant details.",
+        "tags": ["Grant Management"],
         "parameters": [
           {
             "name": "$select",
@@ -1083,6 +289,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/GrantsManagementService.Grants"
                 }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
@@ -1092,7 +303,8 @@
         }
       },
       "patch": {
-        "summary": "Changes a single grant.",
+        "operationId": "grants.patch",
+        "summary": "Updates a single grant.",
         "tags": ["Grants"],
         "requestBody": {
           "description": "New property values",
@@ -1115,8 +327,9 @@
         }
       },
       "delete": {
-        "summary": "Deletes a single grant.",
-        "tags": ["Grants"],
+        "operationId": "grants.revoke",
+        "summary": "Revokes a grant.",
+        "tags": ["Grant Management"],
         "responses": {
           "204": {
             "description": "Success"
@@ -1127,404 +340,7 @@
         }
       }
     },
-    "/Grants('{id}')/authorization": {
-      "parameters": [
-        {
-          "description": "key: id",
-          "in": "path",
-          "name": "id",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "get": {
-        "summary": "Retrieves a list of authorization of a grant.",
-        "tags": ["Grants", "ConsentGrant"],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/top"
-          },
-          {
-            "$ref": "#/components/parameters/skip"
-          },
-          {
-            "$ref": "#/components/parameters/search"
-          },
-          {
-            "name": "$filter",
-            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "$ref": "#/components/parameters/count"
-          },
-          {
-            "name": "$orderby",
-            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": [
-                  "ID",
-                  "ID desc",
-                  "createdAt",
-                  "createdAt desc",
-                  "createdBy",
-                  "createdBy desc",
-                  "modifiedAt",
-                  "modifiedAt desc",
-                  "modifiedBy",
-                  "modifiedBy desc",
-                  "grant_id",
-                  "grant_id desc",
-                  "request_ID",
-                  "request_ID desc",
-                  "scope",
-                  "scope desc",
-                  "duration",
-                  "duration desc",
-                  "subject",
-                  "subject desc",
-                  "previous_consent_ID",
-                  "previous_consent_ID desc",
-                  "previous_consent_grant_id",
-                  "previous_consent_grant_id desc",
-                  "redirect_uri",
-                  "redirect_uri desc"
-                ]
-              }
-            }
-          },
-          {
-            "name": "$select",
-            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": [
-                  "ID",
-                  "createdAt",
-                  "createdBy",
-                  "modifiedAt",
-                  "modifiedBy",
-                  "grant_id",
-                  "request_ID",
-                  "scope",
-                  "duration",
-                  "subject",
-                  "previous_consent_ID",
-                  "previous_consent_grant_id",
-                  "redirect_uri"
-                ]
-              }
-            }
-          },
-          {
-            "name": "$expand",
-            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": [
-                  "*",
-                  "grant",
-                  "request",
-                  "authorization_details",
-                  "previous_consent"
-                ]
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Retrieved authorization",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "title": "Collection of ConsentGrant",
-                  "properties": {
-                    "@count": {
-                      "$ref": "#/components/schemas/count"
-                    },
-                    "value": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/GrantsManagementService.ConsentGrant"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "4XX": {
-            "$ref": "#/components/responses/error"
-          }
-        }
-      },
-      "post": {
-        "summary": "Creates a single authorization of a grant.",
-        "tags": ["Grants", "ConsentGrant"],
-        "requestBody": {
-          "description": "New authorization",
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GrantsManagementService.ConsentGrant-create"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Created authorization",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GrantsManagementService.ConsentGrant"
-                }
-              }
-            }
-          },
-          "4XX": {
-            "$ref": "#/components/responses/error"
-          }
-        }
-      }
-    },
-    "/Grants('{id}')/authorization_details": {
-      "parameters": [
-        {
-          "description": "key: id",
-          "in": "path",
-          "name": "id",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "get": {
-        "summary": "Retrieves a list of authorization_details of a grant.",
-        "tags": ["Grants", "AuthorizationDetail"],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/top"
-          },
-          {
-            "$ref": "#/components/parameters/skip"
-          },
-          {
-            "$ref": "#/components/parameters/search"
-          },
-          {
-            "name": "$filter",
-            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "$ref": "#/components/parameters/count"
-          },
-          {
-            "name": "$orderby",
-            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": [
-                  "ID",
-                  "ID desc",
-                  "createdAt",
-                  "createdAt desc",
-                  "createdBy",
-                  "createdBy desc",
-                  "modifiedAt",
-                  "modifiedAt desc",
-                  "modifiedBy",
-                  "modifiedBy desc",
-                  "transport",
-                  "transport desc",
-                  "server",
-                  "server desc",
-                  "roots",
-                  "roots desc",
-                  "permissions_read",
-                  "permissions_read desc",
-                  "permissions_write",
-                  "permissions_write desc",
-                  "permissions_execute",
-                  "permissions_execute desc",
-                  "permissions_delete",
-                  "permissions_delete desc",
-                  "permissions_list",
-                  "permissions_list desc",
-                  "permissions_create",
-                  "permissions_create desc",
-                  "databases",
-                  "databases desc",
-                  "schemas",
-                  "schemas desc",
-                  "tables",
-                  "tables desc",
-                  "urls",
-                  "urls desc",
-                  "protocols",
-                  "protocols desc",
-                  "consent_ID",
-                  "consent_ID desc",
-                  "consent_grant_id",
-                  "consent_grant_id desc",
-                  "type",
-                  "type desc",
-                  "locations",
-                  "locations desc",
-                  "actions",
-                  "actions desc"
-                ]
-              }
-            }
-          },
-          {
-            "name": "$select",
-            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": [
-                  "ID",
-                  "createdAt",
-                  "createdBy",
-                  "modifiedAt",
-                  "modifiedBy",
-                  "transport",
-                  "tools",
-                  "server",
-                  "roots",
-                  "permissions_read",
-                  "permissions_write",
-                  "permissions_execute",
-                  "permissions_delete",
-                  "permissions_list",
-                  "permissions_create",
-                  "databases",
-                  "schemas",
-                  "tables",
-                  "urls",
-                  "protocols",
-                  "consent_ID",
-                  "consent_grant_id",
-                  "type",
-                  "locations",
-                  "actions"
-                ]
-              }
-            }
-          },
-          {
-            "name": "$expand",
-            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
-            "in": "query",
-            "explode": false,
-            "schema": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "enum": ["*", "consent"]
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Retrieved authorization_details",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "title": "Collection of AuthorizationDetail",
-                  "properties": {
-                    "@count": {
-                      "$ref": "#/components/schemas/count"
-                    },
-                    "value": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/GrantsManagementService.AuthorizationDetail"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "4XX": {
-            "$ref": "#/components/responses/error"
-          }
-        }
-      },
-      "post": {
-        "summary": "Creates a single authorization_detail of a grant.",
-        "tags": ["Grants", "AuthorizationDetail"],
-        "requestBody": {
-          "description": "New authorization_detail",
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GrantsManagementService.AuthorizationDetail-create"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Created authorization_detail",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GrantsManagementService.AuthorizationDetail"
-                }
-              }
-            }
-          },
-          "4XX": {
-            "$ref": "#/components/responses/error"
-          }
-        }
-      }
-    },
+
     "/Grants('{id}')/consents": {
       "parameters": [
         {
@@ -1680,8 +496,9 @@
         }
       },
       "post": {
+        "operationId": "grants.consents.create",
         "summary": "Creates a single consent of a grant.",
-        "tags": ["Grants", "Consents"],
+        "tags": ["Grant Management", "Consents"],
         "requestBody": {
           "description": "New consent",
           "required": true,
@@ -1947,6 +764,219 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GrantsManagementService.AuthorizationRequests"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Grants('{id}')/authorization_details": {
+      "parameters": [
+        {
+          "description": "key: id",
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a list of authorization_details of a grant.",
+        "tags": ["Grants", "AuthorizationDetail"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "ID desc",
+                  "createdAt",
+                  "createdAt desc",
+                  "createdBy",
+                  "createdBy desc",
+                  "modifiedAt",
+                  "modifiedAt desc",
+                  "modifiedBy",
+                  "modifiedBy desc",
+                  "transport",
+                  "transport desc",
+                  "server",
+                  "server desc",
+                  "roots",
+                  "roots desc",
+                  "permissions_read",
+                  "permissions_read desc",
+                  "permissions_write",
+                  "permissions_write desc",
+                  "permissions_execute",
+                  "permissions_execute desc",
+                  "permissions_delete",
+                  "permissions_delete desc",
+                  "permissions_list",
+                  "permissions_list desc",
+                  "permissions_create",
+                  "permissions_create desc",
+                  "databases",
+                  "databases desc",
+                  "schemas",
+                  "schemas desc",
+                  "tables",
+                  "tables desc",
+                  "urls",
+                  "urls desc",
+                  "protocols",
+                  "protocols desc",
+                  "consent_ID",
+                  "consent_ID desc",
+                  "consent_grant_id",
+                  "consent_grant_id desc",
+                  "type",
+                  "type desc",
+                  "locations",
+                  "locations desc",
+                  "actions",
+                  "actions desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "transport",
+                  "tools",
+                  "server",
+                  "roots",
+                  "permissions_read",
+                  "permissions_write",
+                  "permissions_execute",
+                  "permissions_delete",
+                  "permissions_list",
+                  "permissions_create",
+                  "databases",
+                  "schemas",
+                  "tables",
+                  "urls",
+                  "protocols",
+                  "consent_ID",
+                  "consent_grant_id",
+                  "type",
+                  "locations",
+                  "actions"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": ["*", "consent"]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved authorization_details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of AuthorizationDetail",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/GrantsManagementService.AuthorizationDetail"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Creates a single authorization_detail of a grant.",
+        "tags": ["Grants", "AuthorizationDetail"],
+        "requestBody": {
+          "description": "New authorization_detail",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GrantsManagementService.AuthorizationDetail-create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created authorization_detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GrantsManagementService.AuthorizationDetail"
                 }
               }
             }
@@ -4080,6 +3110,21 @@
       }
     },
     "parameters": {
+      "accept": {
+        "name": "Accept",
+        "in": "header",
+        "description": "Accept header",
+        "schema": {
+          "type": "string",
+          "default": "application/json",
+          "enum": [
+            "application/json",
+            "text/html",
+            "application/vnd.sap.cds.v1+json"
+          ]
+        },
+        "required": true
+      },
       "top": {
         "name": "$top",
         "in": "query",

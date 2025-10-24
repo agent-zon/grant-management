@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.2",
   "info": {
-    "title": "Auth Service",
-    "description": "Provides simple authenticated user information and helper endpoints for demos and integration tests.",
+    "title": "Auth Debug Service",
+    "description": "Debugging and testing endpoints for authenticated user information and helper endpoints for demos and integration tests.",
     "version": ""
   },
   "x-sap-api-type": "ODATAV4",
@@ -19,9 +19,7 @@
       "post": {
         "summary": "Sends a group of requests",
         "description": "Group multiple requests into a single request payload, see [Batch Requests](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_BatchRequests).\n\n*Please note that \"Try it out\" is not supported for this request.*",
-        "tags": [
-          "Batch Requests"
-        ],
+        "tags": ["Batch Requests"],
         "requestBody": {
           "required": true,
           "description": "Batch request",
@@ -55,9 +53,7 @@
     "/me": {
       "get": {
         "summary": "Invokes function me",
-        "tags": [
-          "Service Operations"
-        ],
+        "tags": ["Service Operations"],
         "parameters": [],
         "responses": {
           "200": {
@@ -101,16 +97,11 @@
       },
       "error": {
         "type": "object",
-        "required": [
-          "error"
-        ],
+        "required": ["error"],
         "properties": {
           "error": {
             "type": "object",
-            "required": [
-              "code",
-              "message"
-            ],
+            "required": ["code", "message"],
             "properties": {
               "code": {
                 "type": "string"
@@ -125,10 +116,7 @@
                 "type": "array",
                 "items": {
                   "type": "object",
-                  "required": [
-                    "code",
-                    "message"
-                  ],
+                  "required": ["code", "message"],
                   "properties": {
                     "code": {
                       "type": "string"
