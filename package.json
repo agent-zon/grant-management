@@ -1,5 +1,5 @@
 {
-  "name": "v3",
+  "name": "grant-management",
   "version": "1.0.0",
   "description": "A simple CAP project.",
   "type": "module",
@@ -46,8 +46,8 @@
   },
   "scripts": {
     "start": "npx cds-tsx serve",
-    "watch": "npx cds-tsx watch",
-    "debug": "npx cds debug ",
+    "watch": "npx cds-tsx watch --profile development",
+    "debug": "npx cds debug --profile development",
     "serve": "npm run serve:cds & npm run serve:approuter",
     "serve:cds": "npx cds serve --profile dev",
     "dev:approuter": "node node_modules/@sap/approuter/approuter.js --workingDir app/router --port 9000",
@@ -61,17 +61,16 @@
     "build:push": "ctz containerize.yaml --log --push",
     "bind:srv": "cds bind --to-app-services v11-srv --on k8s",
     "bind:router": "cds bind --to-app-services v11-approuter --on k8s",
-    "bind:auth": "cds bind ias -2 v11-srv-auth --on k8s",
-    "bind:auth:approuter": "cds bind ias -2 v11-approuter-auth --on k8s",
-    "bind:destination": "cds bind -2 v11-srv-destination --on k8s",
-    "bind:all": "npx cds bind -2 v11-identity --on k8s && cds bind -2 router-srv-destination --on k8s",
+    "bind:auth": "cds bind ias -2 v11-identity --on k8s",
+    "bind:destination": "cds bind -2 v11-destination --on k8s", 
     "bind:resolve": "npx cds env requires --resolve-bindings --profile hybrid",
     "bind:list": "npx cds bind --list",
     "bind:remove": "npx cds bind --remove",
     "setup:local": "npm run bind:all && npm run serve:hybrid",
     "setup:dev": "npm install && npm run bind:auth && npm run serve",
     "deploy": "npm run build:push && npm run deploy:helm",
-    "deploy:helm": "npm run build && helm upgrade api ./gen/chart --install --create-namespace",
+    "deploy:sqlite": "npx cds deploy --to sqlite --profile development",
+    "deploy:helm": "npm run build && helm upgrade agents ./gen/chart --install --create-namespace",
     "deploy:to:sqlite": "npx cds deploy --to sqlite",
     "copy-docker-secret": "./scripts/copy-docker-secret.sh",
     "setup-namespace": "./scripts/setup-namespace.sh",
@@ -101,5 +100,16 @@
     "#cds-models/*": "./@cds-models/*/index.js",
     "@/*": "./srv/*",
     "@types": "./types/index.d.ts"
+  },
+  "cds": {
+    "requires": {
+      "db": {
+        "kind": "sqlite",
+        "url": "db.sqlite",
+        "credentials": {
+          "url": "db.sqlite"
+        }
+      }
+    }
   }
 }

@@ -30,7 +30,7 @@ declare module "#cds-models/AuthorizationService" {
   }
 }
 
-declare module "#cds-models/com/sap/agent/grants" {
+declare module "#cds-models/sap/scai/grants" {
   export interface Consent {
     request_ID: string;
     scope: string;

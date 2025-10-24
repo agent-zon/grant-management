@@ -5,13 +5,13 @@ import { initialTransition, type SnapshotFrom } from "xstate";
 import type {
   AuthorizationDetailRequest,
   AuthorizationDetail,
-} from "#cds-models/com/sap/agent/grants";
+} from "#cds-models/sap/scai/grants";
 import permissionsElevationMachine, {
   PermissionsContext,
-} from "./demo-service/permissions-elevation-machine.tsx";
+} from "./permissions-elevation-machine.tsx";
 import { createActor } from "xstate";
-import { htmlTemplate } from "./middleware/htmx.tsx";
-import AuthorizationService from "#cds-models/AuthorizationService";
+import { htmlTemplate } from "../middleware/htmx.tsx";
+import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
 
 import React from "react";
 
@@ -642,7 +642,7 @@ export default class Service extends cds.ApplicationService {
       const authorizationService = await cds.connect.to(AuthorizationService);
       console.log(
         "🔍 Demo Request - Connected to AuthorizeService",
-        cds.context?.user?.authInfo
+        (cds.context?.user as any)?.authInfo
       );
 
       const request = {
@@ -683,7 +683,7 @@ export default class Service extends cds.ApplicationService {
 
       console.log("🔍 Demo Request - Preparing HTML response");
       const authServerUrl =
-        (await cds.connect.to(AuthorizationService).then((service) => {
+        (await cds.connect.to(AuthorizationService).then((service: any) => {
           return service.baseUrl;
         })) || "/oauth-server";
 
@@ -734,14 +734,15 @@ export default class Service extends cds.ApplicationService {
 
   public async callback(code, code_verifier, redirect_uri) {
     const authorizationService = await cds.connect.to(AuthorizationService);
+    const tokenResponse: any = await authorizationService.token({
+      grant_type: "authorization_code",
+      client_id: "demo-client-app",
+      code: code,
+      code_verifier: code_verifier,
+      redirect_uri: redirect_uri,
+    });
     const { access_token, token_type, expires_in, grant_id, error, ...rest } =
-      await authorizationService.token({
-        grant_type: "authorization_code",
-        client_id: "demo-client-app",
-        code: code,
-        code_verifier: code_verifier,
-        redirect_uri: redirect_uri,
-      });
+      tokenResponse;
 
     if (error) {
       return await cds.context?.http?.res.send(
@@ -786,11 +787,11 @@ export default class Service extends cds.ApplicationService {
         <div className="space-y-6">
           {/* Authorization Details - Full Width */}
           <AuthorizationParams
-            authorization_details={rest.authorization_details}
-            client_id={rest.client_id}
-            redirect_uri={rest.redirect_uri}
+            authorization_details={(rest as any).authorization_details}
+            client_id={(rest as any).client_id}
+            redirect_uri={(rest as any).redirect_uri}
             scope={rest.scope}
-            requested_actor={rest.actor || rest.requested_actor}
+            requested_actor={rest.actor || (rest as any).requested_actor}
             grant_id={grant_id}
           />
 
@@ -896,7 +897,7 @@ export default class Service extends cds.ApplicationService {
     cds.context?.http?.res.setHeader("Content-Type", "text/html");
     cds.context?.http?.res.setHeader("HX-Trigger", "grant-updated");
     const authServerUrl =
-      (await cds.connect.to(AuthorizationService).then((service) => {
+      (await cds.connect.to(AuthorizationService).then((service: any) => {
         return service.baseUrl;
       })) || "/oauth-server";
     cds.context?.http?.res.send(

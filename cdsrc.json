@@ -1,5 +1,26 @@
 {
   "cds": {
+    "build": {
+      "tasks": [
+        {
+          "src": "srv",
+          "for": "nodejs",
+          "options": { "model": ["db", "srv", "app", "@sap/cds/srv/outbox"] }
+        },
+        {
+          "src": ".",
+          "for": "helm",
+          "options": {
+            "model": ["db", "srv", "app", "@sap/cds/srv/outbox", "."]
+          }
+        },
+        {
+          "src": "db",
+          "for": "postgres",
+          "options": { "model": ["db", "srv", "app", "@sap/cds/srv/outbox"] }
+        }
+      ]
+    },
     "folders": {
       "authorization": "./srv/authorization-service",
       "grant-management": "./srv/grant-management-service",
@@ -24,9 +45,7 @@
       },
       "db": {
         "kind": "sqlite",
-        "url": "db.sqlite",
         "credentials": {
-          "database": "db.sqlite",
           "url": "db.sqlite"
         }
       }
@@ -36,7 +55,6 @@
       "db": {
         "kind": "sqlite",
         "credentials": {
-          "database": "db.sqlite",
           "url": "db.sqlite"
         }
       },

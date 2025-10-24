@@ -1,10 +1,10 @@
 import cds from "@sap/cds";
 import { ulid } from "ulid";
-import type { AuthorizationService } from "../authorization-service.tsx";
+import type { AuthorizationService } from "./authorization-service.tsx";
 import {
   Grants,
   AuthorizationRequests,
-} from "#cds-models/AuthorizationService";
+} from "#cds-models/sap/scai/grants/GrantsManagementService";
 
 export default async function token(
   this: AuthorizationService,

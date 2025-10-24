@@ -1,10 +1,9 @@
 import cds from "@sap/cds";
-import { type Grant, Grants } from "#cds-models/GrantsManagementService";
 import type {
   GrantHandler,
   GrantsHandler,
   GrantsManagementService,
-} from "../grant-management.tsx";
+} from "./grant-management.tsx";
 import { isNativeError } from "node:util/types";
 
 export function POST(
