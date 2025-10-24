@@ -1,5 +1,5 @@
 import cds from "@sap/cds";
-import type { AuthorizationService } from "../authorization-service.tsx";
+import type { AuthorizationService } from "./authorization-service.tsx";
 
 export default function metadata(this: AuthorizationService, req: cds.Request) {
   console.log("🔐 Metadata request");

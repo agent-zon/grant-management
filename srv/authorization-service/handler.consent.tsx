@@ -1,10 +1,11 @@
 import cds from "@sap/cds";
-import type { AuthorizationService } from "../authorization-service";
+import type { AuthorizationService } from "./authorization-service.tsx";
 import {
   AuthorizationRequests,
   Consents,
   Consent,
-} from "#cds-models/AuthorizationService";
+  AuthorizationDetailType,
+} from "#cds-models/sap/scai/grants/AuthorizationService";
 import { isNativeError } from "node:util/types";
 
 type ConsentHandler = cds.CRUDEventHandler.On<Consent, void | Consent | Error>;
@@ -16,6 +17,7 @@ export async function POST(
 ) {
   req.data.previous_consent = await getPreviousConsent(this, req.data.grant_id);
   console.log("🔐 Creating consent:", req.data);
+
   const consent = await next(req);
   if (consent && !isNativeError(consent)) {
     const request = await this.read(AuthorizationRequests, consent.request_ID);

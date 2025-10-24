@@ -1,16 +1,14 @@
-namespace com.sap.agent.grants;
+namespace sap.scai.grants;
 using { managed, cuid } from '@sap/cds/common';
 using { sap,User } from '@sap/cds/common';
 /*
 managed give the createdBy createdAt, modifiedBy modifiedAt
 cuid give the ID:UUID
-*/
- 
-
+*/ 
 @cds.autoexpose :true
 // Grants as primary entity - not a projection
 entity Grants: managed {
-  key id : String;
+  key id : String @cds.primary.key;
    
   client_id: String=max(requests.client_id);
   risk_level:String=max(requests.risk_level);
@@ -33,22 +31,7 @@ entity Grants: managed {
 // Note: Simplified for PostgreSQL compatibility
 entity ConsentGrant as projection on Consents;
  
-
-// Note: Complex column extensions commented out for PostgreSQL compatibility
-// extend ConsentGrant with columns {
-//   authorization_details[type = 'fs'] as fs,
-//   authorization_details[type = 'database'] as database,
-//   authorization_details[type = 'api'] as api,
-//   authorization_details[type = 'grant_management'] as grant_management,
-//   authorization_details[type = 'file_access'] as file_access,
-//   authorization_details[type = 'data_access'] as data_access,
-//   authorization_details[type = 'network_access'] as network_access ,
-//   authorization_details[type = 'mcp'] as mcp @Core.AutoExpand,
-// }
-
-// entity UseGrant(grant:String)
-// as select from Consents  where grant = :grant ;
-entity AuthorizationRequests: cuid, managed {
+ entity AuthorizationRequests: cuid, managed {
   //raw request fields
   client_id: String;
   redirect_uri: String;
@@ -58,7 +41,6 @@ entity AuthorizationRequests: cuid, managed {
   code_challenge: String; // PKCE code challenge
   code_challenge_method: String; // S256
   grant_management_action: String; // create, merge, replace
-  // grant_id: String; // For merge/update operations - the target grant ID
   authorization_details: String; // JSON array of authorization_details objects
   requested_actor: String; // OAuth on-behalf-of: actor URN (e.g., urn:agent:finance-v1)
   expires_at: String @cds.on.insert: $now; // expires in 90 seconds
@@ -120,20 +102,13 @@ entity Consents:cuid,managed {
 @cds.autoexpose :true
 entity AuthorizationDetail:cuid,managed, AuthorizationDetailMcpTools, AuthorizationDetailFileSystem, AuthorizationDetailDatabase, AuthorizationDetailApi {
   consent: Association to Consents;
-
-  type: String enum {
-                fs;
-                mcp;
-                api;
-                database;
-                other;
-              };  
-  tools: Map; 
+  type: String(20);
   locations: array of String;
   actions: array of String;
-  // identifier: String;
-  // privileges: array of String;
-  // resources: array of String;
+
+  identifier: String;
+  privileges: array of String;
+  resources: array of String; 
 }
 
 
@@ -207,7 +182,6 @@ entity AuthorizationDetailType: sap.common.CodeList {
     riskLevel: String enum { low; medium; high; }; // Risk assessment
     category: String; // Category for grouping (mcp-integration, api-access, etc.)
     //WHY?
-    // availableTools: array of String; // List of available tools (only for types that use tools)
 }
 
 
