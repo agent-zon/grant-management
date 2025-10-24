@@ -6,6 +6,7 @@
 @title: 'Demo Service'
 @Core.Description: 'Demonstration endpoints and UI helpers'
 @Core.LongDescription: 'Provides interactive demo flows and helper HTML to showcase grant flows, events, and integrations.'
+@OpenAPI.externalDocs: { description: 'Playground', url: 'https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/demo/index' }
 service DemoService {
     @method: [PUT, POST, GET]
     function request(config: String) returns String;
