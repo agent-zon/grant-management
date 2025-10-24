@@ -5,6 +5,7 @@ import type {
   GrantsManagementService,
 } from "./grant-management.tsx";
 import { isNativeError } from "node:util/types";
+import type {Grants, Grant} from "#cds-models/sap/scai/grants/GrantsManagementService";
 
 export function POST(
   this: GrantsManagementService,
@@ -12,8 +13,7 @@ export function POST(
 ) {
   console.log("🔑 TODO: Implement grant update");
   return cds.context?.http?.res.redirect(`/grants-management/Grants`);
-}
-
+} 
 export async function GET(
   this: GrantsManagementService,
   ...[req, next]: Parameters<GrantsHandler>
@@ -21,7 +21,7 @@ export async function GET(
   console.log("🔧 GET request:", req.data);
 
   // Only handle single grant requests
-  if (!req.data.id) {
+  if (!req.query.SELECT?.one) {
     return await next(req);
   }
 
@@ -34,8 +34,7 @@ export async function GET(
     cds.context?.http?.req.accepts("html")
   );
   if (
-    !!grant &&
-    !isNativeError(grant) &&
+    isGrant(grant) &&
     cds.context?.http?.req.accepts("html")
   ) {
     return cds.context?.render(
@@ -383,4 +382,8 @@ function getScopeIcon(scope: string) {
 }
 function unique<T>(value: T, index: number, array: T[]): value is T {
   return array.indexOf(value) === index;
+}
+
+function isGrant(grant: Grant| void | Grants | Error): grant is Grant {
+  return !!grant && !isNativeError(grant) && grant.hasOwnProperty("id");
 }

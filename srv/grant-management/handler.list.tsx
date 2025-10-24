@@ -5,7 +5,7 @@ import {
   Consents,
   AuthorizationDetail,
   Consent,
-} from "#cds-models/GrantsManagementService";
+} from "#cds-models/sap/scai/grants/GrantsManagementService";
 import type {
   GrantsHandler,
   GrantsManagementService,
@@ -17,24 +17,16 @@ export async function LIST(
   this: GrantsManagementService,
   ...[req, next]: Parameters<GrantsHandler>
 ) {
-  req.data["$expand"] = [
-    ...(req.data["$expand"]?.split(",") || []),
-    "authorization_details",
-    "consents",
-  ]
-    .filter(unique)
-    .join(",");
-
-  if (req.data.id) {
+ 
+  console.log("🔍 Listing grants with expand:", req.data, req.query, req.id);
+  if (req.query?.SELECT?.one){
     return await next(req);
   }
 
   const response = await next(req);
 
-  console.log("🔧 Grants:", response);
   if (
-    response &&
-    !isNativeError(response) &&
+     isGrants(response) &&
     cds.context?.http?.req.accepts("html")
   ) {
     console.log("🔧 Grants:", response);
@@ -325,12 +317,12 @@ async function getGrants(srv: GrantsManagementService, data: Grants) {
 
   const grants = consentRecords.reduce(
     (acc, consent) => {
-      const consents = [...(acc[consent.grant_id]?.consents || []), consent];
+      const consents = [...(acc[consent.grant_id!]?.consents || []), consent];
       const grant = data?.find((g) => g.id === consent.grant_id);
-      acc[consent.grant_id] = {
+      acc[consent.grant_id!] = {
         consents: consents,
         authorization_details: [
-          ...(acc[consent.grant_id]?.authorization_details || []),
+          ...(acc[consent.grant_id!]?.authorization_details || []),
           ...authorization_details.filter(
             (detail) => detail.consent_grant_id === consent.grant_id
           ),
@@ -359,4 +351,8 @@ async function getGrants(srv: GrantsManagementService, data: Grants) {
 
 function unique<T>(value: T, index: number, array: T[]): value is T {
   return array.indexOf(value) === index;
+}
+
+function isGrants(grant: Grant| void | Grants | Error): grant is Grants {
+  return !!grant && !isNativeError(grant) && grant.hasOwnProperty("length");
 }

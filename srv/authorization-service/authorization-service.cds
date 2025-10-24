@@ -4,16 +4,19 @@ using sap.scai.grants as grants from '../../db/grants.cds';
 @path: '/oauth-server'
 @impl: './authorization-service.tsx'
 @protocol: 'rest' 
-service AuthorizationService {   
+service AuthorizationService {
+     @cds. redirection.target
     entity AuthorizationRequests as projection on grants.AuthorizationRequests;
     @requires: ['authenticated-user', 'system-user'] 
     entity Consents as projection on grants.Consents;
+ 
+    
     @requires: ['authenticated-user']
     // OAuth authorize endpoint with Rich Authorization Requests support
     action authorize(
         request_uri: String,
-        client_id: String,
-
+        client_id: String
+ 
     ) returns String;
 
     // PAR (Pushed Authorization Request) endpoint with Rich Authorization Requests support
