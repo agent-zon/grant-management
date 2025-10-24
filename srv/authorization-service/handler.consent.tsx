@@ -16,9 +16,88 @@ export async function POST(
 ) {
   req.data.previous_consent = await getPreviousConsent(this, req.data.grant_id);
   console.log("🔐 Creating consent:", req.data);
+  // Extract any posted authorization_details payload for manual processing
+  const postedAuthDetails = (req.data as any)?.authorization_details as
+    | any[]
+    | string
+    | undefined;
+  // Prevent auto-CRUD from trying to persist nested authorization_details on Consents (no longer modeled)
+  if (postedAuthDetails) {
+    delete (req.data as any).authorization_details;
+  }
+
   const consent = await next(req);
+
+  // Upsert AuthorizationDetail rows using Identifier + Grant relations
   if (consent && !isNativeError(consent)) {
-    const request = await this.read(AuthorizationRequests, consent.request_ID);
+    const request = (await this.read(
+      AuthorizationRequests,
+      consent.request_ID
+    )) as any;
+
+    // Determine details source: posted payload takes precedence, otherwise use PAR-stored access
+    let details: any[] = [];
+    try {
+      if (Array.isArray(postedAuthDetails)) details = postedAuthDetails;
+      else if (typeof postedAuthDetails === "string")
+        details = JSON.parse(postedAuthDetails);
+    } catch (e) {
+      console.warn("⚠️ Failed to parse posted authorization_details:", e);
+    }
+    if (!details?.length && Array.isArray(request?.access)) {
+      details = request.access;
+    }
+
+    const grantId = consent.grant_id;
+    const requestId = consent.request_ID;
+
+    if (Array.isArray(details) && details.length > 0) {
+      const records = details.map((d: any, idx: number) => {
+        // Prefer explicit identifier; fallback to a stable synthetic one
+        const identifier = d.identifier || `${d.type || "detail"}-${idx}`;
+        const id = `${grantId}:${identifier}`;
+        const {
+          type,
+          actions,
+          locations,
+          tools,
+          roots,
+          databases,
+          schemas,
+          tables,
+          urls,
+          protocols,
+          permissions,
+          ...rest
+        } = d || {};
+        return {
+          id,
+          identifier,
+          grant_ID: grantId,
+          request_ID: requestId,
+          type,
+          actions,
+          locations,
+          tools,
+          roots,
+          databases,
+          schemas,
+          tables,
+          urls,
+          protocols,
+          permissions,
+          ...rest,
+        };
+      });
+
+      // Upsert will create or replace by key(id)
+      await this.upsert(records).into("com.sap.agent.grants.AuthorizationDetail");
+      console.log(
+        `✅ Upserted ${records.length} authorization_details for grant ${grantId}`
+      );
+    }
+
+    // Redirect to client with code
     cds.context?.http?.res.redirect(
       `${request?.redirect_uri}?code=${consent.request_ID}`
     );

@@ -33,6 +33,57 @@ export default async function push(
 
   console.log("Request created", ID);
 
+  // Upsert AuthorizationDetail records for this request keyed by (grantId:identifier)
+  try {
+    const details = req.data.authorization_details
+      ? parseAuthorizationDetails(req.data.authorization_details)
+      : [];
+    if (Array.isArray(details) && details.length > 0) {
+      const records = details.map((d: any, idx: number) => {
+        const identifier = d.identifier || `${d.type_code || "detail"}-${idx}`;
+        const id = `${grantId}:${identifier}`;
+        const {
+          type_code,
+          actions,
+          locations,
+          tools,
+          roots,
+          databases,
+          schemas,
+          tables,
+          urls,
+          protocols,
+          permissions,
+          ...rest
+        } = d || {};
+        return {
+          id,
+          identifier,
+          grant_ID: grantId,
+          request_ID: ID,
+          type: type_code,
+          actions,
+          locations,
+          tools,
+          roots,
+          databases,
+          schemas,
+          tables,
+          urls,
+          protocols,
+          permissions,
+          ...rest,
+        };
+      });
+      await this.upsert(records).into("com.sap.agent.grants.AuthorizationDetail");
+      console.log(
+        `✅ Upserted ${records.length} authorization_details for request ${ID} and grant ${grantId}`
+      );
+    }
+  } catch (e) {
+    console.warn("⚠️ Failed to upsert authorization_details on request:", e);
+  }
+
   return {
     request_uri: `urn:ietf:params:oauth:request_uri:${ID}`,
     expires_in: 90,
@@ -42,9 +93,10 @@ export default async function push(
 function parseAuthorizationDetails(authorization_details: string) {
   return JSON.parse(authorization_details)
     .filter(Boolean)
-    .map(({ type, ...detail }: { type: string; [key: string]: unknown }) => {
+    .map(({ type, identifier, ...detail }: { type: string; identifier?: string; [key: string]: unknown }) => {
       return {
         type_code: type,
+        identifier,
         ...detail,
       };
     });

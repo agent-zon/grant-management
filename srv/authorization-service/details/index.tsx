@@ -28,6 +28,17 @@ export function AuthorizationDetailComponent({
         name={`authorization_details[${index}].type`}
         value={type_code!}
       />
+      <div className="mb-3">
+        <label className="block text-xs text-gray-400 mb-1">Identifier</label>
+        <input
+          type="text"
+          name={`authorization_details[${index}].identifier`}
+          defaultValue={(authorizationDetails as any).identifier as any}
+          placeholder="e.g., fs-home, api-admin, mcp-default"
+          className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 text-white placeholder-gray-500"
+          required
+        />
+      </div>
 
       <Component
         index={index}
