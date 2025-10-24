@@ -1,6 +1,6 @@
 import React from "react";
 import type { AuthorizationDetailProps } from "./types.tsx";
-import type { MCPToolAuthorizationDetailRequest } from "#cds-models/com/sap/agent/grants";
+import type { MCPToolAuthorizationDetailRequest } from "#cds-models/sap/scai/grants";
 import "./types.tsx";
 
 export default function MCPAuthorizationDetail({

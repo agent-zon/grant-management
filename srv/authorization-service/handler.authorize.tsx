@@ -1,11 +1,11 @@
 import cds from "@sap/cds";
 import AuthorizationDetailsComponent from "./details/index.tsx";
 import "./handler.authorize.tsx";
-import type { AuthorizationService } from "../authorization-service.tsx";
-import {
-  AuthorizationRequests,
+import type { AuthorizationService } from "./authorization-service.tsx";
+import { AuthorizationRequests } from "#cds-models/sap/scai/grants/AuthorizationService";
+import GrantsManagementService, {
   Grants,
-} from "#cds-models/AuthorizationService";
+} from "#cds-models/sap/scai/grants/GrantsManagementService";
 
 export default async function authorize(
   this: AuthorizationService,
@@ -26,16 +26,17 @@ export default async function authorize(
 
   // Load the grant associated with this request
   console.log("🔧 Reading grant:", request);
-  const grant = await this.upsert([
-    {
+  const grantManagement = await cds.connect.to(GrantsManagementService);
+
+  const grant = await grantManagement
+    .upsert({
       id: request.grant_id,
       client_id: request.client_id,
       risk_level: request.risk_level,
       actor: request.requested_actor,
       subject: request.subject,
-      request_ID: request.ID,
-    },
-  ]).into(Grants);
+    })
+    .into(Grants);
 
   console.log("📋 Grant loaded for authorization:", grant.id);
 

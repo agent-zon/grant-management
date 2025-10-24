@@ -5,11 +5,11 @@ import {
   Consents,
   AuthorizationDetail,
   Consent,
-} from "#cds-models/GrantsManagementService";
+} from "#cds-models/sap/scai/grants/GrantsManagementService";
 import type {
   GrantsHandler,
   GrantsManagementService,
-} from "../grant-management.tsx";
+} from "./grant-management.tsx";
 import { isNativeError } from "node:util/types";
 import e from "express";
 
@@ -17,24 +17,16 @@ export async function LIST(
   this: GrantsManagementService,
   ...[req, next]: Parameters<GrantsHandler>
 ) {
-  req.data["$expand"] = [
-    ...(req.data["$expand"]?.split(",") || []),
-    "authorization_details",
-    "consents",
-  ]
-    .filter(unique)
-    .join(",");
-
-  if (req.data.id) {
+ 
+  console.log("🔍 Listing grants with expand:", req.data, req.query, req.id);
+  if (req.query?.SELECT?.one){
     return await next(req);
   }
 
   const response = await next(req);
 
-  console.log("🔧 Grants:", response);
   if (
-    response &&
-    !isNativeError(response) &&
+     isGrants(response) &&
     cds.context?.http?.req.accepts("html")
   ) {
     console.log("🔧 Grants:", response);
@@ -101,7 +93,7 @@ export async function LIST(
               <div>
                 <p className="text-sm text-gray-400">Expired</p>
                 <p className="text-xl font-bold text-white">
-                  {grants.filter((g) => g.status === "expired").length}
+                  {grants.filter((g) => (g.status as any) === "expired").length}
                 </p>
               </div>
             </div>
@@ -192,7 +184,7 @@ export async function LIST(
                       className={`px-2 py-1 text-xs rounded ${
                         grant.status === "active"
                           ? "bg-green-500/20 text-green-400"
-                          : grant.status === "expired"
+                          : (grant.status as any) === "expired"
                             ? "bg-yellow-500/20 text-yellow-400"
                             : "bg-red-500/20 text-red-400"
                       }`}
@@ -257,38 +249,40 @@ export async function LIST(
                           .map((d) => d.type)
                           .filter(unique)
                           .filter((type) => !!type)
-                          .map((type: string, idx: number) => (
-                            <div
-                              key={idx}
-                              className="bg-gray-600/30 rounded p-2 border border-gray-600"
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-medium text-purple-300">
-                                  {type}
-                                </span>
-                                <span className="text-xs text-gray-400">
-                                  {grant.authorization_details
-                                    ?.filter((d) => d.type === type)
-                                    .map((d) => d.locations)
-                                    .filter(Boolean)
-                                    .flat()
-                                    .filter(unique)
-                                    .join(", ") || "No locations"}
-                                </span>
+                          .map(
+                            (type: string | null | undefined, idx: number) => (
+                              <div
+                                key={idx}
+                                className="bg-gray-600/30 rounded p-2 border border-gray-600"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-medium text-purple-300">
+                                    {type}
+                                  </span>
+                                  <span className="text-xs text-gray-400">
+                                    {grant.authorization_details
+                                      ?.filter((d) => d.type === type)
+                                      .map((d) => d.locations)
+                                      .filter(Boolean)
+                                      .flat()
+                                      .filter(unique)
+                                      .join(", ") || "No locations"}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-gray-400">
+                                    {grant.authorization_details
+                                      ?.filter((d) => d.type === type)
+                                      .map((d) => d.actions)
+                                      .filter(Boolean)
+                                      .flat()
+                                      .filter(unique)
+                                      .join(", ") || "No actions"}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-400">
-                                  {grant.authorization_details
-                                    ?.filter((d) => d.type === type)
-                                    .map((d) => d.actions)
-                                    .filter(Boolean)
-                                    .flat()
-                                    .filter(unique)
-                                    .join(", ") || "No actions"}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
+                            )
+                          )}
                       </div>
                     </div>
                   )}
@@ -323,12 +317,12 @@ async function getGrants(srv: GrantsManagementService, data: Grants) {
 
   const grants = consentRecords.reduce(
     (acc, consent) => {
-      const consents = [...(acc[consent.grant_id]?.consents || []), consent];
+      const consents = [...(acc[consent.grant_id!]?.consents || []), consent];
       const grant = data?.find((g) => g.id === consent.grant_id);
-      acc[consent.grant_id] = {
+      acc[consent.grant_id!] = {
         consents: consents,
         authorization_details: [
-          ...(acc[consent.grant_id]?.authorization_details || []),
+          ...(acc[consent.grant_id!]?.authorization_details || []),
           ...authorization_details.filter(
             (detail) => detail.consent_grant_id === consent.grant_id
           ),
@@ -344,6 +338,7 @@ async function getGrants(srv: GrantsManagementService, data: Grants) {
         subject: consent[0]?.subject,
         ...(grant || {}),
         id: consent.grant_id,
+        client_id: grant?.client_id || consent.grant_id,
       };
 
       return acc;
@@ -356,4 +351,8 @@ async function getGrants(srv: GrantsManagementService, data: Grants) {
 
 function unique<T>(value: T, index: number, array: T[]): value is T {
   return array.indexOf(value) === index;
+}
+
+function isGrants(grant: Grant| void | Grants | Error): grant is Grants {
+  return !!grant && !isNativeError(grant) && grant.hasOwnProperty("length");
 }

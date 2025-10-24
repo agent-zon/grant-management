@@ -3,7 +3,7 @@ import React from "react";
 import type {
   FileSystemAuthorizationDetailRequest,
   RARClaim,
-} from "#cds-models/com/sap/agent/grants";
+} from "#cds-models/sap/scai/grants";
 import type { AuthorizationDetailProps } from "./types.tsx";
 import "./types.tsx";
 export default function FSAuthorizationDetail({

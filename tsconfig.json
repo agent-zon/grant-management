@@ -16,7 +16,7 @@
     "resolveJsonModule": true,
     "outDir": "./dist",
     "rootDirs": [".", "@cds-models", "types"],
-    "typeRoots": ["./types", "./node_modules/@types", "./@cds-models"],
+    "typeRoots": ["./types", "./node_modules/@types"],
     "composite": true,
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "noImplicitAny": false,

@@ -1,7 +1,7 @@
 import type {
   AuthorizationDetailRequest,
   AuthorizationRequest,
-} from "#cds-models/com/sap/agent/grants";
+} from "#cds-models/sap/scai/grants";
 import { createMachine, assign } from "xstate";
 
 // Types for the state machine context
