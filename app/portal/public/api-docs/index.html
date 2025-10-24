@@ -37,7 +37,15 @@
       placeholder.innerHTML = '<div class="muted">Loading documentation...</div>';
       host.appendChild(placeholder);
       setTimeout(() => {
-        host.innerHTML = `<script id="api-reference" data-url="${specUrl}"></script>`;
+        host.innerHTML = "";
+        const cfg = document.createElement('script');
+        cfg.id = 'api-reference';
+        cfg.setAttribute('data-url', specUrl);
+        host.appendChild(cfg);
+        const loader = document.createElement('script');
+        loader.src = 'https://cdn.jsdelivr.net/npm/@scalar/api-reference';
+        loader.async = true;
+        host.appendChild(loader);
       }, 0);
       const current = document.querySelectorAll('.card');
       current.forEach(c => c.style.borderColor = '#334155');
@@ -60,7 +68,6 @@
       selectSpec(services[0].id);
     });
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference" async></script>
 </head>
 <body>
   <div class="header">

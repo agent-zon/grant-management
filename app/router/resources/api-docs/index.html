@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>API Documentation</title>
   <meta name="description" content="Interactive OpenAPI documentation" />
+  <script>
+    if (/\/api-docs$/.test(location.pathname)) {
+      location.replace(location.pathname + '/');
+    }
+  </script>
   <style>
     :root { color-scheme: dark; }
     html, body { height: 100%; background: #0b0f19; margin: 0; }
@@ -32,13 +37,14 @@
       const specUrl = `${OPENAPI_BASE}/${s.spec}`;
       const host = document.getElementById('scalar-host');
       host.innerHTML = '';
-      const placeholder = document.createElement('div');
-      placeholder.style.padding = '24px';
-      placeholder.innerHTML = '<div class="muted">Loading documentation...</div>';
-      host.appendChild(placeholder);
-      setTimeout(() => {
-        host.innerHTML = `<script id=\"api-reference\" data-url=\"${specUrl}\"></script>`;
-      }, 0);
+      const cfg = document.createElement('script');
+      cfg.id = 'api-reference';
+      cfg.setAttribute('data-url', specUrl);
+      host.appendChild(cfg);
+      const loader = document.createElement('script');
+      loader.src = 'https://cdn.jsdelivr.net/npm/@scalar/api-reference';
+      loader.async = true;
+      host.appendChild(loader);
       const current = document.querySelectorAll('.card');
       current.forEach(c => c.style.borderColor = '#334155');
       const active = document.getElementById(`card-${s.id}`);
@@ -54,13 +60,12 @@
         div.tabIndex = 0;
         div.onclick = () => selectSpec(s.id);
         div.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') selectSpec(s.id); };
-        div.innerHTML = `<div class=\"title\">${s.name}</div><div class=\"muted\">${s.description}</div>`;
+        div.innerHTML = `<div class="title">${s.name}</div><div class="muted">${s.description}</div>`;
         grid.appendChild(div);
       });
       selectSpec(services[0].id);
     });
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference" async></script>
 </head>
 <body>
   <div class="header">
