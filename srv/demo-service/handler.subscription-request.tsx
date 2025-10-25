@@ -114,11 +114,11 @@ function AuthorizationRequestButton({
   );
 }
 
-export async function GET(this: DemoService, req: cds.Request) {
+export async function GET(this: DemoService, grant_id?: string) {
   try {
-    console.log("🔍 Subscription Request - Starting");
+    console.log("🔍 Subscription Request - Starting", { grant_id });
 
-    if (!req.data.grant_id) {
+    if (!grant_id) {
       throw new Error("grant_id is required for subscription request");
     }
 
@@ -132,7 +132,7 @@ export async function GET(this: DemoService, req: cds.Request) {
         cds.context?.http?.req.headers.referer
       ).href,
       grant_management_action: "update",
-      grant_id: req.data.grant_id,
+      grant_id: grant_id,
       authorization_details: JSON.stringify(SUBSCRIPTION_CONFIG.authorization_details),
       requested_actor: "urn:agent:billing-assistant",
       scope: SUBSCRIPTION_CONFIG.scope,
@@ -185,6 +185,6 @@ export async function GET(this: DemoService, req: cds.Request) {
   }
 }
 
-export async function POST(this: DemoService, req: cds.Request) {
-  return GET.call(this, req);
+export async function POST(this: DemoService, grant_id?: string) {
+  return GET.call(this, grant_id);
 }

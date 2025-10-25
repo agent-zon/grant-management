@@ -114,9 +114,9 @@ function AuthorizationRequestButton({
   );
 }
 
-export async function GET(this: DemoService, req: cds.Request) {
+export async function GET(this: DemoService, grant_id?: string) {
   try {
-    console.log("🔍 Analysis Request - Starting");
+    console.log("🔍 Analysis Request - Starting", { grant_id });
 
     const authorizationService = await cds.connect.to(AuthorizationService);
 
@@ -127,8 +127,8 @@ export async function GET(this: DemoService, req: cds.Request) {
         "/demo/callback?step=1",
         cds.context?.http?.req.headers.referer
       ).href,
-      grant_management_action: req.data.grant_id ? "update" : "create",
-      grant_id: req.data.grant_id || undefined,
+      grant_management_action: grant_id ? "update" : "create",
+      grant_id: grant_id || undefined,
       authorization_details: JSON.stringify(ANALYSIS_CONFIG.authorization_details),
       requested_actor: "urn:agent:analytics-bot-v1",
       scope: ANALYSIS_CONFIG.scope,
@@ -181,6 +181,6 @@ export async function GET(this: DemoService, req: cds.Request) {
   }
 }
 
-export async function POST(this: DemoService, req: cds.Request) {
-  return GET.call(this, req);
+export async function POST(this: DemoService, grant_id?: string) {
+  return GET.call(this, grant_id);
 }

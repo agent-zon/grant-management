@@ -43,3 +43,14 @@
 - Removed `main` function from service definition
 - Reduced HTTP requests by 1 on initial page load
 - Cleaner, more straightforward page rendering
+
+## 2025-10-25 - Bug Fix: Parameter Handling
+- Fixed handlers to receive `grant_id` as direct parameter instead of `req.data`
+- In CDS functions, parameters come as function arguments, not wrapped in request object
+- Updated all three handlers:
+  - `handler.analysis-request.tsx`: `GET(grant_id?: string)` instead of `GET(req: cds.Request)`
+  - `handler.deployment-request.tsx`: Same pattern
+  - `handler.subscription-request.tsx`: Same pattern
+- Updated main service delegation methods to pass parameters directly
+- Added debug logging to show grant_id value in handlers
+- Fixed TypeError: Cannot read properties of undefined (reading 'data')
