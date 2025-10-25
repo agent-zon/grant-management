@@ -103,28 +103,28 @@ cds.on("bootstrap", (app) => {
 
 
   // Middleware to remove null values from JSON responses. TODO: should be configurable
-  app.use((req, res, next) => {
-    next();
-    if (req.accepts("json") && res.body) {
-        console.log("[MIDDLEWARE] Response JSON after null removal:");
-        res.body = removeNulls(res.body);;
-    }
-    function removeNulls(body) {
-      if (Array.isArray(body)) {
-        return body.map(item => removeNulls(item));
-      } else if (body && typeof body === 'object') {
-        const newObj = {};
-        for (const key in body) {
-          if (body[key] !== null) {
-            newObj[key] = removeNulls(body[key]);
-          }
-        }
-        return newObj;
-      }
-      return body;
-    }
-
-  });
+  // app.use((req, res, next) => {
+  //   next();
+  //   if (req.accepts("json") && res.body) {
+  //       console.log("[MIDDLEWARE] Response JSON after null removal:");
+  //       res.body = removeNulls(res.body);;
+  //   }
+  //   function removeNulls(body) {
+  //     if (Array.isArray(body)) {
+  //       return body.map(item => removeNulls(item));
+  //     } else if (body && typeof body === 'object') {
+  //       const newObj = {};
+  //       for (const key in body) {
+  //         if (body[key] !== null) {
+  //           newObj[key] = removeNulls(body[key]);
+  //         }
+  //       }
+  //       return newObj;
+  //     }
+  //     return body;
+  //   }
+  //
+  // });
 
   // Add usage tracking middleware for grant usage monitoring
   // app.use(createUsageTracker());
