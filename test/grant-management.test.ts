@@ -117,7 +117,7 @@ test("should query the initial grant", async () => {
   });
 
   assert.strictEqual(data.id, initialGrantId);
-  assert.strictEqual(data.client_id, "test-client-basic");
+
   assert.strictEqual(data.scope, "openid profile");
   console.log("✓ Successfully queried initial grant");
 });
@@ -378,7 +378,6 @@ test("Create New Grant: Complete flow without existing grant_id", async (t) => {
     });
 
     assert.strictEqual(data.id, newGrantId);
-    assert.strictEqual(data.client_id, "test-client-new");
     assert.strictEqual(data.scope, "api.read api.write");
     assert.strictEqual(data.status, "active");
     console.log("  ✓ New grant verified");

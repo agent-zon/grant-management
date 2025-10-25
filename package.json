@@ -98,7 +98,8 @@
     "test": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/*.test.ts",
     "test:oauth": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/oauth-*.test.ts",
     "test:oauth:basic": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/oauth-basic-flow.test.ts",
-    "test:oauth:stepup": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/oauth-stepup-flow.test.ts"
+    "test:oauth:stepup": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/oauth-stepup-flow.test.ts",
+    "test:grant-mgmt": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/grant-management.test.ts"
   },
   "workspaces": [
     "app/*"

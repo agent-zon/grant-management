@@ -18,9 +18,8 @@ export async function LIST(
   ...[req, next]: Parameters<GrantsHandler>
 ) {
   console.log("🔍 Listing grants with expand:", req.data, req.query, req.id);
-  if (req.query?.SELECT?.one) {
-    return await next(req);
-  }
+
+ 
 
   const response = await next(req);
 
@@ -332,10 +331,52 @@ async function getGrants(srv: GrantsManagementService, data: Grants) {
     cds.ql.SELECT.from(AuthorizationDetail)
   );
 
+  // Fetch all AuthorizationRequests to get client_id mapping
+  const authRequests = await cds.run(
+    cds.ql.SELECT.from("sap.scai.grants.AuthorizationRequests").columns(
+      "ID",
+      "client_id",
+      "grant_id"
+    )
+  );
+  const grantToClientMap = new Map<string, string>();
+  authRequests.forEach((req: any) => {
+    if (req.grant_id && req.client_id) {
+      grantToClientMap.set(req.grant_id, req.client_id);
+    }
+  });
+
   const grants = consentRecords.reduce(
     (acc, consent) => {
       const consents = [...(acc[consent.grant_id!]?.consents || []), consent];
       const grant = data?.find((g) => g.id === consent.grant_id);
+
+      // Collect unique client_ids, actors, and subjects from all consents
+      const client_ids = consents
+        .map((c: any) => c.client_id)
+        .filter(Boolean)
+        .filter(unique);
+
+      // If no client_ids from consents, try grant record or AuthRequest mapping
+      const finalClientIds =
+        client_ids.length > 0
+          ? client_ids
+          : [
+              grant?.client_id ||
+                grantToClientMap.get(consent.grant_id!) ||
+                "unknown",
+            ].filter(Boolean);
+
+      const actors = consents
+        .map((c: any) => c.actor)
+        .filter(Boolean)
+        .filter(unique);
+
+      const subjects = consents
+        .map((c: any) => c.subject)
+        .filter(Boolean)
+        .filter(unique);
+
       acc[consent.grant_id!] = {
         consents: consents,
         authorization_details: [
@@ -351,11 +392,19 @@ async function getGrants(srv: GrantsManagementService, data: Grants) {
         createdAt: consent[0]?.createdAt,
         modifiedAt: consent[0]?.modifiedAt,
         risk_level: consent[0]?.risk_level,
-        actor: consent[0]?.actor,
-        subject: consent[0]?.subject,
         ...(grant || {}),
         id: consent.grant_id,
-        client_id: grant?.client_id || consent.grant_id,
+        client_id: finalClientIds as any,
+        actor: (actors.length > 0
+          ? actors
+          : grant?.actor
+            ? [grant.actor]
+            : undefined) as any,
+        subject: (subjects.length > 0
+          ? subjects
+          : grant?.subject
+            ? [grant.subject]
+            : undefined) as any,
       };
 
       return acc;
@@ -368,6 +417,79 @@ async function getGrants(srv: GrantsManagementService, data: Grants) {
 
 function unique<T>(value: T, index: number, array: T[]): value is T {
   return array.indexOf(value) === index;
+}
+
+//workaround for single grant query
+async function getGrant(
+  srv: GrantsManagementService,
+  grant: Grant
+): Promise<Grant> {
+  if (!grant.id) return grant;
+
+  const consentRecords = await srv.run(
+    cds.ql.SELECT.from(Consents).where({ grant_id: grant.id })
+  );
+  const authorization_details = await srv.run(
+    cds.ql.SELECT.from(AuthorizationDetail).where({
+      consent_grant_id: grant.id,
+    })
+  );
+
+  // Collect unique client_ids, actors, and subjects from all consents
+  const client_ids = consentRecords
+    .map((c: any) => c.client_id)
+    .filter(Boolean)
+    .filter(unique);
+
+  const actors = consentRecords
+    .map((c: any) => c.actor)
+    .filter(Boolean)
+    .filter(unique);
+
+  const subjects = consentRecords
+    .map((c: any) => c.subject)
+    .filter(Boolean)
+    .filter(unique);
+
+  // Aggregate scope from all consents
+  const aggregatedScope = consentRecords
+    .map((c: any) => c.scope)
+    .filter(unique)
+    .join(" ")
+    .split(/\s+/)
+    .filter((v: string, i: number, a: string[]) => v && a.indexOf(v) === i)
+    .join(" ");
+
+  return {
+    ...grant,
+    scope: aggregatedScope || grant.scope,
+    authorization_details,
+    consents: consentRecords,
+    client_id: (client_ids.length > 0
+      ? client_ids
+      : grant.client_id
+        ? [grant.client_id]
+        : []) as any,
+    actor: (actors.length > 0
+      ? actors
+      : grant.actor
+        ? [grant.actor]
+        : undefined) as any,
+    subject: (subjects.length > 0
+      ? subjects
+      : grant.subject
+        ? [grant.subject]
+        : undefined) as any,
+  } as Grant;
+}
+
+function isGrant(grant: Grant | void | Grants | Error): grant is Grant {
+  return (
+    !!grant &&
+    !isNativeError(grant) &&
+    grant.hasOwnProperty("id") &&
+    !Array.isArray(grant)
+  );
 }
 
 function isGrants(grant: Grant | void | Grants | Error): grant is Grants {
