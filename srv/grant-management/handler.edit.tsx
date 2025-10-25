@@ -25,7 +25,18 @@ export async function GET(
     return await next(req);
   }
 
-  const grant = await next(req);
+  // If JSON requested (API), bypass UI pipeline and read directly from DB
+  if (cds.context?.http?.req && cds.context.http.req.accepts("html") === false) {
+    const id = req.data?.id as string | undefined;
+    if (id) {
+      const row = await cds.run(
+        cds.ql.SELECT.one.from("sap.scai.grants.Grants").where({ id })
+      );
+      if (row) return row as any;
+    }
+  }
+
+  let grant = await next(req);
   console.log("🔧 Grant:", grant);
   console.log(
     "🔧 GET response:",
@@ -33,6 +44,20 @@ export async function GET(
     !isNativeError(grant),
     cds.context?.http?.req.accepts("html")
   );
+  // Fallback: if JSON requested and no valid grant returned, fetch directly from DB
+  if (
+    req.query.SELECT?.one &&
+    cds.context?.http?.req.accepts("html") === false &&
+    (!isGrant(grant) || !grant.id)
+  ) {
+    const id = req.data?.id as string | undefined;
+    if (id) {
+      const row = await cds.run(
+        cds.ql.SELECT.one.from("sap.scai.grants.Grants").where({ id })
+      );
+      if (row) return row as any;
+    }
+  }
   if (
     isGrant(grant) &&
     cds.context?.http?.req.accepts("html")

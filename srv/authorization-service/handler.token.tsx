@@ -1,15 +1,11 @@
 import cds  from "@sap/cds";
 import { ulid } from "ulid";
 import type { AuthorizationService } from "./authorization-service.tsx";
-import GrantsManagementService, {
-  AuthorizationDetail
-} from "#cds-models/sap/scai/grants/GrantsManagementService";
+// Avoid calling GrantsManagementService within this HTTP request to prevent UI rendering side-effects.
 
 import {
   AuthorizationRequest,
   AuthorizationRequests,
-  Consents, Grant,
-  Grants
 } from "#cds-models/sap/scai/grants/AuthorizationService";
 
 export default async function token(
@@ -27,29 +23,34 @@ export default async function token(
     return req.error(400, "invalid_grant");
   }
   
-  const grantManagement = await cds.connect.to(GrantsManagementService);
-  const { scope, actor,id,...data} =await this.read(Grants, grant_id) as Grant;
-  const authorization_details = await grantManagement.run(
-      cds.ql.SELECT.from(AuthorizationDetail).where({'consent.grant_id':grant_id})
-  ); 
+  // Read grant directly from DB model to avoid triggering UI GET handlers
+  const grantRecord = await cds.run(
+    cds.ql.SELECT.one.from("sap.scai.grants.Grants").where({ id: grant_id })
+  );
+  if (!grantRecord) return req.error(400, "invalid_grant");
+  const scope = grantRecord.scope || "";
+  const actor = grantRecord.actor;
+
+  // Fetch authorization details from DB by consent foreign key
+  const authorization_details = await cds.run(
+    cds.ql.SELECT.from("sap.scai.grants.AuthorizationDetail").where({ consent_grant_id: grant_id })
+  );
 
   console.log("token response", {
-    scope: scope || "",
-    grant_id: grant_id,
-    authorization_details: authorization_details,
-    actor: actor ,
-    found_grant:id,
-    data
+    scope,
+    grant_id,
+    authorization_details,
+    actor,
   });
 
   return {
     access_token: `at_${ulid()}:${grant_id}`,
     token_type: "Bearer",
     expires_in: 3600,
-    scope: scope || "",
-    grant_id: grant_id,
-    authorization_details: authorization_details,
-    actor: actor,
+    scope,
+    grant_id,
+    authorization_details,
+    actor,
   };
 }
 

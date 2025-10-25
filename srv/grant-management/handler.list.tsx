@@ -126,11 +126,11 @@ export async function LIST(
           </div>
 
           <div className="space-y-4">
-            {grants.map((grant) => (
+            {grants.map((grant, idx) => (
               <div
-                key={grant.id}
+                key={grant?.id || idx}
                 className="bg-gray-700/50 rounded-lg p-4 border border-gray-600"
-                id={`grant-${grant.id}`}
+                id={`grant-${grant?.id || idx}`}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-3">
@@ -153,10 +153,10 @@ export async function LIST(
                     </div>
                     <div>
                       <p className="text-sm font-medium text-white">
-                        {grant.scope}
+                        {grant.scope || ""}
                       </p>
                       <p className="text-xs text-purple-400">
-                        👤 Subject: {grant.subject}
+                        👤 Subject: {grant.subject || ""}
                       </p>
                       {grant.actor && (
                         <p className="text-xs text-blue-400">
@@ -166,14 +166,14 @@ export async function LIST(
                       <div className="flex items-center space-x-2 mt-1">
                         <span
                           className={`px-2 py-1 text-xs rounded ${
-                            grant.risk_level === "high"
+                          grant.risk_level === "high"
                               ? "bg-red-500/20 text-red-400"
                               : grant.risk_level === "medium"
                                 ? "bg-yellow-500/20 text-yellow-400"
                                 : "bg-green-500/20 text-green-400"
                           }`}
                         >
-                          {grant.risk_level} risk
+                          {grant.risk_level || "low"} risk
                         </span>
                       </div>
                     </div>
@@ -189,12 +189,12 @@ export async function LIST(
                             : "bg-red-500/20 text-red-400"
                       }`}
                     >
-                      {grant.status}
+                      {grant.status || "active"}
                     </span>
                     <div className="flex space-x-2">
                       <div>
                         <a
-                          href={`Grants/${grant.id}`}
+                          href={`Grants/${grant?.id || ""}`}
                           className="text-xs text-blue-400 hover:text-blue-300 underline transition-colors duration-200"
                         >
                           View
@@ -202,7 +202,7 @@ export async function LIST(
                       </div>
                       {grant.status === "active" && (
                         <form
-                          action={`Grants/${grant.id}`}
+                          action={`Grants/${grant?.id || ""}`}
                           method="POST"
                           hx-swap="outerHTML"
                           hx-target="body"
@@ -225,7 +225,7 @@ export async function LIST(
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                   <div>
                     <p className="text-xs text-gray-400">Grant ID</p>
-                    <p className="text-sm text-white font-mono">{grant.id}</p>
+                    <p className="text-sm text-white font-mono">{grant?.id || ""}</p>
                   </div>
                   {grant.createdAt && (
                     <div>

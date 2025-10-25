@@ -82,6 +82,8 @@ entity Consents:cuid,managed {
   // Association to Grant (primary relationship)
   grant: Association to Grants on grant.id = $self.grant_id; 
   request: Association to AuthorizationRequests;
+  // Included to accept client-provided field during consent POSTs (not persisted elsewhere)
+  client_id: String;
   scope: String; 
   authorization_details: Composition of many AuthorizationDetail on authorization_details.consent = $self;
   duration: Timespan;

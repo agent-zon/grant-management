@@ -100,6 +100,35 @@ cds.on("bootstrap", (app) => {
     next();
   });
 
+  // Normalize consent creation payloads before CDS validation
+  app.use('/oauth-server/Consents', async (req, _res, next) => {
+    try {
+      if (req.method === 'POST' && req.body && typeof req.body === 'object') {
+        const body = req.body;
+        // If grant_id is still an object (e.g., Promise serialized to {}), resolve via request_ID
+        if ((!body.grant_id || typeof body.grant_id !== 'string') && body.request_ID) {
+          try {
+            const authReq = await cds.run(
+              cds.ql.SELECT.from('sap.scai.grants.AuthorizationService.AuthorizationRequests')
+                .where({ ID: body.request_ID })
+            );
+            if (authReq && authReq[0]?.grant_id) {
+              body.grant_id = authReq[0].grant_id;
+            }
+          } catch (e) {
+            // ignore, let CDS validation handle if still missing
+          }
+        }
+        // Ensure request association is set from request_ID
+        if (body.request_ID && !body.request) {
+          body.request = { ID: body.request_ID };
+        }
+      }
+    } finally {
+      next();
+    }
+  });
+
   // Add usage tracking middleware for grant usage monitoring
   // app.use(createUsageTracker());
 
