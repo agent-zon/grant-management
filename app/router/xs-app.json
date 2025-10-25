@@ -1,5 +1,20 @@
 {
+  "welcomeFile": "./api-docs/index.html",
   "routes": [
+    {
+      "source": "^/api-docs$",
+      "target": "/index.html",
+      "localDir": "./api-docs",
+      "csrfProtection": false,
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/api-docs/(.*)$",
+      "target": "/$1",
+      "localDir": "./api-docs",
+      "csrfProtection": false,
+      "authenticationType": "none"
+    },
     {
       "source": "^/auth/debug(.*)$",
       "target": "/$1",
