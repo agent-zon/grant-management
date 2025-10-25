@@ -38,6 +38,20 @@ declare module "#cds-models/sap/scai/grants" {
     redirect_uri: string;
     grant_id: string;
   }
+
+  export interface Grants {
+    id: string;
+    client_id: string;
+    consents: Consent[];
+    authorization_details: AuthorizationDetail[];
+    scope: string;
+    subject: string;
+    actor: string;
+    risk_level: string;
+    status: string;
+    createdAt: Date;
+    modifiedAt: Date;
+  }
 }
 
 declare module "#cds-models/GrantsManagementService" {
@@ -51,9 +65,6 @@ declare module "#cds-models/GrantsManagementService" {
   export interface Grants {
     id: string;
     client_id: string;
-    risk_level: string;
-    actor: string;
-    subject: string;
     consents: Consent[];
     authorization_details: AuthorizationDetail[];
     scope: string;
