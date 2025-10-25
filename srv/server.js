@@ -100,6 +100,55 @@ cds.on("bootstrap", (app) => {
     next();
   });
 
+  // Early JSON aggregator for single Grant GETs to avoid UI pipeline/nulls
+  app.use(async (req, res, next) => {
+    try {
+      if (
+        req.method === 'GET' &&
+        req.path.startsWith("/grants-management/Grants(") &&
+        (req.get('accept') || '').includes('application/json')
+      ) {
+        const match = req.path.match(/^\/grants-management\/Grants\('([^']+)'\)$/);
+        const id = match?.[1];
+        if (!id) return next();
+
+        const grantRow = await cds.run(
+          cds.ql.SELECT.one.from('sap.scai.grants.Grants').where({ id })
+        );
+        if (grantRow) return res.json(grantRow);
+
+        const consents = await cds.run(
+          cds.ql.SELECT.from('sap.scai.grants.Consents').where({ grant_id: id })
+        );
+        const aggregatedScope = (consents || [])
+          .map((c) => c.scope)
+          .filter(Boolean)
+          .join(' ')
+          .split(/\s+/)
+          .filter((v, i, a) => v && a.indexOf(v) === i)
+          .join(' ');
+
+        const latestReq = await cds.run(
+          cds.ql.SELECT.one
+            .from('sap.scai.grants.AuthorizationRequests')
+            .where({ grant_id: id })
+            .orderBy('createdAt desc')
+        );
+
+        return res.json({
+          id,
+          client_id: latestReq?.client_id,
+          actor: latestReq?.requested_actor,
+          status: 'active',
+          scope: aggregatedScope,
+        });
+      }
+      next();
+    } catch (e) {
+      next(e);
+    }
+  });
+
   // Normalize consent creation payloads before CDS validation
   app.use('/oauth-server/Consents', async (req, _res, next) => {
     try {
