@@ -1,0 +1,228 @@
+@server=http://localhost:4004
+@username=alice
+@password=
+
+
+### AuthorizationDetail
+# @name AuthorizationDetail_GET
+GET {{server}}/grants-management/AuthorizationDetail
+Authorization: Basic {{username}}:{{password}}
+
+
+### Grants
+# @name Grants_GET
+GET {{server}}/grants-management/Grants
+Authorization: Basic {{username}}:{{password}}
+
+
+### Consents
+# @name Consents_GET
+GET {{server}}/grants-management/Consents
+Authorization: Basic {{username}}:{{password}}
+
+
+### AuthorizationRequests
+# @name AuthorizationRequests_GET
+GET {{server}}/grants-management/AuthorizationRequests
+Authorization: Basic {{username}}:{{password}}
+
+
+### AuthorizationRequests
+# @name AuthorizationRequests_POST
+POST {{server}}/grants-management/AuthorizationRequests
+Content-Type: application/json
+Authorization: Basic {{username}}:{{password}}
+
+{
+  "ID": "27906690-e953-47aa-b344-bae530740b6b",
+  "client_id": "client_id-27906690",
+  "redirect_uri": "redirect_uri-27906690",
+  "request_uri": "request_uri-27906690",
+  "scope": "scope-27906690",
+  "state": "state-27906690",
+  "code_challenge": "code_challenge-27906690",
+  "code_challenge_method": "code_challenge_method-27906690",
+  "grant_management_action": "grant_management_action-27906690",
+  "authorization_details": "authorization_details-27906690",
+  "requested_actor": "requested_actor-27906690",
+  "expires_at": "expires_at-27906690",
+  "status": "status-27906690",
+  "response_type": "response_type-27906690",
+  "risk_level": "risk_level-27906690",
+  "subject_token_type": "subject_token_type-27906690",
+  "subject_token": "subject_token-27906690",
+  "subject": "subject-27906690",
+  "expires_in": 36,
+  "grant": {
+    "id": "Grants-24019651"
+  },
+  "consent": {
+    "ID": "19711814-d3eb-4420-896e-ccc158b3fe9e",
+    "grant_id": "Consents-19711814"
+  },
+  "access": [
+    {
+      "type": {
+        "code": "file_access"
+      },
+      "server": "server-27906690",
+      "transport": "transport-27906690",
+      "tools": {},
+      "locations": [
+        "String-27906690"
+      ],
+      "actions": [
+        "String-27906690"
+      ],
+      "permissions": {
+        "read": {
+          "essential": true
+        },
+        "write": {
+          "essential": true
+        },
+        "delete": {
+          "essential": true
+        },
+        "execute": {
+          "essential": true
+        },
+        "list": {
+          "essential": true
+        },
+        "create": {
+          "essential": true
+        }
+      },
+      "roots": [
+        "String-27906690"
+      ],
+      "databases": [
+        "String-27906690"
+      ],
+      "schemas": [
+        "String-27906690"
+      ],
+      "tables": [
+        "String-27906690"
+      ],
+      "urls": [
+        "String-27906690"
+      ],
+      "protocols": [
+        "String-27906690"
+      ]
+    }
+  ],
+  "createdAt": "2016-12-13T22:00:00.000Z",
+  "createdBy": "Rodrick.Jenkins@example.org",
+  "modifiedAt": "2005-04-01T22:00:00.000Z",
+  "modifiedBy": "Brandt_Kovacek38@example.net"
+}
+
+
+### AuthorizationRequests
+# @name AuthorizationRequests_PATCH
+PATCH {{server}}/grants-management/AuthorizationRequests/27906690-e953-47aa-b344-bae530740b6b
+Content-Type: application/json
+Authorization: Basic {{username}}:{{password}}
+
+{
+  "ID": "27906690-e953-47aa-b344-bae530740b6b",
+  "client_id": "client_id-27906690",
+  "redirect_uri": "redirect_uri-27906690",
+  "request_uri": "request_uri-27906690",
+  "scope": "scope-27906690",
+  "state": "state-27906690",
+  "code_challenge": "code_challenge-27906690",
+  "code_challenge_method": "code_challenge_method-27906690",
+  "grant_management_action": "grant_management_action-27906690",
+  "authorization_details": "authorization_details-27906690",
+  "requested_actor": "requested_actor-27906690",
+  "expires_at": "expires_at-27906690",
+  "status": "status-27906690",
+  "response_type": "response_type-27906690",
+  "risk_level": "risk_level-27906690",
+  "subject_token_type": "subject_token_type-27906690",
+  "subject_token": "subject_token-27906690",
+  "subject": "subject-27906690",
+  "expires_in": 36,
+  "grant": {
+    "id": "Grants-24019651"
+  },
+  "consent": {
+    "ID": "19711814-d3eb-4420-896e-ccc158b3fe9e",
+    "grant_id": "Consents-19711814"
+  },
+  "access": [
+    {
+      "type": {
+        "code": "file_access"
+      },
+      "server": "server-27906690",
+      "transport": "transport-27906690",
+      "tools": {},
+      "locations": [
+        "String-27906690"
+      ],
+      "actions": [
+        "String-27906690"
+      ],
+      "permissions": {
+        "read": {
+          "essential": true
+        },
+        "write": {
+          "essential": true
+        },
+        "delete": {
+          "essential": true
+        },
+        "execute": {
+          "essential": true
+        },
+        "list": {
+          "essential": true
+        },
+        "create": {
+          "essential": true
+        }
+      },
+      "roots": [
+        "String-27906690"
+      ],
+      "databases": [
+        "String-27906690"
+      ],
+      "schemas": [
+        "String-27906690"
+      ],
+      "tables": [
+        "String-27906690"
+      ],
+      "urls": [
+        "String-27906690"
+      ],
+      "protocols": [
+        "String-27906690"
+      ]
+    }
+  ],
+  "createdAt": "2016-12-13T22:00:00.000Z",
+  "createdBy": "Rodrick.Jenkins@example.org",
+  "modifiedAt": "2005-04-01T22:00:00.000Z",
+  "modifiedBy": "Brandt_Kovacek38@example.net"
+}
+
+
+### AuthorizationRequests
+# @name AuthorizationRequests_DELETE
+DELETE {{server}}/grants-management/AuthorizationRequests/27906690-e953-47aa-b344-bae530740b6b
+Content-Type: application/json
+Authorization: Basic {{username}}:{{password}}
+
+
+### AuthorizationDetailType
+# @name AuthorizationDetailType_GET
+GET {{server}}/grants-management/AuthorizationDetailType
+Authorization: Basic {{username}}:{{password}}
