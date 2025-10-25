@@ -54,3 +54,15 @@
 - Updated main service delegation methods to pass parameters directly
 - Added debug logging to show grant_id value in handlers
 - Fixed TypeError: Cannot read properties of undefined (reading 'data')
+
+## 2025-10-25 - Merge from Main Branch
+- Fetched and merged origin/main into feature branch
+- Resolved merge conflict in package.json:
+  - Kept our changes (xstate removed)
+  - Removed duplicate dependency entries
+  - Preserved new test scripts from main
+- Merge brought in new changes from main:
+  - New test files and test infrastructure (@cap-js/cds-test)
+  - New test scripts for OAuth flows
+  - Updated devDependencies (@types/jest)
+- Branch is now 2 commits ahead of origin
