@@ -14,10 +14,31 @@ export async function POST(
   req: Parameters<ConsentHandler>[0],
   next: Parameters<ConsentHandler>[1]
 ) {
+  return handleConsent.call(this, req, next)
+}
+
+export async function UPDATE(
+  this: AuthorizationService,
+  req: Parameters<ConsentHandler>[0],
+  next: Parameters<ConsentHandler>[1]
+) {
+  return handleConsent.call(this, req, next)
+}
+
+async function handleConsent(
+  this: AuthorizationService,
+  req: Parameters<ConsentHandler>[0],
+  next: Parameters<ConsentHandler>[1]
+) {
   req.data.previous_consent = await getPreviousConsent(this, req.data.grant_id);
   console.log("🔐 Creating consent:", req.data);
   // Extract any posted authorization_details payload for manual processing
-  const postedAuthDetails = (req.data as any)?.authorization_details as
+  const postedAuthDetails = (
+    (cds.context as any)?.http?.req?.__postedAuthDetails ??
+    (req as any).__postedAuthDetails ??
+    (req.data as any)?.__postedAuthDetails ??
+    (req.data as any)?.authorization_details
+  ) as
     | any[]
     | string
     | undefined;
@@ -73,7 +94,7 @@ export async function POST(
         return {
           id,
           identifier,
-          grant_ID: grantId,
+          grant_id: grantId,
           request_ID: requestId,
           type,
           actions,
@@ -91,7 +112,8 @@ export async function POST(
       });
 
       // Upsert will create or replace by key(id)
-      await this.upsert(records).into("com.sap.agent.grants.AuthorizationDetail");
+      const db = await cds.connect.to("db");
+      await db.upsert(records).into("com.sap.agent.grants.AuthorizationDetail");
       console.log(
         `✅ Upserted ${records.length} authorization_details for grant ${grantId}`
       );
@@ -99,8 +121,9 @@ export async function POST(
       // Flattened permissions
       const flatPermissions = buildPermissionsFromDetails(grantId, details);
       if (flatPermissions.length > 0) {
-        await this.delete("com.sap.agent.grants.Permissions").where({ grant_id: grantId });
-        await this.upsert(flatPermissions).into("com.sap.agent.grants.Permissions");
+        const db = await cds.connect.to("db");
+        await db.delete("com.sap.agent.grants.Permissions").where({ grant_id: grantId });
+        await db.upsert(flatPermissions).into("com.sap.agent.grants.Permissions");
         console.log(`✅ Upserted ${flatPermissions.length} flattened permissions for grant ${grantId}`);
       }
     }

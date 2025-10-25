@@ -100,6 +100,29 @@ cds.on("bootstrap", (app) => {
     })
   );
 
+  // Sanitize consent payload: allow authorization_details as transient field
+  app.use((req, _res, next) => {
+    try {
+      if (
+        req.method === "PUT" &&
+        /^\/oauth-server\/AuthorizationRequests\/[^/]+\/consent$/.test(req.path) &&
+        req.body && typeof req.body === "object"
+      ) {
+        const body = req.body;
+        if (body.authorization_details !== undefined) {
+          // Stash on the Express req to avoid CDS validation on unknown fields
+          req.__postedAuthDetails = body.authorization_details;
+          delete body.authorization_details;
+        }
+        if (body.__postedAuthDetails !== undefined) {
+          req.__postedAuthDetails = body.__postedAuthDetails;
+          delete body.__postedAuthDetails;
+        }
+      }
+    } catch {}
+    next();
+  });
+
   // Optional: one-time backfill of Permissions table from existing AuthorizationDetail
   // Enable by setting env BACKFILL_PERMISSIONS=true
   cds.once("served", async () => {

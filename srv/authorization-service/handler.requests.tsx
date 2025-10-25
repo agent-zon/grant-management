@@ -59,7 +59,7 @@ export default async function push(
         return {
           id,
           identifier,
-          grant_ID: grantId,
+          grant_id: grantId,
           request_ID: ID,
           type: type_code,
           actions,
@@ -75,7 +75,8 @@ export default async function push(
           ...rest,
         };
       });
-      await this.upsert(records).into("com.sap.agent.grants.AuthorizationDetail");
+      const db = await cds.connect.to("db");
+      await db.upsert(records).into("com.sap.agent.grants.AuthorizationDetail");
       console.log(
         `✅ Upserted ${records.length} authorization_details for request ${ID} and grant ${grantId}`
       );
@@ -83,9 +84,10 @@ export default async function push(
       // Build flattened permissions from authorization details
       const flatPermissions = buildPermissionsFromDetails(grantId, details);
       if (flatPermissions.length > 0) {
+        const db = await cds.connect.to("db");
         // Replace existing flattened rows for this grant to avoid stale entries
-        await this.delete("com.sap.agent.grants.Permissions").where({ grant_id: grantId });
-        await this.upsert(flatPermissions).into("com.sap.agent.grants.Permissions");
+        await db.delete("com.sap.agent.grants.Permissions").where({ grant_id: grantId });
+        await db.upsert(flatPermissions).into("com.sap.agent.grants.Permissions");
         console.log(`✅ Upserted ${flatPermissions.length} flattened permissions for grant ${grantId}`);
       }
     }
