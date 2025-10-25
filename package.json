@@ -22,7 +22,6 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
     "ulid": "^3.0.1",
-    "xstate": "^5.22.1",
     "mustache": "^4.2.0",
     "@types/mustache": "^4.2.6",
     "body-parser": "^2.2.0",

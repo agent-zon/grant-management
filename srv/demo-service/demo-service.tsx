@@ -1,19 +1,17 @@
 import cds from "@sap/cds";
 import { renderToString } from "react-dom/server";
-import { initialTransition, type SnapshotFrom } from "xstate";
-
 import type {
   AuthorizationDetailRequest,
   AuthorizationDetail,
 } from "#cds-models/sap/scai/grants";
-import permissionsElevationMachine, {
-  PermissionsContext,
-} from "./permissions-elevation-machine.tsx";
-import { createActor } from "xstate";
 import { htmlTemplate } from "../middleware/htmx.tsx";
 import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
-
 import React from "react";
+
+// Import handlers
+import * as AnalysisHandler from "./handler.analysis-request.tsx";
+import * as DeploymentHandler from "./handler.deployment-request.tsx";
+import * as SubscriptionHandler from "./handler.subscription-request.tsx";
 
 interface AuthorizationRequestButtonProps {
   client_id?: string;
@@ -22,88 +20,8 @@ interface AuthorizationRequestButtonProps {
   requested_actor?: string;
   request_uri?: string;
   expires_in?: number;
-  authorization_details?: PermissionsContext["request"]["authorization_details"];
+  authorization_details?: any[];
   authServerUrl?: string;
-}
-
-function AuthorizationRequestButton({
-  authServerUrl,
-  request_uri,
-  expires_in,
-  authorization_details,
-  client_id,
-  redirect_uri,
-  scope,
-  requested_actor,
-  ...request
-}: AuthorizationRequestButtonProps) {
-  return (
-    <div hx-ext="client-side-templates">
-      <div className="space-y-3">
-        <div className="bg-gray-700/50 rounded-lg p-3">
-          <div className="text-xs text-gray-400 mb-1">Endpoint</div>
-          <div className="text-sm text-purple-400 font-mono">
-            GET /authorize
-          </div>
-        </div>
-        <div className="bg-gray-700/50 rounded-lg p-3">
-          <div className="text-xs text-gray-400 mb-1">Parameters</div>
-          <div className="text-sm text-white">
-            client_id: {client_id}
-            <br />
-            request_uri: {request_uri}
-            <br />
-          </div>
-        </div>
-      </div>
-      <form action={`${authServerUrl}/authorize`} method="post">
-        <input type="hidden" name="client_id" value="demo-client-app" />
-        <input type="hidden" name="request_uri" value={request_uri!} />
-        <button
-          type="submit"
-          className="w-full mt-4 px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
-        >
-          🔗 Authorize Request
-        </button>
-      </form>
-      <div className="space-y-6">
-        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-600">
-          <div className="text-gray-400 text-sm text-center text-pretty ">
-            The server pushed an authorization request to the authorization
-            server and received `request_uri` to use in the authorization
-            request
-          </div>
-          <div className="text-gray-500 text-sm text-center text-pretty font-mono ">
-            Endpoint: {`${authServerUrl}/par`}
-          </div>
-        </div>
-        <div className="space-y-3">
-          <div className="bg-gray-700/50 rounded-lg p-3">
-            <div className="text-xs text-gray-400 mb-1">Endpoint</div>
-            <div className="text-sm text-purple-400 font-mono">POST /par</div>
-          </div>
-        </div>
-        <div className="bg-gray-700/30 rounded-lg p-4 border border-gray-600">
-          <div className="space-y-2 text-xs font-mono overflow-y-auto scroll-smooth mx-auto">
-            <pre className="text-gray-300 text-pretty whitespace-pre-wrap">
-              {JSON.stringify(
-                {
-                  client_id,
-                  redirect_uri,
-                  requested_actor,
-                  ...request,
-                  scope,
-                  authorization_details,
-                },
-                null,
-                2
-              )}
-            </pre>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 interface AuthorizationParamsProps {
@@ -401,35 +319,6 @@ function AuthorizationParams({
   );
 }
 
-const actorState = new Map<
-  string,
-  SnapshotFrom<typeof permissionsElevationMachine>
->();
-
-function createPermissionsElevationActor(id: string) {
-  const actor = createActor(permissionsElevationMachine, {
-    id: id,
-    input: {
-      actor: "urn:agent:analytics-bot-v1",
-    },
-    // snapshot: await this.read(this.entities.DemoState, req.data.sid),
-    snapshot: actorState.get(id),
-  });
-
-  actor.start();
-  const subscribtion = actor.subscribe(() => {
-    // this.upsert({snapshot: actor.getPersistedSnapshot(), sid: req.data.sid}).into(this.entities.DemoState)
-    actorState.set(
-      id,
-      actor.getPersistedSnapshot() as SnapshotFrom<
-        typeof permissionsElevationMachine
-      >
-    );
-  });
-
-  return { actor, subscribtion, snapshot: actor.getSnapshot() };
-}
-
 export default class Service extends cds.ApplicationService {
   public async main() {
     cds.context?.http?.res.setHeader("Content-Type", "text/html");
@@ -446,7 +335,6 @@ export default class Service extends cds.ApplicationService {
                 hx-trigger="load"
                 hx-swap="innerHTML"
               >
-                {/* <div  hx-get="/demo/navbar" hx-trigger="load" hx-swap="outerHTML" /> */}
               </div>
 
               <div className="space-y-6">
@@ -456,7 +344,7 @@ export default class Service extends cds.ApplicationService {
                     name="authorization-iframe"
                     className="w-full h-full min-h-screen"
                     title="Authorization Screen"
-                    src="/demo/request"
+                    src="/demo/analysis_request"
                     aria-label="Interactive consent screen for authorization"
                   />
                 </div>
@@ -468,30 +356,17 @@ export default class Service extends cds.ApplicationService {
     );
   }
 
-  public async navbar(grant_id, event) {
-    console.log("navbar", grant_id);
-    const { actor, snapshot } = grant_id
-      ? createPermissionsElevationActor(grant_id)
-      : {
-          actor: null,
-          snapshot: initialTransition(permissionsElevationMachine)[0],
-        };
+  public async navbar(grant_id, event, step = 0) {
+    console.log("navbar", grant_id, "step", step);
 
-    const state = snapshot.value;
-
-    // Get meta information for all states
-    const idleMeta = permissionsElevationMachine.states.idle.meta?.next;
-    const analysisMeta =
-      permissionsElevationMachine.states.analysis_granted.meta?.next;
-    const deploymentMeta =
-      permissionsElevationMachine.states.deployment_granted.meta?.next;
-
-    console.log("state", state, "idleMeta", idleMeta);
+    const currentStep = parseInt(step as any) || 0;
+    
     event = event || "grant-updated";
     const activeClass =
       event === "grant-requested"
-        ? "bg-blue-600 animate-pulse  animate-infinite animate-duration-1000 animate-ease-linear "
+        ? "bg-blue-600 animate-pulse animate-infinite animate-duration-1000 animate-ease-linear"
         : "bg-blue-500";
+        
     cds.context?.http?.res.setHeader("Content-Type", "text/html");
     cds.context?.http?.res.send(
       renderToString(
@@ -502,81 +377,78 @@ export default class Service extends cds.ApplicationService {
         >
           <form
             className="flex items-center space-x-4"
-            action={`/demo/elevate?grant_id=${grant_id}`}
+            action={`/demo/deployment_request?grant_id=${grant_id}`}
             method="get"
             target="authorization-iframe"
           >
             <input type="hidden" name="grant_id" value={grant_id} />
+            
+            {/* Step 1: Analysis */}
             <div className="flex items-center space-x-2">
               <div
-                className={` w-8 h-8  rounded-full flex items-center justify-center text-white font-bold text-sm
-            ${
-              state === "idle"
-                ? activeClass
-                : state === "subscription_granted"
-                  ? "bg-blue-400"
-                  : "bg-blue-900"
-            }`}
-                hx-get={`/demo/elevate?grant_id=${grant_id}`}
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                  currentStep === 0
+                    ? activeClass
+                    : currentStep > 0
+                      ? "bg-blue-400"
+                      : "bg-gray-600"
+                }`}
               >
                 1
               </div>
               <span
-                className={`text-sm ${state === "analysis_granted" ? "text-blue-400" : "text-gray-400"}`}
+                className={`text-sm ${currentStep >= 1 ? "text-blue-400" : "text-gray-400"}`}
               >
-                {state === "idle" ? idleMeta?.active : idleMeta?.permitted}
+                {currentStep === 0 ? "Want to Analyze" : "Can Analyze"}
               </span>
             </div>
+            
             <div className="w-12 h-px bg-gray-600"></div>
-            <div className=" flex items-center space-x-2">
+            
+            {/* Step 2: Deployment */}
+            <div className="flex items-center space-x-2">
               <button
                 type="submit"
+                disabled={currentStep < 1}
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                  state === "analysis_granted"
+                  currentStep === 1
                     ? activeClass
-                    : state === "deployment_granted"
-                      ? "bg-blue-900"
-                      : state === "subscription_granted"
-                        ? "bg-blue-400"
-                        : "bg-gray-600"
-                }  `}
+                    : currentStep > 1
+                      ? "bg-blue-400"
+                      : "bg-gray-600"
+                }`}
               >
                 2
               </button>
               <span
-                className={`text-sm ${state === "deployment_granted" ? "text-blue-400" : "text-gray-400"}`}
+                className={`text-sm ${currentStep >= 2 ? "text-blue-400" : "text-gray-400"}`}
               >
-                {state === "analysis_granted"
-                  ? analysisMeta?.active
-                  : state === "deployment_granted"
-                    ? analysisMeta?.permitted
-                    : state === "subscription_granted"
-                      ? analysisMeta?.permitted
-                      : analysisMeta?.pending || "Deployment"}
+                {currentStep === 1 ? "Want to Deploy" : currentStep > 1 ? "Can Deploy" : "Deployment"}
               </span>
             </div>
+            
             <div className="w-12 h-px bg-gray-600"></div>
+            
+            {/* Step 3: Subscription */}
             <div className="flex items-center space-x-2">
               <button
                 type="submit"
+                disabled={currentStep < 2}
+                formAction={`/demo/subscription_request?grant_id=${grant_id}`}
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                  state === "deployment_granted"
+                  currentStep === 2
                     ? activeClass
-                    : state === "subscription_granted"
+                    : currentStep > 2
                       ? "bg-blue-400"
                       : "bg-gray-600"
-                }  `}
+                }`}
               >
                 3
               </button>
               <span
-                className={`text-sm ${state === "subscription_granted" ? "text-blue-400" : "text-gray-400"}`}
+                className={`text-sm ${currentStep >= 3 ? "text-blue-400" : "text-gray-400"}`}
               >
-                {state === "deployment_granted"
-                  ? deploymentMeta?.active
-                  : state === "subscription_granted"
-                    ? deploymentMeta?.permitted
-                    : deploymentMeta?.pending || "Subscription Management"}
+                {currentStep === 2 ? "Want Subscriptions" : currentStep > 2 ? "Can Manage Subscriptions" : "Subscription Management"}
               </span>
             </div>
           </form>
@@ -621,118 +493,7 @@ export default class Service extends cds.ApplicationService {
     );
   }
 
-  public async request() {
-    try {
-      console.log("🔍 Demo Request - Starting request processing");
-      console.log(
-        "🔍 Demo Request - HTTP method:",
-        cds.context?.http?.req.method
-      );
-      console.log("🔍 Demo Request - Headers:", cds.context?.http?.req.headers);
-      console.log("🔍 Demo Request - User:", cds.context?.user);
-
-      const [
-        {
-          context: { request: config },
-        },
-      ] = initialTransition(permissionsElevationMachine);
-
-      console.log("🔍 Demo Request - Config from state machine:", config);
-
-      const authorizationService = await cds.connect.to(AuthorizationService);
-      console.log(
-        "🔍 Demo Request - Connected to AuthorizeService",
-        (cds.context?.user as any)?.authInfo
-      );
-
-      const request = {
-        response_type: "code",
-        client_id: "demo-client-app",
-        redirect_uri: new URL(
-          "/demo/callback",
-          cds.context?.http?.req.headers.referer
-        ).href,
-        grant_management_action: "create",
-        authorization_details: JSON.stringify(config.authorization_details),
-        requested_actor: "urn:agent:analytics-bot-v1",
-        scope: config.scope,
-        subject: cds.context?.user?.id,
-        subject_token_type: "urn:ietf:params:oauth:token-type:basic",
-      };
-
-      console.log(
-        "🔍 Demo Request - PAR request data:",
-        JSON.stringify(request, null, 2)
-      );
-      console.log("🔍 Demo Request - Calling authorizationService.par...");
-
-      const response = await authorizationService.par(request);
-
-      console.log("🔍 Demo Request - PAR response:", response);
-
-      if (!response) {
-        console.log("❌ Demo Request - No response from PAR");
-        return await cds.context?.http?.res.send(
-          renderToString(
-            <div>
-              <h1>Authorization failed</h1>
-            </div>
-          )
-        );
-      }
-
-      console.log("🔍 Demo Request - Preparing HTML response");
-      const authServerUrl =
-        (await cds.connect.to(AuthorizationService).then((service: any) => {
-          return service.baseUrl;
-        })) || "/oauth-server";
-
-      console.log("🔍 Demo Request - Auth server URL:", authServerUrl);
-      cds.context?.http?.res.setHeader("Content-Type", "text/html");
-      const htmlResponse = htmlTemplate(`${renderToString(
-        <AuthorizationRequestButton
-          authServerUrl={authServerUrl}
-          {...request}
-          request_uri={response.request_uri!}
-          expires_in={response.expires_in!}
-          authorization_details={config.authorization_details}
-        />
-      )}
-     
-      `);
-
-      console.log("✅ Demo Request - Sending HTML response");
-      return await cds.context?.http?.res.send(htmlResponse);
-    } catch (e) {
-      const error = e as {
-        message: string;
-        code: string;
-        target: string;
-        args: string[];
-        stack: string;
-      };
-      console.error("❌ Demo Request - Error occurred:", error);
-      console.error("❌ Demo Request - Error stack:", error.stack);
-      console.error("❌ Demo Request - Error details:", {
-        message: error.message,
-        code: error.code,
-        target: error.target,
-        args: error.args,
-      });
-
-      // Return error response
-      return await cds.context?.http?.res.status(500).send(
-        renderToString(
-          <div>
-            <h1>Internal Server Error</h1>
-            <p>Error: {error.message}</p>
-          </div>
-        )
-      );
-    }
-  }
-
-  public async callback(code, code_verifier, redirect_uri) {
+  public async callback(code, code_verifier, redirect_uri, step = 0) {
     const authorizationService = await cds.connect.to(AuthorizationService);
     const tokenResponse: any = await authorizationService.token({
       grant_type: "authorization_code",
@@ -741,44 +502,33 @@ export default class Service extends cds.ApplicationService {
       code_verifier: code_verifier,
       redirect_uri: redirect_uri,
     });
+    
     const { access_token, token_type, expires_in, grant_id, error, ...rest } =
       tokenResponse;
 
     if (error) {
-      return  cds.context?.http?.res.send(
+      return cds.context?.http?.res.send(
         renderToString(
           <div>
             <div>Authorization failed: {error}</div>
             <script
               async
               defer
-              src="/demo/send_event?grant_id=${grant_id}&type=grant-failed"
+              src={`/demo/send_event?grant_id=${grant_id}&type=grant-failed&step=${step}`}
             ></script>
           </div>
         )
       );
     }
-    const { actor } = createPermissionsElevationActor(grant_id);
-    
-    actor.send({
-      type: "GRANT_UPDATED",
-      access_token,
-      token_type,
-      expires_in,
-      grant_id,
-      ...rest,
-    });
+
+    const currentStep = parseInt(step as any) || 0;
+    const nextStep = currentStep + 1;
+
     cds.context?.http?.res.setHeader("HX-Trigger", "grant-updated");
     cds.context?.http?.res.setHeader("Content-Type", "text/html");
 
-    return  cds.context?.http?.res?.status(201).send(`<body>${renderToString(
+    return cds.context?.http?.res?.status(201).send(`<body>${renderToString(
       <div>
-        {/* <a
-            href={`/demo/elevate?grant_id=${grant_id}`}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2 mx-auto float-right justify-end"
-          >
-            Elevate Permissions
-          </a> */}
         {/* Full Width Layout */}
         <div className="space-y-6">
           {/* Authorization Details - Full Width */}
@@ -819,9 +569,9 @@ export default class Service extends cds.ApplicationService {
           </div>
         </div>
       </div>
-    )} <script async defer src="/demo/send_event?grant_id=${grant_id}&type=grant-requested">
+    )} <script async defer src="/demo/send_event?grant_id=${grant_id}&type=grant-requested&step=${nextStep}">
       </script></body>
-     `)
+    `);
   }
 
   public async event_handlers(req) {
@@ -837,7 +587,7 @@ export default class Service extends cds.ApplicationService {
     `);
   }
 
-  public async send_event(grant_id, type) {
+  public async send_event(grant_id, type, step = 0) {
     cds.context?.http?.res.setHeader("Content-Type", "text/javascript");
     cds.context?.http?.res.send(`
       
@@ -850,7 +600,7 @@ export default class Service extends cds.ApplicationService {
             console.log('sendToParent');
             const event = new CustomEvent('${type || "grant-updated"}', {
                bubbles: true,
-               detail: ${JSON.stringify({ grant_id: grant_id, event: type })} ,
+               detail: ${JSON.stringify({ grant_id: grant_id, event: type, step: step })} ,
             });
             if(window.parent) {
               window.parent.document.body.dispatchEvent(event);
@@ -863,54 +613,17 @@ export default class Service extends cds.ApplicationService {
       `);
   }
 
-  public async elevate(grant_id) {
-    const { actor } = createPermissionsElevationActor(grant_id);
-    const config = actor.getSnapshot().context.request;
-    const authorizationService = await cds.connect.to(AuthorizationService);
-    const request = {
-      response_type: "code",
-      client_id: "demo-client-app",
-      redirect_uri: new URL(
-        "/demo/callback",
-        cds.context?.http?.req.headers.referer
-      ).href,
-      grant_management_action: "merge",
-      grant_id: grant_id,
-      authorization_details: JSON.stringify(config.authorization_details),
-      requested_actor: "urn:agent:accounting-bot-v1",
-      scope: config.scope,
-      subject_token_type: "urn:ietf:params:oauth:token-type:access_token",
-      subject: cds.context?.user?.id,
-    };
-    const response = await authorizationService.par(request);
+  // Handler methods that delegate to the imported handlers
+  public async analysis_request(req: cds.Request) {
+    return AnalysisHandler.GET.call(this, req);
+  }
 
-    if (!response) {
-      return await cds.context?.http?.res.send(
-        renderToString(<div>Authorization failed</div>)
-      );
-    }
-    const { request_uri, expires_in } = response;
-    cds.context?.http?.res.setHeader("Content-Type", "text/html");
-    cds.context?.http?.res.setHeader("HX-Trigger", "grant-updated");
-    const authServerUrl =
-      (await cds.connect.to(AuthorizationService).then((service: any) => {
-        return service.baseUrl;
-      })) || "/oauth-server";
-    cds.context?.http?.res.send(
-      htmlTemplate(`
-            ${renderToString(
-              <AuthorizationRequestButton
-                authServerUrl={authServerUrl}
-                {...request}
-                request_uri={request_uri!}
-                expires_in={expires_in!}
-                authorization_details={config.authorization_details}
-              />
-            )},
-            <script async defer src="/demo/send_event?grant_id=${grant_id}&type=grant-updated">
-            </script>
-          `)
-    );
+  public async deployment_request(req: cds.Request) {
+    return DeploymentHandler.GET.call(this, req);
+  }
+
+  public async subscription_request(req: cds.Request) {
+    return SubscriptionHandler.GET.call(this, req);
   }
 }
 
