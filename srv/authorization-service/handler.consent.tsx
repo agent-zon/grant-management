@@ -6,6 +6,7 @@ import {
   Consent,
 } from "#cds-models/AuthorizationService";
 import { isNativeError } from "node:util/types";
+import { flattenAuthorizationDetails } from "./permissions-utils";
 
 type ConsentHandler = cds.CRUDEventHandler.On<Consent, void | Consent | Error>;
 
@@ -28,7 +29,7 @@ export async function POST(
 
   const consent = await next(req);
 
-  // Upsert AuthorizationDetail rows using Identifier + Grant relations
+  // Upsert flattened Permissions and legacy AuthorizationDetail rows
   if (consent && !isNativeError(consent)) {
     const request = (await this.read(
       AuthorizationRequests,
@@ -52,8 +53,22 @@ export async function POST(
     const requestId = consent.request_ID;
 
     if (Array.isArray(details) && details.length > 0) {
+      // 1. Insert into new flattened Permissions table
+      const permissionRows = flattenAuthorizationDetails(
+        details,
+        grantId,
+        requestId
+      );
+
+      if (permissionRows.length > 0) {
+        await this.insert(permissionRows).into("com.sap.agent.grants.Permissions");
+        console.log(
+          `✅ Inserted ${permissionRows.length} permission rows for grant ${grantId}`
+        );
+      }
+
+      // 2. Also maintain legacy AuthorizationDetail for backward compatibility
       const records = details.map((d: any, idx: number) => {
-        // Prefer explicit identifier; fallback to a stable synthetic one
         const identifier = d.identifier || `${d.type || "detail"}-${idx}`;
         const id = `${grantId}:${identifier}`;
         const {
@@ -79,21 +94,13 @@ export async function POST(
           actions,
           locations,
           tools,
-          roots,
-          databases,
-          schemas,
-          tables,
-          urls,
-          protocols,
-          permissions,
           ...rest,
         };
       });
 
-      // Upsert will create or replace by key(id)
       await this.upsert(records).into("com.sap.agent.grants.AuthorizationDetail");
       console.log(
-        `✅ Upserted ${records.length} authorization_details for grant ${grantId}`
+        `✅ Upserted ${records.length} authorization_details (legacy) for grant ${grantId}`
       );
     }
 

@@ -317,6 +317,8 @@ export async function LIST(
 //workround for last grant overwrite issue
 async function getGrants(srv: GrantsManagementService, data: Grants) {
   const consentRecords = await srv.read(Consents);
+  
+  // Read from legacy AuthorizationDetail for now (can be replaced with Permissions later)
   const authorization_details = await srv.run(
     cds.ql.SELECT.from(AuthorizationDetail)
   );

@@ -23,6 +23,9 @@ entity Grants: managed {
   consents: Composition of many Consents on consents.grant_id = $self.id;
   requests: Composition of many AuthorizationRequests on requests.grant = $self;
   authorization: Composition of many ConsentGrant on authorization.grant_id = $self.id;
+  // New flattened permissions structure
+  permissions: Composition of many Permissions on permissions.grant_id = $self.id;
+  // Legacy authorization_details - kept for backward compatibility
   authorization_details: Composition of many AuthorizationDetail on authorization_details.grant = $self;
 }
 
@@ -117,16 +120,27 @@ entity Consents:cuid,managed {
 
 
 @cds.autoexpose :true
-entity AuthorizationDetail: managed, AuthorizationDetailMcpTools, AuthorizationDetailFileSystem, AuthorizationDetailDatabase, AuthorizationDetailApi {
-  // Composite identifier derived from grant and per-detail identifier
-  key id: String;
-  // Business identifier supplied by clients (unique per grant)
-  identifier: String;
-
-  // New relations
-  grant: Association to Grants;               // owning grant
+// Flattened permissions table - each row represents a single attribute-value pair
+entity Permissions: managed {
+  key id: UUID;
+  resource_identifier: String;  // Identifier for the resource (e.g., "mcp-server-1", "fs-root-1")
+  grant_id: String;             // Reference to the grant
+  attribute: String;            // The attribute name (e.g., "action", "location", "tool", "database")
+  value: String;                // The attribute value
+  
+  // Relations
+  grant: Association to Grants on grant.id = grant_id;
   request: Association to AuthorizationRequests; // originating request
+}
 
+// Legacy authorization detail entity - kept for backward compatibility during migration
+// This will be replaced by querying Permissions table grouped by resource_identifier
+@cds.autoexpose :true
+entity AuthorizationDetail: managed {
+  key id: String;
+  identifier: String;
+  grant: Association to Grants;
+  request: Association to AuthorizationRequests;
   type: String enum {
                 fs;
                 mcp;
@@ -137,43 +151,6 @@ entity AuthorizationDetail: managed, AuthorizationDetailMcpTools, AuthorizationD
   tools: Map; 
   locations: array of String;
   actions: array of String;
-  // privileges: array of String;
-  // resources: array of String;
-}
-
-
-aspect AuthorizationDetailDatabase {
-  // type: String enum { database };
-  databases: array of String; // Database names
-  schemas: array of String;   // Schema names
-  tables: array of String;    // Table names
-}
-
-aspect AuthorizationDetailApi {
-  // type: String enum { api };
-  urls: array of String;    // API endpoint URLs
-  protocols: array of String; // HTTP, HTTPS, WebSocket, gRPC, etc.
-}
- 
-aspect AuthorizationDetailMcpTools {
-  // type: String enum { mcp };
-  transport: String;        // Transport protocol
-  tools: Map;              // tool_name -> boolean (granted/denied)
-  server: String;
-}
-
-
-aspect AuthorizationDetailFileSystem {
-  // type: String enum { fs };
-  roots: array of String;   // File system root paths
-  permissions:  {
-    read: Boolean;
-    write: Boolean;
-    execute: Boolean;
-    delete: Boolean;
-    list: Boolean;
-    create: Boolean;
-  }; // read, write, execute, delete, etc.
 }
 
 

@@ -36,7 +36,8 @@ annotate grants.Consents with @(restrict: [
 @impl: './grant-management.tsx'
 service GrantsManagementService {
    
-
+    entity Permissions as projection on grants.Permissions;
+    
     entity AuthorizationDetail as projection on grants.AuthorizationDetail;
 
     entity ConsentGrant as projection on grants.ConsentGrant; 
