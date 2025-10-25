@@ -97,7 +97,7 @@ entity Consents:cuid,managed {
 @cds.autoexpose :true
 entity AuthorizationDetail:cuid,managed, AuthorizationDetailMcpTools, AuthorizationDetailFileSystem, AuthorizationDetailDatabase, AuthorizationDetailApi {
   consent: Association to Consents;
-  type: String(20);
+  type: String;
   locations: array of String;
   actions: array of String;
 
@@ -161,7 +161,7 @@ type AuthorizationDetailRequest: MCPToolAuthorizationDetailRequest, FileSystemAu
 }
  
 entity AuthorizationDetailType: sap.common.CodeList {
-    key code : String(20) enum { 
+    key code : String(60) enum { 
       mcp;
       fs;
       database;
