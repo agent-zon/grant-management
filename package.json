@@ -96,7 +96,9 @@
     "dev": "npx cds-tsx watch",
     "test:auth": "npx cds bind --profile hybrid --exec -- node ./tests/auth.spec.js",
     "test": "node --import tsx --test --experimental-vm-modules ./test/*.test.ts",
-    "posttest:oauth:basic": "node --import tsx --test --experimental-vm-modules ./test/oauth-flow-test.ts"
+    "test:oauth": "node --import tsx --test --experimental-vm-modules ./test/oauth-*.test.ts",
+    "test:oauth:basic": "node --import tsx --test --experimental-vm-modules ./test/oauth-basic-flow.test.ts",
+    "test:oauth:stepup": "node --import tsx --test --experimental-vm-modules ./test/oauth-stepup-flow.test.ts"
   },
   "workspaces": [
     "app/*"
