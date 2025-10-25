@@ -6,7 +6,7 @@ with the authorization server.
 
 ## Deployment
 
-- **API Docs**: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/api/docs
+- **API Docs**: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/api-docs
 
 - **Grant Management User Dashbaord**: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/grants-management/Grants
 
