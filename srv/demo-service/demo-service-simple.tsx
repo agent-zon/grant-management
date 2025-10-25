@@ -1,10 +1,15 @@
 import cds from "@sap/cds";
 import { renderToString } from "react-dom/server";
-import { htmlTemplate } from "../middleware/htmx.tsx";
 import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
 import React from "react";
-import Mustache from "mustache";
 import { ulid } from "ulid";
+
+// Import handlers
+import * as ShellHandler from "./handler.shell.tsx";
+import * as GrantTemplateHandler from "./handler.grant-template.tsx";
+import * as AnalyzeHandler from "./handler.analyze.tsx";
+import * as DeployHandler from "./handler.deploy.tsx";
+import * as MonitorHandler from "./handler.monitor.tsx";
 
 export default class Service extends cds.ApplicationService {
   
@@ -14,8 +19,48 @@ export default class Service extends cds.ApplicationService {
     cds.context?.http?.res.redirect(`/demo/devops_bot/${grant_id}/shell`);
   }
 
-  // Shell page with buttons and grant viewer
+  // Shell page - delegates to handler
   public async shell(grant_id: string) {
+    return ShellHandler.GET.call(this, grant_id);
+  }
+
+  // Grant template - delegates to handler
+  public async grant_template(grant_id: string) {
+    return GrantTemplateHandler.GET.call(this, grant_id);
+  }
+
+  // Analyze request - delegates to handler
+  public async analyze_request(grant_id: string) {
+    return AnalyzeHandler.REQUEST.call(this, grant_id);
+  }
+
+  // Analyze section UI - delegates to handler
+  public async analyze(grant_id: string) {
+    return AnalyzeHandler.GET.call(this, grant_id);
+  }
+
+  // Deploy request - delegates to handler
+  public async deploy_request(grant_id: string) {
+    return DeployHandler.REQUEST.call(this, grant_id);
+  }
+
+  // Deploy section UI - delegates to handler
+  public async deploy(grant_id: string) {
+    return DeployHandler.GET.call(this, grant_id);
+  }
+
+  // Monitor request - delegates to handler
+  public async monitor_request(grant_id: string) {
+    return MonitorHandler.REQUEST.call(this, grant_id);
+  }
+
+  // Monitor section UI - delegates to handler
+  public async monitor(grant_id: string) {
+    return MonitorHandler.GET.call(this, grant_id);
+  }
+
+  // OAuth callback
+  public async callback(code, code_verifier, redirect_uri) {
     cds.context?.http?.res.setHeader("Content-Type", "text/html");
     cds.context?.http?.res.send(
       htmlTemplate(
@@ -168,192 +213,6 @@ export default class Service extends cds.ApplicationService {
     );
   }
 
-  // Analyze request - creates PAR request for analysis permissions
-  public async analyze_request(grant_id: string) {
-    try {
-      const authorizationService = await cds.connect.to(AuthorizationService);
-      
-      const request = {
-        response_type: "code",
-        client_id: "devops-bot",
-        redirect_uri: new URL(
-          `/demo/devops_bot/${grant_id}/callback`,
-          cds.context?.http?.req.headers.referer
-        ).href,
-        grant_management_action: "update",
-        grant_id: grant_id,
-        scope: "analytics_read",
-        authorization_details: JSON.stringify([
-          {
-            type: "mcp",
-            server: "devops-mcp-server",
-            transport: "sse",
-            tools: {
-              "metrics.read": { essential: true },
-              "logs.query": { essential: true },
-            },
-            locations: ["analytics"],
-          },
-        ]),
-        subject: cds.context?.user?.id,
-      };
-
-      const response = await authorizationService.par(request);
-      const authServerUrl = await this.getAuthServerUrl();
-
-      cds.context?.http?.res.setHeader("Content-Type", "text/html");
-      return cds.context?.http?.res.send(
-        renderToString(
-          <div className="space-y-4">
-            <h3 className="text-lg font-bold text-white">📊 Analysis Request</h3>
-            <div className="bg-gray-700 rounded p-4 text-sm">
-              <div className="text-gray-400 mb-2">Request Details:</div>
-              <pre className="text-xs text-gray-300 overflow-x-auto">
-                {JSON.stringify(request, null, 2)}
-              </pre>
-            </div>
-            <form action={`${authServerUrl}/authorize`} method="post">
-              <input type="hidden" name="client_id" value="devops-bot" />
-              <input type="hidden" name="request_uri" value={response.request_uri!} />
-              <button
-                type="submit"
-                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-              >
-                🔗 Authorize Analysis Access
-              </button>
-            </form>
-          </div>
-        )
-      );
-    } catch (e) {
-      return this.renderError(e);
-    }
-  }
-
-  // Deploy request - creates PAR request for deployment permissions
-  public async deploy_request(grant_id: string) {
-    try {
-      const authorizationService = await cds.connect.to(AuthorizationService);
-      
-      const request = {
-        response_type: "code",
-        client_id: "devops-bot",
-        redirect_uri: new URL(
-          `/demo/devops_bot/${grant_id}/callback`,
-          cds.context?.http?.req.headers.referer
-        ).href,
-        grant_management_action: "update",
-        grant_id: grant_id,
-        scope: "deployments",
-        authorization_details: JSON.stringify([
-          {
-            type: "mcp",
-            server: "devops-mcp-server",
-            transport: "sse",
-            tools: {
-              "deploy.create": { essential: true },
-              "deploy.read": { essential: true },
-            },
-            locations: ["staging", "production"],
-          },
-        ]),
-        subject: cds.context?.user?.id,
-      };
-
-      const response = await authorizationService.par(request);
-      const authServerUrl = await this.getAuthServerUrl();
-
-      cds.context?.http?.res.setHeader("Content-Type", "text/html");
-      return cds.context?.http?.res.send(
-        renderToString(
-          <div className="space-y-4">
-            <h3 className="text-lg font-bold text-white">🚀 Deployment Request</h3>
-            <div className="bg-gray-700 rounded p-4 text-sm">
-              <div className="text-gray-400 mb-2">Request Details:</div>
-              <pre className="text-xs text-gray-300 overflow-x-auto">
-                {JSON.stringify(request, null, 2)}
-              </pre>
-            </div>
-            <form action={`${authServerUrl}/authorize`} method="post">
-              <input type="hidden" name="client_id" value="devops-bot" />
-              <input type="hidden" name="request_uri" value={response.request_uri!} />
-              <button
-                type="submit"
-                className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg"
-              >
-                🔗 Authorize Deployment Access
-              </button>
-            </form>
-          </div>
-        )
-      );
-    } catch (e) {
-      return this.renderError(e);
-    }
-  }
-
-  // Monitor request
-  public async monitor_request(grant_id: string) {
-    try {
-      const authorizationService = await cds.connect.to(AuthorizationService);
-      
-      const request = {
-        response_type: "code",
-        client_id: "devops-bot",
-        redirect_uri: new URL(
-          `/demo/devops_bot/${grant_id}/callback`,
-          cds.context?.http?.req.headers.referer
-        ).href,
-        grant_management_action: "update",
-        grant_id: grant_id,
-        scope: "monitoring_read",
-        authorization_details: JSON.stringify([
-          {
-            type: "mcp",
-            server: "monitoring-mcp-server",
-            transport: "sse",
-            tools: {
-              "health.check": { essential: true },
-              "alerts.list": { essential: true },
-            },
-            locations: ["monitoring"],
-          },
-        ]),
-        subject: cds.context?.user?.id,
-      };
-
-      const response = await authorizationService.par(request);
-      const authServerUrl = await this.getAuthServerUrl();
-
-      cds.context?.http?.res.setHeader("Content-Type", "text/html");
-      return cds.context?.http?.res.send(
-        renderToString(
-          <div className="space-y-4">
-            <h3 className="text-lg font-bold text-white">📈 Monitoring Request</h3>
-            <div className="bg-gray-700 rounded p-4 text-sm">
-              <div className="text-gray-400 mb-2">Request Details:</div>
-              <pre className="text-xs text-gray-300 overflow-x-auto">
-                {JSON.stringify(request, null, 2)}
-              </pre>
-            </div>
-            <form action={`${authServerUrl}/authorize`} method="post">
-              <input type="hidden" name="client_id" value="devops-bot" />
-              <input type="hidden" name="request_uri" value={response.request_uri!} />
-              <button
-                type="submit"
-                className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg"
-              >
-                🔗 Authorize Monitoring Access
-              </button>
-            </form>
-          </div>
-        )
-      );
-    } catch (e) {
-      return this.renderError(e);
-    }
-  }
-
   // OAuth callback - returns JSON for API logger
   public async callback(code, code_verifier, redirect_uri) {
     try {
@@ -390,24 +249,6 @@ export default class Service extends cds.ApplicationService {
     }
   }
 
-  // Section UIs - these would render grant-aware interfaces
-  // Placeholder implementations for now
-  
-  public async analyze(grant_id: string) {
-    // TODO: Check grant, render UI or disabled state
-    return "analyze UI";
-  }
-
-  public async deploy(grant_id: string) {
-    // TODO: Check grant, render UI or disabled state
-    return "deploy UI";
-  }
-
-  public async monitor(grant_id: string) {
-    // TODO: Check grant, render UI or disabled state
-    return "monitor UI";
-  }
-
   // Helper methods
   private async getAuthServerUrl(): Promise<string> {
     return (
@@ -417,7 +258,7 @@ export default class Service extends cds.ApplicationService {
     );
   }
 
-  private renderError(e: any) {
+  public renderError(e: any) {
     const error = e as { message: string };
     return cds.context?.http?.res.status(500).send(
       renderToString(
@@ -426,6 +267,14 @@ export default class Service extends cds.ApplicationService {
           <p>{error.message}</p>
         </div>
       )
+    );
+  }
+
+  public async getAuthServerUrl(): Promise<string> {
+    return (
+      (await cds.connect.to(AuthorizationService).then((service: any) => {
+        return service.baseUrl;
+      })) || "/oauth-server"
     );
   }
 }
