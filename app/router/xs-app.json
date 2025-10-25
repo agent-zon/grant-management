@@ -1,16 +1,17 @@
 {
+  "welcomeFile": "./api-docs/index.html",
   "routes": [
     {
-      "source": "^/resources/openapi/(.*)$",
-      "target": "/$1",
-      "localDir": "./resources/openapi",
+      "source": "^/api-docs$",
+      "target": "/index.html",
+      "localDir": "./api-docs",
       "csrfProtection": false,
       "authenticationType": "none"
     },
     {
-      "source": "^/api-docs(.*)$",
-      "target": "/api-docs$1",
-      "destination": "user-portal",
+      "source": "^/api-docs/(.*)$",
+      "target": "/$1",
+      "localDir": "./api-docs",
       "csrfProtection": false,
       "authenticationType": "none"
     },

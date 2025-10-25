@@ -1,24 +1,26 @@
-using com.sap.agent.grants as grants from '../db/grants.cds';
+namespace sap.scai.grants;
 
+using sap.scai.grants as grants from '../../db/grants.cds';
 @path: '/oauth-server'
 @impl: './authorization-service.tsx'
 @protocol: 'rest' 
-service AuthorizationService {   
+@title: 'Authorization Server API'
+@Core.Description: 'OAuth 2.0 endpoints and metadata'
+@Core.LongDescription: 'Authorization Server endpoints for authorization, PAR, and token exchange with Rich Authorization Requests (RAR) support and grant_id propagation.'
+@OpenAPI.externalDocs: { description: 'Playground', url: '/demo/index' }
+service AuthorizationService {
+     @cds. redirection.target
     entity AuthorizationRequests as projection on grants.AuthorizationRequests;
-    entity Grants as projection on grants.Grants {
-        *
-    };
- 
-
-    @requires: ['authenticated-user','system-user']
+    @requires: ['authenticated-user', 'system-user'] 
     entity Consents as projection on grants.Consents;
+ 
     
     @requires: ['authenticated-user']
     // OAuth authorize endpoint with Rich Authorization Requests support
     action authorize(
         request_uri: String,
-        client_id: String,
-
+        client_id: String
+ 
     ) returns String;
 
     // PAR (Pushed Authorization Request) endpoint with Rich Authorization Requests support
@@ -69,4 +71,4 @@ service AuthorizationService {
         code_challenge_methods_supported: String;
     }; 
 }   
- 
+

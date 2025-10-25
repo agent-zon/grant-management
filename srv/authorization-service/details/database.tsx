@@ -1,4 +1,4 @@
-import { DatabaseAuthorizationDetailRequest } from '#cds-models/com/sap/agent/grants';
+import { DatabaseAuthorizationDetailRequest } from '#cds-models/sap/scai/grants';
 import React from 'react';
 import type { AuthorizationDetailProps } from './types.tsx';
 

@@ -1,6 +1,6 @@
 import cds from "@sap/cds";
-import type { GrantsManagementService } from "../grant-management.tsx";
-import { Grants } from "#cds-models/GrantsManagementService";
+import type { GrantsManagementService } from "./grant-management.tsx";
+import { Grants } from "#cds-models/sap/scai/grants/GrantsManagementService";
 
 export async function DELETE(this: GrantsManagementService, req: cds.Request) {
   const grant = await this.upsert({

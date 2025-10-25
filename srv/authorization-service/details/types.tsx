@@ -1,7 +1,7 @@
 import type {
   RARClaim,
   AuthorizationDetailRequest,
-} from "#cds-models/com/sap/agent/grants";
+} from "#cds-models/sap/scai/grants";
 
 export type AuthorizationDetailProps = AuthorizationDetailRequest & {
   index: number;

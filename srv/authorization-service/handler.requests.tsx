@@ -1,7 +1,7 @@
 import cds from "@sap/cds";
 import { ulid } from "ulid";
-import type { AuthorizationService } from "../authorization-service.tsx";
-import { AuthorizationRequests } from "#cds-models/AuthorizationService";
+import type { AuthorizationService } from "./authorization-service.tsx";
+import { AuthorizationRequests } from "#cds-models/sap/scai/grants/AuthorizationService";
 
 export default async function push(
   this: AuthorizationService,
@@ -20,7 +20,6 @@ export default async function push(
   // Generate or use existing grant ID
   const grantId = req.data.grant_id || `gnt_${ulid()}`;
   console.log("🔑 Grant ID for request:", grantId);
-
 
   // Create authorization request linked to grant
   const { ID } = await this.insert({

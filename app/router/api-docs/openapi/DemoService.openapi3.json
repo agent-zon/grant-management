@@ -1,13 +1,13 @@
 {
   "openapi": "3.0.2",
   "info": {
-    "title": "Use @title: '...' on your CDS service to provide a meaningful title.",
-    "description": "Use @Core.LongDescription: '...' on your CDS service to provide a meaningful description.",
+    "title": "Demo Service",
+    "description": "Provides interactive demo flows and helper HTML to showcase grant flows, events, and integrations. Visit [Playground](/demo/index) .",
     "version": ""
   },
   "x-sap-api-type": "ODATAV4",
   "x-odata-version": "4.01",
-  "x-sap-shortText": "Use @Core.Description: '...' on your CDS service to provide a meaningful short text.",
+  "x-sap-shortText": "Demonstration endpoints and UI helpers",
   "servers": [
     {
       "url": "/demo"
