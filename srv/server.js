@@ -100,88 +100,30 @@ cds.on("bootstrap", (app) => {
     next();
   });
 
-  // Early JSON aggregator for single Grant GETs to avoid UI pipeline/nulls
-  app.use(async (req, res, next) => {
-    try {
-      if (
-        req.method === 'GET' &&
-        req.path.startsWith("/grants-management/Grants(") &&
-        (req.get('accept') || '').includes('application/json')
-      ) {
-        const match = req.path.match(/^\/grants-management\/Grants\('([^']+)'\)$/);
-        const id = match?.[1];
-        if (!id) return next();
-        console.log("[AGG GET] JSON grant fetch for id:", id);
 
-        const grantRow = await cds.run(
-          cds.ql.SELECT.one.from('sap.scai.grants.Grants').where({ id })
-        );
-        if (grantRow) {
-          console.log("[AGG GET] Found Grants row");
-          return res.json(grantRow);
-        }
 
-        const consents = await cds.run(
-          cds.ql.SELECT.from('sap.scai.grants.Consents').where({ grant_id: id })
-        );
-        const aggregatedScope = (consents || [])
-          .map((c) => c.scope)
-          .filter(Boolean)
-          .join(' ')
-          .split(/\s+/)
-          .filter((v, i, a) => v && a.indexOf(v) === i)
-          .join(' ');
-
-        const latestReq = await cds.run(
-          cds.ql.SELECT.one
-            .from('sap.scai.grants.AuthorizationRequests')
-            .where({ grant_id: id })
-            .orderBy('createdAt desc')
-        );
-
-        const payload = {
-          id,
-          client_id: latestReq?.client_id,
-          actor: latestReq?.requested_actor,
-          status: 'active',
-          scope: aggregatedScope,
-        };
-        console.log("[AGG GET] Synthesized grant payload:", payload);
-        return res.json(payload);
-      }
-      next();
-    } catch (e) {
-      next(e);
+  // Middleware to remove null values from JSON responses. TODO: should be configurable
+  app.use((req, res, next) => {
+    next();
+    if (req.accepts("json") && res.body) {
+        console.log("[MIDDLEWARE] Response JSON after null removal:");
+        res.body = removeNulls(res.body);;
     }
-  });
-
-  // Normalize consent creation payloads before CDS validation
-  app.use('/oauth-server/Consents', async (req, _res, next) => {
-    try {
-      if (req.method === 'POST' && req.body && typeof req.body === 'object') {
-        const body = req.body;
-        // If grant_id is still an object (e.g., Promise serialized to {}), resolve via request_ID
-        if ((!body.grant_id || typeof body.grant_id !== 'string') && body.request_ID) {
-          try {
-            const authReq = await cds.run(
-              cds.ql.SELECT.from('sap.scai.grants.AuthorizationService.AuthorizationRequests')
-                .where({ ID: body.request_ID })
-            );
-            if (authReq && authReq[0]?.grant_id) {
-              body.grant_id = authReq[0].grant_id;
-            }
-          } catch (e) {
-            // ignore, let CDS validation handle if still missing
+    function removeNulls(body) {
+      if (Array.isArray(body)) {
+        return body.map(item => removeNulls(item));
+      } else if (body && typeof body === 'object') {
+        const newObj = {};
+        for (const key in body) {
+          if (body[key] !== null) {
+            newObj[key] = removeNulls(body[key]);
           }
         }
-        // Ensure request association is set from request_ID
-        if (body.request_ID && !body.request) {
-          body.request = { ID: body.request_ID };
-        }
+        return newObj;
       }
-    } finally {
-      next();
+      return body;
     }
+
   });
 
   // Add usage tracking middleware for grant usage monitoring
@@ -198,6 +140,7 @@ cds.on("bootstrap", (app) => {
     })
   );
 
+  
   // Add global error handler to catch all errors and prevent service crashes
   app.use((err, req, res, next) => {
     console.error("[ERROR HANDLER]", {
@@ -262,68 +205,8 @@ cds.on("bootstrap", (app) => {
 
     // Fallback plain text response
     res.status(statusCode).send(`Error ${statusCode}: ${errorMessage}`);
-  });
-
-  // Allow DELETE on OData entity without CSRF for tests: /grants-management/Grants('ID')
-  app.delete(/^\/grants-management\/Grants\('([^']+)'\)$/, async (req, res, next) => {
-    try {
-      const id = req.params[0];
-      if (!id) return next();
-      await cds.run(
-        cds.ql.UPDATE('sap.scai.grants.Grants').set({
-          revoked_by: req.user?.id || 'system',
-          revoked_at: new Date().toISOString(),
-          status: 'revoked',
-        }).where({ id })
-      );
-      res.status(204).send();
-    } catch (e) {
-      next(e);
-    }
-  });
-
-  // JSON GET for single grant: aggregates from Grants/Consents/AuthorizationRequests for API callers
-  app.get(/^\/grants-management\/Grants\('([^']+)'\)$/, async (req, res, next) => {
-    try {
-      if (req.accepts('html')) return next();
-      const id = req.params[0];
-      // Prefer direct Grants row
-      const grantRow = await cds.run(
-        cds.ql.SELECT.one.from('sap.scai.grants.Grants').where({ id })
-      );
-      if (grantRow) return res.json(grantRow);
-
-      // Aggregate from Consents
-      const consents = await cds.run(
-        cds.ql.SELECT.from('sap.scai.grants.Consents').where({ grant_id: id })
-      );
-      const aggregatedScope = (consents || [])
-        .map((c) => c.scope)
-        .filter(Boolean)
-        .join(' ')
-        .split(/\s+/)
-        .filter((v, i, a) => v && a.indexOf(v) === i)
-        .join(' ');
-
-      // Enrich with client/actor from latest AuthorizationRequest
-      const authReq = await cds.run(
-        cds.ql.SELECT.one
-          .from('sap.scai.grants.AuthorizationRequests')
-          .where({ grant_id: id })
-          .orderBy('createdAt desc')
-      );
-
-      return res.json({
-        id,
-        client_id: authReq?.client_id,
-        actor: authReq?.requested_actor,
-        status: 'active',
-        scope: aggregatedScope,
-      });
-    } catch (e) {
-      next(e);
-    }
-  });
+  }); 
+   
 });
 
 // cds.serve(ConsentService).at("/consent").in(app);

@@ -4,8 +4,9 @@ import type { AuthorizationService } from "./authorization-service.tsx";
 // Avoid calling GrantsManagementService within this HTTP request to prevent UI rendering side-effects.
 
 import {
+  AuthorizationDetail,
   AuthorizationRequest,
-  AuthorizationRequests,
+  AuthorizationRequests, Grants,
 } from "#cds-models/sap/scai/grants/AuthorizationService";
 
 export default async function token(
@@ -25,7 +26,7 @@ export default async function token(
   
   // Read grant directly from DB model to avoid triggering UI GET handlers
   const grantRecord = await cds.run(
-    cds.ql.SELECT.one.from("sap.scai.grants.Grants").where({ id: grant_id })
+    cds.ql.SELECT.one.from(Grants).where({ id: grant_id })
   );
   if (!grantRecord) return req.error(400, "invalid_grant");
   const scope = grantRecord.scope || "";
@@ -33,7 +34,7 @@ export default async function token(
 
   // Fetch authorization details from DB by consent foreign key
   const authorization_details = await cds.run(
-    cds.ql.SELECT.from("sap.scai.grants.AuthorizationDetail").where({ consent_grant_id: grant_id })
+    cds.ql.SELECT.from(AuthorizationDetail).where({ consent_grant_id: grant_id })
   );
 
   console.log("token response", {
