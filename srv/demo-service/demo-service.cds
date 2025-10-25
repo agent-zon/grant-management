@@ -10,8 +10,6 @@
 service DemoService {
     function navbar(grant_id: String, event: String, step: Integer) returns String;
     
-    function main() returns String; 
-    
     function index() returns String;
     
     @method: [PUT, POST, GET] 
