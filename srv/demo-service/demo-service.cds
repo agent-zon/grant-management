@@ -8,24 +8,29 @@
 @Core.LongDescription: 'Provides interactive demo flows and helper HTML to showcase grant flows, events, and integrations.'
 @OpenAPI.externalDocs: { description: 'Playground', url: '/demo/index' }
 service DemoService {
-    @method: [PUT, POST, GET]
-    function request(config: String) returns String;
-     
-    function navbar(grant_id: String, event: String) returns String;
+    function navbar(grant_id: String, event: String, step: Integer) returns String;
     
     function main() returns String; 
     
     function index() returns String;
     
     @method: [PUT, POST, GET] 
-    function callback(code: String, code_verifier: String, redirect_uri: String) returns String;
+    function callback(code: String, code_verifier: String, redirect_uri: String, step: Integer) returns String;
    
     function reset() returns String;
 
-    function elevate(grant_id: String) returns String;
-
     function event_handlers() returns String;
 
-    function send_event(type: String, grant_id: String) returns String;
+    function send_event(type: String, grant_id: String, step: Integer) returns String;
+    
+    // Permission step endpoints
+    @method: [GET, POST]
+    function analysis_request(grant_id: String) returns String;
+    
+    @method: [GET, POST]
+    function deployment_request(grant_id: String) returns String;
+    
+    @method: [GET, POST]
+    function subscription_request(grant_id: String) returns String;
 } 
     

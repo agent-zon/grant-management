@@ -1,0 +1,37 @@
+# Changelog
+
+## 2025-10-25 - Task Started
+- Created task structure
+- Analyzed existing implementation
+- Planning new endpoint-driven architecture
+- Identified pattern from grant-management handlers to follow
+
+## 2025-10-25 - Implementation Complete
+- Updated demo-service.cds with new endpoints:
+  - `analysis_request` - for analysis permissions (step 1)
+  - `deployment_request` - for deployment permissions (step 2)
+  - `subscription_request` - for subscription permissions (step 3)
+- Created handler files following grant-management pattern:
+  - `handler.analysis-request.tsx` - handles analysis permission requests
+  - `handler.deployment-request.tsx` - handles deployment permission requests
+  - `handler.subscription-request.tsx` - handles subscription permission requests
+- Refactored demo-service.tsx:
+  - Removed xstate dependency and state machine logic
+  - Simplified callback flow with step tracking
+  - Updated navbar to use step-based navigation
+  - Delegates to handler methods for each permission step
+- Removed permissions-elevation-machine.tsx file
+- Removed xstate dependency from package.json
+- Each step now:
+  - Has its own clear endpoint
+  - Creates appropriate authorization request
+  - Triggers next step via callback with step parameter
+  - Uses HTMX for navigation without custom JS
+
+## 2025-10-25 - Testing Complete
+- Verified all files are in place (4 .tsx files in demo-service)
+- No linter errors detected
+- Code follows established patterns from grant-management handlers
+- State machine complexity replaced with simple step-based flow
+- Successfully removed ~9KB xstate machine file
+- Package.json cleaned up (xstate removed)
