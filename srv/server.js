@@ -111,11 +111,15 @@ cds.on("bootstrap", (app) => {
         const match = req.path.match(/^\/grants-management\/Grants\('([^']+)'\)$/);
         const id = match?.[1];
         if (!id) return next();
+        console.log("[AGG GET] JSON grant fetch for id:", id);
 
         const grantRow = await cds.run(
           cds.ql.SELECT.one.from('sap.scai.grants.Grants').where({ id })
         );
-        if (grantRow) return res.json(grantRow);
+        if (grantRow) {
+          console.log("[AGG GET] Found Grants row");
+          return res.json(grantRow);
+        }
 
         const consents = await cds.run(
           cds.ql.SELECT.from('sap.scai.grants.Consents').where({ grant_id: id })
@@ -135,13 +139,15 @@ cds.on("bootstrap", (app) => {
             .orderBy('createdAt desc')
         );
 
-        return res.json({
+        const payload = {
           id,
           client_id: latestReq?.client_id,
           actor: latestReq?.requested_actor,
           status: 'active',
           scope: aggregatedScope,
-        });
+        };
+        console.log("[AGG GET] Synthesized grant payload:", payload);
+        return res.json(payload);
       }
       next();
     } catch (e) {
