@@ -1,7 +1,7 @@
   
 @path: '/demo/devops_bot' 
 @protocol: 'rest' 
-@impl: './demo-service-simple.tsx' 
+@impl: './demo-service.tsx' 
 @requires: ['authenticated-user','system-user']
 @title: 'DevOps Bot Demo'
 @Core.Description: 'Interactive DevOps agent demo with grant-based permissions'

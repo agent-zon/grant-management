@@ -1,7 +1,7 @@
 import cds from "@sap/cds";
 import { renderToString } from "react-dom/server";
 import React from "react";
-import type { DemoService } from "./demo-service-simple.tsx";
+import type { DemoService } from "./demo-service.tsx";
 
 interface GrantData {
   id: string;

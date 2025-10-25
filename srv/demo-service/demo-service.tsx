@@ -1,606 +1,281 @@
 import cds from "@sap/cds";
 import { renderToString } from "react-dom/server";
-import type {
-  AuthorizationDetailRequest,
-  AuthorizationDetail,
-} from "#cds-models/sap/scai/grants";
-import { htmlTemplate } from "../middleware/htmx.tsx";
 import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
 import React from "react";
+import { ulid } from "ulid";
 
 // Import handlers
-import * as AnalysisHandler from "./handler.analysis-request.tsx";
-import * as DeploymentHandler from "./handler.deployment-request.tsx";
-import * as SubscriptionHandler from "./handler.subscription-request.tsx";
-import * as RequestScopeHandler from "./handler.request-scope.tsx";
-
-// Import scope configuration
-import { SCOPE_CONFIGS, SCOPE_ORDER, parseGrantedScopes, getScopeStatus } from "./scope-config.tsx";
-
-interface AuthorizationRequestButtonProps {
-  client_id?: string;
-  redirect_uri?: string;
-  scope?: string | null;
-  requested_actor?: string;
-  request_uri?: string;
-  expires_in?: number;
-  authorization_details?: any[];
-  authServerUrl?: string;
-}
-
-interface AuthorizationParamsProps {
-  client_id?: string;
-  redirect_uri?: string;
-  scope?: string | null;
-  requested_actor?: string;
-  authorization_details?: AuthorizationDetailRequest;
-  grant_id?: string;
-}
-
-function AuthorizationParams({
-  authorization_details,
-  client_id,
-  redirect_uri,
-  scope,
-  requested_actor,
-}: AuthorizationParamsProps) {
-  return (
-    <div className="space-y-6">
-      {/* Request Parameters */}
-      <div className="bg-gray-700/50 rounded-xl p-6 border border-gray-600">
-        <h4 className="text-lg font-medium text-gray-300 mb-4 flex items-center space-x-2">
-          <span>📋</span>
-          <span>Request Parameters</span>
-        </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-3">
-            <div>
-              <span className="text-sm text-gray-400 block mb-1">
-                Client Application
-              </span>
-              <span className="text-blue-400 font-medium">demo-client-app</span>
-            </div>
-            <div>
-              <span className="text-sm text-gray-400 block mb-1">
-                Requesting Actor
-              </span>
-              <span className="text-purple-400 font-mono text-sm">
-                {requested_actor}
-              </span>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <div>
-              <span className="text-sm text-gray-400 block mb-1">
-                Requested Scope
-              </span>
-              <span className="text-white">{scope || "openid"}</span>
-            </div>
-            <div>
-              <span className="text-sm text-gray-400 block mb-1">
-                Resource Types
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {Array.isArray(authorization_details) ? (
-                  [
-                    ...new Set(
-                      authorization_details.map((detail) => detail.type)
-                    ),
-                  ].map((type, idx) => (
-                    <span
-                      key={idx}
-                      className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded border border-blue-500/30"
-                    >
-                      {type}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-white text-sm">
-                    {JSON.stringify(authorization_details, null, 2)}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Authorization Details */}
-      <div className="bg-gray-700/50 rounded-xl p-6 border border-gray-600">
-        <h4 className="text-lg font-medium text-gray-300 mb-4 flex items-center space-x-2">
-          <span>🔐</span>
-          <span>Access Permissions</span>
-        </h4>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {Array.isArray(authorization_details)
-            ? (() => {
-                // Group authorization details by type
-                const grouped = authorization_details.reduce(
-                  (acc, detail) => {
-                    const detailType = detail.type;
-                    if (detailType && !acc[detailType]) acc[detailType] = [];
-                    if (detailType) acc[detailType].push(detail);
-                    return acc;
-                  },
-                  {} as Record<string, AuthorizationDetailRequest[]>
-                ) as Record<string, (AuthorizationDetailRequest & any)[]>;
-
-                return Object.entries(grouped).map(([type, details]) => (
-                  <div
-                    key={type}
-                    className="bg-gray-600/30 rounded-xl p-5 border border-gray-500/50 h-fit"
-                  >
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-lg flex items-center justify-center">
-                        <span className="text-xl">
-                          {type === "mcp"
-                            ? "🔧"
-                            : type === "api"
-                              ? "🌐"
-                              : type === "fs"
-                                ? "📁"
-                                : type === "database"
-                                  ? "🗄️"
-                                  : "⚙️"}
-                        </span>
-                      </div>
-                      <div>
-                        <h5 className="text-white font-semibold capitalize">
-                          {type} Access
-                        </h5>
-                        <p className="text-xs text-gray-400">
-                          {details.length}{" "}
-                          {details.length === 1 ? "permission" : "permissions"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      {details.map((detail, index: number) => (
-                        <div
-                          key={index}
-                          className="bg-gray-700/40 rounded-lg p-4 border-l-4 border-blue-400/60"
-                        >
-                          {type === "mcp" && (
-                            <div className="space-y-2">
-                              <div className="flex items-center space-x-3 mb-3">
-                                <span className="text-sm text-gray-400">
-                                  Server:
-                                </span>
-                                <span className="text-purple-400 font-mono">
-                                  {detail.server}
-                                </span>
-                                <span className="text-gray-500">•</span>
-                                <span className="text-blue-400 text-sm">
-                                  {detail.transport}
-                                </span>
-                              </div>
-                              {detail.tools && (
-                                <div>
-                                  <span className="text-sm text-gray-400 block mb-2">
-                                    Available Tools:
-                                  </span>
-                                  <div className="flex flex-wrap gap-2">
-                                    {Object.keys(detail.tools).map(
-                                      (tool, i) => (
-                                        <span
-                                          key={i}
-                                          className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded border border-green-500/30"
-                                        >
-                                          {tool}
-                                        </span>
-                                      )
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                              {detail.locations &&
-                                detail.locations.length > 0 && (
-                                  <div>
-                                    <span className="text-sm text-gray-400 block mb-2">
-                                      Locations:
-                                    </span>
-                                    <div className="flex flex-wrap gap-2">
-                                      {detail.locations.map(
-                                        (location: string, i: number) => (
-                                          <span
-                                            key={i}
-                                            className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded border border-blue-500/30"
-                                          >
-                                            {location}
-                                          </span>
-                                        )
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                            </div>
-                          )}
-
-                          {type === "api" && (
-                            <div className="space-y-2">
-                              {detail.urls && (
-                                <div>
-                                  <span className="text-sm text-gray-400 block mb-2">
-                                    API Endpoints:
-                                  </span>
-                                  <div className="space-y-2">
-                                    {detail.urls.map(
-                                      (url: string, i: number) => (
-                                        <div
-                                          key={i}
-                                          className="text-blue-300 text-sm font-mono bg-gray-800/50 rounded-lg px-3 py-2 border border-blue-500/20"
-                                        >
-                                          {url}
-                                        </div>
-                                      )
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                              {detail.protocols && (
-                                <div>
-                                  <span className="text-sm text-gray-400 block mb-2">
-                                    Protocols:
-                                  </span>
-                                  <div className="flex flex-wrap gap-2">
-                                    {detail.protocols.map(
-                                      (protocol: string, i: number) => (
-                                        <span
-                                          key={i}
-                                          className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded border border-green-500/30"
-                                        >
-                                          {protocol}
-                                        </span>
-                                      )
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {type === "fs" && (
-                            <div className="space-y-2">
-                              {detail.roots && (
-                                <div>
-                                  <span className="text-sm text-gray-400 block mb-2">
-                                    Root Directories:
-                                  </span>
-                                  <div className="space-y-2">
-                                    {detail.roots.map(
-                                      (root: string, i: number) => (
-                                        <div
-                                          key={i}
-                                          className="text-yellow-300 text-sm font-mono bg-gray-800/50 rounded-lg px-3 py-2 border border-yellow-500/20"
-                                        >
-                                          {root}
-                                        </div>
-                                      )
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                              <div>
-                                <span className="text-sm text-gray-400 block mb-2">
-                                  File Permissions:
-                                </span>
-                                <div className="flex flex-wrap gap-2">
-                                  {detail.permissions_read && (
-                                    <span className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded border border-green-500/30">
-                                      read
-                                    </span>
-                                  )}
-                                  {detail.permissions_write && (
-                                    <span className="px-2 py-1 bg-yellow-500/20 text-yellow-300 text-xs rounded border border-yellow-500/30">
-                                      write
-                                    </span>
-                                  )}
-                                  {detail.permissions_execute && (
-                                    <span className="px-2 py-1 bg-red-500/20 text-red-300 text-xs rounded border border-red-500/30">
-                                      execute
-                                    </span>
-                                  )}
-                                  {detail.permissions_list && (
-                                    <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded border border-blue-500/30">
-                                      list
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ));
-              })()
-            : null}
-        </div>
-      </div>
-    </div>
-  );
-}
+import * as ShellHandler from "./handler.shell.tsx";
+import * as GrantTemplateHandler from "./handler.grant-template.tsx";
+import * as AnalyzeHandler from "./handler.analyze.tsx";
+import * as DeployHandler from "./handler.deploy.tsx";
+import * as MonitorHandler from "./handler.monitor.tsx";
 
 export default class Service extends cds.ApplicationService {
-
-  public async navbar(grant_id, granted_scopes = "", requesting_scope = "") {
-    console.log("navbar", { grant_id, granted_scopes, requesting_scope });
-
-    // Parse granted scopes from space-separated string
-    const grantedScopesSet = parseGrantedScopes(granted_scopes);
-    
-    const activeClass = requesting_scope
-      ? "bg-blue-600 animate-pulse animate-infinite animate-duration-1000 animate-ease-linear"
-      : "bg-blue-500";
-
-    const colorMap = {
-      blue: { bg: "bg-blue-400", hover: "hover:bg-blue-500", text: "text-blue-400" },
-      yellow: { bg: "bg-yellow-400", hover: "hover:bg-yellow-500", text: "text-yellow-400" },
-      red: { bg: "bg-red-400", hover: "hover:bg-red-500", text: "text-red-400" },
-    };
-        
-    cds.context?.http?.res.setHeader("Content-Type", "text/html");
-    cds.context?.http?.res.send(
-      renderToString(
-        <div
-          hx-get="/demo/navbar"
-          hx-trigger="grant-updated from:body, grant-requested from:body"
-          hx-swap="outerHTML"
-        >
-          <div className="flex items-center space-x-4">
-            {SCOPE_ORDER.map((scopeName, index) => {
-              const config = SCOPE_CONFIGS[scopeName];
-              const status = getScopeStatus(scopeName, grantedScopesSet, requesting_scope);
-              const colors = colorMap[config.color];
-              
-              return (
-                <React.Fragment key={scopeName}>
-                  {index > 0 && <div className="w-12 h-px bg-gray-600"></div>}
-                  
-                  <div className="flex items-center space-x-2">
-                    <form
-                      action={`/demo/request_scope?scope_name=${scopeName}&grant_id=${grant_id || ""}`}
-                      method="get"
-                      target="authorization-iframe"
-                      className="inline"
-                    >
-                      <button
-                        type="submit"
-                        disabled={status === "granted"}
-                        className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg transition-all ${
-                          status === "granted"
-                            ? `${colors.bg} cursor-default`
-                            : status === "requesting"
-                              ? activeClass
-                              : `bg-gray-600 ${colors.hover} cursor-pointer`
-                        }`}
-                        title={
-                          status === "granted"
-                            ? `${config.displayName} already granted`
-                            : `Request ${config.displayName} permissions`
-                        }
-                      >
-                        {config.icon}
-                      </button>
-                    </form>
-                    <div>
-                      <div
-                        className={`text-sm font-medium ${
-                          status === "granted" ? colors.text : "text-gray-400"
-                        }`}
-                      >
-                        {config.displayName}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {status === "granted"
-                          ? "✓ Granted"
-                          : status === "requesting"
-                            ? "⏳ Requesting..."
-                            : "Click to request"}
-                      </div>
-                    </div>
-                  </div>
-                </React.Fragment>
-              );
-            })}
-          </div>
-        </div>
-      )
-    );
+  
+  // Index - redirects to new grant
+  public async index() {
+    const grant_id = ulid();
+    cds.context?.http?.res.redirect(`/demo/devops_bot/${grant_id}/shell`);
   }
 
-  public async index() {
+  // Shell page - delegates to handler
+  public async shell(grant_id: string) {
+    return ShellHandler.GET.call(this, grant_id);
+  }
+
+  // Grant template - delegates to handler
+  public async grant_template(grant_id: string) {
+    return GrantTemplateHandler.GET.call(this, grant_id);
+  }
+
+  // Analyze request - delegates to handler
+  public async analyze_request(grant_id: string) {
+    return AnalyzeHandler.REQUEST.call(this, grant_id);
+  }
+
+  // Analyze section UI - delegates to handler
+  public async analyze(grant_id: string) {
+    return AnalyzeHandler.GET.call(this, grant_id);
+  }
+
+  // Deploy request - delegates to handler
+  public async deploy_request(grant_id: string) {
+    return DeployHandler.REQUEST.call(this, grant_id);
+  }
+
+  // Deploy section UI - delegates to handler
+  public async deploy(grant_id: string) {
+    return DeployHandler.GET.call(this, grant_id);
+  }
+
+  // Monitor request - delegates to handler
+  public async monitor_request(grant_id: string) {
+    return MonitorHandler.REQUEST.call(this, grant_id);
+  }
+
+  // Monitor section UI - delegates to handler
+  public async monitor(grant_id: string) {
+    return MonitorHandler.GET.call(this, grant_id);
+  }
+
+  // OAuth callback
+  public async callback(code, code_verifier, redirect_uri) {
     cds.context?.http?.res.setHeader("Content-Type", "text/html");
     cds.context?.http?.res.send(
       htmlTemplate(
         renderToString(
-          <body
-            className="bg-gray-950 text-white min-h-screen"
-            hx-ext="client-side-templates"
-          >
+          <body className="bg-gray-950 text-white min-h-screen">
             <div className="container mx-auto px-4 py-8">
               {/* Header */}
               <div className="text-center mb-8">
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-4">
-                  🔐 OAuth Grant Management Demo
+                  🤖 DevOps Bot
                 </h1>
-                <p className="text-gray-400 text-lg mb-6">
-                  Progressive agent authorization: Analysis → Deployment →
-                  Subscription Management
+                <p className="text-gray-400 text-lg mb-2">
+                  Grant ID: <code className="text-purple-400 font-mono">{grant_id}</code>
+                </p>
+                <p className="text-gray-500 text-sm">
+                  Progressive permissions demo
                 </p>
               </div>
-              
-              {/* Progress Steps */}
-              <div className="max-w-7xl mx-auto">
-                <div
-                  className="flex justify-center mb-8"
-                  id="navbar"
-                  hx-get="/demo/navbar"
-                  hx-trigger="load"
-                  hx-swap="innerHTML"
-                >
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left: Actions */}
+                <div className="space-y-4">
+                  <h2 className="text-xl font-bold text-white mb-4">Actions</h2>
+                  
+                  {/* Analyze */}
+                  <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <span className="text-3xl">📊</span>
+                      <div>
+                        <h3 className="text-lg font-bold text-white">Analyze</h3>
+                        <p className="text-sm text-gray-400">View metrics and logs</p>
+                      </div>
+                    </div>
+                    <button
+                      hx-get={`/demo/devops_bot/${grant_id}/requests/analyze`}
+                      hx-target="#content"
+                      className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                    >
+                      Request Analysis Access
+                    </button>
+                  </div>
+
+                  {/* Deploy */}
+                  <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <span className="text-3xl">🚀</span>
+                      <div>
+                        <h3 className="text-lg font-bold text-white">Deploy</h3>
+                        <p className="text-sm text-gray-400">Deploy to environments</p>
+                      </div>
+                    </div>
+                    <button
+                      hx-get={`/demo/devops_bot/${grant_id}/requests/deploy`}
+                      hx-target="#content"
+                      className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors"
+                    >
+                      Request Deployment Access
+                    </button>
+                  </div>
+
+                  {/* Monitor */}
+                  <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <span className="text-3xl">📈</span>
+                      <div>
+                        <h3 className="text-lg font-bold text-white">Monitor</h3>
+                        <p className="text-sm text-gray-400">View system health</p>
+                      </div>
+                    </div>
+                    <button
+                      hx-get={`/demo/devops_bot/${grant_id}/requests/monitor`}
+                      hx-target="#content"
+                      className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                    >
+                      Request Monitoring Access
+                    </button>
+                  </div>
                 </div>
 
-                <div className="space-y-6">
-                  <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6">
-                    <iframe
-                      id="authorization-iframe"
-                      name="authorization-iframe"
-                      className="w-full h-full min-h-screen"
-                      title="Authorization Screen"
-                      src="/demo/request_scope?scope_name=analysis"
-                      aria-label="Interactive consent screen for authorization"
-                    />
+                {/* Right: Grant Details & Content */}
+                <div className="space-y-4">
+                  {/* Grant Details */}
+                  <div
+                    id="grant-details"
+                    hx-get={`/grants-management/Grants/${grant_id}`}
+                    hx-headers='{"Accept": "application/json"}'
+                    hx-trigger="load, grant-updated from:body"
+                    hx-swap="innerHTML"
+                    className="bg-gray-800 rounded-lg p-6 border border-gray-700"
+                  >
+                    <div className="text-center text-gray-400">Loading grant details...</div>
+                  </div>
+
+                  {/* Dynamic Content Area */}
+                  <div
+                    id="content"
+                    className="bg-gray-800 rounded-lg p-6 border border-gray-700 min-h-[400px]"
+                  >
+                    <div className="text-center text-gray-400">
+                      👈 Click an action to get started
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-            <script src="/demo/event_handlers"></script>
+
+            {/* Mustache template for grant details */}
+            <script id="grant-template" type="text/x-mustache-template">
+              {`<div>
+                <h3 class="text-lg font-bold text-white mb-3">Grant Details</h3>
+                <div class="space-y-2 text-sm">
+                  <div class="flex justify-between">
+                    <span class="text-gray-400">Status:</span>
+                    <span class="text-{{#status}}{{.}}{{/status}}">{{status}}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-400">Scope:</span>
+                    <code class="text-blue-400">{{scope}}</code>
+                  </div>
+                  {{#createdAt}}
+                  <div class="flex justify-between">
+                    <span class="text-gray-400">Created:</span>
+                    <span class="text-gray-300">{{createdAt}}</span>
+                  </div>
+                  {{/createdAt}}
+                </div>
+                <a href="/grants-management/Grants/{{id}}" class="inline-block mt-4 text-blue-400 hover:text-blue-300 text-sm">
+                  View Full Grant →
+                </a>
+              </div>`}
+            </script>
+
+            {/* HTMX client-side template extension */}
+            <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/client-side-templates.js"></script>
+            <script src="https://unpkg.com/mustache@latest"></script>
+            <script>
+              {`// Configure HTMX to use Mustache for grant details
+              document.body.addEventListener('htmx:afterSettle', function(evt) {
+                if (evt.detail.target.id === 'grant-details') {
+                  const template = document.getElementById('grant-template').innerHTML;
+                  const data = JSON.parse(evt.detail.xhr.responseText);
+                  const rendered = Mustache.render(template, data);
+                  evt.detail.target.innerHTML = rendered;
+                }
+              });`}
+            </script>
           </body>
         )
       )
     );
   }
 
+  // OAuth callback - returns JSON for API logger
   public async callback(code, code_verifier, redirect_uri) {
-    const authorizationService = await cds.connect.to(AuthorizationService);
-    const tokenResponse: any = await authorizationService.token({
-      grant_type: "authorization_code",
-      client_id: "demo-client-app",
-      code: code,
-      code_verifier: code_verifier,
-      redirect_uri: redirect_uri,
-    });
-    
-    const { access_token, token_type, expires_in, grant_id, error, scope, ...rest } =
-      tokenResponse;
+    try {
+      const authorizationService = await cds.connect.to(AuthorizationService);
+      const tokenResponse: any = await authorizationService.token({
+        grant_type: "authorization_code",
+        client_id: "devops-bot",
+        code,
+        code_verifier,
+        redirect_uri,
+      });
 
-    if (error) {
+      // Return JSON formatted response
+      cds.context?.http?.res.setHeader("Content-Type", "text/html");
+      cds.context?.http?.res.setHeader("HX-Trigger", "grant-updated");
+      
       return cds.context?.http?.res.send(
         renderToString(
-          <div>
-            <div>Authorization failed: {error}</div>
-            <script
-              async
-              defer
-              src={`/demo/send_event?grant_id=${grant_id}&type=grant-failed`}
-            ></script>
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold text-green-400">✅ Token Response</h3>
+            <div className="bg-gray-900 rounded p-4">
+              <pre className="text-xs text-green-300 overflow-x-auto">
+                {JSON.stringify(tokenResponse, null, 2)}
+              </pre>
+            </div>
+            <div className="text-sm text-gray-400">
+              Grant has been updated. View full details in the Grant Details panel.
+            </div>
           </div>
         )
       );
+    } catch (e) {
+      return this.renderError(e);
     }
+  }
 
-    // Parse granted scopes from token response
-    const grantedScopes = scope || "";
-    console.log("✅ Callback - Granted scopes:", grantedScopes);
+  // Helper methods
+  private async getAuthServerUrl(): Promise<string> {
+    return (
+      (await cds.connect.to(AuthorizationService).then((service: any) => {
+        return service.baseUrl;
+      })) || "/oauth-server"
+    );
+  }
 
-    cds.context?.http?.res.setHeader("HX-Trigger", "grant-updated");
-    cds.context?.http?.res.setHeader("Content-Type", "text/html");
-
-    return cds.context?.http?.res?.status(201).send(`<body>${renderToString(
-      <div>
-        {/* Full Width Layout */}
-        <div className="space-y-6">
-          {/* Authorization Details - Full Width */}
-          <AuthorizationParams
-            authorization_details={(rest as any).authorization_details}
-            client_id={(rest as any).client_id}
-            redirect_uri={(rest as any).redirect_uri}
-            scope={rest.scope}
-            requested_actor={rest.actor || (rest as any).requested_actor}
-            grant_id={grant_id}
-          />
-
-          {/* JSON Response - Full Width */}
-          <div className="bg-gray-700/30 rounded-xl p-6 border border-gray-600">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-300">
-                🔐 Token Response
-              </h3>
-              <span className="text-xs text-gray-400 bg-gray-600/50 px-2 py-1 rounded">
-                JSON
-              </span>
-            </div>
-            <div className="text-sm font-mono overflow-y-auto scroll-smooth max-h-96 bg-gray-800/50 rounded-lg p-4">
-              <pre className="text-gray-300 whitespace-pre-wrap">
-                {JSON.stringify(
-                  {
-                    access_token,
-                    token_type,
-                    expires_in,
-                    grant_id,
-                    ...rest,
-                  },
-                  null,
-                  2
-                )}
-              </pre>
-            </div>
-          </div>
+  public renderError(e: any) {
+    const error = e as { message: string };
+    return cds.context?.http?.res.status(500).send(
+      renderToString(
+        <div className="text-red-400">
+          <h3 className="font-bold">Error</h3>
+          <p>{error.message}</p>
         </div>
-      </div>
-    )} <script async defer src="/demo/send_event?grant_id=${grant_id}&granted_scopes=${encodeURIComponent(grantedScopes)}&type=grant-requested">
-      </script></body>
-    `);
+      )
+    );
   }
 
-  public async event_handlers(req) {
-    cds.context?.http?.res.setHeader("Content-Type", "text/javascript");
-    cds.context?.http?.res.send(`
-      document.body.addEventListener('htmx:configRequest', function (evt) {
-        if (evt.detail.triggeringEvent && evt.detail.triggeringEvent.type.startsWith('grant-')) {
-          console.log('grant-', evt.detail.triggeringEvent.type);
-          const detail = evt.detail.triggeringEvent.detail;
-          evt.detail.parameters = { ...evt.detail.parameters, ...detail };
-        }
-      });
-    `);
-  }
-
-  public async send_event(grant_id, type, granted_scopes = "", requesting_scope = "") {
-    cds.context?.http?.res.setHeader("Content-Type", "text/javascript");
-    cds.context?.http?.res.send(`
-      
-        sendToParent();
-        document.onload = function() {
-            console.log('onload');
-          sendToParent();
-        };
-        function sendToParent() {
-            console.log('sendToParent', ${JSON.stringify({ grant_id, type, granted_scopes, requesting_scope })});
-            const event = new CustomEvent('${type || "grant-updated"}', {
-               bubbles: true,
-               detail: ${JSON.stringify({ grant_id, event: type, granted_scopes, requesting_scope })} ,
-            });
-            if(window.parent) {
-              window.parent.document.body.dispatchEvent(event);
-            }
-            else {
-              window.document.body.dispatchEvent(event);
-            }
-
-          }
-      `);
-  }
-
-  // Primary handler - scope-based request
-  public async request_scope(scope_name?: string, grant_id?: string) {
-    return RequestScopeHandler.GET.call(this, scope_name, grant_id);
-  }
-
-  // Legacy handler methods for backwards compatibility
-  public async analysis_request(grant_id?: string) {
-    return RequestScopeHandler.GET.call(this, "analysis", grant_id);
-  }
-
-  public async deployment_request(grant_id?: string) {
-    return RequestScopeHandler.GET.call(this, "deployment", grant_id);
-  }
-
-  public async subscription_request(grant_id?: string) {
-    return RequestScopeHandler.GET.call(this, "entitlements", grant_id);
+  public async getAuthServerUrl(): Promise<string> {
+    return (
+      (await cds.connect.to(AuthorizationService).then((service: any) => {
+        return service.baseUrl;
+      })) || "/oauth-server"
+    );
   }
 }
 

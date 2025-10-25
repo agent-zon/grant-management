@@ -2,7 +2,7 @@ import cds from "@sap/cds";
 import { renderToString } from "react-dom/server";
 import { htmlTemplate } from "../middleware/htmx.tsx";
 import React from "react";
-import type { DemoService } from "./demo-service-simple.tsx";
+import type { DemoService } from "./demo-service.tsx";
 
 export async function GET(this: DemoService, grant_id: string) {
   cds.context?.http?.res.setHeader("Content-Type", "text/html");
