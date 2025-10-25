@@ -12,6 +12,10 @@ import React from "react";
 import * as AnalysisHandler from "./handler.analysis-request.tsx";
 import * as DeploymentHandler from "./handler.deployment-request.tsx";
 import * as SubscriptionHandler from "./handler.subscription-request.tsx";
+import * as RequestScopeHandler from "./handler.request-scope.tsx";
+
+// Import scope configuration
+import { SCOPE_CONFIGS, SCOPE_ORDER, parseGrantedScopes, getScopeStatus } from "./scope-config.tsx";
 
 interface AuthorizationRequestButtonProps {
   client_id?: string;
@@ -321,16 +325,21 @@ function AuthorizationParams({
 
 export default class Service extends cds.ApplicationService {
 
-  public async navbar(grant_id, event, step = 0) {
-    console.log("navbar", grant_id, "step", step);
+  public async navbar(grant_id, granted_scopes = "", requesting_scope = "") {
+    console.log("navbar", { grant_id, granted_scopes, requesting_scope });
 
-    const currentStep = parseInt(step as any) || 0;
+    // Parse granted scopes from space-separated string
+    const grantedScopesSet = parseGrantedScopes(granted_scopes);
     
-    event = event || "grant-updated";
-    const activeClass =
-      event === "grant-requested"
-        ? "bg-blue-600 animate-pulse animate-infinite animate-duration-1000 animate-ease-linear"
-        : "bg-blue-500";
+    const activeClass = requesting_scope
+      ? "bg-blue-600 animate-pulse animate-infinite animate-duration-1000 animate-ease-linear"
+      : "bg-blue-500";
+
+    const colorMap = {
+      blue: { bg: "bg-blue-400", hover: "hover:bg-blue-500", text: "text-blue-400" },
+      yellow: { bg: "bg-yellow-400", hover: "hover:bg-yellow-500", text: "text-yellow-400" },
+      red: { bg: "bg-red-400", hover: "hover:bg-red-500", text: "text-red-400" },
+    };
         
     cds.context?.http?.res.setHeader("Content-Type", "text/html");
     cds.context?.http?.res.send(
@@ -340,83 +349,63 @@ export default class Service extends cds.ApplicationService {
           hx-trigger="grant-updated from:body, grant-requested from:body"
           hx-swap="outerHTML"
         >
-          <form
-            className="flex items-center space-x-4"
-            action={`/demo/deployment_request?grant_id=${grant_id}`}
-            method="get"
-            target="authorization-iframe"
-          >
-            <input type="hidden" name="grant_id" value={grant_id} />
-            
-            {/* Step 1: Analysis */}
-            <div className="flex items-center space-x-2">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                  currentStep === 0
-                    ? activeClass
-                    : currentStep > 0
-                      ? "bg-blue-400"
-                      : "bg-gray-600"
-                }`}
-              >
-                1
-              </div>
-              <span
-                className={`text-sm ${currentStep >= 1 ? "text-blue-400" : "text-gray-400"}`}
-              >
-                {currentStep === 0 ? "Want to Analyze" : "Can Analyze"}
-              </span>
-            </div>
-            
-            <div className="w-12 h-px bg-gray-600"></div>
-            
-            {/* Step 2: Deployment */}
-            <div className="flex items-center space-x-2">
-              <button
-                type="submit"
-                disabled={currentStep < 1}
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                  currentStep === 1
-                    ? activeClass
-                    : currentStep > 1
-                      ? "bg-blue-400"
-                      : "bg-gray-600"
-                }`}
-              >
-                2
-              </button>
-              <span
-                className={`text-sm ${currentStep >= 2 ? "text-blue-400" : "text-gray-400"}`}
-              >
-                {currentStep === 1 ? "Want to Deploy" : currentStep > 1 ? "Can Deploy" : "Deployment"}
-              </span>
-            </div>
-            
-            <div className="w-12 h-px bg-gray-600"></div>
-            
-            {/* Step 3: Subscription */}
-            <div className="flex items-center space-x-2">
-              <button
-                type="submit"
-                disabled={currentStep < 2}
-                formAction={`/demo/subscription_request?grant_id=${grant_id}`}
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                  currentStep === 2
-                    ? activeClass
-                    : currentStep > 2
-                      ? "bg-blue-400"
-                      : "bg-gray-600"
-                }`}
-              >
-                3
-              </button>
-              <span
-                className={`text-sm ${currentStep >= 3 ? "text-blue-400" : "text-gray-400"}`}
-              >
-                {currentStep === 2 ? "Want Subscriptions" : currentStep > 2 ? "Can Manage Subscriptions" : "Subscription Management"}
-              </span>
-            </div>
-          </form>
+          <div className="flex items-center space-x-4">
+            {SCOPE_ORDER.map((scopeName, index) => {
+              const config = SCOPE_CONFIGS[scopeName];
+              const status = getScopeStatus(scopeName, grantedScopesSet, requesting_scope);
+              const colors = colorMap[config.color];
+              
+              return (
+                <React.Fragment key={scopeName}>
+                  {index > 0 && <div className="w-12 h-px bg-gray-600"></div>}
+                  
+                  <div className="flex items-center space-x-2">
+                    <form
+                      action={`/demo/request_scope?scope_name=${scopeName}&grant_id=${grant_id || ""}`}
+                      method="get"
+                      target="authorization-iframe"
+                      className="inline"
+                    >
+                      <button
+                        type="submit"
+                        disabled={status === "granted"}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg transition-all ${
+                          status === "granted"
+                            ? `${colors.bg} cursor-default`
+                            : status === "requesting"
+                              ? activeClass
+                              : `bg-gray-600 ${colors.hover} cursor-pointer`
+                        }`}
+                        title={
+                          status === "granted"
+                            ? `${config.displayName} already granted`
+                            : `Request ${config.displayName} permissions`
+                        }
+                      >
+                        {config.icon}
+                      </button>
+                    </form>
+                    <div>
+                      <div
+                        className={`text-sm font-medium ${
+                          status === "granted" ? colors.text : "text-gray-400"
+                        }`}
+                      >
+                        {config.displayName}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {status === "granted"
+                          ? "✓ Granted"
+                          : status === "requesting"
+                            ? "⏳ Requesting..."
+                            : "Click to request"}
+                      </div>
+                    </div>
+                  </div>
+                </React.Fragment>
+              );
+            })}
+          </div>
         </div>
       )
     );
@@ -461,7 +450,7 @@ export default class Service extends cds.ApplicationService {
                       name="authorization-iframe"
                       className="w-full h-full min-h-screen"
                       title="Authorization Screen"
-                      src="/demo/analysis_request"
+                      src="/demo/request_scope?scope_name=analysis"
                       aria-label="Interactive consent screen for authorization"
                     />
                   </div>
@@ -475,7 +464,7 @@ export default class Service extends cds.ApplicationService {
     );
   }
 
-  public async callback(code, code_verifier, redirect_uri, step = 0) {
+  public async callback(code, code_verifier, redirect_uri) {
     const authorizationService = await cds.connect.to(AuthorizationService);
     const tokenResponse: any = await authorizationService.token({
       grant_type: "authorization_code",
@@ -485,7 +474,7 @@ export default class Service extends cds.ApplicationService {
       redirect_uri: redirect_uri,
     });
     
-    const { access_token, token_type, expires_in, grant_id, error, ...rest } =
+    const { access_token, token_type, expires_in, grant_id, error, scope, ...rest } =
       tokenResponse;
 
     if (error) {
@@ -496,15 +485,16 @@ export default class Service extends cds.ApplicationService {
             <script
               async
               defer
-              src={`/demo/send_event?grant_id=${grant_id}&type=grant-failed&step=${step}`}
+              src={`/demo/send_event?grant_id=${grant_id}&type=grant-failed`}
             ></script>
           </div>
         )
       );
     }
 
-    const currentStep = parseInt(step as any) || 0;
-    const nextStep = currentStep + 1;
+    // Parse granted scopes from token response
+    const grantedScopes = scope || "";
+    console.log("✅ Callback - Granted scopes:", grantedScopes);
 
     cds.context?.http?.res.setHeader("HX-Trigger", "grant-updated");
     cds.context?.http?.res.setHeader("Content-Type", "text/html");
@@ -551,7 +541,7 @@ export default class Service extends cds.ApplicationService {
           </div>
         </div>
       </div>
-    )} <script async defer src="/demo/send_event?grant_id=${grant_id}&type=grant-requested&step=${nextStep}">
+    )} <script async defer src="/demo/send_event?grant_id=${grant_id}&granted_scopes=${encodeURIComponent(grantedScopes)}&type=grant-requested">
       </script></body>
     `);
   }
@@ -569,7 +559,7 @@ export default class Service extends cds.ApplicationService {
     `);
   }
 
-  public async send_event(grant_id, type, step = 0) {
+  public async send_event(grant_id, type, granted_scopes = "", requesting_scope = "") {
     cds.context?.http?.res.setHeader("Content-Type", "text/javascript");
     cds.context?.http?.res.send(`
       
@@ -579,10 +569,10 @@ export default class Service extends cds.ApplicationService {
           sendToParent();
         };
         function sendToParent() {
-            console.log('sendToParent');
+            console.log('sendToParent', ${JSON.stringify({ grant_id, type, granted_scopes, requesting_scope })});
             const event = new CustomEvent('${type || "grant-updated"}', {
                bubbles: true,
-               detail: ${JSON.stringify({ grant_id: grant_id, event: type, step: step })} ,
+               detail: ${JSON.stringify({ grant_id, event: type, granted_scopes, requesting_scope })} ,
             });
             if(window.parent) {
               window.parent.document.body.dispatchEvent(event);
@@ -595,17 +585,22 @@ export default class Service extends cds.ApplicationService {
       `);
   }
 
-  // Handler methods that delegate to the imported handlers
+  // Primary handler - scope-based request
+  public async request_scope(scope_name?: string, grant_id?: string) {
+    return RequestScopeHandler.GET.call(this, scope_name, grant_id);
+  }
+
+  // Legacy handler methods for backwards compatibility
   public async analysis_request(grant_id?: string) {
-    return AnalysisHandler.GET.call(this, grant_id);
+    return RequestScopeHandler.GET.call(this, "analysis", grant_id);
   }
 
   public async deployment_request(grant_id?: string) {
-    return DeploymentHandler.GET.call(this, grant_id);
+    return RequestScopeHandler.GET.call(this, "deployment", grant_id);
   }
 
   public async subscription_request(grant_id?: string) {
-    return SubscriptionHandler.GET.call(this, grant_id);
+    return RequestScopeHandler.GET.call(this, "entitlements", grant_id);
   }
 }
 
