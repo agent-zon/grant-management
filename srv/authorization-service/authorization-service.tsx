@@ -31,7 +31,31 @@ export default class Service extends cds.ApplicationService {
     this.on("authorize", authorize);
     this.on("par", par);
     this.on("metadata", metadata);
-    this.on("POST", Consents, consent);
+    // Normalize incoming consent payloads before validation
+    this.before("CREATE", Consents, async (req) => {
+      const d: any = req.data || {};
+      // grant_id may be passed as a Promise or object from tests
+      if (d && d.grant_id) {
+        if (typeof d.grant_id?.then === "function") {
+          d.grant_id = await d.grant_id;
+        }
+        if (typeof d.grant_id === "object") {
+          if (typeof d.grant_id?.ID === "string") d.grant_id = d.grant_id.ID;
+          if (typeof d.grant_id?.id === "string") d.grant_id = d.grant_id.id;
+        }
+      }
+      // If grant_id still not a string, resolve from AuthorizationRequests(request_ID)
+      if ((!d.grant_id || typeof d.grant_id !== "string") && d.request_ID) {
+        try {
+          const reqRec = await this.read(AuthorizationRequests, d.request_ID);
+          if (reqRec?.grant_id) d.grant_id = reqRec.grant_id;
+        } catch { /* ignore */ }
+      }
+      if (d && d.request_ID && !d.request) {
+        d.request = { ID: d.request_ID };
+      }
+    });
+    this.on("CREATE", Consents, consent);
 
     console.log("✅ AuthorizationService initialized");
     return super.init && super.init();

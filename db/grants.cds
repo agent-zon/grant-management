@@ -8,8 +8,7 @@ cuid give the ID:UUID
 @cds.autoexpose :true
 // Grants as primary entity - not a projection
 entity Grants: managed {
-  key id : String @cds.primary.key;
-   
+  key id : String @cds.primary.key; 
   client_id: String=max(requests.client_id);
   risk_level:String=max(requests.risk_level);
   status: String enum { active; revoked; } default 'active';
@@ -82,13 +81,16 @@ entity Consents:cuid,managed {
   // Association to Grant (primary relationship)
   grant: Association to Grants on grant.id = $self.grant_id; 
   request: Association to AuthorizationRequests;
-  scope: String; 
+  // Included to accept client-provided field during consent POSTs (not persisted elsewhere)
+  client_id: String=request.client_id;
+  scope: String=request.scope;
   authorization_details: Composition of many AuthorizationDetail on authorization_details.consent = $self;
   duration: Timespan;
   subject: User; //@cds.on.insert: $user;
   previous_consent: Association to Consents; // Reference to the previous consent for this grant
   @calculated
   redirect_uri: String=request.redirect_uri;
+  actor: String=request.requested_actor;
   
  }
 
@@ -97,7 +99,7 @@ entity Consents:cuid,managed {
 @cds.autoexpose :true
 entity AuthorizationDetail:cuid,managed, AuthorizationDetailMcpTools, AuthorizationDetailFileSystem, AuthorizationDetailDatabase, AuthorizationDetailApi {
   consent: Association to Consents;
-  type: String(20);
+  type: String;
   locations: array of String;
   actions: array of String;
 
@@ -161,7 +163,7 @@ type AuthorizationDetailRequest: MCPToolAuthorizationDetailRequest, FileSystemAu
 }
  
 entity AuthorizationDetailType: sap.common.CodeList {
-    key code : String(20) enum { 
+    key code : String(60) enum { 
       mcp;
       fs;
       database;

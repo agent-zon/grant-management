@@ -34,6 +34,6 @@
       "@sap/cds": ["./node_modules/@cap-js/cds-types"]
     }
   },
-  "include": ["types/**/*", "srv/**/*", "@cds-models/**/*"],
+  "include": ["types/**/*", "srv/**/*", "@cds-models/**/*", "test/*"],
   "exclude": ["node_modules", "gen", "dist"]
 }
