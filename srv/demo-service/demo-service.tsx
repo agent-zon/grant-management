@@ -596,16 +596,16 @@ export default class Service extends cds.ApplicationService {
   }
 
   // Handler methods that delegate to the imported handlers
-  public async analysis_request(req: cds.Request) {
-    return AnalysisHandler.GET.call(this, req);
+  public async analysis_request(grant_id?: string) {
+    return AnalysisHandler.GET.call(this, grant_id);
   }
 
-  public async deployment_request(req: cds.Request) {
-    return DeploymentHandler.GET.call(this, req);
+  public async deployment_request(grant_id?: string) {
+    return DeploymentHandler.GET.call(this, grant_id);
   }
 
-  public async subscription_request(req: cds.Request) {
-    return SubscriptionHandler.GET.call(this, req);
+  public async subscription_request(grant_id?: string) {
+    return SubscriptionHandler.GET.call(this, grant_id);
   }
 }
 
