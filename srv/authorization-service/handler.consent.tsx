@@ -134,6 +134,14 @@ export async function POST(
       console.log(
         `✅ Upserted ${records.length} authorization_details for grant ${grantId}`
       );
+
+      // Flattened permissions
+      const flatPermissions = buildPermissionsFromDetails(grantId, details);
+      if (flatPermissions.length > 0) {
+        await this.delete("com.sap.agent.grants.Permissions").where({ grant_id: grantId });
+        await this.upsert(flatPermissions).into("com.sap.agent.grants.Permissions");
+        console.log(`✅ Upserted ${flatPermissions.length} flattened permissions for grant ${grantId}`);
+      }
     }
 
     // Redirect to client with code
@@ -153,4 +161,65 @@ async function getPreviousConsent(srv: AuthorizationService, grant_id: string) {
   );
 
   return previousConsents[0];
+}
+
+function buildPermissionsFromDetails(
+  grantId: string,
+  details: Array<any>
+) {
+  const rows: Array<{ grant_id: string; resource_identifier: string; attribute: string; value: string }> = [];
+
+  const push = (resource_identifier: string, attribute: string, value: unknown) => {
+    if (value === undefined || value === null) return;
+    rows.push({
+      grant_id: grantId,
+      resource_identifier,
+      attribute,
+      value: typeof value === "string" ? value : JSON.stringify(value),
+    });
+  };
+
+  const arrayAttrMap: Record<string, string> = {
+    actions: "action",
+    locations: "location",
+    roots: "root",
+    urls: "url",
+    protocols: "protocol",
+    databases: "database",
+    schemas: "schema",
+    tables: "table",
+  };
+
+  details.forEach((d: any, idx: number) => {
+    const identifier = d.identifier || `${d.type || "detail"}-${idx}`;
+    const type = d.type;
+    if (type) push(identifier, "type", String(type));
+
+    Object.entries(arrayAttrMap).forEach(([key, singular]) => {
+      const arr = d[key];
+      if (Array.isArray(arr)) {
+        arr.filter((v) => v !== undefined && v !== null).forEach((v) => push(identifier, singular, v));
+      }
+    });
+
+    if (d.tools && typeof d.tools === "object") {
+      Object.entries(d.tools).forEach(([k, v]) => {
+        const val = typeof v === "object" && v !== null ? (v as any).essential ?? v : v;
+        push(identifier, `tool:${k}`, val as any);
+      });
+    }
+    if (d.permissions && typeof d.permissions === "object") {
+      Object.entries(d.permissions).forEach(([k, v]) => {
+        const val = typeof v === "object" && v !== null ? (v as any).essential ?? v : v;
+        push(identifier, `permission:${k}`, val as any);
+      });
+    }
+  });
+
+  const dedup = new Map<string, typeof rows[number]>();
+  for (const r of rows) {
+    const key = `${r.grant_id}|${r.resource_identifier}|${r.attribute}|${r.value}`;
+    dedup.set(key, r);
+  }
+  return Array.from(dedup.values());
 }
