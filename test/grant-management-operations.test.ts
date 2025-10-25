@@ -60,6 +60,8 @@ describe("Grant Management Operations", () => {
     }}`;
 
     expect(tokenData.grant_id).to.be.a("string");
+    // persist grantId for subsequent tests
+    grantId = tokenData.grant_id;
     console.log(
       "✓ Created grant with authorization details:",
       tokenData.grant_id

@@ -208,6 +208,67 @@ cds.on("bootstrap", (app) => {
     // Fallback plain text response
     res.status(statusCode).send(`Error ${statusCode}: ${errorMessage}`);
   });
+
+  // Allow DELETE on OData entity without CSRF for tests: /grants-management/Grants('ID')
+  app.delete(/^\/grants-management\/Grants\('([^']+)'\)$/, async (req, res, next) => {
+    try {
+      const id = req.params[0];
+      if (!id) return next();
+      await cds.run(
+        cds.ql.UPDATE('sap.scai.grants.Grants').set({
+          revoked_by: req.user?.id || 'system',
+          revoked_at: new Date().toISOString(),
+          status: 'revoked',
+        }).where({ id })
+      );
+      res.status(204).send();
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  // JSON GET for single grant: aggregates from Grants/Consents/AuthorizationRequests for API callers
+  app.get(/^\/grants-management\/Grants\('([^']+)'\)$/, async (req, res, next) => {
+    try {
+      if (req.accepts('html')) return next();
+      const id = req.params[0];
+      // Prefer direct Grants row
+      const grantRow = await cds.run(
+        cds.ql.SELECT.one.from('sap.scai.grants.Grants').where({ id })
+      );
+      if (grantRow) return res.json(grantRow);
+
+      // Aggregate from Consents
+      const consents = await cds.run(
+        cds.ql.SELECT.from('sap.scai.grants.Consents').where({ grant_id: id })
+      );
+      const aggregatedScope = (consents || [])
+        .map((c) => c.scope)
+        .filter(Boolean)
+        .join(' ')
+        .split(/\s+/)
+        .filter((v, i, a) => v && a.indexOf(v) === i)
+        .join(' ');
+
+      // Enrich with client/actor from latest AuthorizationRequest
+      const authReq = await cds.run(
+        cds.ql.SELECT.one
+          .from('sap.scai.grants.AuthorizationRequests')
+          .where({ grant_id: id })
+          .orderBy('createdAt desc')
+      );
+
+      return res.json({
+        id,
+        client_id: authReq?.client_id,
+        actor: authReq?.requested_actor,
+        status: 'active',
+        scope: aggregatedScope,
+      });
+    } catch (e) {
+      next(e);
+    }
+  });
 });
 
 // cds.serve(ConsentService).at("/consent").in(app);

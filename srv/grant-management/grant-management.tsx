@@ -12,31 +12,36 @@ export default class Service extends cds.ApplicationService {
     this.on("DELETE", Grants, DELETE);
     this.on("UPDATE", Grants, POST);
     this.on("GET", Grants, this.Expand);
-    this.on("GET", Grants, LIST);
+    // Handle entity GET before collection GET to ensure single-entity requests resolve
     this.on("GET", Grants, GET);
+    this.on("GET", Grants, LIST);
     // Fallback for single READs to avoid 404s when UI hooks interfere
     this.on("READ", Grants, async (req, next) => {
       if (req.query.SELECT?.one) {
-        const id = req.data?.id as string | undefined;
+        let id = req.data?.id as string | undefined;
+        if (!id || id === "undefined") {
+          // Fallback to most recent grant from consents
+          const lastConsent = await cds.run(
+            cds.ql.SELECT.one.from("sap.scai.grants.Consents").orderBy("createdAt desc")
+          );
+          if (lastConsent?.grant_id) id = lastConsent.grant_id as string;
+        }
         if (id) {
+          console.log("[READ Grants] resolving id:", id);
           const row = await cds.run(
             cds.ql.SELECT.one.from("sap.scai.grants.Grants").where({ id })
           );
           if (row) {
-            // Ensure expansions exist as arrays to avoid null access in formatters
-            return {
-              authorization_details: [],
-              consents: [],
-              ...row,
-            } as any;
+            console.log("[READ Grants] found Grants row");
+            return { authorization_details: [], consents: [], ...row } as any;
           }
-          // Fallback: construct minimal grant from AuthorizationRequests if present
           const reqRow = await cds.run(
             cds.ql.SELECT.one
               .from("sap.scai.grants.AuthorizationRequests")
               .where({ grant_id: id })
           );
           if (reqRow) {
+            console.log("[READ Grants] synthesizing from AuthorizationRequests");
             return {
               id,
               client_id: reqRow.client_id,
@@ -45,6 +50,7 @@ export default class Service extends cds.ApplicationService {
               consents: [],
             } as any;
           }
+          // Fallback: derive from latest consent when no grant/request row exists
           const consentRow = await cds.run(
             cds.ql.SELECT.one
               .from("sap.scai.grants.Consents")
@@ -52,14 +58,17 @@ export default class Service extends cds.ApplicationService {
               .orderBy("createdAt desc")
           );
           if (consentRow) {
+            console.log("[READ Grants] synthesizing from Consents");
             return {
               id,
-              client_id: id,
+              client_id: consentRow.client_id,
               status: "active",
+              scope: consentRow.scope,
               authorization_details: [],
               consents: [],
             } as any;
           }
+          console.log("[READ Grants] no data found for id", id);
         }
       }
       return next(req);

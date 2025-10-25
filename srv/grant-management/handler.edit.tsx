@@ -33,6 +33,48 @@ export async function GET(
         cds.ql.SELECT.one.from("sap.scai.grants.Grants").where({ id })
       );
       if (row) return row as any;
+
+      // Fallback: synthesize minimal grant from Consents + AuthorizationRequests
+      const latestConsent = await cds.run(
+        cds.ql.SELECT.one
+          .from("sap.scai.grants.Consents")
+          .where({ grant_id: id })
+          .orderBy("createdAt desc")
+      );
+      if (latestConsent) {
+        // Aggregate all consent scopes for this grant
+        const allConsents = await cds.run(
+          cds.ql.SELECT.from("sap.scai.grants.Consents").columns("scope").where({ grant_id: id })
+        );
+        const aggregatedScope = (allConsents || [])
+          .map((r: any) => r.scope)
+          .filter(Boolean)
+          .join(" ")
+          .split(/\s+/)
+          .filter((v, i, a) => v && a.indexOf(v) === i)
+          .join(" ");
+
+        // Enrich with client_id and actor from AuthorizationRequests
+        let client_id: string | undefined;
+        let actor: string | undefined;
+        if (latestConsent.request_ID) {
+          const reqRow = await cds.run(
+            cds.ql.SELECT.one
+              .from("sap.scai.grants.AuthorizationRequests")
+              .where({ ID: latestConsent.request_ID })
+          );
+          client_id = reqRow?.client_id;
+          actor = reqRow?.requested_actor;
+        }
+
+        return {
+          id,
+          client_id,
+          actor,
+          status: "active",
+          scope: aggregatedScope,
+        } as any;
+      }
     }
   }
 
@@ -47,7 +89,6 @@ export async function GET(
   // Fallback: if JSON requested and no valid grant returned, fetch directly from DB
   if (
     req.query.SELECT?.one &&
-    cds.context?.http?.req.accepts("html") === false &&
     (!isGrant(grant) || !grant.id)
   ) {
     const id = req.data?.id as string | undefined;
