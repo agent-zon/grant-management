@@ -12,7 +12,7 @@ entity Grants: managed {
    
   client_id: String=max(requests.client_id);
   risk_level:String=max(requests.risk_level);
-  status:String enum { active; revoked; }= revoked_at is null ? 'active' : 'revoked';
+  status: String enum { active; revoked; } default 'active';
   revoked_at: DateTime;
   revoked_by: User;
   subject: User;

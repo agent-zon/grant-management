@@ -4,19 +4,13 @@ A comprehensive grant management system that implements the OAuth 2.0 Grant
 Management API specification, allowing clients to explicitly manage their grants
 with the authorization server.
 
-## Live Deployment
+## Deployment
 
-The application is deployed on SAP BTP Kyma environment and can be accessed at:
+- **API Docs**: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/api/docs
 
-### Simulation Dashboard
-
-- **Dashboard**: https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com
-
-### With CDS Backend
+- **Grant Management User Dashbaord**: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/grants-management/Grants
 
 - **OAuth Flow Step-by-Step Demo**: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/demo/index
-- **Grant Management with CAP Backend**: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/grants-management/Grants
-- **API Browser**: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/
 
 ## Features
 
