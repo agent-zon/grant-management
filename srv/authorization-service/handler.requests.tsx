@@ -2,6 +2,7 @@ import cds from "@sap/cds";
 import { ulid } from "ulid";
 import type { AuthorizationService } from "../authorization-service.tsx";
 import { AuthorizationRequests } from "#cds-models/AuthorizationService";
+import { flattenAuthorizationDetails } from "./permissions-utils";
 
 export default async function push(
   this: AuthorizationService,
@@ -11,6 +12,7 @@ export default async function push(
     authorization_details?: string;
     client_id?: string;
     scope?: string;
+    grant_management_action?: string;
   }>
 ) {
   //todo:extract subject from token
@@ -33,12 +35,36 @@ export default async function push(
 
   console.log("Request created", ID);
 
-  // Upsert AuthorizationDetail records for this request keyed by (grantId:identifier)
+  // Upsert flattened Permissions and legacy AuthorizationDetail records
   try {
     const details = req.data.authorization_details
       ? parseAuthorizationDetails(req.data.authorization_details)
       : [];
+    
     if (Array.isArray(details) && details.length > 0) {
+      // Handle replace action
+      const action = req.data.grant_management_action;
+      if (action === "replace") {
+        await this.delete("com.sap.agent.grants.Permissions").where({
+          grant_id: grantId,
+        });
+        await this.delete("com.sap.agent.grants.AuthorizationDetail").where({
+          grant_ID: grantId,
+        });
+      }
+
+      // 1. Insert into flattened Permissions table
+      const rawDetails = JSON.parse(req.data.authorization_details || "[]");
+      const permissionRows = flattenAuthorizationDetails(rawDetails, grantId, ID);
+      
+      if (permissionRows.length > 0) {
+        await this.insert(permissionRows).into("com.sap.agent.grants.Permissions");
+        console.log(
+          `✅ Inserted ${permissionRows.length} permission rows for grant ${grantId}`
+        );
+      }
+
+      // 2. Also maintain legacy AuthorizationDetail for backward compatibility
       const records = details.map((d: any, idx: number) => {
         const identifier = d.identifier || `${d.type_code || "detail"}-${idx}`;
         const id = `${grantId}:${identifier}`;
@@ -65,19 +91,13 @@ export default async function push(
           actions,
           locations,
           tools,
-          roots,
-          databases,
-          schemas,
-          tables,
-          urls,
-          protocols,
-          permissions,
           ...rest,
         };
       });
+      
       await this.upsert(records).into("com.sap.agent.grants.AuthorizationDetail");
       console.log(
-        `✅ Upserted ${records.length} authorization_details for request ${ID} and grant ${grantId}`
+        `✅ Upserted ${records.length} authorization_details (legacy) for request ${ID} and grant ${grantId}`
       );
     }
   } catch (e) {
