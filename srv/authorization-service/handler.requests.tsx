@@ -79,6 +79,15 @@ export default async function push(
       console.log(
         `✅ Upserted ${records.length} authorization_details for request ${ID} and grant ${grantId}`
       );
+
+      // Build flattened permissions from authorization details
+      const flatPermissions = buildPermissionsFromDetails(grantId, details);
+      if (flatPermissions.length > 0) {
+        // Replace existing flattened rows for this grant to avoid stale entries
+        await this.delete("com.sap.agent.grants.Permissions").where({ grant_id: grantId });
+        await this.upsert(flatPermissions).into("com.sap.agent.grants.Permissions");
+        console.log(`✅ Upserted ${flatPermissions.length} flattened permissions for grant ${grantId}`);
+      }
     }
   } catch (e) {
     console.warn("⚠️ Failed to upsert authorization_details on request:", e);
@@ -100,4 +109,68 @@ function parseAuthorizationDetails(authorization_details: string) {
         ...detail,
       };
     });
+}
+
+function buildPermissionsFromDetails(
+  grantId: string,
+  details: Array<any>
+) {
+  const rows: Array<{ grant_id: string; resource_identifier: string; attribute: string; value: string }> = [];
+
+  const push = (resource_identifier: string, attribute: string, value: unknown) => {
+    if (value === undefined || value === null) return;
+    rows.push({
+      grant_id: grantId,
+      resource_identifier,
+      attribute,
+      value: typeof value === "string" ? value : JSON.stringify(value),
+    });
+  };
+
+  const arrayAttrMap: Record<string, string> = {
+    actions: "action",
+    locations: "location",
+    roots: "root",
+    urls: "url",
+    protocols: "protocol",
+    databases: "database",
+    schemas: "schema",
+    tables: "table",
+  };
+
+  details.forEach((d: any, idx: number) => {
+    const identifier = d.identifier || `${d.type_code || d.type || "detail"}-${idx}`;
+    const type = d.type_code || d.type;
+    if (type) push(identifier, "type", String(type));
+
+    // Arrays → one row per element
+    Object.entries(arrayAttrMap).forEach(([key, singular]) => {
+      const arr = d[key];
+      if (Array.isArray(arr)) {
+        arr.filter((v) => v !== undefined && v !== null).forEach((v) => push(identifier, singular, v));
+      }
+    });
+
+    // Maps → one row per key
+    if (d.tools && typeof d.tools === "object") {
+      Object.entries(d.tools).forEach(([k, v]) => {
+        const val = typeof v === "object" && v !== null ? (v as any).essential ?? v : v;
+        push(identifier, `tool:${k}`, val as any);
+      });
+    }
+    if (d.permissions && typeof d.permissions === "object") {
+      Object.entries(d.permissions).forEach(([k, v]) => {
+        const val = typeof v === "object" && v !== null ? (v as any).essential ?? v : v;
+        push(identifier, `permission:${k}`, val as any);
+      });
+    }
+  });
+
+  // De-duplicate identical entries
+  const dedup = new Map<string, typeof rows[number]>();
+  for (const r of rows) {
+    const key = `${r.grant_id}|${r.resource_identifier}|${r.attribute}|${r.value}`;
+    dedup.set(key, r);
+  }
+  return Array.from(dedup.values());
 }

@@ -254,3 +254,13 @@ aspect ApiAuthorizationDetailRequest {
 type RARClaim {
   essential: Boolean;
 }
+
+
+// Flattened permissions table derived from AuthorizationDetail
+// Keys are natural to prevent duplicates when regenerating
+entity Permissions {
+  key grant_id: String;             // owning grant
+  key resource_identifier: String;  // AuthorizationDetail.identifier
+  key attribute: String;            // flattened attribute name (e.g., action, location, tools.name)
+  key value: String;                // stringified value (e.g., read, https://..., true)
+}

@@ -100,6 +100,40 @@ cds.on("bootstrap", (app) => {
     })
   );
 
+  // Optional: one-time backfill of Permissions table from existing AuthorizationDetail
+  // Enable by setting env BACKFILL_PERMISSIONS=true
+  cds.once("served", async () => {
+    try {
+      if (process.env.BACKFILL_PERMISSIONS === "true") {
+        const db = await cds.connect.to("db");
+        const [{ COUNT: count }] = await db.run(
+          cds.ql.SELECT.from("com.sap.agent.grants.AuthorizationDetail").columns("count(1) as COUNT")
+        );
+        if (count > 0) {
+          const details = await db.run(
+            cds.ql.SELECT.from("com.sap.agent.grants.AuthorizationDetail")
+          );
+          const byGrant = new Map();
+          for (const d of details) {
+            const grantId = d.grant_ID || d.grant_id || d.grant;
+            if (!grantId) continue;
+            const arr = byGrant.get(grantId) || [];
+            arr.push(d);
+            byGrant.set(grantId, arr);
+          }
+          for (const [grantId, list] of byGrant.entries()) {
+            const rows = buildPermissionsFromDetails(grantId, list);
+            await db.run(cds.ql.DELETE.from("com.sap.agent.grants.Permissions").where({ grant_id: grantId }));
+            if (rows.length) await db.run(cds.ql.UPSERT.into("com.sap.agent.grants.Permissions").entries(rows));
+          }
+          console.log(`[BACKFILL] Permissions backfilled for ${byGrant.size} grant(s)`);
+        }
+      }
+    } catch (e) {
+      console.warn("[BACKFILL] Skipped due to error:", e?.message || e);
+    }
+  });
+
   // Add global error handler to catch all errors and prevent service crashes
   app.use((err, req, res, next) => {
     console.error("[ERROR HANDLER]", {
@@ -168,3 +202,51 @@ cds.on("bootstrap", (app) => {
 });
 
 // cds.serve(ConsentService).at("/consent").in(app);
+
+// Local helper for backfill; duplicate kept small to avoid cross-file imports here
+function buildPermissionsFromDetails(grantId, details) {
+  const rows = [];
+  const push = (resource_identifier, attribute, value) => {
+    if (value === undefined || value === null) return;
+    rows.push({
+      grant_id: grantId,
+      resource_identifier,
+      attribute,
+      value: typeof value === "string" ? value : JSON.stringify(value),
+    });
+  };
+  const arrayAttrMap = {
+    actions: "action",
+    locations: "location",
+    roots: "root",
+    urls: "url",
+    protocols: "protocol",
+    databases: "database",
+    schemas: "schema",
+    tables: "table",
+  };
+  details.forEach((d, idx) => {
+    const identifier = d.identifier || `${d.type || "detail"}-${idx}`;
+    const type = d.type;
+    if (type) push(identifier, "type", String(type));
+    Object.entries(arrayAttrMap).forEach(([key, singular]) => {
+      const arr = d[key];
+      if (Array.isArray(arr)) arr.filter(v => v !== undefined && v !== null).forEach(v => push(identifier, singular, v));
+    });
+    if (d.tools && typeof d.tools === "object") {
+      Object.entries(d.tools).forEach(([k, v]) => {
+        const val = typeof v === "object" && v !== null ? (v.essential ?? v) : v;
+        push(identifier, `tool:${k}`, val);
+      });
+    }
+    if (d.permissions && typeof d.permissions === "object") {
+      Object.entries(d.permissions).forEach(([k, v]) => {
+        const val = typeof v === "object" && v !== null ? (v.essential ?? v) : v;
+        push(identifier, `permission:${k}`, val);
+      });
+    }
+  });
+  const dedup = new Map();
+  for (const r of rows) dedup.set(`${r.grant_id}|${r.resource_identifier}|${r.attribute}|${r.value}`, r);
+  return Array.from(dedup.values());
+}

@@ -38,6 +38,7 @@ service GrantsManagementService {
    
 
     entity AuthorizationDetail as projection on grants.AuthorizationDetail;
+    entity Permissions as projection on grants.Permissions;
 
     entity ConsentGrant as projection on grants.ConsentGrant; 
  
