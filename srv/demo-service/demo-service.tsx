@@ -320,41 +320,6 @@ function AuthorizationParams({
 }
 
 export default class Service extends cds.ApplicationService {
-  public async main() {
-    cds.context?.http?.res.setHeader("Content-Type", "text/html");
-    cds.context?.http?.res.send(
-      renderToString(
-        <div className="min-h-screen bg-gray-950 text-white">
-          <div className="container mx-auto px-4 py-8">
-            <div className="max-w-7xl mx-auto">
-              {/* Progress Steps */}
-              <div
-                className="flex justify-center mb-8"
-                id="navbar"
-                hx-get="/demo/navbar"
-                hx-trigger="load"
-                hx-swap="innerHTML"
-              >
-              </div>
-
-              <div className="space-y-6">
-                <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6">
-                  <iframe
-                    id="authorization-iframe"
-                    name="authorization-iframe"
-                    className="w-full h-full min-h-screen"
-                    title="Authorization Screen"
-                    src="/demo/analysis_request"
-                    aria-label="Interactive consent screen for authorization"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )
-    );
-  }
 
   public async navbar(grant_id, event, step = 0) {
     console.log("navbar", grant_id, "step", step);
@@ -477,13 +442,30 @@ export default class Service extends cds.ApplicationService {
                   Subscription Management
                 </p>
               </div>
-              <div id="content">
+              
+              {/* Progress Steps */}
+              <div className="max-w-7xl mx-auto">
                 <div
-                  id="main"
-                  hx-get="/demo/main"
-                  hx-swap="innerHTML"
+                  className="flex justify-center mb-8"
+                  id="navbar"
+                  hx-get="/demo/navbar"
                   hx-trigger="load"
-                ></div>
+                  hx-swap="innerHTML"
+                >
+                </div>
+
+                <div className="space-y-6">
+                  <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6">
+                    <iframe
+                      id="authorization-iframe"
+                      name="authorization-iframe"
+                      className="w-full h-full min-h-screen"
+                      title="Authorization Screen"
+                      src="/demo/analysis_request"
+                      aria-label="Interactive consent screen for authorization"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
             <script src="/demo/event_handlers"></script>

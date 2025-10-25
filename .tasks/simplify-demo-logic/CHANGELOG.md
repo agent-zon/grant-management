@@ -35,3 +35,11 @@
 - State machine complexity replaced with simple step-based flow
 - Successfully removed ~9KB xstate machine file
 - Package.json cleaned up (xstate removed)
+
+## 2025-10-25 - Further Simplification
+- Combined `main()` and `index()` functions
+- Removed unnecessary HTMX load request on page initialization
+- Inlined navbar and iframe directly in index page
+- Removed `main` function from service definition
+- Reduced HTTP requests by 1 on initial page load
+- Cleaner, more straightforward page rendering
