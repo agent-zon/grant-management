@@ -4,6 +4,7 @@ import {
   AuthorizationRequests,
   Consents,
   Consent,
+  Grants,
 } from "#cds-models/AuthorizationService";
 import { isNativeError } from "node:util/types";
 
@@ -34,6 +35,21 @@ export async function POST(
       AuthorizationRequests,
       consent.request_ID
     )) as any;
+
+    // Merge granted scope into Grants.scope (union semantics)
+    try {
+      const grantRow = (await this.read(Grants, consent.grant_id)) as any;
+      const currentScopes = (grantRow?.scope || "").split(/\s+/).filter(Boolean);
+      const newScopes = String(consent.scope || "")
+        .split(/\s+/)
+        .filter(Boolean);
+      const merged = Array.from(new Set([...currentScopes, ...newScopes])).join(
+        " "
+      );
+      await this.update(Grants, consent.grant_id).with({ scope: merged });
+    } catch (e) {
+      console.warn("⚠️ Failed to merge scopes for grant", consent.grant_id, e);
+    }
 
     // Determine details source: posted payload takes precedence, otherwise use PAR-stored access
     let details: any[] = [];
@@ -68,8 +84,31 @@ export async function POST(
           urls,
           protocols,
           permissions,
+          permissions_read,
+          permissions_write,
+          permissions_execute,
+          permissions_delete,
+          permissions_list,
+          permissions_create,
           ...rest
         } = d || {};
+        const mergedPermissions =
+          permissions ||
+          (typeof permissions_read === "boolean" ||
+          typeof permissions_write === "boolean" ||
+          typeof permissions_execute === "boolean" ||
+          typeof permissions_delete === "boolean" ||
+          typeof permissions_list === "boolean" ||
+          typeof permissions_create === "boolean"
+            ? {
+                read: Boolean(permissions_read),
+                write: Boolean(permissions_write),
+                execute: Boolean(permissions_execute),
+                delete: Boolean(permissions_delete),
+                list: Boolean(permissions_list),
+                create: Boolean(permissions_create),
+              }
+            : undefined);
         return {
           id,
           identifier,
@@ -85,7 +124,7 @@ export async function POST(
           tables,
           urls,
           protocols,
-          permissions,
+          permissions: mergedPermissions,
           ...rest,
         };
       });

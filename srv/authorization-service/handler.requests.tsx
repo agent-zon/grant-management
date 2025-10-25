@@ -39,6 +39,17 @@ export default async function push(
       ? parseAuthorizationDetails(req.data.authorization_details)
       : [];
     if (Array.isArray(details) && details.length > 0) {
+      const normalizeTools = (tools: any) => {
+        if (!tools || typeof tools !== "object") return tools;
+        return Object.fromEntries(
+          Object.entries(tools).map(([k, v]) => [
+            k,
+            typeof v === "object" && v !== null
+              ? Boolean((v as any).essential)
+              : Boolean(v),
+          ])
+        );
+      };
       const records = details.map((d: any, idx: number) => {
         const identifier = d.identifier || `${d.type_code || "detail"}-${idx}`;
         const id = `${grantId}:${identifier}`;
@@ -54,8 +65,32 @@ export default async function push(
           urls,
           protocols,
           permissions,
+          permissions_read,
+          permissions_write,
+          permissions_execute,
+          permissions_delete,
+          permissions_list,
+          permissions_create,
           ...rest
         } = d || {};
+        const toolsNormalized = normalizeTools(tools);
+        const mergedPermissions =
+          permissions ||
+          (typeof permissions_read === "boolean" ||
+          typeof permissions_write === "boolean" ||
+          typeof permissions_execute === "boolean" ||
+          typeof permissions_delete === "boolean" ||
+          typeof permissions_list === "boolean" ||
+          typeof permissions_create === "boolean"
+            ? {
+                read: Boolean(permissions_read),
+                write: Boolean(permissions_write),
+                execute: Boolean(permissions_execute),
+                delete: Boolean(permissions_delete),
+                list: Boolean(permissions_list),
+                create: Boolean(permissions_create),
+              }
+            : undefined);
         return {
           id,
           identifier,
@@ -64,14 +99,14 @@ export default async function push(
           type: type_code,
           actions,
           locations,
-          tools,
+          tools: toolsNormalized,
           roots,
           databases,
           schemas,
           tables,
           urls,
           protocols,
-          permissions,
+          permissions: mergedPermissions,
           ...rest,
         };
       });

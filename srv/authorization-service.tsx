@@ -15,7 +15,14 @@ export default class Service extends cds.ApplicationService {
     this.on("authorize", authorize);
     this.on("par", par);
     this.on("metadata", metadata);
-    this.on("POST", Consents, consent);
+    // Strip unknown fields early to avoid REST validation errors
+    this.before(["POST", "PUT"], Consents, (req) => {
+      if ((req.data as any)?.authorization_details) {
+        delete (req.data as any).authorization_details;
+      }
+      return req;
+    });
+    this.on(["POST", "PUT"], Consents, consent);
 
     console.log("✅ AuthorizationService initialized");
     return super.init && super.init();
