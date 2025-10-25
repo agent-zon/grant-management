@@ -2,7 +2,7 @@ import cds from "@sap/cds";
 import { renderToString } from "react-dom/server";
 import React from "react";
 import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
-import type { DemoService } from "./demo-service-simple.tsx";
+import type { DemoService } from "./demo-service.tsx";
 
 // Request handler - creates PAR request
 export async function REQUEST(this: DemoService, grant_id: string) {
