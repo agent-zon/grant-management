@@ -13,7 +13,7 @@ export async function REQUEST(this: DemoService, grant_id: string) {
       response_type: "code",
       client_id: "devops-bot",
       redirect_uri: new URL(
-        `/demo/devops_bot/${grant_id}/callback`,
+        `/demo/callback?grant_id=${grant_id}`,
         cds.context?.http?.req.headers.referer
       ).href,
       grant_management_action: "update",
@@ -87,6 +87,32 @@ export async function GET(this: DemoService, grant_id: string) {
     const hasPermission = grant?.scope?.includes("analytics_read");
 
     if (!hasPermission) {
+      // Return 403 with WWW-Authenticate header
+      const authorizationService = await cds.connect.to(AuthorizationService);
+      const authServerUrl = await this.getAuthServerUrl();
+      
+      // Create PAR request for authorization URL
+      const request = {
+        response_type: "code",
+        client_id: "devops-bot",
+        redirect_uri: new URL(`/demo/callback?grant_id=${grant_id}`, cds.context?.http?.req.headers.referer).href,
+        grant_management_action: "update",
+        grant_id,
+        scope: "analytics_read",
+        authorization_details: JSON.stringify([{
+          type: "mcp",
+          server: "devops-mcp-server",
+          tools: { "metrics.read": { essential: true } },
+        }]),
+        subject: cds.context?.user?.id,
+      };
+      
+      const parResponse = await authorizationService.par(request);
+      const authorizeUrl = `${authServerUrl}/authorize?client_id=devops-bot&request_uri=${parResponse.request_uri}`;
+      
+      cds.context?.http?.res.setHeader("WWW-Authenticate", `Bearer realm="Analysis", authorize_url="${authorizeUrl}"`);
+      cds.context?.http?.res.status(403);
+      
       // Disabled/sketch mode
       return cds.context?.http?.res.send(
         renderToString(
@@ -112,12 +138,16 @@ export async function GET(this: DemoService, grant_id: string) {
             </div>
 
             <button
-              hx-get={`/demo/devops_bot/${grant_id}/requests/analyze`}
+              hx-post={`/demo/Analysis(grant_id='${grant_id}')/request`}
               hx-target="#content"
               className="w-full px-6 py-3 bg-blue-600/50 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
             >
               🔓 Request Analysis Access
             </button>
+            
+            <div className="text-xs text-gray-500 text-center">
+              Or <a href={authorizeUrl} className="text-blue-400 hover:underline">authorize directly</a>
+            </div>
           </div>
         )
       );
@@ -179,4 +209,27 @@ export async function GET(this: DemoService, grant_id: string) {
   } catch (e) {
     return this.renderError(e);
   }
+}
+
+// Tile view - compact representation
+export async function TILE(this: DemoService, grant_id: string) {
+  const grantService = await cds.connect.to("sap.scai.grants.GrantsManagementService");
+  const grant = await grantService.read("Grants", grant_id);
+  const hasPermission = grant?.scope?.includes("analytics");
+  
+  return cds.context?.http?.res.send(
+    renderToString(
+      <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+        <div className="flex items-center space-x-3">
+          <span className="text-2xl">{hasPermission ? "📊" : "🔒"}</span>
+          <div>
+            <h4 className="font-bold text-white">Analysis</h4>
+            <p className="text-xs text-gray-400">
+              {hasPermission ? "Active" : "Locked"}
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  );
 }
