@@ -28,7 +28,7 @@ export async function LIST(
     const grants = await getGrants(this, response);
 
     // For HTML responses, render the UI
-    if (cds.context?.http?.req.accepts("html")) {
+    if (req.http?.req.accepts("html")) {
       const totalGrants = grants.length;
       const activeGrants = grants.filter((g) => g.status === "active");
       return cds.context?.render(

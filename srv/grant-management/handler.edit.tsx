@@ -38,7 +38,7 @@ export async function GET(
   });
   console.log("🔧 Grant:", grant);
 
-  if (cds.context?.http?.req.accepts("html")) {
+  if (req.http?.req.accepts("html")) {
        return cds.context?.render(
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900 text-white">
           <div className="container mx-auto px-4 py-6 max-w-4xl">
