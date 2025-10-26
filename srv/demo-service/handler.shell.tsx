@@ -40,14 +40,14 @@ export async function GET(this: DemoService, grant_id: string) {
                   </div>
                   <div className="space-y-2">
                     <button
-                      hx-post={`/demo/Analysis(grant_id='${grant_id}')/request`}
+                      hx-post={`/demo/analysis_request?grant_id=${grant_id}`}
                       hx-target="#content"
                       className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                     >
                       Request Analysis Access
                     </button>
                     <button
-                      hx-get={`/demo/Analysis(grant_id='${grant_id}')/elements`}
+                      hx-get={`/demo/analysis_elements?grant_id=${grant_id}`}
                       hx-target="#content"
                       className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
                     >
@@ -67,14 +67,14 @@ export async function GET(this: DemoService, grant_id: string) {
                   </div>
                   <div className="space-y-2">
                     <button
-                      hx-post={`/demo/Deployment(grant_id='${grant_id}')/request`}
+                      hx-post={`/demo/deployment_request?grant_id=${grant_id}`}
                       hx-target="#content"
                       className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors"
                     >
                       Request Deployment Access
                     </button>
                     <button
-                      hx-get={`/demo/Deployment(grant_id='${grant_id}')/elements`}
+                      hx-get={`/demo/deployment_elements?grant_id=${grant_id}`}
                       hx-target="#content"
                       className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
                     >
@@ -94,14 +94,14 @@ export async function GET(this: DemoService, grant_id: string) {
                   </div>
                   <div className="space-y-2">
                     <button
-                      hx-post={`/demo/Monitoring(grant_id='${grant_id}')/request`}
+                      hx-post={`/demo/monitoring_request?grant_id=${grant_id}`}
                       hx-target="#content"
                       className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
                     >
                       Request Monitoring Access
                     </button>
                     <button
-                      hx-get={`/demo/Monitoring(grant_id='${grant_id}')/elements`}
+                      hx-get={`/demo/monitoring_elements?grant_id=${grant_id}`}
                       hx-target="#content"
                       className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
                     >
@@ -118,7 +118,7 @@ export async function GET(this: DemoService, grant_id: string) {
                   <h2 className="text-xl font-bold text-white mb-4">📋 Grant Status</h2>
                   <div
                     id="grant-details"
-                    hx-get={`/demo/DevOpsBot(grant_id='${grant_id}')/grant_status`}
+                    hx-get={`/demo/grant_status?grant_id=${grant_id}`}
                     hx-trigger="load, grant-updated from:body"
                     hx-swap="innerHTML"
                   >
