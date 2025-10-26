@@ -17,7 +17,7 @@ export async function GET(this: DemoService, req: cds.Request) {
   try {
     // Fetch grant from grant-management service
     const grantService = await cds.connect.to("sap.scai.grants.GrantsManagementService");
-    const grant = await grantService.read("Grants").where({ ID: grant_id }) as GrantData;
+    const grant = await grantService.read("Grants").where({ id: grant_id }) as GrantData;
 
     if (!grant) {
       return cds.context?.http?.res.send(
