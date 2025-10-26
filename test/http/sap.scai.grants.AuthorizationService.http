@@ -1,0 +1,290 @@
+@server=http://localhost:4004
+@username=alice
+@password=
+
+
+### AuthorizationRequests
+# @name AuthorizationRequests_GET
+GET {{server}}/oauth-server/AuthorizationRequests
+Authorization: Basic {{username}}:{{password}}
+
+
+### AuthorizationRequests
+# @name AuthorizationRequests_POST
+POST {{server}}/oauth-server/AuthorizationRequests
+Content-Type: application/json
+Authorization: Basic {{username}}:{{password}}
+
+{
+  "ID": "23284961-baed-4b0a-ada4-9a09a30b496a",
+  "client_id": "client_id-2328496",
+  "redirect_uri": "redirect_uri-2328496",
+  "request_uri": "request_uri-2328496",
+  "scope": "scope-2328496",
+  "state": "state-2328496",
+  "code_challenge": "code_challenge-2328496",
+  "code_challenge_method": "code_challenge_method-2328496",
+  "grant_management_action": "grant_management_action-2328496",
+  "authorization_details": "authorization_details-2328496",
+  "requested_actor": "requested_actor-2328496",
+  "expires_at": "expires_at-2328496",
+  "status": "status-2328496",
+  "response_type": "response_type-2328496",
+  "risk_level": "risk_level-2328496",
+  "subject_token_type": "subject_token_type-2328496",
+  "subject_token": "subject_token-2328496",
+  "subject": "subject-2328496",
+  "expires_in": 26,
+  "grant": {
+    "id": "Grants-6760055"
+  },
+  "consent": {
+    "ID": "31720321-dc74-4478-956e-418d2437ea7b",
+    "grant_id": "Consents-31720321"
+  },
+  "access": [
+    {
+      "type": {
+        "code": "data_access"
+      },
+      "server": "server-2328496",
+      "transport": "transport-2328496",
+      "tools": {},
+      "locations": [
+        "String-2328496"
+      ],
+      "actions": [
+        "String-2328496"
+      ],
+      "permissions": {
+        "read": {
+          "essential": true
+        },
+        "write": {
+          "essential": true
+        },
+        "delete": {
+          "essential": true
+        },
+        "execute": {
+          "essential": true
+        },
+        "list": {
+          "essential": true
+        },
+        "create": {
+          "essential": true
+        }
+      },
+      "roots": [
+        "String-2328496"
+      ],
+      "databases": [
+        "String-2328496"
+      ],
+      "schemas": [
+        "String-2328496"
+      ],
+      "tables": [
+        "String-2328496"
+      ],
+      "urls": [
+        "String-2328496"
+      ],
+      "protocols": [
+        "String-2328496"
+      ]
+    }
+  ],
+  "createdAt": "2021-03-11T22:00:00.000Z",
+  "createdBy": "Jon7@example.net",
+  "modifiedAt": "2022-03-16T22:00:00.000Z",
+  "modifiedBy": "Walter.Harber41@example.org"
+}
+
+
+### AuthorizationRequests
+# @name AuthorizationRequests_PATCH
+PATCH {{server}}/oauth-server/AuthorizationRequests/23284961-baed-4b0a-ada4-9a09a30b496a
+Content-Type: application/json
+Authorization: Basic {{username}}:{{password}}
+
+{
+  "ID": "23284961-baed-4b0a-ada4-9a09a30b496a",
+  "client_id": "client_id-2328496",
+  "redirect_uri": "redirect_uri-2328496",
+  "request_uri": "request_uri-2328496",
+  "scope": "scope-2328496",
+  "state": "state-2328496",
+  "code_challenge": "code_challenge-2328496",
+  "code_challenge_method": "code_challenge_method-2328496",
+  "grant_management_action": "grant_management_action-2328496",
+  "authorization_details": "authorization_details-2328496",
+  "requested_actor": "requested_actor-2328496",
+  "expires_at": "expires_at-2328496",
+  "status": "status-2328496",
+  "response_type": "response_type-2328496",
+  "risk_level": "risk_level-2328496",
+  "subject_token_type": "subject_token_type-2328496",
+  "subject_token": "subject_token-2328496",
+  "subject": "subject-2328496",
+  "expires_in": 26,
+  "grant": {
+    "id": "Grants-6760055"
+  },
+  "consent": {
+    "ID": "31720321-dc74-4478-956e-418d2437ea7b",
+    "grant_id": "Consents-31720321"
+  },
+  "access": [
+    {
+      "type": {
+        "code": "data_access"
+      },
+      "server": "server-2328496",
+      "transport": "transport-2328496",
+      "tools": {},
+      "locations": [
+        "String-2328496"
+      ],
+      "actions": [
+        "String-2328496"
+      ],
+      "permissions": {
+        "read": {
+          "essential": true
+        },
+        "write": {
+          "essential": true
+        },
+        "delete": {
+          "essential": true
+        },
+        "execute": {
+          "essential": true
+        },
+        "list": {
+          "essential": true
+        },
+        "create": {
+          "essential": true
+        }
+      },
+      "roots": [
+        "String-2328496"
+      ],
+      "databases": [
+        "String-2328496"
+      ],
+      "schemas": [
+        "String-2328496"
+      ],
+      "tables": [
+        "String-2328496"
+      ],
+      "urls": [
+        "String-2328496"
+      ],
+      "protocols": [
+        "String-2328496"
+      ]
+    }
+  ],
+  "createdAt": "2021-03-11T22:00:00.000Z",
+  "createdBy": "Jon7@example.net",
+  "modifiedAt": "2022-03-16T22:00:00.000Z",
+  "modifiedBy": "Walter.Harber41@example.org"
+}
+
+
+### AuthorizationRequests
+# @name AuthorizationRequests_DELETE
+DELETE {{server}}/oauth-server/AuthorizationRequests/23284961-baed-4b0a-ada4-9a09a30b496a
+Content-Type: application/json
+Authorization: Basic {{username}}:{{password}}
+
+
+### Consents
+# @name Consents_GET
+GET {{server}}/oauth-server/Consents
+Authorization: Basic {{username}}:{{password}}
+
+
+### Grants
+# @name Grants_GET
+GET {{server}}/oauth-server/Grants
+Authorization: Basic {{username}}:{{password}}
+
+
+### AuthorizationDetailType
+# @name AuthorizationDetailType_GET
+GET {{server}}/oauth-server/AuthorizationDetailType
+Authorization: Basic {{username}}:{{password}}
+
+
+### AuthorizationDetail
+# @name AuthorizationDetail_GET
+GET {{server}}/oauth-server/AuthorizationDetail
+Authorization: Basic {{username}}:{{password}}
+
+
+
+### par
+# @name par_POST
+POST {{server}}/oauth-server/par
+Content-Type: application/json
+Authorization: Basic {{username}}:{{password}}
+
+{
+  "response_type": "response_type-25502418",
+  "client_id": "client_id-25502418",
+  "redirect_uri": "redirect_uri-25502418",
+  "scope": "scope-25502418",
+  "state": "state-25502418",
+  "code_challenge": "code_challenge-25502418",
+  "code_challenge_method": "code_challenge_method-25502418",
+  "grant_management_action": "grant_management_action-25502418",
+  "grant_id": "grant_id-25502418",
+  "authorization_details": "[{ \"type\": \"fs\", \"locations\": [\"String-25502418\"], \"actions\": [\"String-25502418\"] }]",
+  "requested_actor": "requested_actor-25502418",
+  "subject_token_type": "subject_token_type-25502418",
+  "subject_token": "subject_token-25502418",
+  "subject": "subject-25502418"
+}
+
+
+### authorize
+# @name authorize_POST
+POST {{server}}/oauth-server/authorize
+Content-Type: application/json
+Authorization: Basic {{username}}:{{password}}
+
+{
+  "request_uri": "urn:ietf:params:oauth:request_uri:6b7e07eb-24a9-4c34-b9b8-b1870944d772",
+  "client_id": "client_id-1001462"
+}
+
+
+
+### token
+# @name token_POST
+POST {{server}}/oauth-server/token
+Content-Type: application/json
+Authorization: Basic {{username}}:{{password}}
+
+{
+  "grant_type": "grant_type-15272175",
+  "client_id": "client_id-15272175",
+  "code": "code-15272175",
+  "code_verifier": "code_verifier-15272175",
+  "redirect_uri": "redirect_uri-15272175"
+}
+
+
+### metadata
+# @name metadata_POST
+POST {{server}}/oauth-server/metadata
+Content-Type: application/json
+Authorization: Basic {{username}}:{{password}}
+
+{}
