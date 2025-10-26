@@ -12,7 +12,8 @@ interface GrantData {
   authorization_details?: any[];
 }
 
-export async function GET(this: DemoService, grant_id: string) {
+export async function GET(this: DemoService, req: cds.Request) {
+  const { grant_id } = req.data;
   try {
     // Fetch grant from grant-management service
     const grantService = await cds.connect.to("sap.scai.grants.GrantsManagementService");

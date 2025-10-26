@@ -13,101 +13,76 @@ import * as MonitorHandler from "./handler.monitor.tsx";
 
 export default class Service extends cds.ApplicationService {
   
-  async init() {
-    // Index - generate new grant and redirect
-    this.on('index', async () => {
-      const grant_id = ulid();
-      cds.context?.http?.res.redirect(`/demo/shell?grant_id=${grant_id}`);
+  override async init() {
+    // Default route - generate new grant and redirect
+    this.on("*", async (req, next) => {
+      if (req.path === "/" || req.path === "") {
+        const grant_id = ulid();
+        return cds.context?.http?.res.redirect(`/demo/devops_bot/shell?grant_id=${grant_id}`);
+      }
+      return next();
     });
     
-    // Shell
-    this.on('shell', async (req) => {
-      return ShellHandler.GET.call(this, req.data.grant_id);
-    });
+    // Register handlers
+    this.on("shell", ShellHandler.GET);
+    this.on("grant", GrantTemplateHandler.GET);
     
-    // Grant status
-    this.on('grant_status', async (req) => {
-      return GrantTemplateHandler.GET.call(this, req.data.grant_id);
-    });
+    this.on("analyze", AnalyzeHandler.GET);
+    this.on("analyze_request", AnalyzeHandler.REQUEST);
     
-    // Analysis
-    this.on('analysis_request', async (req) => {
-      return AnalyzeHandler.REQUEST.call(this, req.data.grant_id);
-    });
+    this.on("deploy", DeployHandler.GET);
+    this.on("deploy_request", DeployHandler.REQUEST);
     
-    this.on('analysis_elements', async (req) => {
-      return AnalyzeHandler.GET.call(this, req.data.grant_id);
-    });
-    
-    this.on('analysis_tile', async (req) => {
-      return AnalyzeHandler.TILE.call(this, req.data.grant_id);
-    });
-    
-    // Deployment
-    this.on('deployment_request', async (req) => {
-      return DeployHandler.REQUEST.call(this, req.data.grant_id);
-    });
-    
-    this.on('deployment_elements', async (req) => {
-      return DeployHandler.GET.call(this, req.data.grant_id);
-    });
-    
-    this.on('deployment_tile', async (req) => {
-      return DeployHandler.TILE.call(this, req.data.grant_id);
-    });
-    
-    // Monitoring
-    this.on('monitoring_request', async (req) => {
-      return MonitorHandler.REQUEST.call(this, req.data.grant_id);
-    });
-    
-    this.on('monitoring_elements', async (req) => {
-      return MonitorHandler.GET.call(this, req.data.grant_id);
-    });
-    
-    this.on('monitoring_tile', async (req) => {
-      return MonitorHandler.TILE.call(this, req.data.grant_id);
-    });
+    this.on("monitor", MonitorHandler.GET);
+    this.on("monitor_request", MonitorHandler.REQUEST);
     
     // OAuth callback
-    this.on('callback', async (req) => {
-      const { code, code_verifier, redirect_uri, grant_id } = req.data;
-      
-      try {
-        const authorizationService = await cds.connect.to(AuthorizationService);
-        const tokenResponse: any = await authorizationService.token({
-          grant_type: "authorization_code",
-          client_id: "devops-bot",
-          code,
-          code_verifier,
-          redirect_uri,
-        });
-
-        // Return JSON formatted response
-        cds.context?.http?.res.setHeader("Content-Type", "text/html");
-        cds.context?.http?.res.setHeader("HX-Trigger", "grant-updated");
-        
-        return cds.context?.http?.res.send(
-          renderToString(
-            <div className="space-y-4">
-              <h3 className="text-lg font-bold text-green-400">✅ Token Response</h3>
-              <div className="bg-gray-900 rounded p-4">
-                <pre className="text-xs text-green-300 overflow-x-auto whitespace-pre-wrap">
-                  {JSON.stringify(tokenResponse, null, 2)}
-                </pre>
-              </div>
-              <div className="text-sm text-gray-400">
-                Grant has been updated. Reload sections to see new permissions.
-              </div>
-            </div>
-          )
-        );
-      } catch (e) {
-        return this.renderError(e);
-      }
-    });
+    this.on("callback", this.callback);
     
     await super.init();
+  }
+  
+  // Callback handler
+  public async callback(req: cds.Request) {
+    const { code, code_verifier, redirect_uri } = req.data;
+    
+    try {
+      const authorizationService = await cds.connect.to(AuthorizationService);
+      const tokenResponse: any = await authorizationService.token({
+        grant_type: "authorization_code",
+        client_id: "devops-bot",
+        code,
+        code_verifier,
+        redirect_uri,
+      });
+
+      // Get grant_id from token response
+      const grant_id = tokenResponse.grant_id;
+
+      // Use HTMX headers to navigate back to shell
+      cds.context?.http?.res.setHeader("Content-Type", "text/html");
+      cds.context?.http?.res.setHeader("HX-Trigger", "grant-updated");
+      cds.context?.http?.res.setHeader("HX-Location", `/demo/devops_bot/shell?grant_id=${grant_id}`);
+      cds.context?.http?.res.setHeader("HX-Push-Url", `/demo/devops_bot/shell?grant_id=${grant_id}`);
+
+      return cds.context?.http?.res.send(
+        renderToString(
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold text-green-400">✅ Authorization Complete</h3>
+            <div className="bg-gray-900 rounded p-4">
+              <pre className="text-xs text-green-300 overflow-x-auto whitespace-pre-wrap">
+                {JSON.stringify(tokenResponse, null, 2)}
+              </pre>
+            </div>
+            <div className="text-sm text-gray-400">
+              Redirecting to shell...
+            </div>
+          </div>
+        )
+      );
+    } catch (e) {
+      return this.renderError(e);
+    }
   }
   
   // Helper methods

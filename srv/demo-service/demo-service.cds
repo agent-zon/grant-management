@@ -1,4 +1,4 @@
-@path: '/demo'
+@path: '/demo/devops_bot'
 @protocol: 'rest'
 @impl: './demo-service.tsx'
 @requires: ['authenticated-user', 'system-user']
@@ -6,40 +6,30 @@
 @Core.Description: 'Interactive DevOps agent demo with grant-based permissions'
 service DemoService {
   
-  // Main shell - generate new grant_id and redirect
-  function index() returns String;
-  
-  // Shell and grant status
+  // Main shell
   function shell(grant_id: String) returns String;
-  function grant_status(grant_id: String) returns String;
+  function grant(grant_id: String) returns String;
   
-  // Analysis functions
+  // Analysis
+  function analyze(grant_id: String) returns String;
   @method: [POST]
-  function analysis_request(grant_id: String) returns String;
+  function analyze_request(grant_id: String) returns String;
   
-  function analysis_elements(grant_id: String) returns String;
-  function analysis_tile(grant_id: String) returns String;
-  
-  // Deployment functions
+  // Deployment
+  function deploy(grant_id: String) returns String;
   @method: [POST]
-  function deployment_request(grant_id: String) returns String;
+  function deploy_request(grant_id: String) returns String;
   
-  function deployment_elements(grant_id: String) returns String;
-  function deployment_tile(grant_id: String) returns String;
-  
-  // Monitoring functions
+  // Monitoring
+  function monitor(grant_id: String) returns String;
   @method: [POST]
-  function monitoring_request(grant_id: String) returns String;
-  
-  function monitoring_elements(grant_id: String) returns String;
-  function monitoring_tile(grant_id: String) returns String;
+  function monitor_request(grant_id: String) returns String;
   
   // OAuth callback
   @method: [GET, POST]
   function callback(
     code: String,
-    code_verifier: String, 
-    redirect_uri: String,
-    grant_id: String
+    code_verifier: String,
+    redirect_uri: String
   ) returns String;
 }
