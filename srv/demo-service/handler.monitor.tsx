@@ -2,8 +2,9 @@ import cds from "@sap/cds";
 import { renderToString } from "react-dom/server";
 import React from "react";
 import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
-import GrantsManagementService from "#cds-models/sap/scai/grants/GrantsManagementService";
+import GrantsManagementService, {Grants} from "#cds-models/sap/scai/grants/GrantsManagementService";
 import type { DemoService } from "./demo-service.tsx";
+import {isGrant} from "@/lib/is-grant.ts";
 
 // Request handler - creates PAR request
 export async function REQUEST(this: DemoService, req: cds.Request) {
@@ -86,8 +87,14 @@ export async function GET(this: DemoService, req: cds.Request) {
   
   try {
     const grantService = await cds.connect.to(GrantsManagementService);
-    const grant = await grantService.read("Grants").where({ ID: grant_id });
-    const hasPermission = grant?.scope?.includes("monitoring_read");
+    // const {data:grant,...res} = await grantService.run(`SELECT * FROM ${Grants} WHERE id = ?`, [grant_id]) as {data:Grants};
+    const {data:grant,...res} = await grantService.get(Grants, {
+      id: grant_id
+    }) ;
+    console.log("fetch grant", grant,res);
+
+    const hasPermission = isGrant(grant) && grant?.scope?.includes("monitoring_read");
+    cds.context?.http?.res.setHeader("Content-Type", "text/html");
 
     return cds.context?.http?.res.send(
       renderToString(

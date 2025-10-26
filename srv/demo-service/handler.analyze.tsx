@@ -4,6 +4,7 @@ import React from "react";
 import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
 import GrantsManagementService from "#cds-models/sap/scai/grants/GrantsManagementService";
 import type { DemoService } from "./demo-service.tsx";
+import {Grants} from "#cds-models/GrantsManagementService";
 
 // Request handler - creates PAR request
 export async function REQUEST(this: DemoService, req: cds.Request) {
@@ -86,7 +87,9 @@ export async function GET(this: DemoService, req: cds.Request) {
   
   try {
     const grantService = await cds.connect.to(GrantsManagementService);
-    const grant = await grantService.read("Grants").where({ ID: grant_id });
+ 
+    const {data:grant,...res} = await  cds.``
+    console.log(res,grant);
     const hasPermission = grant?.scope?.includes("analytics_read");
 
     return cds.context?.http?.res.send(
