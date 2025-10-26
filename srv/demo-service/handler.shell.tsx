@@ -6,9 +6,9 @@ import type { DemoService } from "./demo-service.tsx";
 
 export async function GET(this: DemoService, req: cds.Request) {
   const { grant_id } = req.data;
-  
-  cds.context?.http?.res.setHeader("Content-Type", "text/html");
-  cds.context?.http?.res.send(
+
+  req.http?.res.setHeader("Content-Type", "text/html");
+  req.http?.res.send(
     htmlTemplate(
       renderToString(
         <body className="bg-gray-950 text-white min-h-screen">
@@ -79,16 +79,7 @@ export async function GET(this: DemoService, req: cds.Request) {
                   </div>
                 </div>
 
-                {/* Dynamic Content Area */}
-                <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 min-h-[400px]">
-                  <h2 className="text-xl font-bold text-white mb-4">📄 Content</h2>
-                  <div id="content" className="text-gray-400">
-                    <div className="text-center py-12">
-                      <span className="text-6xl">👈</span>
-                      <p className="mt-4">Click an action to get started</p>
-                    </div>
-                  </div>
-                </div>
+               
               </div>
             </div>
           </div>

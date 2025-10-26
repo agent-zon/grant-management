@@ -68,7 +68,7 @@ export async function REQUEST(this: DemoService, req: cds.Request) {
 
           <form action={`${authServerUrl}/authorize`} method="post">
             <input type="hidden" name="client_id" value="devops-bot" />
-            <input type="hidden" name="request_uri" value={response.request_uri!} />
+            <input type="hidden" name="request_uri" value={response!.request_uri!} />
             <button
               type="submit"
               className="w-full px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors"
@@ -90,46 +90,30 @@ export async function GET(this: DemoService, req: cds.Request) {
   
   try {
     const grantService = await cds.connect.to(GrantsManagementService);
-    const {data:grant,...res} = await grantService.get(`/grants-management/Grants('${grant_id}')`, {
-      headers: {Accept: "application/json"},
-    })
+    const grant = await grantService.read(Grants,grant_id)
     const hasPermission =isGrant(grant) && grant?.scope?.includes("deployments");
+    if(!hasPermission){
+      return req.http?.res.send(
+          renderToString(
+              <div className="text-center py-8">
+                <div className="text-center py-8" hx-get={`/demo/devops_bot/deploy_request?grant_id=${grant_id}`} hx-trigger="load" >
 
-    return cds.context?.http?.res.send(
+                </div>
+              </div>
+          )
+      );
+    }
+    return req?.http?.res.send(
       renderToString(
-        <div className={`bg-gray-800 rounded-lg p-6 border transition-colors ${
-          hasPermission ? "border-yellow-500" : "border-gray-700 hover:border-yellow-500"
-        }`}>
+        <div className={`border-yellow-500 bg-gray-800 rounded-lg p-6 border transition-colors `}>
           <div className="flex items-center space-x-3 mb-3">
-            <span className="text-3xl">{hasPermission ? "🚀" : "🔒"}</span>
+            <span className="text-3xl">🚀</span>
             <div className="flex-1">
               <h3 className="text-lg font-bold text-white">Deploy</h3>
               <p className="text-sm text-gray-400">
-                {hasPermission ? "Deploy to environments" : "Locked - request access"}
+                Deploy to environments
               </p>
             </div>
-          </div>
-          <div className="space-y-2">
-            <button
-              hx-post={`/demo/devops_bot/deploy_request?grant_id=${grant_id}`}
-              hx-target="#content"
-              className={`w-full px-4 py-2 rounded-lg transition-colors ${
-                hasPermission 
-                  ? "bg-yellow-600/30 hover:bg-yellow-600 text-yellow-300" 
-                  : "bg-yellow-600 hover:bg-yellow-700 text-white"
-              }`}
-            >
-              {hasPermission ? "🔄 Update Permissions" : "Request Deployment Access"}
-            </button>
-            {hasPermission && (
-              <button
-                hx-get={`/demo/devops_bot/deploy?grant_id=${grant_id}`}
-                hx-target="#content"
-                className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
-              >
-                Go to Deployment →
-              </button>
-            )}
           </div>
         </div>
       )

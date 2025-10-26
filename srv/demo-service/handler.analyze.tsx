@@ -4,7 +4,8 @@ import React from "react";
 import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
 import GrantsManagementService from "#cds-models/sap/scai/grants/GrantsManagementService";
 import type { DemoService } from "./demo-service.tsx";
-import {Grants} from "#cds-models/GrantsManagementService";
+import {Grants} from "#cds-models/sap/scai/grants/GrantsManagementService";
+import {isGrant} from "@/lib/is-grant.ts";
 
 // Request handler - creates PAR request
 export async function REQUEST(this: DemoService, req: cds.Request) {
@@ -61,7 +62,7 @@ export async function REQUEST(this: DemoService, req: cds.Request) {
 
           <form action={`${authServerUrl}/authorize`} method="post">
             <input type="hidden" name="client_id" value="devops-bot" />
-            <input type="hidden" name="request_uri" value={response.request_uri!} />
+            <input type="hidden" name="request_uri" value={response!.request_uri!} />
             <button
               type="submit"
               className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
@@ -88,47 +89,35 @@ export async function GET(this: DemoService, req: cds.Request) {
   try {
     const grantService = await cds.connect.to(GrantsManagementService);
  
-    const {data:grant,...res} = await  cds.``
-    console.log(res,grant);
-    const hasPermission = grant?.scope?.includes("analytics_read");
+    const grant = await  grantService.read(Grants, grant_id) 
+    console.log("Grant fetched:", grant);
 
+    cds.context?.http?.res.setHeader("Content-Type", "text/html");
+    const hasPermission = isGrant(grant) && grant?.scope?.includes("analytics_read");
+    if(!hasPermission){
+      return req.http?.res.send(
+          renderToString(
+              <div className="text-center py-8">
+                <div className="text-center py-8" hx-get={`/demo/devops_bot/analyze_request?grant_id=${grant_id}`} hx-trigger="load" >
+
+                </div>
+              </div>
+          )
+      );
+    }
     return cds.context?.http?.res.send(
       renderToString(
-        <div className={`bg-gray-800 rounded-lg p-6 border transition-colors ${
-          hasPermission ? "border-blue-500" : "border-gray-700 hover:border-blue-500"
-        }`}>
+        <div className={`border-blue-500" bg-gray-800 rounded-lg p-6 border transition-colors`}>
           <div className="flex items-center space-x-3 mb-3">
-            <span className="text-3xl">{hasPermission ? "📊" : "🔒"}</span>
+            <span className="text-3xl">📊</span>
             <div className="flex-1">
               <h3 className="text-lg font-bold text-white">Analyze</h3>
               <p className="text-sm text-gray-400">
-                {hasPermission ? "View metrics and logs" : "Locked - request access"}
+                View metrics and logs
               </p>
             </div>
           </div>
-          <div className="space-y-2">
-            <button
-              hx-post={`/demo/devops_bot/analyze_request?grant_id=${grant_id}`}
-              hx-target="#content"
-              className={`w-full px-4 py-2 rounded-lg transition-colors ${
-                hasPermission 
-                  ? "bg-blue-600/30 hover:bg-blue-600 text-blue-300" 
-                  : "bg-blue-600 hover:bg-blue-700 text-white"
-              }`}
-            >
-              {hasPermission ? "🔄 Update Permissions" : "Request Analysis Access"}
-            </button>
-            {hasPermission && (
-              <button
-                hx-get={`/demo/devops_bot/analyze?grant_id=${grant_id}`}
-                hx-target="#content"
-                className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
-              >
-                Go to Analysis →
-              </button>
-            )}
-          </div>
-        </div>
+         </div>
       )
     );
   } catch (e) {

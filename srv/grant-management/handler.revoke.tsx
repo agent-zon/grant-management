@@ -12,13 +12,13 @@ export async function DELETE(this: GrantsManagementService, req: cds.Request) {
     }).where({ id: req.data.id })
   );
 
-  if (cds.context?.http?.req.accepts("html")) {
-    return cds.context?.http?.res.redirect(`/grants-management/Grants`);
+  if (req.http?.req.accepts("html")) {
+    return req.http?.res.redirect(`/grants-management/Grants`);
   }
   // For API JSON requests: 204 No Content
   if (cds.context?.http?.req.accepts("html") === false) {
-    cds.context?.http?.res.status(204).send();
-    return;
+      return req.http?.res.status(204).send();
+    
   }
   return { id: req.data.id } as any;
 }
