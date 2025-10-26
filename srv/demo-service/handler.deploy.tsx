@@ -89,7 +89,7 @@ export async function GET(this: DemoService, req: cds.Request) {
   
   try {
     const grantService = await cds.connect.to(GrantsManagementService);
-    const grant = await grantService.read("Grants", grant_id);
+    const grant = await grantService.read("Grants").where({ ID: grant_id });
     const hasPermission = grant?.scope?.includes("deployments");
 
     return cds.context?.http?.res.send(
