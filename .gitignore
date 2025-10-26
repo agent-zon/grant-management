@@ -43,3 +43,5 @@ temp/
 @cds-models
 *-secret.*
 secret/
+db.sqlite
+db.sqlite-*
