@@ -38,6 +38,13 @@
       "service": "sap-approuter-userapi"
     },
     {
+      "source": "^/mcp-proxy/(.*)$",
+      "target": "/$1",
+      "destination": "mcp-proxy",
+      "csrfProtection": false,
+      "authenticationType": "none"
+    },
+    {
       "source": "^/(.*)$",
       "target": "$1",
       "destination": "srv-api",

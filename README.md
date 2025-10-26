@@ -19,6 +19,9 @@ with the authorization server.
 - **CDS Service**: Core Data Services implementation with proper entity modeling
 - **Authorization Details**: Model tools and operations as Rich Authorization
   Request (RAR) authorization details
+- **MCP Consent Middleware**: Tool-level authorization proxy for Model Context Protocol agents
+- **Session Management**: Track MCP agent sessions and link them to OAuth grants
+- **Tool Policy Integration**: Group related tools for batch consent requests
 - **Web-based UI**: User-friendly interface for managing consent grants
 - **RESTful API**: Programmatic access for OAuth clients
 - **Real-time Monitoring**: Live tracking of grant usage and status
@@ -43,10 +46,21 @@ documentation.
 
 ### Key Endpoints
 
+#### Grant Management API
+
 - `GET /api/grants` - Grants list
 - `GET /api/grants?$expand=authorization_details` - Grants list with authorization_details
 - `GET /api/grants/{grant_id}` - Query grant status
 - `DELETE /api/grants/{grant_id}` - Revoke grant
+
+#### MCP Consent Proxy
+
+- `POST /mcp-proxy/proxy` - MCP JSON-RPC proxy endpoint with consent enforcement
+- `GET /mcp-proxy/callback` - OAuth callback for consent completion
+- `GET /mcp-proxy/session` - Session information and authorization status
+- `GET /mcp-proxy/health` - Service health check and statistics
+
+See [srv/mcp-consent-middleware/README.md](srv/mcp-consent-middleware/README.md) for detailed documentation.
 
 ### Web UI
 

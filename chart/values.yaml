@@ -104,6 +104,36 @@ approuter:
     OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
     OTEL_SERVICE_NAME: approuter
     OTEL_PROPAGATORS: tracecontext,baggage
+mcp-proxy:
+  image:
+    repository: grant-management/mcp-proxy
+  resources:
+    limits:
+      ephemeral-storage: 1G
+      memory: 256M
+    requests:
+      ephemeral-storage: 512M
+      cpu: 100m
+      memory: 128M
+  health:
+    liveness:
+      path: /health
+    readiness:
+      path: /health
+  networkSecurity:
+    allowNamespaceInternal: true
+  env:
+    - name: MCP_SERVER_URL
+      value: "http://localhost:3000/mcp"
+    - name: AUTH_SERVER_URL
+      value: "http://srv:4004/oauth-server"
+    - name: GRANT_MANAGEMENT_URL
+      value: "http://srv:4004/grants-management"
+    - name: MCP_CLIENT_ID
+      value: "mcp-agent-client"
+    - name: BASE_URL
+      value: "https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/mcp-proxy"
+
 portal:
   runAsUser: 1993
   bindings:
@@ -165,6 +195,9 @@ backendDestinations:
   srv-api:
     service: srv
     forwardAuthToken: true
+  mcp-proxy:
+    service: mcp-proxy
+    forwardAuthToken: false
   # user-portal:
   #   service: portal
   #   forwardAuthToken: true
