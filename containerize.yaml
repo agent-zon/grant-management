@@ -14,3 +14,8 @@ modules:
     build-parameters:
       commands:
         - docker buildx build --platform linux/amd64 -t grant-management/approuter:v17 app/router --load
+
+  - name: grant-management/mcp
+    build-parameters:
+      commands:
+        - docker buildx build --platform linux/amd64 -t grant-management/mcp:v17 app/mcp --load

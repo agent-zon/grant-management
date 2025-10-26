@@ -104,26 +104,25 @@ approuter:
     OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
     OTEL_SERVICE_NAME: approuter
     OTEL_PROPAGATORS: tracecontext,baggage
-#  additionalVolumes:
-#    - name: xs-app
-#      configMap:
-#        name: "{{ .Release.Name }}-approuter-static-files"
-#      volumeMount:
-#        mountPath: /app/xs-app.json
-#        subPath: xs-app.json
-#        readOnly: true
-#    - name: api-docs
-#      volumeMount:
-#        mountPath: /app/api-docs
-##        subPath: api-docs
-#        readOnly: true
-#    - name: favicon-config
-#      configMap:
-#        name: "{{ .Release.Name }}-approuter-static-files"
-#      volumeMount:
-#        mountPath: /app/favicon.svg
-#        subPath: favicon.svg
-#        readOnly: true
+mcp:
+  image:
+    repository: grant-management/mcp
+  resources:
+    limits:
+      ephemeral-storage: 1G
+      memory: 256M
+    requests:
+      ephemeral-storage: 512M
+      cpu: 100m
+      memory: 128M
+  health:
+    liveness:
+      path: /health
+    readiness:
+      path: /health
+  networkSecurity:
+    allowNamespaceInternal: true
+
 portal:
   runAsUser: 1993
   bindings:
@@ -185,6 +184,9 @@ backendDestinations:
   srv-api:
     service: srv
     forwardAuthToken: true
+  mcp:
+    service: mcp
+    forwardAuthToken: false
   # user-portal:
   #   service: portal
   #   forwardAuthToken: true
