@@ -17,72 +17,56 @@ export default class Service extends cds.ApplicationService {
     // Index - generate new grant and redirect
     this.on('index', async () => {
       const grant_id = ulid();
-      cds.context?.http?.res.redirect(`/demo/DevOpsBot(grant_id='${grant_id}')/shell`);
+      cds.context?.http?.res.redirect(`/demo/shell?grant_id=${grant_id}`);
     });
     
-    // DevOpsBot entity handlers
-    this.on('READ', 'DevOpsBot', async (req) => {
-      // Return minimal entity data
-      return { grant_id: req.data.grant_id };
+    // Shell
+    this.on('shell', async (req) => {
+      return ShellHandler.GET.call(this, req.data.grant_id);
     });
     
-    this.on('shell', 'DevOpsBot', async (req) => {
-      return ShellHandler.GET.call(this, req.params[0].grant_id);
+    // Grant status
+    this.on('grant_status', async (req) => {
+      return GrantTemplateHandler.GET.call(this, req.data.grant_id);
     });
     
-    this.on('grant_status', 'DevOpsBot', async (req) => {
-      return GrantTemplateHandler.GET.call(this, req.params[0].grant_id);
+    // Analysis
+    this.on('analysis_request', async (req) => {
+      return AnalyzeHandler.REQUEST.call(this, req.data.grant_id);
     });
     
-    // Analysis entity handlers
-    this.on('READ', 'Analysis', async (req) => {
-      return { grant_id: req.data.grant_id };
+    this.on('analysis_elements', async (req) => {
+      return AnalyzeHandler.GET.call(this, req.data.grant_id);
     });
     
-    this.on('request', 'Analysis', async (req) => {
-      return AnalyzeHandler.REQUEST.call(this, req.params[0].grant_id);
+    this.on('analysis_tile', async (req) => {
+      return AnalyzeHandler.TILE.call(this, req.data.grant_id);
     });
     
-    this.on('elements', 'Analysis', async (req) => {
-      return AnalyzeHandler.GET.call(this, req.params[0].grant_id);
+    // Deployment
+    this.on('deployment_request', async (req) => {
+      return DeployHandler.REQUEST.call(this, req.data.grant_id);
     });
     
-    this.on('tile', 'Analysis', async (req) => {
-      return AnalyzeHandler.TILE.call(this, req.params[0].grant_id);
+    this.on('deployment_elements', async (req) => {
+      return DeployHandler.GET.call(this, req.data.grant_id);
     });
     
-    // Deployment entity handlers
-    this.on('READ', 'Deployment', async (req) => {
-      return { grant_id: req.data.grant_id };
+    this.on('deployment_tile', async (req) => {
+      return DeployHandler.TILE.call(this, req.data.grant_id);
     });
     
-    this.on('request', 'Deployment', async (req) => {
-      return DeployHandler.REQUEST.call(this, req.params[0].grant_id);
+    // Monitoring
+    this.on('monitoring_request', async (req) => {
+      return MonitorHandler.REQUEST.call(this, req.data.grant_id);
     });
     
-    this.on('elements', 'Deployment', async (req) => {
-      return DeployHandler.GET.call(this, req.params[0].grant_id);
+    this.on('monitoring_elements', async (req) => {
+      return MonitorHandler.GET.call(this, req.data.grant_id);
     });
     
-    this.on('tile', 'Deployment', async (req) => {
-      return DeployHandler.TILE.call(this, req.params[0].grant_id);
-    });
-    
-    // Monitoring entity handlers
-    this.on('READ', 'Monitoring', async (req) => {
-      return { grant_id: req.data.grant_id };
-    });
-    
-    this.on('request', 'Monitoring', async (req) => {
-      return MonitorHandler.REQUEST.call(this, req.params[0].grant_id);
-    });
-    
-    this.on('elements', 'Monitoring', async (req) => {
-      return MonitorHandler.GET.call(this, req.params[0].grant_id);
-    });
-    
-    this.on('tile', 'Monitoring', async (req) => {
-      return MonitorHandler.TILE.call(this, req.params[0].grant_id);
+    this.on('monitoring_tile', async (req) => {
+      return MonitorHandler.TILE.call(this, req.data.grant_id);
     });
     
     // OAuth callback

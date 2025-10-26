@@ -9,46 +9,32 @@ service DemoService {
   // Main shell - generate new grant_id and redirect
   function index() returns String;
   
-  // DevOps Bot instances - one per grant
-  entity DevOpsBot {
-    key grant_id: String;
-  }
+  // Shell and grant status
+  function shell(grant_id: String) returns String;
+  function grant_status(grant_id: String) returns String;
   
-  // Bound actions on DevOpsBot
-  action DevOpsBot.shell() returns String;
-  action DevOpsBot.grant_status() returns String;
+  // Analysis functions
+  @method: [POST]
+  function analysis_request(grant_id: String) returns String;
   
-  // Analysis capability
-  entity Analysis {
-    key grant_id: String;
-  }
+  function analysis_elements(grant_id: String) returns String;
+  function analysis_tile(grant_id: String) returns String;
   
-  // Analysis actions
-  action Analysis.request() returns String;      // POST - create PAR request
-  action Analysis.elements() returns String;     // GET - UI elements
-  action Analysis.tile() returns String;         // GET - tile view
+  // Deployment functions
+  @method: [POST]
+  function deployment_request(grant_id: String) returns String;
   
-  // Deployment capability  
-  entity Deployment {
-    key grant_id: String;
-  }
+  function deployment_elements(grant_id: String) returns String;
+  function deployment_tile(grant_id: String) returns String;
   
-  // Deployment actions
-  action Deployment.request() returns String;    // POST - create PAR request
-  action Deployment.elements() returns String;   // GET - UI elements
-  action Deployment.tile() returns String;       // GET - tile view
+  // Monitoring functions
+  @method: [POST]
+  function monitoring_request(grant_id: String) returns String;
   
-  // Monitoring capability
-  entity Monitoring {
-    key grant_id: String;
-  }
+  function monitoring_elements(grant_id: String) returns String;
+  function monitoring_tile(grant_id: String) returns String;
   
-  // Monitoring actions
-  action Monitoring.request() returns String;    // POST - create PAR request
-  action Monitoring.elements() returns String;   // GET - UI elements
-  action Monitoring.tile() returns String;       // GET - tile view
-  
-  // OAuth callback - stateless
+  // OAuth callback
   @method: [GET, POST]
   function callback(
     code: String,

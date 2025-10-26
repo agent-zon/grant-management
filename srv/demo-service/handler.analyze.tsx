@@ -138,7 +138,7 @@ export async function GET(this: DemoService, grant_id: string) {
             </div>
 
             <button
-              hx-post={`/demo/Analysis(grant_id='${grant_id}')/request`}
+              hx-post={`/demo/analysis_request?grant_id=${grant_id}`}
               hx-target="#content"
               className="w-full px-6 py-3 bg-blue-600/50 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
             >
