@@ -22,7 +22,7 @@ export async function REQUEST(this: DemoService, req: cds.Request) {
       ).href,
       grant_management_action: "update",
       grant_id: grant_id,
-      scope: "monitoring_read",
+      scope: "monitoring",
       authorization_details: JSON.stringify([
         {
           type: "mcp",
@@ -61,7 +61,7 @@ export async function REQUEST(this: DemoService, req: cds.Request) {
 
           <form action={`${authServerUrl}/authorize`} method="post">
             <input type="hidden" name="client_id" value="devops-bot" />
-            <input type="hidden" name="request_uri" value={response.request_uri!} />
+            <input type="hidden" name="request_uri" value={response!.request_uri!} />
             <button
               type="submit"
               className="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
@@ -88,49 +88,34 @@ export async function GET(this: DemoService, req: cds.Request) {
   try {
     const grantService = await cds.connect.to(GrantsManagementService);
     // const {data:grant,...res} = await grantService.run(`SELECT * FROM ${Grants} WHERE id = ?`, [grant_id]) as {data:Grants};
-    const {data:grant,...res} = await grantService.get(Grants, {
-      id: grant_id
-    }) ;
-    console.log("fetch grant", grant,res);
+    const grant= await grantService.read(Grants, grant_id) ;
+    console.log("fetch grant", grant);
 
-    const hasPermission = isGrant(grant) && grant?.scope?.includes("monitoring_read");
-    cds.context?.http?.res.setHeader("Content-Type", "text/html");
-
+    const hasPermission = isGrant(grant) && grant?.scope?.includes("monitoring");
+    req.http?.res.setHeader("Content-Type", "text/html");
+    if(!hasPermission){
+      return req.http?.res.send(
+        renderToString(
+          <div className="text-center py-8" hx-get={`/demo/devops_bot/monitor_request?grant_id=${grant_id}`} hx-trigger="load" >
+            
+          </div>
+        )
+      );
+    }
+    
     return cds.context?.http?.res.send(
       renderToString(
         <div className={`bg-gray-800 rounded-lg p-6 border transition-colors ${
           hasPermission ? "border-green-500" : "border-gray-700 hover:border-green-500"
         }`}>
           <div className="flex items-center space-x-3 mb-3">
-            <span className="text-3xl">{hasPermission ? "📈" : "🔒"}</span>
+            <span className="text-3xl">📈</span>
             <div className="flex-1">
               <h3 className="text-lg font-bold text-white">Monitor</h3>
               <p className="text-sm text-gray-400">
-                {hasPermission ? "View system health" : "Locked - request access"}
+                View system health
               </p>
             </div>
-          </div>
-          <div className="space-y-2">
-            <button
-              hx-post={`/demo/devops_bot/monitor_request?grant_id=${grant_id}`}
-              hx-target="#content"
-              className={`w-full px-4 py-2 rounded-lg transition-colors ${
-                hasPermission 
-                  ? "bg-green-600/30 hover:bg-green-600 text-green-300" 
-                  : "bg-green-600 hover:bg-green-700 text-white"
-              }`}
-            >
-              {hasPermission ? "🔄 Update Permissions" : "Request Monitoring Access"}
-            </button>
-            {hasPermission && (
-              <button
-                hx-get={`/demo/devops_bot/monitor?grant_id=${grant_id}`}
-                hx-target="#content"
-                className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
-              >
-                Go to Monitoring →
-              </button>
-            )}
           </div>
         </div>
       )

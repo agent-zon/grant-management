@@ -2,6 +2,8 @@ import cds from "@sap/cds";
 import { renderToString } from "react-dom/server";
 import React from "react";
 import type { DemoService } from "./demo-service.tsx";
+import GrantsManagementService, {Grants} from "#cds-models/sap/scai/grants/GrantsManagementService";
+import {isGrant} from "@/lib/is-grant.ts";
 
 interface GrantData {
   id: string;
@@ -16,10 +18,10 @@ export async function GET(this: DemoService, req: cds.Request) {
   const { grant_id } = req.data;
   try {
     // Fetch grant from grant-management service
-    const grantService = await cds.connect.to("sap.scai.grants.GrantsManagementService");
-    const grant = await grantService.read("Grants").where({ id: grant_id }) as GrantData;
+    const grantService = await cds.connect.to(GrantsManagementService);
+    const grant = await grantService.read(Grants,grant_id)
 
-    if (!grant) {
+    if (!isGrant(grant)) {
       return cds.context?.http?.res.send(
         renderToString(
           <div className="text-center py-8">
