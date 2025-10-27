@@ -26,13 +26,13 @@ modules:
     id: v1-grant-server
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t grant-management/grant-server:v14 -f app/grant-management/GrantManagementServer/Dockerfile app/grant-management --load
+        - docker buildx build --platform linux/amd64 -t grant-management/grant-server:v14 -f app/grant-management/GrantManagementServer/Dockerfile app --load
 
   - name: grant-management/grant-mcp-layer
     id: v1-grant-mcp-layer
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t grant-management/grant-mcp-layer:v14 -f app/grant-management/GrantMcpLayer/Dockerfile app/grant-management --load
+        - docker buildx build --platform linux/amd64 -t grant-management/grant-mcp-layer:v14 -f app/grant-management/GrantMcpLayer/Dockerfile app --load
 
   - name: grant-management/cockpit-ui
     id: v1-cockpit-ui

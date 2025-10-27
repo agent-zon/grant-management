@@ -7,9 +7,13 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["GrantManagementServer/GrantManagementServer.csproj", "GrantManagementServer/"]
+COPY ["grant-management/GrantManagementServer/GrantManagementServer.csproj", "GrantManagementServer/"]
+COPY ["common/Common.csproj", "/common/"]
+COPY ["grant-management/GrantManagement.ServiceDefaults/GrantManagement.ServiceDefaults.csproj", "GrantManagement.ServiceDefaults/"]
 RUN dotnet restore "GrantManagementServer/GrantManagementServer.csproj"
-COPY . .
+COPY ["grant-management/GrantManagementServer/", "GrantManagementServer/"]
+COPY ["common/", "/common/"]
+COPY ["grant-management/GrantManagement.ServiceDefaults/", "GrantManagement.ServiceDefaults/"]
 WORKDIR "/src/GrantManagementServer"
 RUN dotnet build "./GrantManagementServer.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
