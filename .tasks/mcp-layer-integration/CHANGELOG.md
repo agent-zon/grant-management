@@ -131,4 +131,37 @@
 
 ---
 
+### 15:20 - [BUILD] Fixed .NET Docker Build Issues
+- Resolved "Invalid framework identifier" error
+- Root cause: Directory.Build.props, Directory.Build.targets, Directory.Packages.props not in Docker context
+- Solution: Copied files to app/grant-management/ folder
+- Updated Dockerfile to copy these files to container root (/)
+- Successfully built all containers:
+  - grant-management/api:v14 (270MB)
+  - grant-management/grant-server:v14 (97.4MB)
+  - grant-management/cockpit-ui:v14 (25.7MB)
+
+### 15:35 - [BUILD] Restored Missing tsconfig.json
+- Found tsconfig.cdsbuild.json extends ./tsconfig.json which was missing
+- Restored tsconfig.json from commit 72967a2
+- File was accidentally removed during merge
+
+### 15:40 - [DEPLOYMENT] v01 Partial Deployment Complete
+- Pushed containers to registry:
+  - scai-dev.common.repositories.cloud.sap/grant-management/api:v14 ✓
+  - scai-dev.common.repositories.cloud.sap/grant-management/grant-server:v14 ✓
+  - scai-dev.common.repositories.cloud.sap/grant-management/cockpit-ui:v14 ✓
+- Deployed v01 to Kyma namespace grant-management
+- Status: Partial success
+  - v01-srv: Running ✓
+  - v01-approuter: Running ✓
+  - v01-grant-server: Init:0/2 (waiting for dependencies)
+  - v01-cockpit-ui: ImagePullBackOff (registry pull issue)
+  - v01-mcp-proxy: ImagePullBackOff (image not built - old service, build errors)
+  - v01-grant-mcp-layer: ImagePullBackOff (image not built - requires csharp-sdk submodule)
+- VirtualServices created for all services
+- Approuter accessible at: https://v01-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/
+
+---
+
 (More entries will be added as work progresses)
