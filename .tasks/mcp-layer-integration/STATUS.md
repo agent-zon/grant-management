@@ -23,6 +23,10 @@
 - [x] Dockerfiles created/verified
 - [x] containerize.yaml updated
 - [x] docker-compose.local.yml created
+- [x] All containers built successfully
+  - grant-management/api:v14 (Node.js) - 270MB
+  - grant-management/grant-server:v14 (.NET) - 97.4MB
+  - grant-management/cockpit-ui:v14 (React) - 25.7MB
 - [ ] Local integration tested (deferred to after Helm)
 
 ### Phase 4: Deployment v01
@@ -62,7 +66,7 @@ None currently.
 
 ## Next Steps
 
-1. Build and push containers: npm run build:containers
+1. Push containers to registry: docker push commands or build:containers script
 2. Deploy v01 to Kyma: helm upgrade --install --create-namespace --wait v01 ./chart --namespace grant-management
 3. Test all services are accessible through approuter
 4. Verify IAS authentication works for all services
