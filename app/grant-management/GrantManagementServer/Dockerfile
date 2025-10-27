@@ -7,6 +7,11 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+# Copy Directory.Build files first - they define shared properties for all projects
+COPY ["grant-management/Directory.Build.props", "/"]
+COPY ["grant-management/Directory.Build.targets", "/"]
+COPY ["grant-management/Directory.Packages.props", "/"]
+# Now copy project files
 COPY ["grant-management/GrantManagementServer/GrantManagementServer.csproj", "GrantManagementServer/"]
 COPY ["common/Common.csproj", "/common/"]
 COPY ["grant-management/GrantManagement.ServiceDefaults/GrantManagement.ServiceDefaults.csproj", "GrantManagement.ServiceDefaults/"]
