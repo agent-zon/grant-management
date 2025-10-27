@@ -82,6 +82,25 @@
 - Will move Common/ → app/common/
 - Will update .NET project references after move
 
+### 09:30 - [MIGRATION] Phase 2 Complete
+- All directories successfully moved using `git mv` to preserve history
+- Updated GrantManagementServer.csproj: ../common/Common.csproj reference
+- Updated GrantMcpLayer.csproj: ../common/Common.csproj reference
+- Updated grant-managment.sln with new paths for all projects
+- Committed changes: "Phase 2: Move .NET services to app/ folder structure"
+
+### 09:45 - [CONTAINERIZATION] Starting Phase 3 - Dockerfile Creation
+- Verified Dockerfiles exist for GrantManagementServer and GrantMcpLayer
+- Created new Dockerfile for cockpit-ui using node:20-alpine + nginx:alpine
+- Updated containerize.yaml with three new modules:
+  - grant-management/grant-server (v1-grant-server)
+  - grant-management/grant-mcp-layer (v1-grant-mcp-layer)
+  - grant-management/cockpit-ui (v1-cockpit-ui)
+- Created docker-compose.local.yml for local integration testing
+  - Services: srv, mcp-proxy, grant-server, grant-mcp-layer, cockpit-ui, mcp-server-example, postgres
+  - Configured service networking and environment variables
+  - Added postgres volume for data persistence
+
 ---
 
 (More entries will be added as work progresses)
