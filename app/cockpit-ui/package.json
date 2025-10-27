@@ -18,7 +18,8 @@
     "@ui5/webcomponents-fiori": "^2.0.0",
     "@ui5/webcomponents": "^2.0.0",
     "@ui5/webcomponents-icons": "^2.0.0",
-    "oidc-client-ts": "^3.0.1"
+    "oidc-client-ts": "^3.0.1",
+    "serve": "^14.2.1"
   },
   "devDependencies": {
     "typescript": "^5.5.3",

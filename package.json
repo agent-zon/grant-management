@@ -70,7 +70,7 @@
     "bind:remove": "npx cds bind --remove",
     "setup:local": "npm run bind:all && npm run serve:hybrid",
     "setup:dev": "npm install && npm run bind:auth && npm run serve",
-    "deploy": "npm run build:push && npm run deploy:helm",
+    "deploy": "./scripts/deploy.sh",
     "deploy:sqlite": "npx cds deploy --to sqlite --profile development",
     "deploy:helm": "npm run build && helm upgrade v01 ./gen/chart --install --create-namespace",
     "deploy:to:sqlite": "npx cds deploy --to sqlite",

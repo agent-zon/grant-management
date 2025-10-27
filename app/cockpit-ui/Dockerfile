@@ -1,24 +1,30 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm install --omit=dev
+RUN npm install
 COPY . .
 RUN npm run build
 
-FROM nginx:alpine
+FROM node:20-alpine AS production
+WORKDIR /app
 
-# Copy custom nginx config, app, and entrypoint
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Create app directory and user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
 
-# Set permissions
-RUN chmod +x /docker-entrypoint.sh && \
-    chown -R 101:101 /usr/share/nginx/html /etc/nginx/nginx.conf
+# Copy built application
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package*.json ./
 
-USER 101
+# Install only production dependencies
+RUN npm install --omit=dev
+
+# Change ownership to nodejs user
+RUN chown -R 1001:1001 /app
+USER 1001
+
 EXPOSE 8080
 
-# Use custom entrypoint that creates temp dirs at runtime
-ENTRYPOINT ["/docker-entrypoint.sh"]
+# Start the application using a simple HTTP server
+CMD ["npx", "serve", "-s", "dist", "-l", "8080"]
 
