@@ -45,6 +45,20 @@
       "authenticationType": "none"
     },
     {
+      "source": "^/cockpit-ui/(.*)$",
+      "target": "/$1",
+      "destination": "cockpit-ui",
+      "csrfProtection": false,
+      "authenticationType": "ias"
+    },
+    {
+      "source": "^/api/grants/(.*)$",
+      "target": "/api/grants/$1",
+      "destination": "grant-server",
+      "csrfProtection": false,
+      "authenticationType": "ias"
+    },
+    {
       "source": "^/(.*)$",
       "target": "$1",
       "destination": "srv-api",

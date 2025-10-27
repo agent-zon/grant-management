@@ -134,6 +134,85 @@ mcp-proxy:
     - name: BASE_URL
       value: "https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/mcp-proxy"
 
+grant-server:
+  bindings:
+    auth:
+      serviceInstanceName: identity
+      parameters:
+        credential-type: X509_GENERATED
+        app-identifier: grant-server
+    db:
+      serviceInstanceName: postgresql
+  image:
+    repository: grant-management/grant-server
+  resources:
+    limits:
+      ephemeral-storage: 1G
+      memory: 512M
+    requests:
+      ephemeral-storage: 512M
+      cpu: 250m
+      memory: 256M
+  health:
+    liveness:
+      path: /health
+    readiness:
+      path: /health
+  networkSecurity:
+    allowNamespaceInternal: true
+  env:
+    - name: ASPNETCORE_URLS
+      value: "http://+:8080"
+
+grant-mcp-layer:
+  bindings:
+    auth:
+      serviceInstanceName: identity
+      parameters:
+        credential-type: X509_GENERATED
+        app-identifier: grant-mcp-layer
+  image:
+    repository: grant-management/grant-mcp-layer
+  resources:
+    limits:
+      ephemeral-storage: 1G
+      memory: 256M
+    requests:
+      ephemeral-storage: 512M
+      cpu: 100m
+      memory: 128M
+  health:
+    liveness:
+      path: /health
+    readiness:
+      path: /health
+  networkSecurity:
+    allowNamespaceInternal: true
+  env:
+    - name: ASPNETCORE_URLS
+      value: "http://+:8080"
+    - name: GrantManagementUrl
+      value: "http://grant-server:8080"
+
+cockpit-ui:
+  image:
+    repository: grant-management/cockpit-ui
+  resources:
+    limits:
+      ephemeral-storage: 1G
+      memory: 128M
+    requests:
+      ephemeral-storage: 256M
+      cpu: 50m
+      memory: 64M
+  health:
+    liveness:
+      path: /
+    readiness:
+      path: /
+  networkSecurity:
+    allowNamespaceInternal: true
+
 portal:
   runAsUser: 1993
   bindings:
@@ -197,6 +276,15 @@ backendDestinations:
     forwardAuthToken: true
   mcp-proxy:
     service: mcp-proxy
+    forwardAuthToken: false
+  grant-server:
+    service: grant-server
+    forwardAuthToken: true
+  grant-mcp-layer:
+    service: grant-mcp-layer
+    forwardAuthToken: true
+  cockpit-ui:
+    service: cockpit-ui
     forwardAuthToken: false
   # user-portal:
   #   service: portal

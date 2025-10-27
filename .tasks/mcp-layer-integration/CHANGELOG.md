@@ -100,6 +100,21 @@
   - Services: srv, mcp-proxy, grant-server, grant-mcp-layer, cockpit-ui, mcp-server-example, postgres
   - Configured service networking and environment variables
   - Added postgres volume for data persistence
+- Committed changes: "Phase 3: Add containerization configuration"
+
+### 10:00 - [HELM] Starting Phase 4 - Helm Chart Configuration for v01
+- Updated chart/Chart.yaml dependencies:
+  - Added grant-server, grant-mcp-layer, cockpit-ui as web-application aliases
+  - Uncommented postgresql service-instance dependency
+- Updated chart/values.yaml:
+  - Added grant-server configuration with IAS binding and postgresql binding
+  - Added grant-mcp-layer configuration with IAS binding and GrantManagementUrl env
+  - Added cockpit-ui configuration (static nginx serve)
+  - Updated backendDestinations with all three new services
+- Updated app/router/xs-app.json routes:
+  - /cockpit-ui/* → cockpit-ui destination (authenticated with IAS)
+  - /api/grants/* → grant-server destination (authenticated with IAS)
+- Ready for v01 deployment milestone
 
 ---
 

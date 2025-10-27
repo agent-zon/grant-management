@@ -20,10 +20,10 @@
 
 ### Phase 3: Containerization
 
-- [ ] Dockerfiles created/verified
-- [ ] containerize.yaml updated
-- [ ] docker-compose.local.yml created
-- [ ] Local integration tested
+- [x] Dockerfiles created/verified
+- [x] containerize.yaml updated
+- [x] docker-compose.local.yml created
+- [ ] Local integration tested (deferred to after Helm)
 
 ### Phase 4: Deployment v01
 
@@ -54,7 +54,7 @@
 
 ## Current Working On
 
-Phase 3: Creating and verifying Dockerfiles for all services.
+Phase 4: Updating Helm charts for v01 deployment.
 
 ## Blockers
 
@@ -62,7 +62,7 @@ None currently.
 
 ## Next Steps
 
-1. Verify Dockerfiles exist for grant-server and grant-mcp-layer
-2. Create Dockerfile for cockpit-ui
-3. Update containerize.yaml with new modules
-4. Create docker-compose.local.yml for integration testing
+1. Update chart/Chart.yaml with new service dependencies
+2. Add postgresql service configuration to values.yaml
+3. Configure grant-server, grant-mcp-layer, cockpit-ui in values.yaml
+4. Update app/router/xs-app.json with new routes
