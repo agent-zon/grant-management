@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   srv:
@@ -33,7 +33,9 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=grants;Username=postgres;Password=postgres
+      - NodeJsGrantApiUrl=http://srv:4004/grants-management
     depends_on:
+      - srv
       - postgres
 
   grant-mcp-layer:
@@ -72,4 +74,3 @@ services:
 
 volumes:
   postgres-data:
-

@@ -12,6 +12,7 @@ Integrated three .NET services (GrantManagementServer, GrantMcpLayer) and one Re
 ## Directory Structure Migration
 
 ### Before
+
 ```
 /
 ├── GrantManagement/          # At root
@@ -23,6 +24,7 @@ Integrated three .NET services (GrantManagementServer, GrantMcpLayer) and one Re
 ```
 
 ### After
+
 ```
 /
 ├── app/
@@ -47,38 +49,47 @@ Integrated three .NET services (GrantManagementServer, GrantMcpLayer) and one Re
 ## Key Architectural Decisions
 
 ### AD-001: Unified app/ Folder Structure
+
 **Decision**: Move all application services under `app/` directory  
-**Rationale**: 
+**Rationale**:
+
 - Consistency with existing `app/mcp-proxy/` and `app/portal/` structure
 - Clear separation between application code and infrastructure (srv/, db/, chart/)
 - Better IDE navigation and discoverability
 
 **Impact**:
+
 - .NET project references updated (`../../Common` → `../common`)
 - Solution file paths updated for all projects
 - Build contexts in Dockerfiles remain relative to service directory
 
 ### AD-002: Service Naming Convention
+
 **Decision**: Use kebab-case for directory names  
 **Rationale**:
+
 - Matches existing naming: `mcp-proxy`, not `McpProxy`
 - Kubernetes-friendly (lowercase, hyphens)
 - Consistent with helm chart aliases
 
 **Mapping**:
+
 - `GrantManagement` → `grant-management`
 - `GrantManagementServer` → stays as-is (within grant-management/)
 - `cockpit-ui` → stays as-is (already kebab-case)
 - `Common` → `common`
 
 ### AD-003: PostgreSQL Database Strategy
+
 **Decision**: Add postgresql service-instance in Helm, bind to .NET services  
 **Rationale**:
+
 - .NET services use EntityFrameworkCore with PostgreSQL
 - Node.js services use SQLite (separate, unchanged)
 - Future: may migrate Node.js to shared PostgreSQL
 
 **Configuration**:
+
 ```yaml
 postgresql:
   serviceOfferingName: postgresql-db
@@ -89,6 +100,7 @@ postgresql:
 ## Project Reference Updates
 
 ### GrantManagementServer.csproj
+
 ```xml
 <!-- Before -->
 <ProjectReference Include="..\..\Common\Common.csproj" />
@@ -98,6 +110,7 @@ postgresql:
 ```
 
 ### GrantMcpLayer.csproj
+
 ```xml
 <!-- Before -->
 <ProjectReference Include="..\..\Common\Common.csproj" />
@@ -107,6 +120,7 @@ postgresql:
 ```
 
 ### grant-managment.sln
+
 ```
 <!-- Before -->
 "GrantManagement\GrantManagementServer\GrantManagementServer.csproj"
@@ -120,6 +134,7 @@ postgresql:
 ## Containerization Strategy
 
 ### Multi-Stage Dockerfile Pattern (.NET)
+
 Both GrantManagementServer and GrantMcpLayer use Microsoft's recommended multi-stage build:
 
 ```dockerfile
@@ -133,11 +148,13 @@ FROM base AS final
 **Dockerfile Location**: `app/grant-management/GrantManagementServer/Dockerfile`
 
 **Why parent context?**
+
 - Needs access to `../Common/` for shared DTOs
 - Needs access to `../GrantManagement.ServiceDefaults/` for shared config
 - Allows `COPY . .` to include all dependencies
 
 ### Node + Nginx Pattern (cockpit-ui)
+
 ```dockerfile
 FROM node:20-alpine AS builder
 # ... build React app ...
@@ -150,21 +167,23 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 ## Helm Integration Pattern
 
 ### Service Dependency Structure
+
 ```yaml
 dependencies:
   - name: web-application
-    alias: srv              # Node.js CAP service
+    alias: srv # Node.js CAP service
   - name: web-application
-    alias: grant-server     # .NET GrantManagementServer
+    alias: grant-server # .NET GrantManagementServer
   - name: web-application
-    alias: grant-mcp-layer  # .NET GrantMcpLayer
+    alias: grant-mcp-layer # .NET GrantMcpLayer
   - name: web-application
-    alias: cockpit-ui       # React UI
+    alias: cockpit-ui # React UI
   - name: service-instance
-    alias: postgresql       # Database for .NET services
+    alias: postgresql # Database for .NET services
 ```
 
 ### IAS Authentication Binding
+
 All services bind to same `identity` service instance with unique `app-identifier`:
 
 ```yaml
@@ -173,8 +192,8 @@ grant-server:
     auth:
       serviceInstanceName: identity
       parameters:
-        app-identifier: grant-server  # Unique per service
-        
+        app-identifier: grant-server # Unique per service
+
 grant-mcp-layer:
   bindings:
     auth:
@@ -184,18 +203,20 @@ grant-mcp-layer:
 ```
 
 ### Service-to-Service Communication
+
 Environment variables configure internal networking:
 
 ```yaml
 grant-mcp-layer:
   env:
     - name: GrantManagementUrl
-      value: "http://grant-server:8080"  # Kubernetes service name
+      value: "http://grant-server:8080" # Kubernetes service name
 ```
 
 ## Approuter Routing Strategy
 
 ### Route Priority Order
+
 1. Static files (`/api-docs`, `/auth/debug`)
 2. Auth APIs (`/auth/api/me`)
 3. User API (`/user-api`)
@@ -205,6 +226,7 @@ grant-mcp-layer:
 7. Fallback to srv (`^/(.*)$`) - IAS auth
 
 ### New Routes
+
 ```json
 {
   "source": "^/cockpit-ui/(.*)$",
@@ -221,18 +243,22 @@ grant-mcp-layer:
 ## Lessons Learned
 
 ### 1. Git History Preservation
+
 ✅ **Used `git mv`** to preserve file history during directory restructuring  
 ❌ Don't use `mv` + `git add` - loses history
 
 ### 2. .NET Build Context
+
 ✅ **Parent directory as context** when projects share dependencies  
 ❌ Don't use project directory if it references `../` paths
 
 ### 3. Helm Alias Naming
+
 ✅ **Match Kubernetes naming rules**: lowercase, hyphens  
 ❌ Don't use PascalCase or underscores in aliases
 
 ### 4. Service Discovery
+
 ✅ **Use Kubernetes service names** in env vars: `http://grant-server:8080`  
 ❌ Don't hardcode pod IPs or use localhost
 
@@ -249,7 +275,7 @@ grant-mcp-layer:
 ## Next Phase
 
 Phase 5 will integrate the Node.js authorization service with .NET grant-server by:
+
 1. Creating HTTP client in `srv/authorization-service/`
 2. Replacing CDS grant queries with REST API calls
 3. Removing old `srv/grant-management/` service
-

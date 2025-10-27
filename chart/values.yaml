@@ -163,6 +163,8 @@ grant-server:
   env:
     - name: ASPNETCORE_URLS
       value: "http://+:8080"
+    - name: NodeJsGrantApiUrl
+      value: "http://srv:4004/grants-management"
 
 grant-mcp-layer:
   bindings:
