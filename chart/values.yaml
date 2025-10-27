@@ -6,8 +6,8 @@ global:
     name: docker-registry
   image:
     registry: scai-dev.common.repositories.cloud.sap
-    tag: v14
-    imagePullPolicy: always
+    tag: v15
+    imagePullPolicy: Always
 srv:
   bindings:
     auth:
@@ -146,11 +146,11 @@ grant-server:
   resources:
     limits:
       ephemeral-storage: 1G
-      memory: 512M
+      memory: 1G
     requests:
       ephemeral-storage: 512M
-      cpu: 250m
-      memory: 256M
+      cpu: 500m
+      memory: 512M
   health:
     liveness:
       path: /health

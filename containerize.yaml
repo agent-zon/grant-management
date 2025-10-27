@@ -1,6 +1,6 @@
 _schema-version: "1.0"
 repository: scai-dev.common.repositories.cloud.sap
-tag: v14
+tag: v15
 before-all:
   - npx cds build --production
 
@@ -8,34 +8,29 @@ modules:
   - name: grant-management/api
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t grant-management/api:v14 -f Dockerfile . --load
+        - docker buildx build --platform linux/amd64 -t grant-management/api:v15 -f Dockerfile . --load
 
   - name: grant-management/approuter
     id: v1-approuter
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t grant-management/approuter:v14 app/router --load
+        - docker buildx build --platform linux/amd64 -t grant-management/approuter:v15 app/router --load
 
-  - name: grant-management/mcp-proxy
-    id: v1-mcp-proxy
-    build-parameters:
-      commands:
-        - docker buildx build --platform linux/amd64 -t grant-management/mcp-proxy:v14 app/mcp-proxy --load
-
+ 
   - name: grant-management/grant-server
     id: v1-grant-server
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t grant-management/grant-server:v14 -f app/grant-management/GrantManagementServer/Dockerfile app --load
+        - docker buildx build --platform linux/amd64 -t grant-management/grant-server:v15 -f app/grant-management/GrantManagementServer/Dockerfile app --load
 
   - name: grant-management/grant-mcp-layer
     id: v1-grant-mcp-layer
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t grant-management/grant-mcp-layer:v14 -f app/grant-management/GrantMcpLayer/Dockerfile app --load
+        - docker buildx build --platform linux/amd64 -t grant-management/grant-mcp-layer:v15 -f app/grant-management/GrantMcpLayer/Dockerfile app --load
 
   - name: grant-management/cockpit-ui
     id: v1-cockpit-ui
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t grant-management/cockpit-ui:v14 app/cockpit-ui --load
+        - docker buildx build --platform linux/amd64 -t grant-management/cockpit-ui:v15 app/cockpit-ui --load
