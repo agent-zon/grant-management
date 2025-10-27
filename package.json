@@ -59,8 +59,8 @@
     "hybrid:portal": "npx cds bind --exec -- npm run dev -w portal",
     "hybrid:cds": "npx cds bind --profile hybrid --exec -- cds watch --profile hybrid",
     "build": "npx cds build --production",
-    "build:containers": "ctz containerize.yaml --log",
-    "build:push": "ctz containerize.yaml --log --push",
+    "build:containers": "./scripts/build-containers.sh",
+    "build:push": "./scripts/build-containers.sh",
     "bind:srv": "cds bind --to-app-services v11-srv --on k8s",
     "bind:router": "cds bind --to-app-services v11-approuter --on k8s",
     "bind:auth": "cds bind ias -2 v11-identity --on k8s",
@@ -70,8 +70,9 @@
     "bind:remove": "npx cds bind --remove",
     "setup:local": "npm run bind:all && npm run serve:hybrid",
     "setup:dev": "npm install && npm run bind:auth && npm run serve",
-    "deploy": "npm run build:push && npm run deploy:helm",
+    "deploy": "npm run build:push && npm run deploy:k8s",
     "deploy:sqlite": "npx cds deploy --to sqlite --profile development",
+    "deploy:k8s": "./scripts/deploy-k8s.sh",
     "deploy:helm": "npm run build && helm upgrade v01 ./gen/chart --install --create-namespace",
     "deploy:to:sqlite": "npx cds deploy --to sqlite",
     "copy-docker-secret": "./scripts/copy-docker-secret.sh",
@@ -99,7 +100,8 @@
     "test:oauth": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/oauth-*.test.ts",
     "test:oauth:basic": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/oauth-basic-flow.test.ts",
     "test:oauth:stepup": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/oauth-stepup-flow.test.ts",
-    "test:grant-mgmt": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/grant-management.test.ts"
+    "test:grant-mgmt": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/grant-management.test.ts",
+    "validate:deployment": "./scripts/validate-deployment.sh"
   },
   "workspaces": [
     "app/*"
