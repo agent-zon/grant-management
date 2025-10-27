@@ -1,6 +1,9 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
-USER $APP_UID
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+ARG APP_UID=1654
 WORKDIR /app
+# Ensure data directory exists and has correct ownership before dropping privileges
+RUN mkdir -p /app/data && chown -R $APP_UID:$APP_UID /app
+USER $APP_UID
 EXPOSE 8080
 EXPOSE 8081
 
