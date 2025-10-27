@@ -1,6 +1,9 @@
 ﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
-USER $APP_UID
+ARG APP_UID=1654
 WORKDIR /app
+# Create data directory before switching to non-root user
+RUN mkdir -p /app/data && chown -R $APP_UID:$APP_UID /app/data /app
+USER $APP_UID
 EXPOSE 8080
 EXPOSE 8081
 

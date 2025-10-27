@@ -199,7 +199,7 @@ grant-mcp-layer:
 cockpit-ui:
   image:
     repository: grant-management/cockpit-ui
-  runAsUser: 101  # nginx user
+  runAsUser: 101 # nginx user
   resources:
     limits:
       ephemeral-storage: 1G

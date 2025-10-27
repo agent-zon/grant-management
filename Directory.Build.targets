@@ -1,5 +1,0 @@
-<Project>
-	<PropertyGroup>
-		<OpenTelemetry>1.12.0</OpenTelemetry>
-	</PropertyGroup>
-</Project>
