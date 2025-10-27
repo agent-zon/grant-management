@@ -27,10 +27,10 @@
 
 ### Phase 4: Deployment v01
 
-- [ ] Helm charts updated
-- [ ] Values.yaml configured
-- [ ] Approuter routes added
-- [ ] v01 deployed and verified
+- [x] Helm charts updated
+- [x] Values.yaml configured
+- [x] Approuter routes added
+- [ ] v01 deployed and verified (awaiting deployment)
 
 ### Phase 5: Deployment v02
 
@@ -54,7 +54,7 @@
 
 ## Current Working On
 
-Phase 4: Updating Helm charts for v01 deployment.
+Phase 4 complete. Ready for v01 deployment and testing.
 
 ## Blockers
 
@@ -62,7 +62,8 @@ None currently.
 
 ## Next Steps
 
-1. Update chart/Chart.yaml with new service dependencies
-2. Add postgresql service configuration to values.yaml
-3. Configure grant-server, grant-mcp-layer, cockpit-ui in values.yaml
-4. Update app/router/xs-app.json with new routes
+1. Build and push containers: npm run build:containers
+2. Deploy v01 to Kyma: helm upgrade --install --create-namespace --wait v01 ./chart --namespace grant-management
+3. Test all services are accessible through approuter
+4. Verify IAS authentication works for all services
+5. Document v01 deployment results in memory bank
