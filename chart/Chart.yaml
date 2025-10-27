@@ -13,9 +13,10 @@ dependencies:
   - name: web-application
     alias: approuter
     version: ">0.0.0"
-  - name: web-application
-    alias: mcp-proxy
-    version: ">0.0.0"
+  # mcp-proxy not needed for v01
+  # - name: web-application
+  #   alias: mcp-proxy
+  #   version: ">0.0.0"
   - name: web-application
     alias: grant-server
     version: ">0.0.0"
@@ -35,6 +36,7 @@ dependencies:
   - name: service-instance
     alias: identity
     version: ">0.0.0"
-  - name: service-instance
-    version: ">0.0.0"
-    alias: "postgresql"
+  # PostgreSQL not needed for v01 - grant-server uses sqlite
+  # - name: service-instance
+  #   version: ">0.0.0"
+  #   alias: "postgresql"

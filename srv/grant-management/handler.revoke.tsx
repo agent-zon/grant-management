@@ -4,13 +4,7 @@ import { Grants } from "#cds-models/sap/scai/grants/GrantsManagementService";
 
 export async function DELETE(this: GrantsManagementService, req: cds.Request) {
   // Mark as revoked in DB and return 204 for API clients
-  await cds.run(
-    cds.ql.UPDATE("sap.scai.grants.Grants").set({
-      revoked_by: req.user.id,
-      revoked_at: new Date().toISOString(),
-      status: "revoked",
-    }).where({ id: req.data.id })
-  );
+  await this.upsert(Grants, req.data.id).set({
 
   if (cds.context?.http?.req.accepts("html")) {
     return cds.context?.http?.res.redirect(`/grants-management/Grants`);

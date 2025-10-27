@@ -141,8 +141,6 @@ grant-server:
       parameters:
         credential-type: X509_GENERATED
         app-identifier: grant-server
-    db:
-      serviceInstanceName: postgresql
   image:
     repository: grant-management/grant-server
   resources:
@@ -165,6 +163,8 @@ grant-server:
       value: "http://+:8080"
     - name: NodeJsGrantApiUrl
       value: "http://srv:4004/grants-management"
+    - name: ConnectionStrings__DefaultConnection
+      value: "Data Source=/app/data/grants.db"
 
 grant-mcp-layer:
   bindings:
@@ -199,6 +199,7 @@ grant-mcp-layer:
 cockpit-ui:
   image:
     repository: grant-management/cockpit-ui
+  runAsUser: 101  # nginx user
   resources:
     limits:
       ephemeral-storage: 1G
@@ -276,9 +277,10 @@ backendDestinations:
   srv-api:
     service: srv
     forwardAuthToken: true
-  mcp-proxy:
-    service: mcp-proxy
-    forwardAuthToken: false
+  # mcp-proxy not deployed in v01
+  # mcp-proxy:
+  #   service: mcp-proxy
+  #   forwardAuthToken: false
   grant-server:
     service: grant-server
     forwardAuthToken: true

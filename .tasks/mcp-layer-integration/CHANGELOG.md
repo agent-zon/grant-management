@@ -132,6 +132,7 @@
 ---
 
 ### 15:20 - [BUILD] Fixed .NET Docker Build Issues
+
 - Resolved "Invalid framework identifier" error
 - Root cause: Directory.Build.props, Directory.Build.targets, Directory.Packages.props not in Docker context
 - Solution: Copied files to app/grant-management/ folder
@@ -142,11 +143,13 @@
   - grant-management/cockpit-ui:v14 (25.7MB)
 
 ### 15:35 - [BUILD] Restored Missing tsconfig.json
+
 - Found tsconfig.cdsbuild.json extends ./tsconfig.json which was missing
 - Restored tsconfig.json from commit 72967a2
 - File was accidentally removed during merge
 
 ### 15:40 - [DEPLOYMENT] v01 Partial Deployment Complete
+
 - Pushed containers to registry:
   - scai-dev.common.repositories.cloud.sap/grant-management/api:v14 ✓
   - scai-dev.common.repositories.cloud.sap/grant-management/grant-server:v14 ✓

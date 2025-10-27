@@ -56,7 +56,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-builder.AddNpgsqlDbContext<AppDbContext>("grant-management-db");
+// Use SQLite for v01 (PostgreSQL in v02)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+    ?? "Data Source=/app/data/grants.db";
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(connectionString));
+
 builder.Services.AddHostedService<EnsureDatabaseCreatedHostedService>();
 builder.Services.AddHostedService<PoliciesSeederHostedService>();
 
