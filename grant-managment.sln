@@ -1,12 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrantManagementServer", "GrantManagement\GrantManagementServer\GrantManagementServer.csproj", "{056792AE-E753-458A-93F7-95F574563028}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrantManagementServer", "app\grant-management\GrantManagementServer\GrantManagementServer.csproj", "{056792AE-E753-458A-93F7-95F574563028}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrantMcpLayer", "GrantManagement\GrantMcpLayer\GrantMcpLayer.csproj", "{71CA6F7E-B6D2-4788-BF54-7010CA065006}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrantMcpLayer", "app\grant-management\GrantMcpLayer\GrantMcpLayer.csproj", "{71CA6F7E-B6D2-4788-BF54-7010CA065006}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{268D9760-82C2-4CD8-879B-921B2438D08F}"
 	ProjectSection(SolutionItems) = preProject
-		GrantManagement\compose.yaml = GrantManagement\compose.yaml
+		app\grant-management\compose.yaml = app\grant-management\compose.yaml
 		.\Directory.Build.props = .\Directory.Build.props
 		.\Directory.Build.targets = .\Directory.Build.targets
 		.\Directory.Packages.props = .\Directory.Packages.props
@@ -20,11 +20,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModelContextProtocol.AspNet
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModelContextProtocol", "csharp-sdk\src\ModelContextProtocol\ModelContextProtocol.csproj", "{924283A1-94A9-4ABF-9DD7-7D3BD6161AAE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrantManagement.AppHost", "GrantManagement\GrantManagement.AppHost\GrantManagement.AppHost.csproj", "{8624F18F-6944-4A2E-B2F0-4AD3E85EDF56}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrantManagement.AppHost", "app\grant-management\GrantManagement.AppHost\GrantManagement.AppHost.csproj", "{8624F18F-6944-4A2E-B2F0-4AD3E85EDF56}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrantManagement.ServiceDefaults", "GrantManagement\GrantManagement.ServiceDefaults\GrantManagement.ServiceDefaults.csproj", "{3F0863FC-55F1-4012-AB61-05D3A502BC59}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrantManagement.ServiceDefaults", "app\grant-management\GrantManagement.ServiceDefaults\GrantManagement.ServiceDefaults.csproj", "{3F0863FC-55F1-4012-AB61-05D3A502BC59}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csproj", "{78EFBA5A-8586-475F-A9A2-E2C66A718B63}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "app\common\Common.csproj", "{78EFBA5A-8586-475F-A9A2-E2C66A718B63}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

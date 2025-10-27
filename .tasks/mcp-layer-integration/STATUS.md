@@ -1,13 +1,13 @@
 # Status: .NET Services Integration
 
-**Last Updated**: 2025-10-26 (initial)
+**Last Updated**: 2025-10-27
 
 ## Current Status: IN PROGRESS
 
 ### Phase 1: Merge and Initial Verification
 - [x] Task structure created
-- [ ] GrantMcpLayer branch merged
-- [ ] Existing services verified
+- [x] GrantMcpLayer branch merged (already present)
+- [x] Dependencies installed
 
 ### Phase 2: Structure Migration
 - [ ] GrantManagement moved to app/
@@ -45,13 +45,14 @@
 - [ ] Cleanup completed
 
 ## Current Working On
-Creating task structure and preparing for branch merge.
+Phase 2: Moving services to app/ folder structure.
 
 ## Blockers
 None currently.
 
 ## Next Steps
-1. Merge origin/GrantMcpLayer branch
-2. Resolve any conflicts
-3. Verify existing services still work
+1. Move GrantManagement/ to app/grant-management/
+2. Move cockpit-ui/ to app/cockpit-ui/
+3. Move Common/ to app/common/
+4. Update project references
 

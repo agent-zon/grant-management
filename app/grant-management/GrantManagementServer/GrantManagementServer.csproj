@@ -25,7 +25,7 @@
     </ItemGroup>
     
     <ItemGroup>
-      <ProjectReference Include="..\..\Common\Common.csproj" />
+      <ProjectReference Include="..\..\common\Common.csproj" />
       <ProjectReference Include="..\GrantManagement.ServiceDefaults\GrantManagement.ServiceDefaults.csproj" />
     </ItemGroup>
 
