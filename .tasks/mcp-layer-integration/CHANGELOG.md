@@ -1,0 +1,71 @@
+# Changelog: .NET Services Integration
+
+**Format**: YYYY-MM-DD HH:MM - [CATEGORY] Description
+
+## 2025-10-26
+
+### 14:30 - [SETUP] Task Structure Created
+- Created `.tasks/dotnet-integration/` directory
+- Added TASK_DEFINITION.md with goals and acceptance criteria
+- Added STATUS.md for progress tracking
+- Added CHANGELOG.md for chronological decisions
+- Added NOTES.md for additional findings
+- Created `memory-bank/`, `artifacts/`, `docs/` subdirectories
+- Following workspace rules from tasks-and-memory-bank.mdc
+
+### 14:32 - [PLANNING] Phase 1 Started
+- Beginning merge of origin/GrantMcpLayer branch
+- Priority: Keep existing srv/ and app/ structure intact
+- Accept new services: GrantManagement/, cockpit-ui/, Common/
+- Will resolve conflicts favoring current implementation for shared files
+
+---
+
+## Decision Log
+
+### Architecture Decisions
+
+**AD-001**: Use single approuter for all services
+- **Date**: 2025-10-26
+- **Decision**: All services (Node.js and .NET) will use the same approuter instance
+- **Rationale**: Simpler routing, consistent authentication, easier CORS management
+- **Impact**: Need to configure destination prefixes and route rules in xs-app.json
+
+**AD-002**: Replace Node.js grant management with .NET version
+- **Date**: 2025-10-26
+- **Decision**: Completely replace srv/grant-management/ with GrantManagementServer
+- **Rationale**: User confirmed "we don't need the nodejs" version
+- **Impact**: Need to create HTTP client in authorization service to call .NET API
+
+**AD-003**: Progressive deployment with version preservation
+- **Date**: 2025-10-26
+- **Decision**: Deploy as v01, v02, v03 with each being a preserved state
+- **Rationale**: Maintain working deployment points, easy rollback, staged integration
+- **Impact**: Need to update helm release names and container tags between phases
+
+**AD-004**: Bind all services to same IAS identity instance
+- **Date**: 2025-10-26
+- **Decision**: All services use single identity service instance with different app-identifiers
+- **Rationale**: User requirement for unified authentication across services
+- **Impact**: Configure separate app-identifier for each service in helm bindings
+
+---
+
+## Technical Decisions
+
+**TD-001**: Use docker-compose for local integration testing
+- **Date**: 2025-10-26
+- **Decision**: Create docker-compose.local.yml with all services
+- **Rationale**: Test service-to-service communication before deployment
+- **Impact**: Need to configure service networking and environment variables
+
+**TD-002**: Store Common DTOs in app/common/
+- **Date**: 2025-10-26
+- **Decision**: Move Common/ directory to app/common/ following project structure
+- **Rationale**: Consistent with app/mcp-proxy/, app/portal/ pattern
+- **Impact**: Need to update .csproj references in GrantManagementServer and GrantMcpLayer
+
+---
+
+(More entries will be added as work progresses)
+

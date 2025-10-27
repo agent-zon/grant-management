@@ -53,13 +53,6 @@ documentation.
 - `GET /api/grants/{grant_id}` - Query grant status
 - `DELETE /api/grants/{grant_id}` - Revoke grant
 
-#### MCP Consent Proxy
-
-- `POST /mcp-proxy/proxy` - MCP JSON-RPC proxy endpoint with consent enforcement
-- `GET /mcp-proxy/callback` - OAuth callback for consent completion
-- `GET /mcp-proxy/session` - Session information and authorization status
-- `GET /mcp-proxy/health` - Service health check and statistics
-
 See [srv/mcp-consent-middleware/README.md](srv/mcp-consent-middleware/README.md) for detailed documentation.
 
 ### Web UI
@@ -68,6 +61,29 @@ See [srv/mcp-consent-middleware/README.md](srv/mcp-consent-middleware/README.md)
 - `/grants/{id}` - Individual grant details
 - `/grants/{id}/grant` - Grant consent
 - `/grants/{id}/revoke` - Revoke consent
+
+
+#### Authorization Flow Extensions
+
+The specification extends the OAuth 2.0 authorization flow with:
+
+- New authorization request parameters: `grant_id` and `grant_management_action`
+- New token response parameter: `grant_id`
+- Grant management actions: `create`, `update`, and `replace`
+
+#### API Authorization
+
+Access to the Grant Management API requires an access token with appropriate scopes:
+- `grant_management_query`: For querying grant status
+- `grant_management_revoke`: For revoking grants
+
+#### Metadata
+
+Authorization servers supporting this API provide metadata including:
+- `grant_management_actions_supported`: Actions supported by the server
+- `grant_management_endpoint`: URL of the Grant Management API endpoint
+- `grant_management_action_required`: Whether grant management actions are required in requests
+
 
 ## Getting Started
 
@@ -125,6 +141,8 @@ Retrieve environment variables from the remote service:
 ```bash
 npx cds env requires.auth --profile hybrid --resolve-bindings
 ```
+
+
 
 ## Learn More
 

@@ -1,0 +1,8 @@
+{
+  "setup-worktree": [
+    "# fnm use",
+    "npm install",
+    "cp $ROOT_WORKTREE_PATH/.cdsrc-private.json .cdsrc-private.json",
+    "npm run bind:resolve"
+  ]
+}

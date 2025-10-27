@@ -109,5 +109,8 @@
     "#cds-models/*": "./@cds-models/*/index.js",
     "@/*": "./srv/*",
     "@types": "./types/index.d.ts"
+  },
+  "engines": {
+    "node": ">=22.16"
   }
 }
