@@ -254,3 +254,18 @@ aspect ApiAuthorizationDetailRequest {
 type RARClaim {
   essential: Boolean;
 }
+
+
+// Flattened view of authorization_details for analytics and policy checks
+// Holds key-value attributes per resource under a grant
+@cds.autoexpose :true
+entity Permissions: cuid, managed {
+  // Owning grant identifier (public string ID)
+  grant_id: String;
+  // Resource identifier (e.g., path, URL, db triplet, tool name)
+  resource_identifier: String;
+  // Attribute key (e.g., action, permission_read, protocol)
+  attribute: String;
+  // Attribute value normalized to string
+  value: String;
+}
