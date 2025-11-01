@@ -11,12 +11,14 @@ public static class WebApplicationExtensions
 
     public static WebApplication UseMcpProxy(this WebApplication webApplication)
     {
-        webApplication.UseMiddleware<McpClientsCacheMiddleware>();
+        // webApplication.UseMiddleware<McpClientsCacheMiddleware>();
         
         webApplication.UseAuthentication();
         webApplication.UseAuthorization();
-        
-        webApplication.MapMcp().RequireAuthorization();
+
+        webApplication.MapMcp()
+            //.RequireAuthorization();
+            ;
         
         return webApplication;
     }

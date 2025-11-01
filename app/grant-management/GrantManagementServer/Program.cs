@@ -7,9 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using System.Text.Json;
-using Common.DTOs;
 using GrantManagementServer.Entities;
-using GrantManagementServer.Mappers;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -1,0 +1,6 @@
+{
+  "appHostPath": "../app/grant-management/GrantManagement.AppHost/GrantManagement.AppHost.csproj",
+  "features": {
+    "execCommandEnabled": "true"
+  }
+}

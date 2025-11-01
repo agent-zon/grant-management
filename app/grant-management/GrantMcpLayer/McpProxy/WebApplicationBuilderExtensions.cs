@@ -1,133 +1,158 @@
-﻿using GrantMcpLayer.McpProxy.CleanHandlers;
+﻿using System.Collections.Concurrent;
+using System.Collections.Immutable;
+using System.Collections.ObjectModel;
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Threading.Channels;
+using System.Web;
+using GrantMcpLayer.McpProxy.Auth;
+using GrantMcpLayer.McpProxy.CleanHandlers;
 using GrantMcpLayer.Models;
 using GrantMcpLayer.Services;
+using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.Extensions.Options;
+using Microsoft.Net.Http.Headers;
+using ModelContextProtocol;
+using ModelContextProtocol.Authentication;
+using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
+using MpcProxy.Common;
+using ModelContextProtocol.AspNetCore.Authentication;
+using static GrantMcpLayer.Interceptors.CallToolInterceptor;
+using static GrantMcpLayer.McpProxy.CleanHandlers.CleanCompletionHandler;
+using static GrantMcpLayer.McpProxy.CleanHandlers.CleanLoggerHandler;
+using static GrantMcpLayer.McpProxy.CleanHandlers.CleanResourcesHandlers;
+using static GrantMcpLayer.McpProxy.CleanHandlers.CleanToolsHandlers;
 
 namespace GrantMcpLayer.McpProxy;
 
+
 public static class WebApplicationBuilderExtensions
 {
-     public static IMcpServerBuilder AddMcpProxy(
-         this WebApplicationBuilder applicationBuilder, 
-         Action<McpProxyOptions>? setupAction = null)
+    private static readonly HashSet<string> HeadersToPassOn = new(StringComparer.OrdinalIgnoreCase)
     {
-        var options = new McpProxyOptions();
-        setupAction?.Invoke(options);
-        
-        applicationBuilder.Services.AddScoped<IMcpClientResolver, McpClientResolver>();
-        applicationBuilder.Services.AddSingleton<IElicitationHandler, CleanElicitationHandlers>();
+        "Authorization",
+        "aiam-session-id",
+        "mcp-session-id",
+    };
 
-        applicationBuilder.Services.AddHttpClient();
+    public static IMcpServerBuilder AddMcpProxy(
+        this WebApplicationBuilder applicationBuilder)
+    {
 
-        applicationBuilder.Services.AddSingleton<IMcpClientSessionsStorage, McpClientSessionsStorage>();
-        applicationBuilder.Services.AddHostedService<ClearOldMcpClientsHostedService>();
-        applicationBuilder.Services.AddSingleton<McpClientsCacheMiddleware>();
-        
         var serverInfoSection = applicationBuilder.Configuration.GetSection("McpServerInfo");
         applicationBuilder.Services.Configure<McpServerInfo>(serverInfoSection);
 
-        var mcpServerBuilder = applicationBuilder.Services
-            .AddMcpServer(serverOptions =>
+
+        // applicationBuilder.Services.AddSingleton<IElicitationHandler, CleanElicitationHandlers>();
+
+        applicationBuilder.Services.AddHttpClient();
+
+        // applicationBuilder.Services.AddSingleton<IMcpClientSessionsStorage, McpClientSessionsStorage>();
+        // applicationBuilder.Services.AddHostedService<ClearOldMcpClientsHostedService>();
+        // applicationBuilder.Services.AddSingleton<McpClientsCacheMiddleware>();
+
+        var i = 0;
+        var authority = applicationBuilder.Configuration.GetValue<string>("OIDC_AUTHORITY");
+        Console.WriteLine("OIDC Authority: " + authority);
+
+        var mcpServer = applicationBuilder.Services
+            .AddMcpServer(serverOptions => { serverOptions.ScopeRequests = true; })
+            .WithHttpTransport(options =>
             {
-                serverOptions.ScopeRequests = options.ScopeRequests;
-                
-                // Tools
-                serverOptions.Capabilities ??= new();
-                serverOptions.Capabilities.Tools = new ToolsCapability
+                options.PerSessionExecutionContext = true;
+                options.RunSessionHandler = async (httpContext, server, cancellationToken) =>
                 {
-                    ListToolsHandler = (context, token) =>
-                        options.ListToolsInterceptor?.Invoke(context, token, CleanToolsHandlers.ListToolsHandler) ??
-                        CleanToolsHandlers.ListToolsHandler(context, token),
-                    CallToolHandler = (context, token) =>
-                        options.CallToolInterceptor?.Invoke(context, token, CleanToolsHandlers.CallToolHandler) ??
-                        CleanToolsHandlers.CallToolHandler(context, token)
-                };
-                
-                // Resources
-                serverOptions.Capabilities.Resources = new()
-                {
-                    ListResourcesHandler = (context, token) =>
-                        options.ListResourcesInterceptor?.Invoke(context, token,
-                            CleanResourcesHandlers.ListResourcesHandler) ??
-                        CleanResourcesHandlers.ListResourcesHandler(context, token),
-                    ListResourceTemplatesHandler = (context, token) =>
-                        options.ListResourceTemplatesInterceptor?.Invoke(context, token,
-                            CleanResourcesHandlers.ListResourcesTemplateHandler) ??
-                        CleanResourcesHandlers.ListResourcesTemplateHandler(context, token),
-                    ReadResourceHandler = (context, token) =>
-                        options.ReadResourceInterceptor?.Invoke(context, token,
-                            CleanResourcesHandlers.ReadResourceHandler) ??
-                        CleanResourcesHandlers.ReadResourceHandler(context, token)
-                };
-                
-                // Completion
-                serverOptions.Capabilities.Completions = new()
-                {
-                    CompleteHandler = (context, token) =>
-                        options.CompleteInterceptor?.Invoke(context, token, CleanCompletionHandler.HandleCompletionAsync) ??
-                        CleanCompletionHandler.HandleCompletionAsync(context, token)  
-                };
-                
-                // Logger
-                serverOptions.Capabilities.Logging = new()
-                {
-                    SetLoggingLevelHandler = (context, token) =>
-                        options.SetLogLevelInterceptor?.Invoke(context, token, CleanLoggerHandler.HandleSetLogLevelAsync) ??
-                        CleanLoggerHandler.HandleSetLogLevelAsync(context, token) 
+                    Console.WriteLine("{0}: Running MCP Proxy session handler...", i++);
+                    await using var mcpClient = httpContext.Items[nameof(McpClient)] as McpClient;
+                    
+                    NotificationHandlers.RegisterNotificationHandlers(mcpClient!, server);
+
+                    await server.RunAsync(cancellationToken);
+ 
                 };
 
-                serverOptions.Capabilities.NotificationHandlers = options.NotificationHandlers;
-            })
-            .WithHttpTransport();
-        
-        return options.AuthenticationType switch
-        {
-            McpProxyAuthenticationType.NoAuth => mcpServerBuilder.WithNoAuth(),
-            McpProxyAuthenticationType.ForwardAuth => mcpServerBuilder.WithAuthForwarding(),
-            McpProxyAuthenticationType.CustomAuth => mcpServerBuilder,
-            _ => throw new ArgumentOutOfRangeException()
-        };
-    }
-    
-     public delegate ValueTask<TResult> ProxyInterceptorDelegate<TParams, TResult>(
-         RequestContext<TParams> context, 
-         CancellationToken token, 
-         Func<RequestContext<TParams>, CancellationToken, ValueTask<TResult>> next);
-     
-    public class McpProxyOptions
-    {
-        public McpProxyAuthenticationType AuthenticationType { get; set; } = McpProxyAuthenticationType.NoAuth;
-        public bool ScopeRequests { get; set; } = true;
-        
-        public ProxyInterceptorDelegate<ListToolsRequestParams, ListToolsResult>? ListToolsInterceptor { get; set; } 
-        public ProxyInterceptorDelegate<CallToolRequestParams, CallToolResult>? CallToolInterceptor { get; set; }
-        public ProxyInterceptorDelegate<ListResourcesRequestParams, ListResourcesResult>? ListResourcesInterceptor { get; set; }
-        public ProxyInterceptorDelegate<ListResourceTemplatesRequestParams, ListResourceTemplatesResult>? ListResourceTemplatesInterceptor { get; set; }
-        public ProxyInterceptorDelegate<ReadResourceRequestParams, ReadResourceResult>? ReadResourceInterceptor { get; set; }
-        public ProxyInterceptorDelegate<CompleteRequestParams, CompleteResult>? CompleteInterceptor { get; set; }
-        public ProxyInterceptorDelegate<SetLevelRequestParams, EmptyResult?>? SetLogLevelInterceptor { get; set; }
+                options.ConfigureSessionOptions = async (httpContext, sessionOptions, cancellationToken) =>
+                {
+                    Console.WriteLine("{0}: Configuring session options...", i++);
+                    var serverInfo = httpContext.RequestServices.GetRequiredService<IOptions<McpServerInfo>>().Value;
+ 
+                   var mcpClient = await McpClient.CreateAsync(new HttpClientTransport(new()
+                        {
+                            Name = serverInfo.Name,
+                            Endpoint = new Uri(serverInfo.Url),
+                            AdditionalHeaders = getHeaders(),
+                            // OAuth = ExternalAuth.OAuth(httpContext, server, cancellationToken)
+                        }, httpContext.RequestServices.GetRequiredService<ILoggerFactory>()),
+                        new McpClientOptions()
+                        {
+                            ClientInfo = sessionOptions.KnownClientInfo  
+                        },
+                        httpContext.RequestServices.GetRequiredService<ILoggerFactory>(), cancellationToken);
 
-        public IEnumerable<KeyValuePair<string, Func<JsonRpcNotification, CancellationToken, ValueTask>>>? NotificationHandlers { get; set; } = null;
+                    sessionOptions.Capabilities = mcpClient.ServerCapabilities;
+                    sessionOptions.Filters.ListToolsFilters.Add(ListToolsHandler(mcpClient));
+                    sessionOptions.Filters.CallToolFilters.Add(CallToolHandler(mcpClient));
+                    sessionOptions.Filters.ListResourcesFilters.Add(ListResourcesHandler(mcpClient));
+                    sessionOptions.Filters.ListResourceTemplatesFilters.Add(ListResourcesTemplateHandler(mcpClient));
+                    sessionOptions.Filters.ReadResourceFilters.Add(ReadResourceHandler(mcpClient));
+                    sessionOptions.Filters.CompleteFilters.Add(CompletionHandler(mcpClient));
+                    sessionOptions.Filters.SetLoggingLevelFilters.Add(SetLogLevelHandler(mcpClient));
+                    httpContext.Items[nameof(McpClient)] = mcpClient;
+
+
+                    IDictionary<string, string> getHeaders()
+                    {
+                        var headers = httpContext.Request.Headers;
+                        var mergedHeaders = new Dictionary<string, string>();
+                        foreach (var existingHeaders in headers)
+                        {
+                            if (!HeadersToPassOn.Contains(existingHeaders.Key))
+                                continue;
+
+                            mergedHeaders.TryAdd(existingHeaders.Key, existingHeaders.Value.ToString());
+                        }
+
+                        return mergedHeaders;
+                    }
+                };
+
+            });
+
+        return authority is { Length: > 0 } ? mcpServer.WithAuthForwarding(authority) : mcpServer;
     }
+ 
 }
 
-public enum McpProxyAuthenticationType
-{
-    /// <summary>
-    /// Will allow all requests to be proxied to the server.
-    /// </summary>
-    NoAuth = 0,
-        
-    /// <summary>
-    /// Will forward the authentication process to the target server.
-    /// </summary>
-    ForwardAuth,
-        
-    /// <summary>
-    /// Will do nothing in terms of registering the authentication handler.
-    /// The invoker is responsible for providing the authentication handler by invoking
-    /// AddAuthentication() & AddAuthorization() on the server builder.
-    /// </summary>
-    CustomAuth
-}
+
+//todo- category filtering per route
+//var toolCategory = httpContext.Request.RouteValues["toolCategory"]?.ToString()?.ToLower() ?? "all";
+
+
+//or use McpSession
+/*    /// <summary>
+/// Sends a JSON-RPC request to the connected session and waits for a response.
+/// </summary>
+/// <param name="request">The JSON-RPC request to send.</param>
+/// <param name="cancellationToken">The <see cref="CancellationToken"/> to monitor for cancellation requests. The default is <see cref="CancellationToken.None"/>.</param>
+/// <returns>A task containing the session's response.</returns>
+/// <exception cref="InvalidOperationException">The transport is not connected, or another error occurs during request processing.</exception>
+/// <exception cref="McpException">An error occurred during request processing.</exception>
+/// <remarks>
+/// This method provides low-level access to send raw JSON-RPC requests. For most use cases,
+/// consider using the strongly-typed methods that provide a more convenient API.
+/// </remarks>
+public abstract Task<JsonRpcResponse> SendRequestAsync(JsonRpcRequest request, CancellationToken cancellationToken = default);
+
+*/
+
+/// Handles the OAuth authorization URL by starting a local HTTP server and opening a browser.
+/// This implementation demonstrates how SDK consumers can provide their own authorization flow.
+/// </summary>
+/// <param name="authorizationUrl">The authorization URL to open in the browser.</param>
+/// <param name="redirectUri">The redirect URI where the authorization code will be sent.</param>
+/// <param name="cancellationToken">The cancellation token.</param>
+/// <returns>The authorization code extracted from the callback, or null if the operation failed.</returns>

@@ -24,6 +24,7 @@ public static class Consts
         
         public static class Elicitations
         {
+            public const string AuthorizationUrlElicitationMessage = $"{InternalProxyPrefix}: Please visit the following URL to authenticate: {{0}}";
             public const string AuthBearerElicitationMessage = $"{InternalProxyPrefix}: Please provide the authentication bearer token";
         }
     }

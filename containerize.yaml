@@ -21,13 +21,13 @@ modules:
     id: v1-grant-server
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t grant-management/grant-server:v15 -f app/grant-management/GrantManagementServer/Dockerfile app --load
+        - dotnet publish app/grant-management --os linux --arch x64 /GrantManagementServer/GrantManagementServer.csproj  /t:PublishContainer -p
 
   - name: grant-management/grant-mcp-layer
     id: v1-grant-mcp-layer
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t grant-management/grant-mcp-layer:v15 -f app/grant-management/GrantMcpLayer/Dockerfile app --load
+        - dotnet publish app/grant-management/GrantMcpLayer/GrantMcpLayer.csproj --os linux --arch x64 /t:PublishContainer -p:ContainerImageTag=v15 
 
   - name: grant-management/cockpit-ui
     id: v1-cockpit-ui

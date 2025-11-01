@@ -6,14 +6,23 @@
       "dotnetRunMessages": true,
       "launchBrowser": false,
       "applicationUrl": "http://localhost:5283",
+      "httpPort": 5823,
+      "httpsPort": 7162,
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "McpServerInfo__Url":"https://api.githubcopilot.com/mcp/",
+        "McpServerInfo__Name": "Github",
+        "McpServerInfo__Type": "http",
+        "OIDC_AUTHORITY": "https://fidm.us1.gigya.com/oidc/op/v1.0/4_XM-g32xng55dZ2ARJl4VXw",
+        "OIDC_CLIENTID": "vXR7Thf2JY-ZJt6OCg4iDpAx"
       }
     },
     "https": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": false,
+      "httpPort": 5823,
+      "httpsPort": 7162,
       "applicationUrl": "https://localhost:7162;http://localhost:5283",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"

@@ -11,8 +11,8 @@ namespace GrantMcpLayer.McpProxy;
 
 public interface IMcpClientResolver : IAsyncDisposable
 {
-    Task<IMcpClient> ResolveAsync(
-        IMcpServer? server = null,
+    Task<McpClient> ResolveAsync(
+        McpServer? server = null,
         Dictionary<string, string>? additionalHeaders = null,
         McpClientOptions? clientOptions = null,
         ILoggerFactory? loggerFactory = null,
@@ -34,7 +34,7 @@ public class McpClientResolver : IMcpClientResolver
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IElicitationHandler _elicitationHandler;
     private readonly ILogger<McpClientResolver> _logger;
-    private IMcpClient? _cachedClient = null;
+    private McpClient? _cachedClient = null;
 
     public McpClientResolver(
         IOptions<McpServerInfo> serverInfo,
@@ -48,8 +48,8 @@ public class McpClientResolver : IMcpClientResolver
         _logger = logger;
     }
 
-    public async Task<IMcpClient> CreateClientAsync(
-        IMcpServer? server = null,
+    public async Task<McpClient> CreateClientAsync(
+        McpServer? server = null,
         Dictionary<string, string>? additionalHeaders = null,
         McpClientOptions? clientOptions = null,
         ILoggerFactory? loggerFactory = null,
@@ -64,7 +64,7 @@ public class McpClientResolver : IMcpClientResolver
                 _elicitationHandler.HandleElicitationAsync(server, requestParams, cancellationToken);
 
             var transport = CreateTransport();
-            return await McpClientFactory.CreateAsync(transport, clientOptions, loggerFactory, ct);
+            return await McpClient.CreateAsync(transport, clientOptions, loggerFactory, ct);
         }
         catch (HttpRequestException e) when (e.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
@@ -77,7 +77,7 @@ public class McpClientResolver : IMcpClientResolver
                 additionalHeaders ??= new();
                 additionalHeaders[HeaderNames.Authorization] = authBearer;
                 var updatedTransport = CreateTransport();
-                return await McpClientFactory.CreateAsync(updatedTransport, clientOptions, loggerFactory, ct);
+                return await McpClient.CreateAsync(updatedTransport, clientOptions, loggerFactory, ct);
             }
 
             throw;
@@ -86,8 +86,8 @@ public class McpClientResolver : IMcpClientResolver
         IClientTransport CreateTransport()
         {
             var mergedHeaders = additionalHeaders?.ToDictionary() ?? new();
-            var headers = _httpContextAccessor.HttpContext.Request.Headers;
-            foreach (var existingHeaders in headers)
+            var headers = _httpContextAccessor.HttpContext?.Request.Headers ?? new HeaderDictionary();
+            foreach (var existingHeaders in headers )
             {
                 if (!HeadersToPassOn.Contains(existingHeaders.Key))
                     continue;
@@ -104,7 +104,7 @@ public class McpClientResolver : IMcpClientResolver
                     Arguments = _serverInfo.Value.Arguments.Split(" "),
                     EnvironmentVariables = _serverInfo.Value.Environments,
                 }),
-                Consts.McpTransportTypes.Sse or Consts.McpTransportTypes.Http => new SseClientTransport(new()
+                Consts.McpTransportTypes.Sse or Consts.McpTransportTypes.Http => new HttpClientTransport(new()
                 {
                     Name = _serverInfo.Value.Name,
                     Endpoint = new Uri(_serverInfo.Value.Url),
@@ -115,8 +115,8 @@ public class McpClientResolver : IMcpClientResolver
         }
     }
 
-    public async Task<IMcpClient> ResolveAsync(
-        IMcpServer? server = null,
+    public async Task<McpClient> ResolveAsync(
+        McpServer? server = null,
         Dictionary<string, string>? additionalHeaders = null,
         McpClientOptions? clientOptions = null,
         ILoggerFactory? loggerFactory = null,
@@ -159,7 +159,7 @@ public class McpClientResolver : IMcpClientResolver
             await _cachedClient.DisposeAsync();
     }
 
-    private static async Task<string?> ElicitForAuthBearerAsync(IMcpServer server, CancellationToken ct = default)
+    public static async Task<string?> ElicitForAuthBearerAsync(McpServer server, CancellationToken ct = default)
     {
         var elicitResult = await server.ElicitAsync(new()
         {

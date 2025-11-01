@@ -6,27 +6,23 @@ namespace GrantMcpLayer.McpProxy.CleanHandlers;
 
 public static class CleanCompletionHandler
 {
-    public static async ValueTask<CompleteResult> HandleCompletionAsync(
-        RequestContext<CompleteRequestParams> context,
-        CancellationToken token)
+    public static McpRequestFilter<CompleteRequestParams,CompleteResult> CompletionHandler(McpClient client)
     {
-        var result = new CompleteResult();
-        try
+        return (next) =>
         {
-            var clientResolver = context.Services.GetMcpClientResolver();
-            var mcpClient = await clientResolver.ResolveAsync(context.Server, ct: token);
- 
-            result = await mcpClient.CompleteAsync(
-                context.Params.Ref,
-                context.Params.Argument.Name,
-                context.Params.Argument.Value,
-                cancellationToken: token);
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-        }
-
-        return result;
+            return async ValueTask<CompleteResult> (context, token) =>
+            {
+                //todo: merge results?
+                var result = await next(context, token);
+           
+                var completionResult = await client.CompleteAsync(
+                    context.Params.Ref,
+                    context.Params.Argument.Name,
+                    context.Params.Argument.Value,
+                    cancellationToken: token);
+                
+                return completionResult;
+            };
+        }; 
     }
 }

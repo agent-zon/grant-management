@@ -1,37 +1,38 @@
 <Project>
-    <PropertyGroup>
-        <!-- Enable central package management, https://learn.microsoft.com/en-us/nuget/consume-packages/Central-Package-Management -->
-        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    </PropertyGroup>
-    <ItemGroup>
-        <PackageVersion Include="Aspire.Hosting.AppHost" Version="9.4.2"/>
-        <PackageVersion Include="Aspire.Hosting.Redis" Version="9.4.2"/>
-        <PackageVersion Include="Aspire.Hosting.Docker" Version="9.4.2-preview.1.25428.12" />
-        <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="9.4.2" />
-        <PackageVersion Include="Aspire.Hosting.NodeJs" Version="9.4.2" />
-        <PackageVersion Include="Aspire.StackExchange.Redis.DistributedCaching" Version="9.4.2" />
-        <PackageVersion Include="Aspire.StackExchange.Redis" Version="9.4.2"/>
-        <PackageVersion Include="Aspire.OpenAI" Version="9.4.2-preview.1.25428.12"/>
-        <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.4.2"/>
-        <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0"/>
-        <PackageVersion Include="CommunityToolkit.Aspire.Hosting.NodeJS.Extensions" Version="9.4.0" />
-        
-        <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.8"/>
-        <PackageVersion Include="Duende.IdentityModel.OidcClient" Version="6.0.1" />
-        <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.8"/>
-
-        <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.9.0" />
-        <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="9.4.2" />
-        <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="$(OpenTelemetry)"/>
-        <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="$(OpenTelemetry)"/>
-        <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="$(OpenTelemetry)"/>
-        <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="$(OpenTelemetry)"/>
-        <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="$(OpenTelemetry)"/>
-        
-        <PackageVersion Include="Serilog.Extensions.Logging" Version="9.0.3-dev-02320"/>
-        <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.1-dev-00953"/>
-        <PackageVersion Include="Serilog.Sinks.OpenTelemetry" Version="4.2.0"/>
-        
-        <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
-    </ItemGroup>
+  <PropertyGroup>
+    <!-- Enable central package management, https://learn.microsoft.com/en-us/nuget/consume-packages/Central-Package-Management -->
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="Aspire.Hosting.AppHost" Version="9.5.2" />
+    <PackageVersion Include="Aspire.Hosting.Redis" Version="9.4.2" />
+    <PackageVersion Include="Aspire.Hosting.Docker" Version="9.4.2-preview.1.25428.12" />
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="9.5.2" />
+    <PackageVersion Include="Aspire.Hosting.NodeJs" Version="9.5.2" />
+    <PackageVersion Include="Aspire.StackExchange.Redis.DistributedCaching" Version="9.4.2" />
+    <PackageVersion Include="Aspire.StackExchange.Redis" Version="9.4.2" />
+    <PackageVersion Include="Aspire.OpenAI" Version="9.4.2-preview.1.25428.12" />
+    <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.5.2" />
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.McpInspector" Version="9.7.2" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0" />
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.NodeJS.Extensions" Version="9.4.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.8" />
+    <PackageVersion Include="Duende.IdentityModel.OidcClient" Version="6.0.1" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.9.0" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="9.5.2" />
+    <PackageVersion Include="ModelContextProtocol" Version="0.4.0-preview.3" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.4.0-preview.3" />
+    <PackageVersion Include="ModelContextProtocol.Core" Version="0.4.0-preview.3" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="$(OpenTelemetry)" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="$(OpenTelemetry)" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="$(OpenTelemetry)" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="$(OpenTelemetry)" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="$(OpenTelemetry)" />
+    <PackageVersion Include="Serilog.Extensions.Logging" Version="9.0.3-dev-02320" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.1-dev-00953" />
+    <PackageVersion Include="Serilog.Sinks.OpenTelemetry" Version="4.2.0" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
+  </ItemGroup>
 </Project>

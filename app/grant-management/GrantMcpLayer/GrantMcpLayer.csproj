@@ -3,12 +3,32 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>    
+        <DockerContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:9.0</DockerContainerBaseImage>
+        <ContainerRuntimeIdentifiers>linux-x64;linux-arm64</ContainerRuntimeIdentifiers>
+        <ContainerImageTag>v15</ContainerImageTag>
+         <ContainerRepository>grant-management/grant-server</ContainerRepository>
+         <ContainerRegistry>scai-dev.common.repositories.cloud.sap</ContainerRegistry>
+        <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
+
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" />
         <PackageReference Include="Duende.IdentityModel.OidcClient" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+        <PackageReference Include="ModelContextProtocol" />
+        <PackageReference Include="ModelContextProtocol.AspNetCore" />
+        <PackageReference Include="ModelContextProtocol.Core" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+
     </ItemGroup>
     
     <ItemGroup Label="Serilog">
@@ -25,7 +45,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\common\Common.csproj" />
-      <ProjectReference Include="..\..\csharp-sdk\src\ModelContextProtocol.AspNetCore\ModelContextProtocol.AspNetCore.csproj" />
       <ProjectReference Include="..\GrantManagement.ServiceDefaults\GrantManagement.ServiceDefaults.csproj" />
     </ItemGroup>
 

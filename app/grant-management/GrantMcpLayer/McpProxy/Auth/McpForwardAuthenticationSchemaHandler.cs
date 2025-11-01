@@ -7,6 +7,7 @@ namespace GrantMcpLayer.McpProxy.Auth;
 
 public class McpForwardAuthenticationSchemaHandler : AuthenticationHandler<McpForwardAuthenticationSchemaOptions>
 {
+    [Obsolete]
     public McpForwardAuthenticationSchemaHandler(
         IOptionsMonitor<McpForwardAuthenticationSchemaOptions> options,
         ILoggerFactory logger,

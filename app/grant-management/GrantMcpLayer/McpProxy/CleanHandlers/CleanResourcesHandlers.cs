@@ -6,52 +6,88 @@ namespace GrantMcpLayer.McpProxy.CleanHandlers;
 
 public static class CleanResourcesHandlers
 {
-    public static async ValueTask<ListResourcesResult> ListResourcesHandler(
-        RequestContext<ListResourcesRequestParams> context,
-        CancellationToken token)
+    public static McpRequestFilter<ListResourcesRequestParams,ListResourcesResult> ListResourcesHandler(McpClient client)
     {
-        IList<McpClientResource> resources = [];
-        try
+        return (next) =>
         {
-            var clientResolver = context.Services.GetMcpClientResolver();
-            var client = await clientResolver.ResolveAsync(context.Server, ct: token);
-            resources = await client.ListResourcesAsync(cancellationToken: token);
-        }
-        catch (Exception e)
+            return async ValueTask<ListResourcesResult> (context, token) =>
+            {
+                var result = await next(context, token);
+                var resources = await client.ListResourcesAsync(cancellationToken: token);
+                foreach (var resource in resources.Select(t => t.ProtocolResource))
+                {
+                    result.Resources.Add(resource);
+                }
+                return result;
+            };
+        }; 
+    }
+    
+    public static McpRequestFilter<ListResourceTemplatesRequestParams,ListResourceTemplatesResult> ListResourcesTemplateHandler(McpClient client)
+    {
+        return (next) =>
         {
-            Console.WriteLine(e.Message);
+            return async ValueTask<ListResourceTemplatesResult> (context, token) =>
+            {
+                var result = await next(context, token);
+                var resources = await client.ListResourceTemplatesAsync(cancellationToken: token);
+                foreach (var resource in resources.Select(t => t.ProtocolResourceTemplate))
+                {
+                    result.ResourceTemplates.Add(resource);
+                }
+                return result;
+            };
+        }; 
+    }
+    
+    public static McpRequestFilter<ReadResourceRequestParams,ReadResourceResult> ReadResourceHandler(McpClient client)
+    {
+        return (next) =>
+        {
+            return async ValueTask<ReadResourceResult> (context, token) =>
+            {
+                var resourceResult = await client.ReadResourceAsync(
+                    context.Params.Uri,
+                    cancellationToken: token);
+                return resourceResult;
+            };
+        }; 
+    }
+}
+
+
+public class McpServerResourceTap(McpClientResource clientResource) : McpServerResource
+{
+    public static McpServerPrimitiveCollection<McpServerResource> CreateCollection(IList<McpClientResource> clientResources)
+    {
+        var serverResources = new McpServerPrimitiveCollection<McpServerResource>();
+        foreach (var clientResource in clientResources)
+        {
+            serverResources.Add(new McpServerResourceTap(clientResource));
         }
 
-        return new() { Resources = resources.Select(r => r.ProtocolResource).ToList() };
+        return serverResources;
+    }
+    
+    private McpServerResource resource =>clientResource.ProtocolResource?.McpServerResource ?? throw new InvalidOperationException("The provided McpClientResource does not have a corresponding McpServerResource implementation.");
+
+ 
+
+    /// <inheritdoc />
+    public override bool IsMatch(string uri)
+    {
+        return resource.IsMatch(uri);
     }
 
-    public static async ValueTask<ListResourceTemplatesResult> ListResourcesTemplateHandler(
-        RequestContext<ListResourceTemplatesRequestParams> context,
-        CancellationToken token)
+    /// <inheritdoc />
+    public override ValueTask<ReadResourceResult> ReadAsync(RequestContext<ReadResourceRequestParams> request, CancellationToken cancellationToken = new CancellationToken())
     {
-        IList<McpClientResourceTemplate> resources = [];
-        try
-        {
-            var clientResolver = context.Services.GetMcpClientResolver();
-            var client = await clientResolver.ResolveAsync(context.Server, ct: token);
-
-            resources = await client.ListResourceTemplatesAsync(cancellationToken: token);
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e.Message);
-        }
-
-        return new() { ResourceTemplates = resources.Select(r => r.ProtocolResourceTemplate).ToList() };
+        return  resource.ReadAsync(request, cancellationToken);
     }
 
-    public static async ValueTask<ReadResourceResult> ReadResourceHandler(
-        RequestContext<ReadResourceRequestParams> context,
-        CancellationToken token)
-    {
-        var clientResolver = context.Services.GetMcpClientResolver();
-        var client = await clientResolver.ResolveAsync(context.Server, ct: token);
+    /// <inheritdoc />
+    public override ResourceTemplate ProtocolResourceTemplate => resource.ProtocolResourceTemplate;
 
-        return await client.ReadResourceAsync(context.Params.Uri, cancellationToken: token);
-    }
+    /// <inheritdoc />
+    public override IReadOnlyList<object> Metadata => resource.Metadata;
 }

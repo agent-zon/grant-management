@@ -6,7 +6,7 @@ namespace GrantMcpLayer.McpProxy.CleanHandlers;
 public interface IElicitationHandler
 {
     ValueTask<ElicitResult> HandleElicitationAsync(
-        IMcpServer? server,
+        McpServer? server,
         ElicitRequestParams? context,
         CancellationToken cancellationToken = default);
 }

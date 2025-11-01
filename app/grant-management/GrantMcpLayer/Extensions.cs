@@ -4,7 +4,6 @@ using GrantMcpLayer.McpProxy;
 using GrantMcpLayer.McpProxy.Auth;
 using GrantMcpLayer.Models;
 using Microsoft.Extensions.Options;
-using ModelContextProtocol.AspNetCore.Authentication;
 
 namespace GrantMcpLayer;
 
@@ -33,9 +32,7 @@ public static class HttpContextExtensions
         
     
 
-    public static JwtSecurityToken ExtractJwtFromAuthorization(this HttpContext context) =>
-        context.Request.Headers.ExtractJwtFromAuthorization();
-    
+     
     public static bool AddItem<T>(this HttpContext context, T value) =>
         context.Items.TryAdd(typeof(T).FullName!, value);
     

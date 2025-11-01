@@ -5,6 +5,11 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <DockerContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:9.0</DockerContainerBaseImage>
+        <ContainerRuntimeIdentifiers>linux-x64;linux-arm64</ContainerRuntimeIdentifiers>
+        <ContainerImageTag>v15</ContainerImageTag>
+         <ContainerRepository>grant-management/grant-server</ContainerRepository>
+         <ContainerRegistry>scai-dev.common.repositories.cloud.sap</ContainerRegistry>
     </PropertyGroup>
 
     <ItemGroup>

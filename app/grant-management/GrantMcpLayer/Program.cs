@@ -9,6 +9,7 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
+Console.WriteLine("Starting Grant Management MCP Layer...");
 
 Log.Logger = new LoggerConfiguration()
     .Enrich.FromLogContext()
@@ -38,25 +39,22 @@ builder.Services.AddSingleton<ChannelWriter<DeviceFlowAuthRequestedEvent>>(conse
 builder.Services.AddHostedService<TokenRequestHostedService>();
 builder.Services.AddHostedService<ClearOldConsentsHostedService>();
 
-builder.Services.AddSingleton<IGrantManagementClient, GrantManagementsClient>();
+// builder.Services.AddSingleton<IGrantManagementClient, GrantManagementsClient>();
 
 builder.AddNpgsqlDbContext<AppDbContext>("user-2-agent-consent-db");
 
-builder.AddMcpProxy(options =>
-{
-    options.AuthenticationType = McpProxyAuthenticationType.ForwardAuth;
-    options.CallToolInterceptor = CallToolInterceptor.Intercept;
-});
+builder.AddMcpProxy();
 
-builder.Services.AddHttpClient<IGrantManagementClient, GrantManagementsClient>(static client =>
-{
-    client.BaseAddress = new Uri("http://GrantManagementServer");
-});
+// builder.Services.AddHttpClient<IGrantManagementClient, GrantManagementsClient>(static client =>
+// {
+//     client.BaseAddress = new Uri("http://GrantManagementServer");
+// });
 
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
 
 app.UseMcpProxy();
-
+Console.WriteLine("Grant Management MCP Layer at: {0}", String.Join("," ,app.Urls ));
+app.Logger.LogInformation("Starting Grant MCP Layer at: {0}", String.Join(",", app.Urls ));
 await app.RunAsync();

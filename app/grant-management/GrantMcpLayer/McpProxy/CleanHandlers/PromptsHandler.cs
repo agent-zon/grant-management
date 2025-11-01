@@ -5,38 +5,65 @@ using ModelContextProtocol.Server;
 namespace GrantMcpLayer.McpProxy.CleanHandlers;
 
 public static class PromptsHandler
+{ 
+    public static McpRequestFilter<ListPromptsRequestParams,ListPromptsResult> ListPromptsHandler(McpClient client)
+    {
+        return (next) =>
+        {
+            return async ValueTask<ListPromptsResult> (context, token) =>
+            {
+                var result = await next(context, token);
+                var prompts = await client.ListPromptsAsync(cancellationToken: token);
+                foreach (var prompt in prompts.Select(t => t.ProtocolPrompt))
+                {
+                    result.Prompts.Add(prompt);
+                }
+                return result;
+            };
+        }; 
+    }
+    
+    public static McpRequestFilter<GetPromptRequestParams,GetPromptResult> GetPromptHandler(McpClient client)
+    {
+        return (next) =>
+        {
+            return async ValueTask<GetPromptResult> (context, token) =>
+            {
+                var promptResult = await client.GetPromptAsync(
+                    context.Params!.Name,
+                    context.Params.Arguments?.ToDictionary(kvp => kvp.Key,
+                        kvp => (object?)kvp.Value),
+                    cancellationToken: token);
+                return promptResult;
+            };
+        }; 
+    } 
+}
+
+public class McpServerPromptTap(McpClientPrompt clientPrompt) : McpServerPrompt
 {
-    public static async ValueTask<ListPromptsResult> ListPromptsHandler(
-        RequestContext<ListPromptsRequestParams> context,
-        CancellationToken token)
+    public static McpServerPrimitiveCollection<McpServerPrompt> CreateCollection(IReadOnlyList<McpClientPrompt> clientPrompts)
     {
-        IList<McpClientPrompt> prompts = [];
-        try
+        var serverPrompts = new McpServerPrimitiveCollection<McpServerPrompt>();
+        foreach (var clientPrompt in clientPrompts)
         {
-            var clientResolver = context.Services.GetMcpClientResolver();
-            var client = await clientResolver.ResolveAsync(context.Server, ct: token);
-
-            prompts = await client.ListPromptsAsync(cancellationToken: token);
+            serverPrompts.Add(new McpServerPromptTap(clientPrompt));
         }
-        catch (Exception e)
-        {
-            Console.WriteLine(e.Message);
-        }
+        return serverPrompts;
+    }
+    
+    private McpServerPrompt prompt =>clientPrompt.ProtocolPrompt?.McpServerPrompt ?? throw new InvalidOperationException("The provided McpClientPrompt does not have a corresponding McpServerPrompt implementation.");
 
-        return new() { Prompts = prompts.Select(r => r.ProtocolPrompt).ToList() };
+
+    /// <inheritdoc />
+    public override ValueTask<GetPromptResult> GetAsync(RequestContext<GetPromptRequestParams> request, CancellationToken cancellationToken = new CancellationToken())
+    {
+        return prompt.GetAsync(request, cancellationToken);
     }
 
-    public static async ValueTask<GetPromptResult> GetPromptHandler(
-        RequestContext<GetPromptRequestParams> context,
-        CancellationToken token)
-    {
-        var clientResolver = context.Services.GetMcpClientResolver();
-        var client = await clientResolver.ResolveAsync(context.Server, ct: token);
+    /// <inheritdoc />
+    public override Prompt ProtocolPrompt  => prompt.ProtocolPrompt;
 
-        return await client.GetPromptAsync(
-            context.Params.Name,
-            context.Params.Arguments?.ToDictionary(kvp => kvp.Key,
-                kvp => (object?)kvp.Value),
-            cancellationToken: token);
-    }
+    /// <inheritdoc />
+    public override IReadOnlyList<object> Metadata => prompt.Metadata;
 }

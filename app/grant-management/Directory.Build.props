@@ -5,6 +5,8 @@
 		<Product>grant-managment</Product>
 		<Description>Grant Managment</Description>
 		<VersionPrefix>0.0.1</VersionPrefix>
+		<RuntimeIdentifiers>linux-x64;linux-arm64</RuntimeIdentifiers>
+
 	</PropertyGroup>
 	<PropertyGroup>
 		<OutputType>Library</OutputType>

@@ -1,9 +1,11 @@
 using System.Net;
+using System.Security.Claims;
 using System.Text.RegularExpressions;
 using GrantMcpLayer.McpProxy.Auth;
 using GrantMcpLayer.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
-using ModelContextProtocol.AspNetCore.Authentication;
+using Microsoft.IdentityModel.Tokens;
 using ModelContextProtocol.Authentication;
 
 namespace GrantMcpLayer.McpProxy;
@@ -12,37 +14,64 @@ public static class McpServerBuilderExtensions
 {
     private static readonly Regex resourceMetadataUrlRegex = new("resource_metadata=\"(?<url>[^\"]+)\"", RegexOptions.Compiled);
 
-    public static IMcpServerBuilder WithAuthForwarding(this IMcpServerBuilder mcpServerBuilder)
+    public static IMcpServerBuilder WithAuthForwarding(this IMcpServerBuilder mcpServerBuilder, string authority, string? audience = null)
     {
+        // Configure JWT Bearer authentication
         mcpServerBuilder.Services.AddAuthentication(options =>
             {
-                options.DefaultChallengeScheme = McpAuthenticationDefaults.AuthenticationScheme;
-                options.DefaultAuthenticateScheme = "Forwarder";
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-            .AddScheme<McpForwardAuthenticationSchemaOptions, McpForwardAuthenticationSchemaHandler>("Forwarder", options => { })
-            .AddMcp(options =>
+            .AddJwtBearer(options =>
             {
-                options.Events.OnResourceMetadataRequest = async context =>
+                if (!string.IsNullOrEmpty(authority))
                 {
-                    var httpClientFactory = context.HttpContext.RequestServices.GetRequiredService<IHttpClientFactory>();
-                    var targetInfoSnapshot = context.HttpContext.RequestServices.GetRequiredService<IOptions<McpServerInfo>>();
-                    var ct = context.HttpContext.RequestAborted;
-                    
-                    var resourceProtectedMetadata = await ResolveProtectedResourceMetadata(httpClientFactory, targetInfoSnapshot.Value, ct);
-                    if (resourceProtectedMetadata is null)
+                    options.Authority = authority;
+                }
+
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidAudience = audience,
+                    ValidIssuer = authority,
+                    NameClaimType = "name",
+                    RoleClaimType = "roles"
+                };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = context =>
                     {
-                        context.Response.StatusCode = (int)HttpStatusCode.NotFound;
-                    }
-                    else
+                        var name = context.Principal?.Identity?.Name ?? "unknown";
+                        var email = context.Principal?.FindFirstValue("preferred_username") ?? "unknown";
+                        Console.WriteLine($"Token validated for: {name} ({email})");
+                        return Task.CompletedTask;
+                    },
+                    OnAuthenticationFailed = context =>
                     {
-                        resourceProtectedMetadata.Resource = new Uri($"{context.HttpContext.Request.Scheme}://{context.HttpContext.Request.Host}");
-                        context.Response.StatusCode = (int)HttpStatusCode.OK;
-                        await context.HttpContext.Response.WriteAsJsonAsync(resourceProtectedMetadata, ct);
+                        Console.WriteLine($"Authentication failed: {context.Exception.Message}");
+                        return Task.CompletedTask;
+                    },
+                    OnChallenge = context =>
+                    {
+                        Console.WriteLine($"Challenging client to authenticate");
+                        return Task.CompletedTask;
                     }
-                    
-                    context.HandleResponse();
+                };
+            }).AddMcp(options =>
+            {
+                options.ResourceMetadata = new()
+                {
+                    Resource = new Uri("http://localhost:5283"),
+                    ResourceDocumentation = new Uri("https://docs.example.com/api/weather"),
+                    AuthorizationServers = { new Uri(authority) },
+                    ScopesSupported = ["openid"],
                 };
             });
+        
         mcpServerBuilder.Services.AddAuthorization();
         
         return mcpServerBuilder;
@@ -52,18 +81,8 @@ public static class McpServerBuilderExtensions
     {
         mcpServerBuilder.Services.AddAuthentication(options =>
             {
-                options.DefaultChallengeScheme = McpAuthenticationDefaults.AuthenticationScheme;
-                options.DefaultAuthenticateScheme = "AllowAll";
-            })
-            .AddScheme<AllowAllSchemaOptions, AllowAllSchemaHandler>("AllowAll", options => { })
-            .AddMcp(options =>
-            {
-                options.Events.OnResourceMetadataRequest = context =>
-                {
-                    context.Response.StatusCode = (int)HttpStatusCode.NotFound;
-                    context.HandleResponse();
-                    return Task.CompletedTask;
-                };
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
             });
         mcpServerBuilder.Services.AddAuthorization();
 

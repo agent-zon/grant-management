@@ -39,8 +39,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasIndex(c => c.SessionId).HasDatabaseName("ix_grant_requests_session_id");
             e.Property(c => c.RequestedScopes).HasConversion(listToStringConverter);
             e.Property(c => c.Tools).HasConversion(listToStringConverter);
-            e.Property(c => c.ApprovedScopes).HasConversion(listToStringConverter).IsRequired(false);
-            e.Property(c => c.DeniedScopes).HasConversion(listToStringConverter).IsRequired(false);
+            e.Property(c => c.ApprovedScopes).HasConversion(listToStringConverter as ValueConverter<List<string>?, string>).IsRequired(false);
+            e.Property(c => c.DeniedScopes).HasConversion(listToStringConverter as ValueConverter<List<string>?, string>).IsRequired(false);
         });
 
         builder.Entity<AuditLogEntity>(e =>
