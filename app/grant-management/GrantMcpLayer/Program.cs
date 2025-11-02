@@ -43,10 +43,10 @@ builder.Services.AddHostedService<ClearOldConsentsHostedService>();
 // builder.Services.AddSingleton<IGrantManagementClient, GrantManagementsClient>();
 
 builder.AddNpgsqlDbContext<AppDbContext>("user-2-agent-consent-db");
-// builder.Services.Configure<McpServerOptions>(options =>
-// {
-//     options.Filters.CallToolFilters.Add(Tools.Call());
-// });
+builder.Services.Configure<McpServerOptions>(options =>
+{
+    options.Filters.CallToolFilters.Add(Tools.Call());
+});
 
 builder.AddMcpProxy();
    

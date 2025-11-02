@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using System.Threading.Channels;
 using Duende.IdentityModel.Client;
 using GrantMcpLayer.Models;
@@ -74,9 +75,13 @@ public static class Tools
                          10)
 
                 }, token);
+                
+                
+                
 
                 return new CallToolResult
                 {
+                    IsError = true,
                     Content =
                     [
                         new TextContentBlock
@@ -87,7 +92,8 @@ public static class Tools
                                     So in order to get access to this tool, prompt the user to visit the following link
 
                                     {authorize.VerificationUriComplete}
-                                    """
+                                    """,
+                            
                         }
                     ]
                 };
