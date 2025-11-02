@@ -3,7 +3,7 @@ using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 
-namespace GrantMcpLayer.McpProxy;
+namespace GrantMcpLayer.unused.Auth;
 
 [Obsolete]
 public class AllowAllSchemaHandler(

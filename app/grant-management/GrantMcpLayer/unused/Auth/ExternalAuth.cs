@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.Net.Http.Headers;
 using ModelContextProtocol.Authentication;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using MpcProxy.Common;
 
-namespace GrantMcpLayer.McpProxy.Auth;
+namespace GrantMcpLayer.unused.Auth;
 
 public class ExternalAuth
 {
@@ -86,7 +86,25 @@ public class ExternalAuth
         }
     }
     
-    
+    public static async Task<string?> ElicitForToken(McpServer server, CancellationToken ct = default)
+    {
+        var elicitResult = await server.ElicitAsync(new()
+        {
+            Message = Consts.InternalProxy.Elicitations.AuthBearerElicitationMessage,
+            RequestedSchema = new ElicitRequestParams.RequestSchema
+            {
+                Properties = new Dictionary<string, ElicitRequestParams.PrimitiveSchemaDefinition>()
+                {
+                    [HeaderNames.Authorization] = new ElicitRequestParams.StringSchema()
+                }
+            }
+        }, ct);
+
+        return elicitResult.Action == "accept" && elicitResult.Content != null &&
+               elicitResult.Content.ContainsKey(HeaderNames.Authorization)
+            ? elicitResult.Content[HeaderNames.Authorization].GetString()
+            : null;
+    }
 }
 
 

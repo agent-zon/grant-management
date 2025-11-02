@@ -3,7 +3,7 @@ using System.Threading.Channels;
 using Duende.IdentityModel.Client;
 using GrantMcpLayer.Models;
 
-namespace GrantMcpLayer.Services;
+namespace GrantMcpLayer.ScopeFilter;
 
 public class TokenRequestHostedService(
     ChannelReader<DeviceFlowAuthRequestedEvent> reader,
@@ -11,7 +11,7 @@ public class TokenRequestHostedService(
     IHttpClientFactory httpClientFactory,
     ILogger<TokenRequestHostedService> logger) : BackgroundService
 {
-    private readonly ConcurrentDictionary<Guid, Task<(Guid TaskKey, IHeaderDictionary Headers, ToolActivationConsent? Result)>> _tasks = new();
+    private readonly ConcurrentDictionary<Guid,Task<(Guid key,ToolActivationConsent? result)>> _tasks = new();
 
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
@@ -34,9 +34,8 @@ public class TokenRequestHostedService(
             {
                 var deviceFlowAuthRequestedEvent = await reader.ReadAsync(ct);
                 var taskKey = Guid.CreateVersion7();
-                var task = AcquireToken(deviceFlowAuthRequestedEvent, ct)
-                    .WithTaskKeyAndHttpHeaders(taskKey, deviceFlowAuthRequestedEvent.HttpHeaders);
-                _tasks.TryAdd(taskKey, task);
+                var task = AcquireToken(deviceFlowAuthRequestedEvent, ct);
+                _tasks.TryAdd(taskKey, WithTaskKey(task, taskKey));
             }
         }
 
@@ -51,7 +50,7 @@ public class TokenRequestHostedService(
                 }
                 
                 var winner = await Task.WhenAny(_tasks.Values);
-                var (taskKey, originalHeaders, tokenResult) = await winner;
+                var (taskKey, tokenResult) = await winner;
                 _tasks.Remove(taskKey, out var _);
                 if (tokenResult != null)
                 {
@@ -61,6 +60,13 @@ public class TokenRequestHostedService(
         }
 
         await Task.WhenAll(ReadingTask(stoppingToken), WriterTask(stoppingToken));
+        
+        static async Task<(Guid TaskKey, T Result)> WithTaskKey<T> (Task<T> task, 
+            Guid taskKey)
+        {
+            var result = await task;
+            return (taskKey, result);
+        }
     }
 
     private async Task WriteResultToDbAsync(ToolActivationConsent tokenResult, CancellationToken ct)
@@ -105,10 +111,10 @@ public class TokenRequestHostedService(
                 {
                     return new ToolActivationConsent
                     {
-                        AgentId = prompt.HttpHeaders.ExtractAgentId(),
-                        ConversationId = prompt.HttpHeaders.ExtractConversationId(),
-                        ToolName = prompt.ToolName,
-                        UserId = prompt.HttpHeaders.ExtractJwtFromAuthorization().Subject,
+                        AgentId = prompt.Agent,
+                        ConversationId = prompt.Grant,
+                        ToolName = prompt.Tool,
+                        UserId = prompt.User,
                         ValidUntil = prompt.ConsentExpiration
                     };
                 }
@@ -138,8 +144,11 @@ public class TokenRequestHostedService(
         }
         catch (Exception e)
         {
-            logger.LogError(e, "Error while aquiring token");
+            logger.LogError(e, "Error while acquiring token");
             return null;
         }
+        
+      
     }
+    
 }

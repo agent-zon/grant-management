@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace GrantMcpLayer.McpProxy;
+namespace GrantMcpLayer.unused.Session;
 
 public interface IMcpClientSessionsStorage
 {

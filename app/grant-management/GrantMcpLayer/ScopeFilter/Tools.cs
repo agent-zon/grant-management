@@ -4,23 +4,29 @@ using GrantMcpLayer.Models;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 
-namespace GrantMcpLayer.Interceptors;
+namespace GrantMcpLayer.ScopeFilter;
 
-public class CallToolInterceptor
+public static class Tools
 {
-    public static McpRequestFilter<CallToolRequestParams, CallToolResult> Intercept()
+    public static McpRequestFilter<CallToolRequestParams, CallToolResult> Call()
     {
         return (next) =>
         {
             return async ValueTask<CallToolResult> (context, token) =>
             {
-                var httpContextAccessor = context.Services.GetRequiredService<IHttpContextAccessor>();
-                var dbContext = context.Services.GetRequiredService<AppDbContext>();
+              var dbContext = context.Services.GetRequiredService<AppDbContext>();
+                var filter = new
+                {
+                    agent = context.User?.FindFirst(e => e.Type == "client_id")?.Value ?? "default-agent-id",
+                    tool = context.Params!.Name,
+                    grant = context.User?.FindFirst(c => c.Type == "jti")?.Value ?? context.Server.SessionId,
+                    user = context.User?.FindFirst(c => c.Type == "sub")?.Value
+                };
                 if (dbContext.ToolActivationConsents.Any(x =>
-                        x.AgentId == httpContextAccessor.HttpContext.ExtractAgentId() &&
-                        x.ToolName == context.Params.Name &&
-                        x.ConversationId == httpContextAccessor.HttpContext.ExtractConversationId() &&
-                        x.UserId == httpContextAccessor.HttpContext.ExtractUserId() &&
+                        x.AgentId ==  filter.agent &&
+                        x.ToolName == filter.tool &&
+                        x.ConversationId == filter.grant &&
+                        x.UserId == filter.user &&
                         x.ValidUntil >= DateTime.UtcNow))
                     return await next(context, token);
 
@@ -56,9 +62,12 @@ public class CallToolInterceptor
                 var channelWriter = context.Services.GetRequiredService<ChannelWriter<DeviceFlowAuthRequestedEvent>>();
                 await channelWriter.WriteAsync(new DeviceFlowAuthRequestedEvent
                 {
-                    HttpHeaders = httpContextAccessor.HttpContext.Request.Headers.DeepCopy(),
+                    Agent = filter.agent,
+                    ToolName = filter.tool,
+                    Grant  = filter.grant,
+                    User = filter.user,
                     TokenRequest = deviceTokenRequest,
-                    ToolName = context.Params.Name,
+                    Tool  = context.Params.Name,
                     Timestamp = now,
                     ConsentExpiration = now + TimeSpan.FromMinutes(
                         // toolPolicy.ExplicitConsentPolicy?.ConsentExpirationMinutes ??

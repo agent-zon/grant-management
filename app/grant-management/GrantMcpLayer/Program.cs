@@ -1,10 +1,11 @@
 using System.Text.RegularExpressions;
 using System.Threading.Channels;
 using GrantMcpLayer;
-using GrantMcpLayer.Interceptors;
 using GrantMcpLayer.McpProxy;
 using GrantMcpLayer.Models;
+using GrantMcpLayer.ScopeFilter;
 using GrantMcpLayer.Services;
+using ModelContextProtocol.Server;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,8 +43,14 @@ builder.Services.AddHostedService<ClearOldConsentsHostedService>();
 // builder.Services.AddSingleton<IGrantManagementClient, GrantManagementsClient>();
 
 builder.AddNpgsqlDbContext<AppDbContext>("user-2-agent-consent-db");
+// builder.Services.Configure<McpServerOptions>(options =>
+// {
+//     options.Filters.CallToolFilters.Add(Tools.Call());
+// });
 
 builder.AddMcpProxy();
+   
+
 
 // builder.Services.AddHttpClient<IGrantManagementClient, GrantManagementsClient>(static client =>
 // {

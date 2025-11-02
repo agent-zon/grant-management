@@ -2,11 +2,11 @@
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 
-namespace GrantMcpLayer.McpProxy.CleanHandlers;
+namespace GrantMcpLayer.McpProxy.Filters;
 
-public static class CleanLoggerHandler
+public static class Logger
 {
-    public static McpRequestFilter<SetLevelRequestParams, EmptyResult> SetLogLevelHandler(McpClient mcpClient)
+    public static McpRequestFilter<SetLevelRequestParams, EmptyResult> SetLevel(McpClient mcpClient)
     {
         return (next) =>
         {

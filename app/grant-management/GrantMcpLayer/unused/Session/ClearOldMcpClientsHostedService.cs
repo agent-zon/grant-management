@@ -1,6 +1,5 @@
-using GrantMcpLayer.McpProxy;
 
-namespace GrantMcpLayer.Services;
+namespace GrantMcpLayer.unused.Session;
 
 public class ClearOldMcpClientsHostedService(IMcpClientSessionsStorage sessionsStorage) : BackgroundService
 {

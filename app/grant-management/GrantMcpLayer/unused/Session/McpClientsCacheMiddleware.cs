@@ -1,6 +1,4 @@
-using GrantMcpLayer.McpProxy;
-
-namespace GrantMcpLayer;
+namespace GrantMcpLayer.unused.Session;
 
 public class McpClientsCacheMiddleware(IServiceProvider serviceProvider) : IMiddleware 
 {

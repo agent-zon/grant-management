@@ -2,11 +2,11 @@ using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 
-namespace GrantMcpLayer.McpProxy.CleanHandlers;
+namespace GrantMcpLayer.McpProxy.Filters;
 
-public static class NotificationHandlers
+public static class Notifications
 { 
-    public static void RegisterNotificationHandlers(McpClient client, McpServer server)
+    public static void Register(McpClient client, McpServer server)
     {
         //todo: register all notification handlers, use same mcp client form configure session options
         client.RegisterNotificationHandler(NotificationMethods.CancelledNotification,

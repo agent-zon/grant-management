@@ -1,16 +1,14 @@
 using System.Net;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
-using GrantMcpLayer.McpProxy.Auth;
 using GrantMcpLayer.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using ModelContextProtocol.Authentication;
 
 namespace GrantMcpLayer.McpProxy;
 
-public static class McpServerBuilderExtensions
+public static class Auth
 {
     private static readonly Regex resourceMetadataUrlRegex = new("resource_metadata=\"(?<url>[^\"]+)\"", RegexOptions.Compiled);
 

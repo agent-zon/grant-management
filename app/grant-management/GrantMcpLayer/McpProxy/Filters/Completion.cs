@@ -2,11 +2,11 @@
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 
-namespace GrantMcpLayer.McpProxy.CleanHandlers;
+namespace GrantMcpLayer.McpProxy.Filters;
 
-public static class CleanCompletionHandler
+public static class Completion
 {
-    public static McpRequestFilter<CompleteRequestParams,CompleteResult> CompletionHandler(McpClient client)
+    public static McpRequestFilter<CompleteRequestParams,CompleteResult> Complete(McpClient client)
     {
         return (next) =>
         {

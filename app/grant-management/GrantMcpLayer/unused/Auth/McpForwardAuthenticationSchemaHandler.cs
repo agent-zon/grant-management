@@ -3,7 +3,7 @@ using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 
-namespace GrantMcpLayer.McpProxy.Auth;
+namespace GrantMcpLayer.unused.Auth;
 
 public class McpForwardAuthenticationSchemaHandler : AuthenticationHandler<McpForwardAuthenticationSchemaOptions>
 {

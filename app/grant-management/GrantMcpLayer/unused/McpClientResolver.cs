@@ -1,5 +1,4 @@
-﻿using GrantMcpLayer.McpProxy.CleanHandlers;
-using GrantMcpLayer.Models;
+﻿using GrantMcpLayer.Models;
 using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
 using ModelContextProtocol.Client;
@@ -7,7 +6,7 @@ using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using MpcProxy.Common;
 
-namespace GrantMcpLayer.McpProxy;
+namespace GrantMcpLayer.unused;
 
 public interface IMcpClientResolver : IAsyncDisposable
 {

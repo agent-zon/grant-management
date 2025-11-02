@@ -68,13 +68,13 @@ var grant = builder.AddProject<Projects.GrantMcpLayer>("GrantMcpLayer")
     // .WaitFor(grantManagementServer)
     .WithEnvironment("OIDC_AUTHORITY", oidcAuthority)
     .WithEnvironment("OIDC_CLIENT_ID", oidcClientId)
-    .WithEnvironment("McpServerInfo:Url", "https://gitmcp.io/zon-cx/mcp-identity")
-    .WithEnvironment("McpServerInfo:Name", "gitmcp")
+    .WithEnvironment("McpServerInfo:Url", "https://aiam-mcps-everything.cfapps.eu12.hana.ondemand.com/mcp")
+    .WithEnvironment("McpServerInfo:Name", "everything")
     .WithEnvironment("McpServerInfo:Type", "http");
 
 builder
     .AddMcpInspector("inspector")
-    .WithMcpServer(grant, isDefault: true)
+    .WithMcpServer(grant, isDefault: true, path:"/")
     .WaitFor(grant)
     .WithEnvironment("MCP_SERVER_URL", grant.GetEndpoint("http"))
     .WithEnvironment("DEFAULT_MCP_SERVER", grant.Resource.Name)
