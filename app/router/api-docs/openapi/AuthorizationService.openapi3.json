@@ -2,8 +2,8 @@
   "openapi": "3.0.2",
   "info": {
     "title": "Authorization Server API",
-    "description": "Authorization Server endpoints for authorization, PAR, and token exchange with Rich Authorization Requests (RAR) support and grant_id propagation. \n\nVisit [Playground](/demo/index) to interact with auth api with grant id and permission elevation \n\n",
-    "version": ""
+    "description": "OAuth 2.0 Authorization Server with Pushed Authorization Requests (PAR), Rich Authorization Requests (RAR), and Grant Management support.\n\n**Features:**\n- Pushed Authorization Requests (PAR) for secure request transmission\n- Rich Authorization Requests (RAR) with `authorization_details`\n- Grant Management with `grant_id` propagation in token responses\n- Progressive permission elevation with `merge` action\n\nVisit the [Interactive Demo](/demo/index) to see the complete authorization flow with progressive permission elevation.",
+    "version": "1.0"
   },
   "x-sap-api-type": "REST",
   "x-odata-version": "4.01",
@@ -52,7 +52,9 @@
     },
     "/par": {
       "post": {
-        "summary": "Invokes action par",
+        "summary": "Pushed Authorization Request (PAR)",
+        "description": "Creates a pushed authorization request and returns a request_uri for use in the authorization endpoint. Supports Rich Authorization Requests (RAR) with authorization_details.",
+        "operationId": "par",
         "tags": ["Service Operations"],
         "responses": {
           "200": {
@@ -75,7 +77,7 @@
           }
         },
         "requestBody": {
-          "description": "Action parameters",
+          "description": "PAR request parameters",
           "content": {
             "application/json": {
               "schema": {
@@ -83,19 +85,23 @@
                 "properties": {
                   "response_type": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "example": "code"
                   },
                   "client_id": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "example": "demo-client-app"
                   },
                   "redirect_uri": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "example": "https://example.com/callback"
                   },
                   "scope": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "example": "analytics_read"
                   },
                   "state": {
                     "type": "string",
@@ -107,27 +113,34 @@
                   },
                   "code_challenge_method": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "example": "S256"
                   },
                   "grant_management_action": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "enum": ["create", "merge", "replace", "update"],
+                    "example": "create"
                   },
                   "grant_id": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "description": "Required when grant_management_action is merge, replace, or update"
                   },
                   "authorization_details": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "example": "[{\"type\":\"mcp\",\"server\":\"devops-mcp-server\",\"transport\":\"sse\",\"tools\":{\"metrics.read\":{\"essential\":true},\"logs.query\":{\"essential\":true}},\"locations\":[\"analytics\"]},{\"type\":\"fs\",\"roots\":[\"/workspace/configs\"],\"permissions\":{\"read\":{\"essential\":true}}}]"
                   },
                   "requested_actor": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "example": "urn:agent:analytics-bot-v1"
                   },
                   "subject_token_type": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "example": "urn:ietf:params:oauth:token-type:id_token"
                   },
                   "subject_token": {
                     "type": "string",
@@ -135,7 +148,37 @@
                   },
                   "subject": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "example": "alice@example.com"
+                  }
+                }
+              },
+              "examples": {
+                "initial_request": {
+                  "summary": "Initial authorization request",
+                  "value": {
+                    "response_type": "code",
+                    "client_id": "demo-client-app",
+                    "redirect_uri": "https://example.com/callback",
+                    "scope": "analytics_read",
+                    "grant_management_action": "create",
+                    "authorization_details": "[{\"type\":\"mcp\",\"server\":\"devops-mcp-server\",\"transport\":\"sse\",\"tools\":{\"metrics.read\":{\"essential\":true},\"logs.query\":{\"essential\":true},\"dashboard.view\":{\"essential\":true}},\"actions\":[\"read\",\"query\"],\"locations\":[\"analytics\"]},{\"type\":\"fs\",\"roots\":[\"/workspace/configs\",\"/home/agent/analytics\"],\"permissions\":{\"read\":{\"essential\":true},\"write\":null}}]",
+                    "requested_actor": "urn:agent:analytics-bot-v1",
+                    "subject": "alice@example.com"
+                  }
+                },
+                "permission_elevation": {
+                  "summary": "Merge additional permissions into existing grant",
+                  "value": {
+                    "response_type": "code",
+                    "client_id": "demo-client-app",
+                    "redirect_uri": "https://example.com/callback",
+                    "scope": "deployments",
+                    "grant_management_action": "merge",
+                    "grant_id": "gnt_01K8NZ1RN416XVA88H60W4YHHF",
+                    "authorization_details": "[{\"type\":\"mcp\",\"server\":\"devops-mcp-server\",\"transport\":\"sse\",\"tools\":{\"deploy.create\":null,\"deploy.read\":{\"essential\":true},\"infrastructure.provision\":null},\"locations\":[\"staging\",\"production\"]},{\"type\":\"api\",\"urls\":[\"https://api.deployment.internal/v1/deploy\"],\"protocols\":[\"HTTPS\"]}]",
+                    "requested_actor": "urn:agent:deployment-bot-v1",
+                    "subject": "bob@example.com"
                   }
                 }
               }
@@ -146,7 +189,9 @@
     },
     "/authorize": {
       "post": {
-        "summary": "Invokes action authorize",
+        "summary": "Authorization Endpoint",
+        "description": "Presents consent screen to user and returns authorization code upon approval. Use request_uri from PAR response.",
+        "operationId": "authorize",
         "tags": ["Service Operations"],
         "responses": {
           "200": {
@@ -193,7 +238,9 @@
     },
     "/token": {
       "post": {
-        "summary": "Invokes action token",
+        "summary": "Token Endpoint",
+        "description": "Exchanges authorization code for access token. Returns grant_id and authorization_details in the response.",
+        "operationId": "token",
         "tags": ["Service Operations"],
         "responses": {
           "200": {
@@ -216,7 +263,7 @@
           }
         },
         "requestBody": {
-          "description": "Action parameters",
+          "description": "Token exchange parameters",
           "content": {
             "application/json": {
               "schema": {
@@ -224,23 +271,39 @@
                 "properties": {
                   "grant_type": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "example": "authorization_code"
                   },
                   "client_id": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "example": "demo-client-app"
                   },
                   "code": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "example": "auth_code_xyz123"
                   },
                   "code_verifier": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "description": "PKCE code verifier (required if code_challenge was sent in PAR)"
                   },
                   "redirect_uri": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "example": "https://example.com/callback"
+                  }
+                }
+              },
+              "examples": {
+                "token_exchange": {
+                  "summary": "Exchange authorization code for token",
+                  "value": {
+                    "grant_type": "authorization_code",
+                    "client_id": "demo-client-app",
+                    "code": "auth_code_xyz123",
+                    "redirect_uri": "https://example.com/callback"
                   }
                 }
               }
