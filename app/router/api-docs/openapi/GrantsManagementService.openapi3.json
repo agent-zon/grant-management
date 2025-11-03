@@ -31,7 +31,8 @@
     "/Grants": {
       "get": {
         "operationId": "grants.list",
-        "summary": "Retrieves a list of grants.",
+        "summary": "List all grants",
+        "description": "Retrieves all grants for the authenticated user. Use $expand=authorization_details to include detailed permissions.",
         "tags": ["Grant Management"],
         "parameters": [
           {
@@ -229,7 +230,8 @@
       ],
       "get": {
         "operationId": "grants.query",
-        "summary": "Queries a grant details.",
+        "summary": "Query grant details",
+        "description": "Retrieves detailed information about a specific grant including status, timestamps, scopes, and authorization_details. Use $expand=authorization_details to see all granted permissions.",
         "tags": ["Grant Management"],
         "parameters": [
           {
@@ -328,7 +330,8 @@
       },
       "delete": {
         "operationId": "grants.revoke",
-        "summary": "Revokes a grant.",
+        "summary": "Revoke grant",
+        "description": "Revokes a grant and all associated access tokens. This action cannot be undone. The grant status will be set to 'revoked' and revoked_at timestamp will be recorded.",
         "tags": ["Grant Management"],
         "responses": {
           "204": {
