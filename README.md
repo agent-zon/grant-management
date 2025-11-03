@@ -9,8 +9,9 @@ fine-grained permission management for AI agents, MCP servers, and API gateways.
 - **API Docs**: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/api-docs
 - **Grant Management Dashboard**: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/grants-management/Grants
 - **OAuth Flow Step-by-Step Demo**: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/demo/index
-- 
+-
 - https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com
+
 ## ✨ Features
 
 - **OAuth 2.0 Grant Management API**: Full implementation of the Grant Management specification using SAP CAP framework
@@ -56,26 +57,41 @@ Content-Type: application/x-www-form-urlencoded
 response_type=code&
 client_id=demo-client-app&
 redirect_uri=https://example.com/callback&
-scope=mcp:tools&
+scope=analytics_read&
 grant_management_action=create&
-authorization_details=[{
-  "type": "mcp",
-  "server": "filesystem",
-  "transport": "stdio",
-  "tools": {
-    "read_file": {},
-    "write_file": {}
+authorization_details=[
+  {
+    "type": "mcp",
+    "server": "devops-mcp-server",
+    "transport": "sse",
+    "tools": {
+      "metrics.read": { "essential": true },
+      "logs.query": { "essential": true },
+      "dashboard.view": { "essential": true }
+    },
+    "actions": ["read", "query"],
+    "locations": ["analytics"]
   },
-  "locations": ["/workspace"]
-}]&
-requested_actor=urn:agent:analytics-bot
+  {
+    "type": "fs",
+    "roots": ["/workspace/configs", "/home/agent/analytics"],
+    "permissions": {
+      "read": { "essential": true },
+      "write": null,
+      "create": null,
+      "list": null
+    }
+  }
+]&
+requested_actor=urn:agent:analytics-bot-v1&
+subject=alice@example.com
 ```
 
 **Response:**
 
 ```json
 {
-  "request_uri": "urn:ietf:params:oauth:request_uri:bwc4JK-ESC0w8acc191e",
+  "request_uri": "urn:ietf:params:oauth:request_uri:177f36c4-c407-41c8-a1c8-b8062a60c197",
   "expires_in": 90
 }
 ```
@@ -87,7 +103,7 @@ POST /oauth-server/authorize
 Content-Type: application/x-www-form-urlencoded
 
 client_id=demo-client-app&
-request_uri=urn:ietf:params:oauth:request_uri:bwc4JK-ESC0w8acc191e
+request_uri=urn:ietf:params:oauth:request_uri:177f36c4-c407-41c8-a1c8-b8062a60c197
 ```
 
 Returns consent screen or redirects with authorization code.
@@ -100,8 +116,7 @@ Content-Type: application/x-www-form-urlencoded
 
 grant_type=authorization_code&
 client_id=demo-client-app&
-code=SplxlOBeZQQYbYS6WxSbIA&
-code_verifier=dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk&
+code=auth_code_xyz123&
 redirect_uri=https://example.com/callback
 ```
 
@@ -109,22 +124,34 @@ redirect_uri=https://example.com/callback
 
 ```json
 {
-  "access_token": "eyJhbGc...",
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "token_type": "Bearer",
   "expires_in": 3600,
-  "grant_id": "grant_abc123",
-  "scope": "mcp:tools",
-  "actor": "urn:agent:analytics-bot",
+  "grant_id": "gnt_01K8NZ1RN416XVA88H60W4YHHF",
+  "scope": "analytics_read",
+  "actor": "urn:agent:analytics-bot-v1",
   "authorization_details": [
     {
       "type": "mcp",
-      "server": "filesystem",
-      "transport": "stdio",
+      "server": "devops-mcp-server",
+      "transport": "sse",
       "tools": {
-        "read_file": {},
-        "write_file": {}
+        "metrics.read": { "essential": true },
+        "logs.query": { "essential": true },
+        "dashboard.view": { "essential": true }
       },
-      "locations": ["/workspace"]
+      "actions": ["read", "query"],
+      "locations": ["analytics"]
+    },
+    {
+      "type": "fs",
+      "roots": ["/workspace/configs", "/home/agent/analytics"],
+      "permissions": {
+        "read": { "essential": true },
+        "write": null,
+        "create": null,
+        "list": null
+      }
     }
   ]
 }
@@ -155,6 +182,43 @@ GET /oauth-server/metadata
 }
 ```
 
+#### OData Query Examples
+
+Both services support OData v4 query parameters (`$select`, `$expand`, `$filter`, `$orderby`, etc.):
+
+**Select specific fields and expand consent:**
+
+```bash
+curl 'http://localhost:4004/oauth-server/AuthorizationRequests?$select=client_id,redirect_uri,subject,grant_id,ID&$expand=consent'
+```
+
+```json
+[
+  {
+    "client_id": "demo-client-app",
+    "redirect_uri": "http://localhost:4004/demo/callback",
+    "subject": "alice",
+    "grant_id": "gnt_01K8EE4VV64BFAY36J23M1BZGG",
+    "ID": "95f8d892-2168-4eff-8d32-08e7717d9535",
+    "consent": {
+      "ID": "2818903d-4ea6-4765-98c3-00804fb2c865",
+      "grant_id": "gnt_01K8EE4VV64BFAY36J23M1BZGG",
+      "scope": "deployments",
+      "subject": "alice",
+      "actor": "urn:agent:accounting-bot-v1",
+      "previous_consent_ID": "c88a79c2-97d2-420a-a089-b92107c3484a",
+      "createdAt": "2025-10-25T19:43:14.340Z"
+    }
+  }
+]
+```
+
+**Filter active grants and expand authorization details:**
+
+```bash
+curl 'http://localhost:4004/grants-management/Grants?$filter=status eq '\''active'\''
+```
+
 ### 2. Grant Management Service (`/grants-management`)
 
 OAuth 2.0 Grant Management API for querying and revoking grants.
@@ -175,13 +239,13 @@ Accept: application/json
   "@odata.context": "/grants-management/$metadata#Grants",
   "value": [
     {
-      "id": "grant_abc123",
+      "id": "gnt_01K8NZ1RN416XVA88H60W4YHHF",
       "client_id": "demo-client-app",
-      "subject": "user@example.com",
-      "actor": "urn:agent:analytics-bot",
+      "subject": "alice@example.com",
+      "actor": "urn:agent:analytics-bot-v1",
       "status": "active",
       "risk_level": "medium",
-      "scope": "mcp:tools",
+      "scope": "analytics_read",
       "createdAt": "2025-01-15T10:30:00Z",
       "modifiedAt": "2025-01-15T10:30:00Z"
     }
@@ -192,7 +256,7 @@ Accept: application/json
 **Query Grant with Authorization Details**
 
 ```http
-GET /grants-management/Grants('grant_abc123')?$expand=authorization_details
+GET /grants-management/Grants/'grant_abc123'
 Accept: application/json
 ```
 
@@ -200,27 +264,38 @@ Accept: application/json
 
 ```json
 {
-  "id": "grant_abc123",
+  "id": "gnt_01K8NZ1RN416XVA88H60W4YHHF",
   "client_id": "demo-client-app",
-  "subject": "user@example.com",
-  "actor": "urn:agent:analytics-bot",
+  "subject": "alice@example.com",
+  "actor": "urn:agent:analytics-bot-v1",
   "status": "active",
   "risk_level": "medium",
-  "scope": "mcp:tools",
+  "scope": "analytics_read",
   "createdAt": "2025-01-15T10:30:00Z",
   "modifiedAt": "2025-01-15T10:30:00Z",
   "authorization_details": [
     {
-      "ID": "detail_123",
+      "ID": "4d8a5c2b-7f31-4e9a-b2c8-1a3d5e6f7g8h",
       "type": "mcp",
-      "server": "filesystem",
-      "transport": "stdio",
+      "server": "devops-mcp-server",
+      "transport": "sse",
       "tools": {
-        "read_file": {},
-        "write_file": {}
+        "metrics.read": { "essential": true },
+        "logs.query": { "essential": true },
+        "dashboard.view": { "essential": true }
       },
-      "locations": ["/workspace"],
-      "actions": ["read", "write"],
+      "actions": ["read", "query"],
+      "locations": ["analytics"],
+      "createdAt": "2025-01-15T10:30:00Z"
+    },
+    {
+      "ID": "9b8c7d6e-5f4a-3e2b-1c9d-8a7b6c5d4e3f",
+      "type": "fs",
+      "roots": ["/workspace/configs", "/home/agent/analytics"],
+      "permissions_read": true,
+      "permissions_write": false,
+      "permissions_create": false,
+      "permissions_list": false,
       "createdAt": "2025-01-15T10:30:00Z"
     }
   ]
@@ -236,12 +311,60 @@ Accept: application/json
 
 **Response:** `204 No Content`
 
-**List Grants with Filtering**
+### OData Query Parameters
+
+Both services support OData v4 query parameters for powerful filtering, selection, and expansion:
+
+**Select specific fields from Authorization Requests:**
+
+```bash
+curl 'http://localhost:4004/oauth-server/AuthorizationRequests?$select=client_id,redirect_uri,subject,grant_id,ID&$expand=consent'
+```
+
+**Response:**
+
+```json
+[
+  {
+    "client_id": "demo-client-app",
+    "redirect_uri": "http://localhost:4004/demo/callback",
+    "subject": "alice",
+    "grant_id": "gnt_01K8EE4VV64BFAY36J23M1BZGG",
+    "ID": "95f8d892-2168-4eff-8d32-08e7717d9535",
+    "consent": {
+      "ID": "2818903d-4ea6-4765-98c3-00804fb2c865",
+      "createdAt": "2025-10-25T19:43:14.340Z",
+      "createdBy": "alice",
+      "modifiedAt": "2025-10-25T19:43:14.340Z",
+      "modifiedBy": "alice",
+      "grant_id": "gnt_01K8EE4VV64BFAY36J23M1BZGG",
+      "request_ID": "95f8d892-2168-4eff-8d32-08e7717d9535",
+      "scope": "deployments",
+      "subject": "alice",
+      "previous_consent_ID": "c88a79c2-97d2-420a-a089-b92107c3484a",
+      "previous_consent_grant_id": "gnt_01K8EE4VV64BFAY36J23M1BZGG",
+      "redirect_uri": "http://localhost:4004/demo/callback",
+      "actor": "urn:agent:accounting-bot-v1"
+    }
+  }
+]
+```
+
+**Filter active grants by actor:**
 
 ```http
-GET /grants-management/Grants?$filter=status eq 'active' and actor eq 'urn:agent:analytics-bot'&$expand=authorization_details
-Accept: application/json
+GET http://localhost:4004/grants-management/Grants?$filter=status eq '\''active'\'' and actor eq '\''urn:agent:analytics-bot-v1'\''
 ```
+
+**Common OData Parameters:**
+
+- `$select` - Choose which fields to return (e.g., `$select=id,subject,scope`)
+- `$expand` - Include related entities (e.g., `$expand=consent,authorization_details`)
+- `$filter` - Filter results (e.g., `$filter=status eq 'active'`)
+- `$orderby` - Sort results (e.g., `$orderby=createdAt desc`)
+- `$top` - Limit results (e.g., `$top=10`)
+- `$skip` - Skip results for pagination (e.g., `$skip=20`)
+- `$count` - Include total count (e.g., `$count=true`)
 
 ### Web UI Routes
 
@@ -737,13 +860,15 @@ The system supports multiple authorization detail types:
 ```json
 {
   "type": "mcp",
-  "server": "filesystem",
-  "transport": "stdio",
+  "server": "devops-mcp-server",
+  "transport": "sse",
   "tools": {
-    "read_file": {},
-    "write_file": {}
+    "metrics.read": { "essential": true },
+    "logs.query": { "essential": true },
+    "dashboard.view": { "essential": true }
   },
-  "locations": ["/workspace"]
+  "actions": ["read", "query"],
+  "locations": ["analytics"]
 }
 ```
 
@@ -753,11 +878,11 @@ The system supports multiple authorization detail types:
 {
   "type": "api",
   "urls": [
-    "https://api.example.com/v1/users",
-    "https://api.example.com/v1/data"
+    "https://api.deployment.internal/v1/deploy",
+    "https://api.infrastructure.internal/v1/provision"
   ],
-  "protocols": ["https"],
-  "actions": ["read", "write"]
+  "protocols": ["HTTPS"],
+  "actions": ["create", "read", "update"]
 }
 ```
 
@@ -766,11 +891,12 @@ The system supports multiple authorization detail types:
 ```json
 {
   "type": "fs",
-  "roots": ["/home/user/workspace"],
+  "roots": ["/workspace/configs", "/home/agent/analytics"],
   "permissions": {
     "read": { "essential": true },
-    "write": { "essential": true },
-    "list": { "essential": true }
+    "write": null,
+    "create": null,
+    "list": null
   }
 }
 ```
@@ -780,11 +906,11 @@ The system supports multiple authorization detail types:
 ```json
 {
   "type": "database",
-  "server": "postgresql://localhost:5432",
-  "databases": ["app_db"],
-  "schemas": ["public"],
-  "tables": ["users", "orders"],
-  "actions": ["select", "insert", "update"]
+  "server": "postgresql://db.internal:5432",
+  "databases": ["analytics_db"],
+  "schemas": ["metrics"],
+  "tables": ["events", "logs", "metrics"],
+  "actions": ["select", "insert"]
 }
 ```
 
@@ -852,15 +978,16 @@ curl -X POST http://localhost:4004/oauth-server/par \
   -d 'response_type=code' \
   -d 'client_id=demo-client-app' \
   -d 'redirect_uri=http://localhost:3000/callback' \
-  -d 'scope=mcp:tools' \
+  -d 'scope=analytics_read' \
   -d 'grant_management_action=create' \
-  -d 'authorization_details=[{"type":"mcp","server":"filesystem","transport":"stdio","tools":{"read_file":{}}}]' \
-  -d 'requested_actor=urn:agent:test-bot'
+  -d 'authorization_details=[{"type":"mcp","server":"devops-mcp-server","transport":"sse","tools":{"metrics.read":{"essential":true},"logs.query":{"essential":true},"dashboard.view":{"essential":true}},"actions":["read","query"],"locations":["analytics"]},{"type":"fs","roots":["/workspace/configs"],"permissions":{"read":{"essential":true},"write":null}}]' \
+  -d 'requested_actor=urn:agent:analytics-bot-v1' \
+  -d 'subject=alice@example.com'
 
-# Response: {"request_uri":"urn:ietf:params:oauth:request_uri:xxx","expires_in":90}
+# Response: {"request_uri":"urn:ietf:params:oauth:request_uri:177f36c4-c407-41c8-a1c8-b8062a60c197","expires_in":90}
 
 # 2. Visit authorization endpoint (in browser)
-# http://localhost:4004/oauth-server/authorize?client_id=demo-client-app&request_uri=urn:ietf:params:oauth:request_uri:xxx
+# http://localhost:4004/oauth-server/authorize?client_id=demo-client-app&request_uri=urn:ietf:params:oauth:request_uri:177f36c4-c407-41c8-a1c8-b8062a60c197
 
 # 3. After consent, exchange code for token
 curl -X POST http://localhost:4004/oauth-server/token \
@@ -871,10 +998,18 @@ curl -X POST http://localhost:4004/oauth-server/token \
   -d 'redirect_uri=http://localhost:3000/callback'
 
 # 4. Query grant details
-curl http://localhost:4004/grants-management/Grants('grant_xxx') \
+curl "http://localhost:4004/grants-management/Grants/grant_xxx" \
   -H "Accept: application/json"
 
-# 5. Revoke grant
+# 5. Query authorization requests with select and expand
+curl "http://localhost:4004/oauth-server/AuthorizationRequests?%24select=client_id,redirect_uri,subject,grant_id,ID&%24expand=consent" \
+  -H "Accept: application/json"
+
+# 6. Filter grants by status and expand consents
+curl "http://localhost:4004/grants-management/Grants?%24filter=status%20eq%20'active'&%24expand=consents" \
+  -H "Accept: application/json"
+
+# 7. Revoke grant
 curl -X DELETE http://localhost:4004/grants-management/Grants('grant_xxx')
 ```
 
