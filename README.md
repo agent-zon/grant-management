@@ -9,7 +9,8 @@ fine-grained permission management for AI agents, MCP servers, and API gateways.
 - **API Docs**: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/api-docs
 - **Grant Management Dashboard**: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/grants-management/Grants
 - **OAuth Flow Step-by-Step Demo**: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/demo/index
-
+- 
+- https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com
 ## ✨ Features
 
 - **OAuth 2.0 Grant Management API**: Full implementation of the Grant Management specification using SAP CAP framework
@@ -870,7 +871,7 @@ curl -X POST http://localhost:4004/oauth-server/token \
   -d 'redirect_uri=http://localhost:3000/callback'
 
 # 4. Query grant details
-curl http://localhost:4004/grants-management/Grants('grant_xxx')?$expand=authorization_details \
+curl http://localhost:4004/grants-management/Grants('grant_xxx') \
   -H "Accept: application/json"
 
 # 5. Revoke grant
@@ -886,10 +887,8 @@ Deploy to SAP BTP Kyma environment:
 export NAMESPACE=grant-management
 
 # Deploy using Helm
-helm upgrade --install agent-grants ./chart \
-  --namespace $NAMESPACE \
-  --create-namespace \
-  --values ./chart/values.yaml
+npm run deploy
+
 ```
 
 Or use the containerization workflow:
@@ -910,13 +909,15 @@ Run the CDS server locally while connecting to remote services in your Kyma envi
 
 ```bash
 # Change default namespace to your namespace
-kubectl config set-context --current --namespace=grant-management
+kubectl config set-context --current --namespace=<your namespace>
 
+# Npm script
+npm run hybr
 # Bind to remote auth service
-cds bind auth --to agent-grants-srv-auth --on k8s
+npx cds bind auth --to agent-grants-srv-auth --on k8s
 
 # Start local server with hybrid profile
-cds watch --profile hybrid
+npx cds watch --profile hybrid
 
 # View resolved bindings
 npx cds env requires.auth --profile hybrid --resolve-bindings
