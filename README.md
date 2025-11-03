@@ -247,13 +247,39 @@ Accept: application/json
       "risk_level": "medium",
       "scope": "analytics_read",
       "createdAt": "2025-01-15T10:30:00Z",
-      "modifiedAt": "2025-01-15T10:30:00Z"
+      "modifiedAt": "2025-01-15T10:30:00Z",
+      "authorization_details": [
+        {
+          "ID": "4d8a5c2b-7f31-4e9a-b2c8-1a3d5e6f7g8h",
+          "type": "mcp",
+          "server": "devops-mcp-server",
+          "transport": "sse",
+          "tools": {
+            "metrics.read": { "essential": true },
+            "logs.query": { "essential": true },
+            "dashboard.view": { "essential": true }
+          },
+          "actions": ["read", "query"],
+          "locations": ["analytics"],
+          "createdAt": "2025-01-15T10:30:00Z"
+        },
+        {
+          "ID": "9b8c7d6e-5f4a-3e2b-1c9d-8a7b6c5d4e3f",
+          "type": "fs",
+          "roots": ["/workspace/configs", "/home/agent/analytics"],
+          "permissions_read": true,
+          "permissions_write": false,
+          "permissions_create": false,
+          "permissions_list": false,
+          "createdAt": "2025-01-15T10:30:00Z"
+        }
+      ]
     }
   ]
 }
 ```
 
-**Query Grant with Authorization Details**
+**Query Specifc Grant **
 
 ```http
 GET /grants-management/Grants/'grant_abc123'
@@ -311,8 +337,8 @@ Accept: application/json
 
 **Response:** `204 No Content`
 
-### OData Query Parameters
-
+<!-- ### OData Query Parameters
+This currently not works with grants api
 Both services support OData v4 query parameters for powerful filtering, selection, and expansion:
 
 **Select specific fields from Authorization Requests:**
@@ -365,8 +391,11 @@ GET http://localhost:4004/grants-management/Grants?$filter=status eq '\''active'
 - `$top` - Limit results (e.g., `$top=10`)
 - `$skip` - Skip results for pagination (e.g., `$skip=20`)
 - `$count` - Include total count (e.g., `$count=true`)
+ -->
 
 ### Web UI Routes
+
+These are the same routes as above, but when requested with `Accept: text/html` they will render an HTML response instead of JSON.
 
 - **`GET /grants-management/Grants`** - Grant management dashboard (HTML)
 - **`GET /grants-management/Grants/{id}`** - Individual grant details
