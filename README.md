@@ -7,15 +7,15 @@ fine-grained permission management for AI agents, MCP servers, and API gateways.
 ## 🚀 Deployment
 
 - **API Docs**: \
-https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/api-docs
+  https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/api-docs
 - **Grant Management Dashboard**: \
-https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/grants-management/Grants
+  https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/grants-management/Grants
 - **OAuth Flow Step-by-Step Demo**: \
 https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/demo/index
 <!-- 
 should restart
-- *Simulation* \
-https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com -->
+- _Simulation_ \
+  https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com -->
 
 ## ✨ Features
 
@@ -141,9 +141,9 @@ redirect_uri=https://example.com/callback
       "server": "devops-mcp-server",
       "transport": "sse",
       "tools": {
-        "metrics.read": { "essential": true },
-        "logs.query": { "essential": true },
-        "dashboard.view": { "essential": true }
+        "metrics_read": true,
+        "logs_query": true,
+        "dashboard_view": true
       },
       "actions": ["read", "query"],
       "locations": ["analytics"]
@@ -153,9 +153,8 @@ redirect_uri=https://example.com/callback
       "roots": ["/workspace/configs", "/home/agent/analytics"],
       "permissions": {
         "read": { "essential": true },
-        "write": null,
-        "create": null,
-        "list": null
+        "write": true,
+        "create": false,
       }
     }
   ]

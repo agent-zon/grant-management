@@ -6,7 +6,7 @@ global:
     name: docker-registry
   image:
     registry: scai-dev.common.repositories.cloud.sap
-    tag: v14
+    tag: v17
     imagePullPolicy: always
 srv:
   bindings:
@@ -104,6 +104,26 @@ approuter:
     OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
     OTEL_SERVICE_NAME: approuter
     OTEL_PROPAGATORS: tracecontext,baggage
+#  additionalVolumes:
+#    - name: xs-app
+#      configMap:
+#        name: "{{ .Release.Name }}-approuter-static-files"
+#      volumeMount:
+#        mountPath: /app/xs-app.json
+#        subPath: xs-app.json
+#        readOnly: true
+#    - name: api-docs
+#      volumeMount:
+#        mountPath: /app/api-docs
+##        subPath: api-docs
+#        readOnly: true
+#    - name: favicon-config
+#      configMap:
+#        name: "{{ .Release.Name }}-approuter-static-files"
+#      volumeMount:
+#        mountPath: /app/favicon.svg
+#        subPath: favicon.svg
+#        readOnly: true
 portal:
   runAsUser: 1993
   bindings:

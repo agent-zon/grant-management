@@ -5,6 +5,7 @@ import {
   Consents,
   Consent,
   AuthorizationDetailType, AuthorizationRequest,
+  Grants,
 } from "#cds-models/sap/scai/grants/AuthorizationService";
 import { isNativeError } from "node:util/types";
 
@@ -60,17 +61,17 @@ export async function POST(
 
       // Check if grant row exists
       const existingGrant = await cds.run(
-        cds.ql.SELECT.one.from("sap.scai.grants.Grants").where({ id: grantId })
+        cds.ql.SELECT.one.from(Grants).where({ id: grantId })
       );
       if (existingGrant) {
         await cds.run(
-          cds.ql.UPDATE("sap.scai.grants.Grants")
+          UPDATE(Grants)
             .set({ scope: aggregatedScope, status: "active", actor: actor })
             .where({ id: grantId })
         );
       } else {
         await cds.run(
-          cds.ql.INSERT.into("sap.scai.grants.Grants").entries({
+          INSERT.into(Grants).entries({
             id: grantId,
             client_id: clientId,
             scope: aggregatedScope,
