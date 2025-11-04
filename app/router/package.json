@@ -5,6 +5,7 @@
   },
   "scripts": {
     "start": "node node_modules/@sap/approuter/approuter.js",
-    "hybrid": "npx cds bind --exec -- npm run start"
+    "hybrid": "npx cds bind --exec -- npm run start",
+    "build": "rsync -av --exclude node_modules . ../../gen/chart/router/"
   }
 }
