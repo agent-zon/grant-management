@@ -18,7 +18,7 @@ entity McpDestination {
 service McpService {
         
   @method: [POST]
-  action mcp(jsonrpc: String, id: Integer, method: String, params: Map) returns String;
+  action mcp(jsonrpc: String, id: Integer, method: String, params: Map) returns Map;
  
 }
 

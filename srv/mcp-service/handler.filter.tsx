@@ -27,14 +27,14 @@ export async function POST(
         return await next(req);
         //todo: should we wait for session to be created, and intialize the grant?
     }
-        console.log(`MCP Proxy Filter ${req.data?.method}- Checking authorization for session: `);
+    console.log(`MCP Proxy Filter ${req.data?.method}- Checking authorization for session: `);
 
 
     try {
-    const authorization_details = await cds.run(
-        cds.ql.SELECT.one.from(AuthorizationDetail).where({ consent_grant_id: grant_id, type: "mcp", server: host })
-    );
-    
+        const authorization_details = await cds.run(
+            cds.ql.SELECT.one.from(AuthorizationDetail).where({consent_grant_id: grant_id, type: "mcp", server: host})
+        );
+
     } catch (error) {
         console.error("MCP Proxy Filter - Error fetching authorization details:", error);
         debugger;
@@ -48,7 +48,7 @@ export async function POST(
         return await next(req);
     }
     const authorization_details = await cds.run(
-        cds.ql.SELECT.one.from(AuthorizationDetail).where({ consent_grant_id: grant_id, type: "mcp", server: host })
+        cds.ql.SELECT.one.from(AuthorizationDetail).where({consent_grant_id: grant_id, type: "mcp", server: host})
     );
     console.log("MCP Proxy Filter - Authorization Details:", authorization_details);
     if (req.data.method !== "tools/call" || authorization_details?.tools?.[req.data.params?.name]) {
@@ -59,7 +59,7 @@ export async function POST(
         console.log(`MCP Proxy Filter - Tool "${toolName}" authorized`);
         return await next(req);
     }
-    
+
     console.log(`MCP Proxy Filter - Tool "${toolName}" not authorized, initiating authorization flow`);
 
     var response = await authService.par({
@@ -75,7 +75,7 @@ export async function POST(
             tools: {
                 [toolName]: {essential: true}
             },
-         }]),
+        }]),
         requested_actor: `urn:mcp:agent:${agent}`,
         subject: cds.context?.user?.id,
         scope: "mcp:tools",
@@ -90,40 +90,46 @@ export async function POST(
 
     var authUrl = `${req.http?.req.protocol}://${req.http?.req.headers.host}/oauth-server/authorize?request_uri=${encodeURIComponent(response.request_uri!)}`;
 
-   return {
+    return {
         jsonrpc: "2.0",
-        error: {
-            code: 403,
-            message: "Insufficient permissions for tool",
-            data: {
-                authorization_url: authUrl
-            }
+
+        result: {
+            isError: true,
+            content: [
+                {
+                    type: "text",
+                    text: `Authorization required for tool "${toolName}". Please authorize by visiting the following URL: 
+                    
+                    ${authUrl}
+                    `,
+                }
+            ]
         },
-        id: req.data.id || null,
+        id: req.data.id || null
     };
 
 }
 
 
 function mcpDetails(grant?: Grant, host?: string): AuthorizationDetailMcpTool | undefined {
-        return grant?.authorization_details?.find(
-            (detail) => detail.type === "mcp" && detail.server === host
-        ) as unknown as AuthorizationDetailMcpTool;
- }
+    return grant?.authorization_details?.find(
+        (detail) => detail.type === "mcp" && detail.server === host
+    ) as unknown as AuthorizationDetailMcpTool;
+}
 
-    async function getAuthDetails(
-        sessionId: string,
-        server: string
-    ): Promise<AuthorizationDetailMcpTool | undefined> {
-        const grantService = await cds.connect.to(GrantsManagementService);
+async function getAuthDetails(
+    sessionId: string,
+    server: string
+): Promise<AuthorizationDetailMcpTool | undefined> {
+    const grantService = await cds.connect.to(GrantsManagementService);
 
-        // Try to find grant by session metadata or user
-        const userId = cds.context?.user?.id;
-        const grant = (await grantService.read(
-            Grants,
-            sessionId
-        )) as unknown as Grant;
-        return grant?.authorization_details?.find(
-            (detail) => detail.type === "mcp" && detail.server === server
-        ) as unknown as AuthorizationDetailMcpTool;
-    }
+    // Try to find grant by session metadata or user
+    const userId = cds.context?.user?.id;
+    const grant = (await grantService.read(
+        Grants,
+        sessionId
+    )) as unknown as Grant;
+    return grant?.authorization_details?.find(
+        (detail) => detail.type === "mcp" && detail.server === server
+    ) as unknown as AuthorizationDetailMcpTool;
+}
