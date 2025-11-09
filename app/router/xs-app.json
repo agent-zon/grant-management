@@ -2,6 +2,13 @@
   "welcomeFile": "./api-docs/index.html",
   "routes": [
     {
+      "source": "^/mcp/client/(.*)$",
+      "target": "/$1",
+      "destination": "mcp-client-api",
+      "csrfProtection": false,
+      "authenticationType": "ias"
+    },
+    {
       "source": "^/api-docs/openapi/(.*)$",
       "target": "/$1",
       "localDir": "./api-docs/openapi",
@@ -38,13 +45,7 @@
       "authenticationType": "ias",
       "service": "sap-approuter-userapi"
     },
-    {
-      "source": "^/mcp-proxy/(.*)$",
-      "target": "/$1",
-      "destination": "mcp-proxy",
-      "csrfProtection": false,
-      "authenticationType": "none"
-    },
+
     {
       "source": "^/(.*)$",
       "target": "$1",

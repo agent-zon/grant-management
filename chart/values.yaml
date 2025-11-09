@@ -39,6 +39,8 @@ srv:
       value: "ias"
     - name: CDS_REQUIRES_DESTINATIONS_KIND
       value: "destinations"
+    - name: BASE_API_URL
+      value: "{{ Release.Name }}-approuter-{{ .Release.Namespace }}.{{ .Values.global.domain }}"
 
 approuter:
   expose:

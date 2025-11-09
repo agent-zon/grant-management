@@ -3,7 +3,7 @@ import {
   type Grant,
   Grants,
   Consents,
-  AuthorizationDetail,
+  AuthorizationDetails,
   Consent,
 } from "#cds-models/sap/scai/grants/GrantsManagementService";
 import type {
@@ -328,7 +328,7 @@ export async function LIST(
 async function getGrants(srv: GrantsManagementService, data: Grants) {
   const consentRecords = await srv.read(Consents);
   const authorization_details = await srv.run(
-    cds.ql.SELECT.from(AuthorizationDetail)
+    cds.ql.SELECT.from(AuthorizationDetails)
   );
 
   // Fetch all AuthorizationRequests to get client_id mapping

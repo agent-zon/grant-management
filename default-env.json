@@ -1,14 +1,22 @@
 {
+  "ENABLE_FORWARD_CORPORATE_IDP_TOKEN": "true",
   "destinations": [
     {
       "name": "srv-api",
       "url": "http://localhost:4004",
-      "forwardAuthToken": true
+      "forwardAuthToken": true,
+      "forwardAuthCertificates": true
     },
     {
       "name": "user-portal",
       "url": "http://localhost:3000",
       "forwardAuthToken": true
+    },
+    {
+      "name": "mcp-client-api",
+      "url": "http://localhost:8787",
+      "forwardAuthToken": true
+      
     }
   ]
 }

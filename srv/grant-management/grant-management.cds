@@ -13,7 +13,7 @@ namespace sap.scai.grants;
 service GrantsManagementService {
    
 
-    entity AuthorizationDetail as projection on grants.AuthorizationDetail;
+    entity AuthorizationDetails as projection on grants.AuthorizationDetails;
 
  
     entity Grants as projection on grants.Grants;

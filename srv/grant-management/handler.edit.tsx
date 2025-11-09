@@ -11,7 +11,7 @@ import type {
 } from "#cds-models/sap/scai/grants/GrantsManagementService";
 import {
   Consents,
-  AuthorizationDetail,
+  AuthorizationDetails,
 } from "#cds-models/sap/scai/grants/GrantsManagementService";
 
 export function POST(
@@ -28,9 +28,10 @@ export async function GET(
   console.log("🔧 GET request:", req.data);
 
   // Only handle single grant requests
-  if (!req.query.SELECT?.one || !req.data.id) {
+  if (!req.query.SELECT?.one ) {
     return await next(req);
   }
+  console.log("🔧 Single grant request.");
   // Apply workaround to process grant with consents and authorization details
   let grant = await getGrant(this, {
     ...req.data,
@@ -398,7 +399,7 @@ async function getGrant(
     cds.ql.SELECT.from(Consents).where({ grant_id: id })
   );
   const authorization_details = await srv.run(
-    cds.ql.SELECT.from(AuthorizationDetail).where({
+    cds.ql.SELECT.from(AuthorizationDetails).where({
       consent_grant_id: id,
     })
   );

@@ -27,6 +27,7 @@ export default class Service extends cds.ApplicationService {
     // Register route handlers
     this.on("token", token);
     this.on("authorize", authorize);
+    this.on("authorize_dialog", authorize);
     this.on("par", par);
     this.on("metadata", metadata);
     // Normalize incoming consent payloads before validation

@@ -61,7 +61,7 @@
     "hybrid": "npx cds bind --exec -- npm run serve",
     "hybrid:approuter": "npx cds bind --exec -- npm run serve:approuter",
     "hybrid:portal": "npx cds bind --exec -- npm run dev -w portal",
-    "hybrid:cds": "npx cds bind --profile hybrid --exec -- cds watch --profile hybrid",
+    "hybrid:cds": "npx cds bind --profile hybrid --exec -- cds debug --profile hybrid",
     "build": "npx cds build --production",
     "build:containers": "ctz containerize.yaml --log",
     "build:push": "ctz containerize.yaml --log --push",

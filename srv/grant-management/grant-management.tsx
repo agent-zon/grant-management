@@ -81,12 +81,12 @@ export default class Service extends cds.ApplicationService {
   ){
     req.data["$expand"] = [
       ...(req.data["$expand"]?.split(",") || []),
-      "authorization_details",
+       "authorization_details",
       "consents",
     ]
         .filter(unique)
         .join(",");
-    console.log("Expanding grant details for request:", req.query.SELECT);
+    console.log("Expanding grant details for request:",JSON.stringify( req.query.SELECT?.from?.ref, null,2) , "\tone:", req.query?.SELECT?.one , "\tdata:", req.data);
 
     return next(req);
   }

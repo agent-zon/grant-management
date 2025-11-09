@@ -5,19 +5,19 @@ class AuthService extends cds.ApplicationService {
     console.log("cds.context.user", cds.context?.user);
 
     // Get user from CDS context (this is the authenticated user)
-    const user = cds.context?.user as any;
+    const user = cds.context?.user ;
 
     return {
       correlationId: user?.authInfo?.config?.correlationId,
       jwt: user?.authInfo?.config?.jwt,
-      sid: user?.authInfo?.config?.sid,
       skipValidation: user?.authInfo?.config?.skipValidation,
-      tokenDecodeCache: user?.authInfo?.config?.tokenDecodeCache,
       user: user?.id,
       claims: user?.attr,
-      scopes: user?.scopes,
       roles: user?.roles,
       authInfo: user?.authInfo,
+      token: user?.authInfo?.token,
+      tokenInfo: user?.authInfo?.getTokenInfo(),
+      payload: user?.authInfo?.token.payload,
       is: {
         anonymous: user?.is("anonymous"),
         authenticated: user?.is("authenticated"),
