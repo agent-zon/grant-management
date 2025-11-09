@@ -3,6 +3,7 @@ import cds from "@sap/cds";
 // import authorize from "./handler.authorize.tsx";
 // import queryTools from "./handler.queryTools.tsx";
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import server from "./mcp.server";
 /**
  * MCP Proxy Service
  * Thin JSON-RPC middleware that proxies requests to downstream MCP server
@@ -33,7 +34,7 @@ export default class Service extends cds.ApplicationService {
                 server.close?.();
             });
         } catch (error) {
-            logger.error('Error handling MCP request:', error);
+            console.error('Error handling MCP request:', error);
             // @ts-ignore: req._.res is not typed in CAP context
             const response = req._.res;
             if (!response.headersSent) {
@@ -48,9 +49,6 @@ export default class Service extends cds.ApplicationService {
             }
         }
     });
-    this.on("proxy", proxy);
-    this.on("authorize", authorize);
-    this.on("queryTools", queryTools);
 
     console.log("✅ McpProxyService initialized");
   }

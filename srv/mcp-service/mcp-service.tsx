@@ -2,12 +2,12 @@ import cds from "@sap/cds";
 // import proxy from "./handler.proxy.tsx";
 // import authorize from "./handler.authorize.tsx";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import server from "./mcp.server.ts";
+import server from "./mcp.server";
 import { getDestination } from "@sap-cloud-sdk/connectivity";
 import { env } from "process";
 import { randomUUID } from "node:crypto";
-import { POST } from "./handler.filter.tsx";
-import { CALLBACK } from "./handler.callback.tsx";
+import { POST } from "./handler.filter";
+import { CALLBACK } from "./handler.callback";
 
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
 

@@ -430,7 +430,7 @@ async function getGrant(
     cds.ql.SELECT.from(Consents).where({ grant_id: grant.id })
   );
   const authorization_details = await srv.run(
-    cds.ql.SELECT.from(AuthorizationDetail).where({
+    cds.ql.SELECT.from(AuthorizationDetails).where({
       consent_grant_id: grant.id,
     })
   );

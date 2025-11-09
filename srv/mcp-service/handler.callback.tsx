@@ -1,7 +1,5 @@
 import cds from "@sap/cds";
-import { GrantHandler } from "../grant-management/grant-management";
-import McpProxyService, { type McpHandler } from "./mcp-stateful-service";
-import { env } from "process";
+import McpProxyService from "./mcp-service";
 import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
 
 export async function CALLBACK(this:McpProxyService ,req: cds.Request<{code: string; code_verifier: string; redirect_uri: string;}>) {

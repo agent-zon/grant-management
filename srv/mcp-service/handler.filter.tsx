@@ -1,6 +1,5 @@
 import cds from "@sap/cds";
-import {GrantHandler} from "../grant-management/grant-management";
-import McpProxyService from "./mcp-stateful-service";
+import McpProxyService from "./mcp-service";
 import GrantsManagementService, {
     AuthorizationDetails,
     Grants,

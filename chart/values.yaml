@@ -2,12 +2,13 @@
 
 global:
   domain: c-127c9ef.stage.kyma.ondemand.com
+  host: v03-grant-management.c-127c9ef.stage.kyma.ondemand.com
   imagePullSecret:
     name: docker-registry
   image:
     registry: scai-dev.common.repositories.cloud.sap
-    tag: v17
-    imagePullPolicy: always
+    tag: v18
+    imagePullPolicy: Always
 srv:
   bindings:
     auth:
@@ -40,7 +41,7 @@ srv:
     - name: CDS_REQUIRES_DESTINATIONS_KIND
       value: "destinations"
     - name: BASE_API_URL
-      value: "{{ Release.Name }}-approuter-{{ .Release.Namespace }}.{{ .Values.global.domain }}"
+      value: "v03-approuter-{{ .Release.Namespace }}.{{ .Values.global.domain }}"
 
 approuter:
   expose:
@@ -152,7 +153,40 @@ portal:
       path: /
   networkSecurity:
     allowNamespaceInternal: true
-
+    
+mcp-client:
+  runAsUser: 1993
+  bindings:
+    auth:
+      serviceInstanceName: identity
+      parameters:
+        credential-type: X509_GENERATED
+        app-identifier: mcp-client
+    destination:
+      serviceInstanceName: destination
+         
+  image:
+    repository: grant-management/mcp-client
+  resources:
+    limits:
+      ephemeral-storage: 1G
+      memory: 256M
+    requests:
+      ephemeral-storage: 512M
+      cpu: 100m
+      memory: 128M
+  health:
+    liveness:
+      path: /health
+    readiness:
+      path: /health
+  networkSecurity:
+    allowNamespaceInternal: true
+  env:
+    - name: MCP_URL
+      value: "v03-approuter-{{ .Release.Namespace }}.{{ .Values.global.domain }}"
+  
+    
 identity:
   serviceOfferingName: identity
   servicePlanName: application
@@ -186,8 +220,8 @@ backendDestinations:
   srv-api:
     service: srv
     forwardAuthToken: true
-  mcp:
-    service: mcp
+  mcp-client-api:
+    service: mcp-client
     forwardAuthToken: false
   # user-portal:
   #   service: portal

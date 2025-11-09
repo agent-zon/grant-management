@@ -1,4 +1,5 @@
 import cds from "@sap/cds";
+import {IdentityService, IdentityServiceToken, SecurityContext} from "@sap/xssec";
 
 class AuthService extends cds.ApplicationService {
   public me(req) {

@@ -13,12 +13,11 @@ import {
   type ListResourceTemplatesResult,
 } from "@modelcontextprotocol/sdk/types.js";
 
-// Test against our local router instead of remote registry
-const MCP_URL = new URL("http://localhost:9000/mcp/streaming");
-const AUTH_TOKEN = process.env.AUTH_TOKEN || "test-token";
-
+ 
 // Helper to create a fresh client + transport for each request (simple approach).
 async function createClient(c: Context) {
+  const MCP_URL =c.env.MCP_URL || "http://localhost:9000/mcp/streaming";
+
   console.log(
     "Creating MCP client with auth:",
     c.req.header("Authorization"),
@@ -126,6 +125,9 @@ app.get("/tools", async (c) => {
   }
 });
 
+app.get("/health", async (c) => {
+ return c.json({ status: "ok" });
+});
 app.get("/resources", async (c) => {
   try {
     const { client, transport } = await createClient(c);
@@ -224,9 +226,10 @@ app.post("/complete", async (c) => {
 // Start the server only if this module is executed directly.
 if (import.meta.url === `file://${process.argv[1]}`) {
   const port = Number(process.env.PORT || 8787);
-  console.log(`[MCP Hono Tester] Running on http://localhost:${port}`);
-  console.log(`[MCP Hono Tester] Testing against: ${MCP_URL}`);
-  serve({ fetch: app.fetch, port });
+  const hostname = process.env.HOST || "127.0.0.1"
+  console.log(`[MCP Hono Tester] Running on port ${port}`);
+  console.log(`[MCP Hono Tester] Testing against: ${process.env.MCP_URL || "http://localhost:9000/mcp/streaming"}`);
+  serve({ fetch: app.fetch, port,hostname});
 }
 
 export default app;

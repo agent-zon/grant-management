@@ -14,7 +14,7 @@ dependencies:
     alias: approuter
     version: ">0.0.0"
   - name: web-application
-    alias: mcp-proxy
+    alias: mcp-client
     version: ">0.0.0"
   # - name: web-application
   #   alias: portal
