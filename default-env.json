@@ -17,6 +17,11 @@
       "url": "http://localhost:8787",
       "forwardAuthToken": true
       
+    },
+    {
+        "name": "grant-mcp",
+        "url": "https://v03-srv-grant-management.c-127c9ef.stage.kyma.ondemand.com/",
+        "forwardAuthToken": true
     }
   ]
 }

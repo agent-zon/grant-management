@@ -2,12 +2,12 @@
 
 global:
   domain: c-127c9ef.stage.kyma.ondemand.com
-  host: v03-grant-management.c-127c9ef.stage.kyma.ondemand.com
+  host: v04-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com
   imagePullSecret:
     name: docker-registry
   image:
     registry: scai-dev.common.repositories.cloud.sap
-    tag: v18
+    tag: v22
     imagePullPolicy: Always
 srv:
   bindings:
@@ -41,9 +41,11 @@ srv:
     - name: CDS_REQUIRES_DESTINATIONS_KIND
       value: "destinations"
     - name: BASE_API_URL
-      value: "v03-approuter-{{ .Release.Namespace }}.{{ .Values.global.domain }}"
+      value: "https://{{ tpl .Values.global.host . }}/"
 
 approuter:
+  networkSecurity:
+    allowNamespaceInternal: true
   expose:
     enabled: true
     corsPolicy:
@@ -81,6 +83,8 @@ approuter:
       parameters:
         credential-type: X509_GENERATED
         app-identifier: approuter
+    destination:
+      serviceInstanceName: destination
   image:
     repository: grant-management/approuter
   runAsUser: 1000
@@ -153,7 +157,7 @@ portal:
       path: /
   networkSecurity:
     allowNamespaceInternal: true
-    
+
 mcp-client:
   runAsUser: 1993
   bindings:
@@ -164,9 +168,10 @@ mcp-client:
         app-identifier: mcp-client
     destination:
       serviceInstanceName: destination
-         
+      
   image:
     repository: grant-management/mcp-client
+    tag: v23
   resources:
     limits:
       ephemeral-storage: 1G
@@ -184,16 +189,40 @@ mcp-client:
     allowNamespaceInternal: true
   env:
     - name: MCP_URL
-      value: "v03-approuter-{{ .Release.Namespace }}.{{ .Values.global.domain }}"
-  
-    
+      value: "https://{{ tpl .Values.global.host . }}"
+    - name: PORT
+      value: "8080"
+    - name: HOST
+      value: "0.0.0.0"
+
 identity:
   serviceOfferingName: identity
   servicePlanName: application
   parameters:
-    display-name: agent-grants
+    name: grant-management-identity
+    display-name: Grant Management Identity Service
+    description: Identity service for Grant Management Application
     multi-tenant: true
+    xsuaa-cross-consumption: true
+    home-url: "https://{{ tpl .Values.global.host . }}/"
+    consumed-services:
+      - service-instance-name: v04-destination
+    provided-apis:
+      - name: grant-api
+        description: Grant Management API
+      - name: grant-mcp
+        description: MCP Service for Grant Management
+      - name: mcp-client
+        description: MCP Client for Grant Management
+      - name: srv-api
+        description: Service API for Grant Management
     oauth2-configuration:
+      grant-types:
+        - authorization_code
+        - client_credentials
+        - refresh_token
+        - urn:ietf:params:oauth:grant-type:jwt-bearer
+        - urn:ietf:params:oauth:grant-type:token-exchange
       token-policy:
         access-token-format: "jwt"
       redirect-uris:
@@ -215,14 +244,27 @@ identity:
 
       post-logout-redirect-uris:
         - https://*.{{ tpl .Values.global.domain . }}/*/logout.html
+    
 
 backendDestinations:
   srv-api:
     service: srv
     forwardAuthToken: true
+    preserveHostHeader: true
   mcp-client-api:
     service: mcp-client
     forwardAuthToken: false
+  grant-api:
+    service: srv
+    forwardAuthToken: true
+    authentication: OAuth2UserTokenExchange
+  grant-mcp:
+    service: srv
+    forwardAuthToken: true
+    HTML5.IASDependencyName: grant-mcp
+    sap-client: true
+    
+    IASDependencyName: grant-mcp
   # user-portal:
   #   service: portal
   #   forwardAuthToken: true
@@ -232,6 +274,20 @@ destination:
   servicePlanName: lite
   parameters:
     version: 1.0.0
+#    HTML5Runtime_enabled: true
+#    init_data:
+#      subaccount:
+#        existing_destinations_policy: update
+#        destinations:
+#          - Name: grant-mcp
+#            url: https://v04-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/mcp/streaming
+#            authentication: OAuth2UserTokenExchange
+#            proxyType: Internet
+#            sap-client: true
+#            description: MCP endpoint for Grant Management Application
+#            forwardAuthToken: true
+          
+          
 
 postgresql:
   serviceOfferingName: postgresql-db

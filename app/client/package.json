@@ -11,6 +11,8 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "@sap-cloud-sdk/connectivity": "^4.1.2",
+    "@sap-cloud-sdk/http-client": "^4.1.2",
     "@modelcontextprotocol/sdk": "^1.21.0",
     "@hono/node-server": "latest",
     "axios": "^1.12.2",
@@ -27,5 +29,16 @@
     "zod": "^3.23.8",
     "hono": "^4.9.9",
     "typescript": "^5.2.2"
+  },
+  "cds": {
+    "requires": {
+      "destinations": true,
+      "grant-mcp":{
+        "kind": "rest",
+        "credentials": {
+          "destination": "grant-mcp"
+        }
+      }
+    }
   }
 }

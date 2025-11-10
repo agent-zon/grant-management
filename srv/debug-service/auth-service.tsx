@@ -19,6 +19,7 @@ class AuthService extends cds.ApplicationService {
       token: user?.authInfo?.token,
       tokenInfo: user?.authInfo?.getTokenInfo(),
       payload: user?.authInfo?.token.payload,
+      consumedApis: user?.authInfo?.token.consumedApis,
       is: {
         anonymous: user?.is("anonymous"),
         authenticated: user?.is("authenticated"),
