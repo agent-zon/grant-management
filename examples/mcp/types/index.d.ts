@@ -1,4 +1,3 @@
-import cds from "@sap/cds";
 import type express from "express";
 import type {
   IdentityService,
@@ -8,9 +7,6 @@ import type {
 import type { AuthorizationDetail } from "#cds-models/grant_management";
 import React from "react";
 declare module "@sap/cds" {
-  export interface cds_Map {
-    [key: string]: string;
-  }
   interface EventContext {
     render: (
       component: React.ReactNode
@@ -40,7 +36,7 @@ declare module "#cds-models/AuthorizationService" {
   }
 }
 
-declare module "#cds-models/sap/scai/grants" {
+declare module "#cds-models/grant_management" {
   export interface Consent {
     request_ID: string;
     scope: string;
@@ -64,38 +60,12 @@ declare module "#cds-models/sap/scai/grants" {
   }
 }
 
-declare module "#cds-models/GrantsManagementService" {
-  export interface Grant {
-    id: string;
-    client_id: string;
-    risk_level: string;
-    actor: string;
-    subject: string;
-  }
-  export interface Grants {
-    id: string;
-    client_id: string;
-    consents: Consent[];
-    authorization_details: AuthorizationDetail[];
-    scope: string;
-    subject: string;
-    actor: string;
-    risk_level: string;
-    status: string;
-    createdAt: Date;
-    modifiedAt: Date;
-  }
-  export interface Consent {
-    id: string;
-    scope: string;
-    client_id: string;
-    redirect_uri: string;
-    grant_id: string;
-  }
-}
-
 declare module "@sap/cds" {
   interface User {
     authInfo?: SecurityContext<IdentityService, IdentityServiceToken>;
   }
+}
+
+declare class cds_Map {
+  [key: string]: string;
 }

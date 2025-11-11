@@ -259,6 +259,11 @@ backendDestinations:
     service: srv
     forwardAuthToken: true
     authentication: OAuth2UserTokenExchange
+#    sap-client: true
+#    forwardAuthCertificates: true
+#    HTML5.IASDependencyName: grant-api
+#    HTML5.ForwardAuthCertificates: true
+
   grant-mcp:
     service: srv
     forwardAuthToken: true

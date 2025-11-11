@@ -1,8 +1,5 @@
 import cds from "@sap/cds";
 import bodyParser from "body-parser";
-import methodOverride from "method-override";
-import { htmxMiddleware, htmlTemplate } from "htmx";
-import { renderToString } from "react-dom/server";
 import React from "react";
 // Make React available globally for JSX in handlers
 global.React = React;
@@ -27,21 +24,6 @@ process.on("unhandledRejection", (reason, promise) => {
   // Don't exit the process - keep the service running
 });
 
-cds.middlewares.before.push(htmxMiddleware);
-
-function sendHtml(html) {
-  cds.context?.http?.res.setHeader("Content-Type", "text/html");
-  return cds.context?.http?.res.send(html);
-}
-cds.on("connect", (service) => {
-  service.before("*", (req) => {
-    Object.assign(cds.context, {
-      render: (component) => sendHtml(htmlTemplate(renderToString(component))),
-      html: (htmlString) => sendHtml(htmlTemplate(htmlString)),
-    });
-    return req.data;
-  });
-});
 cds.on("bootstrap", (app) => {
   // add your own middleware before any by cds are added
   // for example, serve static resources incl. index.html
@@ -84,44 +66,6 @@ cds.on("bootstrap", (app) => {
     }
     next();
   });
-
-  // Middleware to remove null values from JSON responses. TODO: should be configurable
-  // app.use((req, res, next) => {
-  //   next();
-  //   if (req.accepts("json") && res.body) {
-  //       console.log("[MIDDLEWARE] Response JSON after null removal:");
-  //       res.body = removeNulls(res.body);;
-  //   }
-  //   function removeNulls(body) {
-  //     if (Array.isArray(body)) {
-  //       return body.map(item => removeNulls(item));
-  //     } else if (body && typeof body === 'object') {
-  //       const newObj = {};
-  //       for (const key in body) {
-  //         if (body[key] !== null) {
-  //           newObj[key] = removeNulls(body[key]);
-  //         }
-  //       }
-  //       return newObj;
-  //     }
-  //     return body;
-  //   }
-  //
-  // });
-
-  // Add usage tracking middleware for grant usage monitoring
-  // app.use(createUsageTracker());
-
-  app.use(
-    methodOverride(function (req, _res) {
-      if (req.body && typeof req.body === "object" && "_method" in req.body) {
-        // look in urlencoded POST bodies and delete it
-        const method = req.body._method;
-        delete req.body._method;
-        return method;
-      }
-    })
-  );
 
   // Add global error handler to catch all errors and prevent service crashes
   app.use((err, req, res, next) => {

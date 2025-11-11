@@ -35,19 +35,30 @@ async function createClient(c: Context) {
   );
 
   var destination = await useOrFetchDestination({
-    destinationName: "grant-mcp",
+    destinationName: "mcp-example",
     jwt: c.req.header("Authorization")?.replace("Bearer ", ""),
     selectionStrategy: alwaysProvider,
   });
-  
-  console.log("Destination:", destination);
+  var auth = destination?.authTokens
+    ?.filter((t) => t.http_header)
+    .reduce(
+      (headers, token) => {
+        headers[token.http_header.key] = token.http_header.value;
+        return headers;
+      },
+      {} as Record<string, string>
+    );
+
+  console.log("Destination:", destination, auth);
   const transport = new StreamableHTTPClientTransport(
     new URL(`${destination?.url || c.env.MCP_URL}/mcp/streaming`),
     {
       requestInit: {
         headers: {
-          "x-approuter-authorization": c.req.header("Authorization") || "",
-          Authorization: c.req.header("Authorization") || "",
+          ...(c.req.header("Authorization")
+            ? { Authorization: c.req.header("Authorization") }
+            : {}),
+          ...auth,
         },
       },
     }
@@ -260,9 +271,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const port = Number(process.env.PORT || 8787);
   const hostname = process.env.HOST || "0.0.0.0";
   console.log(`[MCP Client] Running on ${hostname}:${port}`);
-  console.log(
-    `[MCP Client] Testing against: ${process.env.MCP_URL || "http://localhost:9000/mcp/streaming"}`
-  );
+
   serve({ fetch: app.fetch, port, hostname });
 }
 

@@ -18,8 +18,8 @@
       "forwardAuthToken": true
     },
     {
-      "name": "grant-mcp",
-      "url": "http://localhost:9000",
+      "name": "mcp-example",
+      "url": "http://localhost:4005",
       "forwardAuthToken": true
     }
   ]
