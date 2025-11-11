@@ -168,7 +168,7 @@ mcp-client:
         app-identifier: mcp-client
     destination:
       serviceInstanceName: destination
-      
+
   image:
     repository: grant-management/mcp-client
     tag: v23
@@ -216,6 +216,8 @@ identity:
         description: MCP Client for Grant Management
       - name: srv-api
         description: Service API for Grant Management
+      - name: principal-propagation
+        description: Principal Propagation for Grant Management
     oauth2-configuration:
       grant-types:
         - authorization_code
@@ -244,7 +246,6 @@ identity:
 
       post-logout-redirect-uris:
         - https://*.{{ tpl .Values.global.domain . }}/*/logout.html
-    
 
 backendDestinations:
   srv-api:
@@ -263,7 +264,7 @@ backendDestinations:
     forwardAuthToken: true
     HTML5.IASDependencyName: grant-mcp
     sap-client: true
-    
+
     IASDependencyName: grant-mcp
   # user-portal:
   #   service: portal
@@ -286,8 +287,6 @@ destination:
 #            sap-client: true
 #            description: MCP endpoint for Grant Management Application
 #            forwardAuthToken: true
-          
-          
 
 postgresql:
   serviceOfferingName: postgresql-db

@@ -39,6 +39,7 @@ async function createClient(c: Context) {
     jwt: c.req.header("Authorization")?.replace("Bearer ", ""),
     selectionStrategy: alwaysProvider,
   });
+  
   console.log("Destination:", destination);
   const transport = new StreamableHTTPClientTransport(
     new URL(`${destination?.url || c.env.MCP_URL}/mcp/streaming`),
