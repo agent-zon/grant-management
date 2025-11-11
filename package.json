@@ -26,7 +26,6 @@
     "react-dom": "^19.1.1",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
-
     "redis": "^5.0.0",
     "sqlite3": "^5.1.7",
     "ulid": "^3.0.1",
@@ -63,7 +62,7 @@
     "hybrid:approuter": "npx cds bind --exec -- npm run serve:approuter",
     "hybrid:portal": "npx cds bind --exec -- npm run dev -w portal",
     "hybrid:cds": "npx cds bind --profile hybrid --exec -- cds debug --profile hybrid",
-    "hybrid:mcp-client": "npx cds bind --profile hybrid --exec -- npm run start -w app/client",
+    "hybrid:mcp-client": "npx cds bind --profile hybrid --exec -- npm run start -w examples/client",
     "build": "npx cds build --production",
     "build:containers": "ctz containerize.yaml --log",
     "build:push": "ctz containerize.yaml --log --push",
@@ -108,11 +107,13 @@
     "test:grant-mgmt": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/grant-management.test.ts"
   },
   "workspaces": [
-    "app/*"
+    "app/*",
+    "examples/*"
   ],
   "private": true,
   "imports": {
     "#cds-models/*": "./@cds-models/*/index.js",
+    "#cds-ssr": "./srv/render/index.js",
     "@/*": "./srv/*",
     "@types": "./types/index.d.ts"
   }

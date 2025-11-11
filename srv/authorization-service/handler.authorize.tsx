@@ -7,7 +7,7 @@ import GrantsManagementService, {
   Grants,
 } from "#cds-models/sap/scai/grants/GrantsManagementService";
 import { renderToString } from "react-dom/server";
-import { htmlTemplate } from "../middleware/htmx.tsx";
+import { htmlTemplate } from "#cds-ssr";
 
 export default async function authorize(
   this: AuthorizationService,

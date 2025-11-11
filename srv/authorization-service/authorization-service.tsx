@@ -3,6 +3,7 @@ import par from "./handler.requests.tsx";
 import authorize from "./handler.authorize.tsx";
 import token from "./handler.token.tsx";
 import metadata from "./handler.metadata.tsx";
+import callback from "./handler.callback.tsx";
 import {
   AuthorizationRequest,
   AuthorizationRequests,
@@ -28,6 +29,7 @@ export default class Service extends cds.ApplicationService {
     this.on("token", token);
     this.on("authorize", authorize);
     this.on("authorize_dialog", authorize);
+    this.on("callback", callback);
     this.on("par", par);
     this.on("metadata", metadata);
     // Normalize incoming consent payloads before validation

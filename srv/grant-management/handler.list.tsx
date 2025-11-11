@@ -12,14 +12,13 @@ import type {
 } from "./grant-management.tsx";
 import { isNativeError } from "node:util/types";
 import e from "express";
+import { render } from "#cds-ssr";
 
 export async function LIST(
   this: GrantsManagementService,
   ...[req, next]: Parameters<GrantsHandler>
 ) {
   console.log("🔍 Listing grants with expand:", req.data, req.query, req.id);
-
- 
 
   const response = await next(req);
 
@@ -28,10 +27,11 @@ export async function LIST(
     const grants = await getGrants(this, response);
 
     // For HTML responses, render the UI
-    if (cds.context?.http?.req.accepts("html")) {
+    if (req?.http?.req.accepts("html")) {
       const totalGrants = grants.length;
       const activeGrants = grants.filter((g) => g.status === "active");
-      return cds.context?.render(
+      return render(
+        req,
         <div className="min-h-screen bg-gray-950 text-white">
           <div className="container mx-auto px-4 py-8 space-y-6">
             <div className="flex items-center justify-between mb-4">

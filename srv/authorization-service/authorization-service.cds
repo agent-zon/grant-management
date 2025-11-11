@@ -31,6 +31,12 @@ service AuthorizationService {
  
     ) returns String;
 
+    // Default callback endpoint for grant completion
+    @requires: ['authenticated-user']
+    function callback(
+        grant_id: String
+    ) returns String;
+
     // PAR (Pushed Authorization Request) endpoint with Rich Authorization Requests support
     action par(
         response_type: String,
