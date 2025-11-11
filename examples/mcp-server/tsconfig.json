@@ -18,6 +18,9 @@
     "paths": {
       "#cds-models/*": [
         "./@cds-models/*"
+      ],
+      "@cds-ssr": [
+        "./render/index.ts"
       ]
     }
   }

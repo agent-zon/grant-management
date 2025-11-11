@@ -40,7 +40,8 @@
   },
   "private": true,
   "imports": {
-    "#cds-models/*": "./@cds-models/*/index.js"
+    "#cds-models/*": "./@cds-models/*/index.js",
+    "#cds-ssr": "./srv/render/index.js"
   },
   "cds": {
     "requires": {

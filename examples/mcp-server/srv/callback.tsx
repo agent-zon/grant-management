@@ -2,7 +2,7 @@ import cds from "@sap/cds";
 import McpProxyService from "./service";
 import AuthorizationService from "#cds-models/authorization_service";
 import { env } from "process";
-import { render } from "./htmx";
+import { render } from "#cds-ssr";
 
 export default async function (
   this: McpProxyService,

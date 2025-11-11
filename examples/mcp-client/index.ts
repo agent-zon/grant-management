@@ -34,20 +34,20 @@ async function createClient(c: Context) {
     c.req.raw.headers
   );
 
-  var destination = await useOrFetchDestination({
+  const destination = await useOrFetchDestination({
     destinationName: "mcp-example",
     jwt: c.req.header("Authorization")?.replace("Bearer ", ""),
     selectionStrategy: alwaysProvider,
   });
-  var auth = destination?.authTokens
-    ?.filter((t) => t.http_header)
-    .reduce(
-      (headers, token) => {
-        headers[token.http_header.key] = token.http_header.value;
-        return headers;
-      },
-      {} as Record<string, string>
-    );
+  const auth = destination?.authTokens
+      ?.filter((t) => t.http_header)
+      .reduce(
+          (headers, token) => {
+            headers[token.http_header.key] = token.http_header.value;
+            return headers;
+          },
+          {} as Record<string, string>
+      );
 
   console.log("Destination:", destination, auth);
   const transport = new StreamableHTTPClientTransport(
