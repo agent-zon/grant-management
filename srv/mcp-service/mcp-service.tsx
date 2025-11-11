@@ -3,25 +3,21 @@ import cds from "@sap/cds";
 // import authorize from "./handler.authorize.tsx";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import server from "./mcp.server";
-import { getDestination } from "@sap-cloud-sdk/connectivity";
-import { env } from "process";
-import { randomUUID } from "node:crypto";
-import { POST } from "./handler.filter";
-import { CALLBACK } from "./handler.callback";
+ import { randomUUID } from "node:crypto";
+import filter from "./handler.filter";
+import callback from "./handler.callback";
 
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
 
 /**
- * MCP Proxy Service
- * Thin JSON-RPC middleware that proxies requests to downstream MCP server
+ * MCP Service
+ * Thin JSON-RPC handler that transport requests to  MCP server
  * and provides authorization tools for agents
  */
 export default class Service extends cds.ApplicationService {
   async init() {
-    console.log("🔧 Initializing McpProxyService...");
-
-    this.on("streaming", POST);
-    // Register route handlers
+    this.on("callback", callback);
+    this.on("streaming", filter);
     this.on("streaming", async (request) => {
       const sessionId = request.headers["mcp-session-id"] as string | undefined;
       const transport =
@@ -71,13 +67,8 @@ export default class Service extends cds.ApplicationService {
         return transport;
       }
     });
-    // this.on("proxy", proxy);
-    // this.on("authorize", authorize);
-    // this.on("queryTools", queryTools);
-
-    this.on("callback", CALLBACK);
-    console.log("✅ McpProxyService initialized");
-  }
+ 
+   }
 }
 
 export type McpService = Service & typeof cds.ApplicationService;

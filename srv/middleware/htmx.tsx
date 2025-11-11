@@ -29,7 +29,7 @@ export const htmlTemplate = (reactContent: string) => `
 `;
 
 // Middleware function to add to CDS context with auto-detection
-export const htmxMiddleware = (req: any, res: any, next: any) => {
+export const htmxMiddleware = (req: cds.Request, res: any, next: any) => {
   if (cds.context) {
     Object.assign(cds.context!, {
       render: (component: React.ReactNode) =>

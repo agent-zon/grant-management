@@ -25,6 +25,9 @@ import {
   useOrFetchDestination,
   subscriberFirst,
 } from "@sap-cloud-sdk/connectivity";
+import { IsolationStrategy } from "@sap-cloud-sdk/connectivity/dist/scp-cf/destination/destination-cache";
+import { getDestinationsFromEnv } from "@sap-cloud-sdk/connectivity/internal";
+import { getDestinationsEnvVariable } from "@sap-cloud-sdk/connectivity/dist/scp-cf/destination/destination-from-env";
 
 // Helper to create a fresh client + transport for each request (simple approach).
 async function createClient(c: Context) {
@@ -34,23 +37,12 @@ async function createClient(c: Context) {
     c.req.raw.headers
   );
 
-  var destination = await useOrFetchDestination({
+  const transport = await TransportProvider.getTransportForToolkit(c, {
     destinationName: "grant-mcp",
-    jwt: c.req.header("Authorization")?.replace("Bearer ", ""),
-    selectionStrategy: alwaysProvider,
+    path: "/mcp/streaming",
+    sessionId: c.req.header("mcp-session-id"),
   });
-  console.log("Destination:", destination);
-  const transport = new StreamableHTTPClientTransport(
-    new URL(`${destination?.url || c.env.MCP_URL}/mcp/streaming`),
-    {
-      requestInit: {
-        headers: {
-          "x-approuter-authorization": c.req.header("Authorization") || "",
-          Authorization: c.req.header("Authorization") || "",
-        },
-      },
-    }
-  );
+
   const client = new Client({
     name: "hono-tester",
     version: "1.0.0",
@@ -91,6 +83,94 @@ app.get("/ping", async (c) => {
   } catch (e: any) {
     return c.json({ ok: false, error: e.message || String(e) }, 500);
   }
+});
+app.get("/destinations/:name", async (c) => {
+  const name = c.req.param("name");
+  var dest = await useOrFetchDestination({
+    destinationName: name,
+    selectionStrategy: alwaysProvider,
+  });
+  var destWithJwt = await useOrFetchDestination({
+    destinationName: name,
+    jwt: c.req.header("Authorization")?.replace("Bearer ", "") ?? "",
+    selectionStrategy: alwaysProvider,
+  });
+
+  // var destFromServiceBinding = getDestinationFromServiceBinding({
+  //     jwt: c.req.header("Authorization")?.replace("Bearer ", "") ?? "",
+  //     destinationName: name,
+  // });
+  // var destFromServiceBindingNoJwt = getDestinationFromServiceBinding({
+  //
+  //     destinationName: name,
+  // });
+
+  try {
+    const destination = await TransportProvider.getDestination(c, name);
+    return c.json({
+      destination,
+      destWithJwt,
+      dest,
+      // ,destFromServiceBindingNoJwt,destFromServiceBinding
+    });
+  } catch (e: any) {
+    return c.json(
+      {
+        destWithJwt,
+        dest,
+        // destFromServiceBindingNoJwt,destFromServiceBinding,
+        error: e.message || String(e),
+      },
+      500
+    );
+  }
+});
+app.get("/destinations", async (c) => {
+  const dests = await getAllDestinationsFromDestinationService({
+    jwt: c.req.header("Authorization")?.replace("Bearer ", "") ?? "",
+  });
+
+  return c.json({
+    destinations: dests,
+    destinationsFromEnv: getDestinationsFromEnv(),
+    destEnvVar: getDestinationsEnvVariable(),
+  });
+});
+
+app.get("/debug", async (c) => {
+  // const allDestinations = await getAllDestinationsFromDestinationService();
+  // const destinationsMcp = await getDestinationFromServiceBinding( {
+  //   jwt: c.req.header("Authorization")?.replace("Bearer ", "") ?? "",
+  //   destinationName: "mcp",
+  // });
+  // const destinationsSrvApi = await getDestinationFromServiceBinding( {
+  //   jwt: c.req.header("Authorization")?.replace("Bearer ", "") ?? "",
+  //   destinationName: "v03-srv",
+  // });
+  // const destinationsGrantMcp = await getDestinationFromServiceBinding( {
+  //   jwt: c.req.header("Authorization")?.replace("Bearer ", "") ?? "",
+  //   destinationName: "grant-mcp",
+  // });
+  const srvBinding = getServiceBinding("grant-mcp");
+
+  const userToken =
+    srvBinding &&
+    (await getUserToken(srvBinding, c.req.header("Authorization") || ""));
+
+  var destination = await getDestination({
+    destinationName: "grant-mcp",
+    jwt: c.req.header("Authorization")?.replace("Bearer ", "") ?? "",
+    selectionStrategy: subscriberFirst,
+  });
+  return c.json({
+    ok: true,
+    userToken,
+    srvBinding,
+    destination,
+    // destinationsMcp,
+    // destinationsSrvApi,
+    // destinationsGrantMcp
+  });
 });
 app.get("/tools", async (c) => {
   try {

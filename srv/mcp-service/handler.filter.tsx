@@ -11,9 +11,8 @@ import type {
 } from "#cds-models/sap/scai/grants";
 import {env} from "process";
 import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
-import {or} from "xstate";
-
-export async function POST(
+ 
+export default async function(
     this: McpProxyService,
     req: cds.Request<MCPRequest>,
     next: Function

@@ -2,7 +2,7 @@ import cds from "@sap/cds";
 import McpProxyService from "./mcp-service";
 import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
 
-export async function CALLBACK(this:McpProxyService ,req: cds.Request<{code: string; code_verifier: string; redirect_uri: string;}>) {
+export default async function (this:McpProxyService ,req: cds.Request<{code: string; code_verifier: string; redirect_uri: string;}>) {
     const {code, code_verifier, redirect_uri} = req.data;
 
     try {
