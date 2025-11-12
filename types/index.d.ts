@@ -1,4 +1,5 @@
 import cds from "@sap/cds";
+import {IdentityService, IdentityServiceToken, SecurityContext} from "@sap/xssec";
 
 declare module "@sap/cds" {
   interface EventContext {
@@ -82,5 +83,12 @@ declare module "#cds-models/GrantsManagementService" {
     client_id: string;
     redirect_uri: string;
     grant_id: string;
+  }
+}
+
+
+declare module "@sap/cds" {
+  interface User {
+    authInfo?: SecurityContext<IdentityService, IdentityServiceToken>;
   }
 }

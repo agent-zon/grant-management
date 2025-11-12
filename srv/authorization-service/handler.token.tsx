@@ -4,7 +4,7 @@ import type { AuthorizationService } from "./authorization-service.tsx";
 // Avoid calling GrantsManagementService within this HTTP request to prevent UI rendering side-effects.
 
 import {
-  AuthorizationDetail,
+  AuthorizationDetails,
   AuthorizationRequest,
   AuthorizationRequests, Grants,
 } from "#cds-models/sap/scai/grants/AuthorizationService";
@@ -34,7 +34,7 @@ export default async function token(
 
   // Fetch authorization details from DB by consent foreign key
   const authorization_details = await cds.run(
-    cds.ql.SELECT.from(AuthorizationDetail).where({ consent_grant_id: grant_id })
+    cds.ql.SELECT.from(AuthorizationDetails).where({ consent_grant_id: grant_id })
   );
 
   console.log("token response", {

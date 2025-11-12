@@ -66,7 +66,7 @@ export default function MCPAuthorizationDetail({
                   name={`authorization_details[${index}].server`}
                   type="text"
                   className="inline-block bg-purple-500/20 text-purple-300 px-2 py-1 rounded text-xs"
-                  value={`🖥️ ${detail.server}`}
+                  value={`${detail.server}`}
                   readOnly
                 />
               </div>

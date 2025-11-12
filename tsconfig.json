@@ -29,9 +29,10 @@
     "noEmit": true,
     "paths": {
       "#cds-models/*": ["./@cds-models/*"],
+      "#cds-ssr": ["./render/index.ts"],
       "@/*": ["./srv/*"],
       "@types": ["./types/index.d.ts"],
-      "@sap/cds": ["./node_modules/@cap-js/cds-types"]
+      "@sap/cds": ["./node_modules/@cap-js/cds-types"],
     }
   },
   "include": ["types/**/*", "srv/**/*", "@cds-models/**/*", "test/*"],

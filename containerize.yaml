@@ -1,6 +1,6 @@
 _schema-version: "1.0"
 repository: scai-dev.common.repositories.cloud.sap
-tag: v17
+tag: v22
 before-all:
   - npx cds build --production
 
@@ -8,9 +8,14 @@ modules:
   - name: grant-management/api
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t grant-management/api:v17 -f Dockerfile . --load
+        - docker buildx build --platform linux/amd64 -t grant-management/api:v22 -f Dockerfile . --load
 
   - name: grant-management/approuter
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t grant-management/approuter:v17 app/router --load
+        - docker buildx build --platform linux/amd64 -t grant-management/approuter:v22 app/router --load
+
+  - name: grant-management/mcp-client
+    build-parameters:
+      commands:
+        - docker buildx build --platform linux/amd64 -t grant-management/mcp-client:v22 examples/mcp-client --load

@@ -16,6 +16,11 @@ requires:
     kind: sqlite
     credentials:
       url: db.sqlite
+  grant-mcp:
+    kind: rest
+    credentials:
+      destination: grant-mcp
+  
   destinations: true
   "[development]":
     db:

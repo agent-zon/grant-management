@@ -1,0 +1,19 @@
+_schema-version: "1.0"
+repository: scai-dev.common.repositories.cloud.sap
+tag: latest
+modules:
+  - name: mcp-example-srv
+    build-parameters:
+      commands:
+        - docker buildx build --platform linux/amd64 -t mcp-example-srv:latest  . --load
+
+  - name: mcp-example-approuter
+    build-parameters:
+      commands:
+        - docker buildx build --platform linux/amd64 -t mcp-example-approuter:latest app/router --load
+        # - docker buildx build --platform linux/amd64 -t scai-dev.common.repositories.cloud.sap/mcp-example-approuter:latest app/router --push
+
+  - name: mcp-example-client
+    build-parameters:
+      commands:
+        - docker buildx build --platform linux/amd64 -t mcp-example-client:latest app/client --load
