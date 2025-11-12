@@ -3,23 +3,22 @@ import {
   type Grant,
   Grants,
   Consents,
-  AuthorizationDetail,
+  AuthorizationDetails,
   Consent,
 } from "#cds-models/sap/scai/grants/GrantsManagementService";
 import type {
   GrantsHandler,
   GrantsManagementService,
-} from "./grant-management.tsx";
+} from "./grant-management";
 import { isNativeError } from "node:util/types";
 import e from "express";
+import { render } from "#cds-ssr";
 
 export async function LIST(
   this: GrantsManagementService,
   ...[req, next]: Parameters<GrantsHandler>
 ) {
   console.log("🔍 Listing grants with expand:", req.data, req.query, req.id);
-
- 
 
   const response = await next(req);
 
@@ -28,10 +27,11 @@ export async function LIST(
     const grants = await getGrants(this, response);
 
     // For HTML responses, render the UI
-    if (cds.context?.http?.req.accepts("html")) {
+    if (req?.http?.req.accepts("html")) {
       const totalGrants = grants.length;
       const activeGrants = grants.filter((g) => g.status === "active");
-      return cds.context?.render(
+      return render(
+        req,
         <div className="min-h-screen bg-gray-950 text-white">
           <div className="container mx-auto px-4 py-8 space-y-6">
             <div className="flex items-center justify-between mb-4">
@@ -328,7 +328,7 @@ export async function LIST(
 async function getGrants(srv: GrantsManagementService, data: Grants) {
   const consentRecords = await srv.read(Consents);
   const authorization_details = await srv.run(
-    cds.ql.SELECT.from(AuthorizationDetail)
+    cds.ql.SELECT.from(AuthorizationDetails)
   );
 
   // Fetch all AuthorizationRequests to get client_id mapping
@@ -430,7 +430,7 @@ async function getGrant(
     cds.ql.SELECT.from(Consents).where({ grant_id: grant.id })
   );
   const authorization_details = await srv.run(
-    cds.ql.SELECT.from(AuthorizationDetail).where({
+    cds.ql.SELECT.from(AuthorizationDetails).where({
       consent_grant_id: grant.id,
     })
   );

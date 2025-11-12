@@ -3,5 +3,5 @@
     "compilerOptions": {
       "outDir": "./gen/srv",
     },
-    "exclude": ["app", "gen"]
+    "exclude": ["app", "gen", "test"]
   }

@@ -15,9 +15,6 @@ Object.keys(process.env).forEach((key) => {
 import cds from "@sap/cds";
 import bodyParser from "body-parser";
 import methodOverride from "method-override";
-import { htmxMiddleware } from "./middleware/htmx.tsx";
-import { htmlTemplate } from "./middleware/htmx.tsx";
-import { renderToString } from "react-dom/server";
 import React from "react";
 // Make React available globally for JSX in handlers
 global.React = React;
@@ -42,21 +39,8 @@ process.on("unhandledRejection", (reason, promise) => {
   // Don't exit the process - keep the service running
 });
 
-cds.middlewares.before.push(htmxMiddleware);
+ 
 
-function sendHtml(html) {
-  cds.context?.http?.res.setHeader("Content-Type", "text/html");
-  return cds.context?.http?.res.send(html);
-}
-cds.on("connect", (service) => {
-  service.before("*", (req) => {
-    Object.assign(cds.context, {
-      render: (component) => sendHtml(htmlTemplate(renderToString(component))),
-      html: (htmlString) => sendHtml(htmlTemplate(htmlString)),
-    });
-    return req.data;
-  });
-});
 cds.on("bootstrap", (app) => {
   // add your own middleware before any by cds are added
   // for example, serve static resources incl. index.html
@@ -100,8 +84,6 @@ cds.on("bootstrap", (app) => {
     next();
   });
 
-
-
   // Middleware to remove null values from JSON responses. TODO: should be configurable
   // app.use((req, res, next) => {
   //   next();
@@ -140,7 +122,6 @@ cds.on("bootstrap", (app) => {
     })
   );
 
-  
   // Add global error handler to catch all errors and prevent service crashes
   app.use((err, req, res, next) => {
     console.error("[ERROR HANDLER]", {
@@ -205,8 +186,7 @@ cds.on("bootstrap", (app) => {
 
     // Fallback plain text response
     res.status(statusCode).send(`Error ${statusCode}: ${errorMessage}`);
-  }); 
-   
+  });
 });
 
 // cds.serve(ConsentService).at("/consent").in(app);

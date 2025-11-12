@@ -2,12 +2,13 @@
 
 global:
   domain: c-127c9ef.stage.kyma.ondemand.com
+  host: v04-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com
   imagePullSecret:
     name: docker-registry
   image:
     registry: scai-dev.common.repositories.cloud.sap
-    tag: v17
-    imagePullPolicy: always
+    tag: v22
+    imagePullPolicy: Always
 srv:
   bindings:
     auth:
@@ -39,8 +40,12 @@ srv:
       value: "ias"
     - name: CDS_REQUIRES_DESTINATIONS_KIND
       value: "destinations"
+    - name: BASE_API_URL
+      value: "https://{{ tpl .Values.global.host . }}/"
 
 approuter:
+  networkSecurity:
+    allowNamespaceInternal: true
   expose:
     enabled: true
     corsPolicy:
@@ -78,6 +83,8 @@ approuter:
       parameters:
         credential-type: X509_GENERATED
         app-identifier: approuter
+    destination:
+      serviceInstanceName: destination
   image:
     repository: grant-management/approuter
   runAsUser: 1000
@@ -104,26 +111,7 @@ approuter:
     OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
     OTEL_SERVICE_NAME: approuter
     OTEL_PROPAGATORS: tracecontext,baggage
-#  additionalVolumes:
-#    - name: xs-app
-#      configMap:
-#        name: "{{ .Release.Name }}-approuter-static-files"
-#      volumeMount:
-#        mountPath: /app/xs-app.json
-#        subPath: xs-app.json
-#        readOnly: true
-#    - name: api-docs
-#      volumeMount:
-#        mountPath: /app/api-docs
-##        subPath: api-docs
-#        readOnly: true
-#    - name: favicon-config
-#      configMap:
-#        name: "{{ .Release.Name }}-approuter-static-files"
-#      volumeMount:
-#        mountPath: /app/favicon.svg
-#        subPath: favicon.svg
-#        readOnly: true
+
 portal:
   runAsUser: 1993
   bindings:
@@ -156,9 +144,32 @@ identity:
   serviceOfferingName: identity
   servicePlanName: application
   parameters:
-    display-name: agent-grants
+    name: grant-management-identity
+    display-name: Grant Management Identity Service
+    description: Identity service for Grant Management Application
     multi-tenant: true
+    xsuaa-cross-consumption: true
+    home-url: "https://{{ tpl .Values.global.host . }}/"
+    consumed-services:
+      - service-instance-name: v04-destination
+    provided-apis:
+      - name: grant-api
+        description: Grant Management API
+      - name: grant-mcp
+        description: MCP Service for Grant Management
+      - name: mcp-client
+        description: MCP Client for Grant Management
+      - name: srv-api
+        description: Service API for Grant Management
+      - name: principal-propagation
+        description: Principal Propagation for Grant Management
     oauth2-configuration:
+      grant-types:
+        - authorization_code
+        - client_credentials
+        - refresh_token
+        - urn:ietf:params:oauth:grant-type:jwt-bearer
+        - urn:ietf:params:oauth:grant-type:token-exchange
       token-policy:
         access-token-format: "jwt"
       redirect-uris:
@@ -185,9 +196,27 @@ backendDestinations:
   srv-api:
     service: srv
     forwardAuthToken: true
+    preserveHostHeader: true
+
+  grant-api:
+    service: srv
+    forwardAuthToken: true
+    authentication: OAuth2UserTokenExchange
+
+  grant-mcp:
+    service: srv
+    forwardAuthToken: true
+    HTML5.IASDependencyName: grant-mcp
+    sap-client: true
+    IASDependencyName: grant-mcp
+
   # user-portal:
   #   service: portal
   #   forwardAuthToken: true
+  #    sap-client: true
+  #    forwardAuthCertificates: true
+  #    HTML5.IASDependencyName: grant-api
+  #    HTML5.ForwardAuthCertificates: true
 
 destination:
   serviceOfferingName: destination

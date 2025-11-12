@@ -16,11 +16,25 @@ service AuthorizationService {
  
     
     @requires: ['authenticated-user']
+    @method: ['POST', 'GET']
     // OAuth authorize endpoint with Rich Authorization Requests support
     action authorize(
         request_uri: String,
         client_id: String
  
+    ) returns String;
+
+    @requires: ['authenticated-user']
+    function authorize_dialog(
+        request_uri: String,
+        client_id: String
+ 
+    ) returns String;
+
+    // Default callback endpoint for grant completion
+    @requires: ['authenticated-user']
+    function callback(
+        grant_id: String
     ) returns String;
 
     // PAR (Pushed Authorization Request) endpoint with Rich Authorization Requests support

@@ -1,0 +1,155 @@
+# yaml-language-server: $schema=./values.schema.json
+
+global:
+  domain: c-127c9ef.stage.kyma.ondemand.com
+  imagePullSecret:
+    name: docker-registry
+  image:
+    registry: scai-dev.common.repositories.cloud.sap
+    tag: latest
+  imagePullPolicy: Always
+srv:
+  bindings:
+    auth:
+      serviceInstanceName: identity
+      parameters:
+        credential-type: X509_GENERATED
+        app-identifier: srv
+    destination:
+      serviceInstanceName: destination
+    connectivity:
+      serviceInstanceName: connectivity
+  image:
+    repository: mcp-example-srv
+  resources:
+    limits:
+      ephemeral-storage: 1G
+      memory: 500M
+    requests:
+      ephemeral-storage: 1G
+      cpu: 500m
+      memory: 500M
+  health:
+    liveness:
+      path: /health
+    readiness:
+      path: /health
+  networkSecurity:
+    allowNamespaceInternal: true
+
+  # additionalVolumes:
+  #   - name: connectivity-secret
+  #     volumeMount:
+  #       mountPath: /bindings/connectivity
+  #       readOnly: true
+  #     projected:
+  #       sources:
+  #         - secret:
+  #             name: <your-connectivity-binding>
+  #             optional: false
+  #         - secret:
+  #             name: <your-connectivity-binding>
+  #             optional: false
+  #             items:
+  #               - key: token_service_url
+  #                 path: url
+  #         - configMap:
+  #             name: "{{ .Release.Name }}-connectivity-proxy-info"
+  #             optional: false
+approuter:
+  runAsUser: 1000
+  bindings:
+    auth:
+      serviceInstanceName: identity
+      parameters:
+        credential-type: X509_GENERATED
+        app-identifier: approuter
+  image:
+    repository: mcp-example-approuter
+  resources:
+    limits:
+      ephemeral-storage: 1G
+      memory: 500M
+    requests:
+      ephemeral-storage: 1G
+      cpu: 500m
+      memory: 500M
+  health:
+    liveness:
+      path: /
+    readiness:
+      path: /
+  envFrom:
+    - configMapRef:
+        name: "{{ .Release.Name }}-approuter-configmap"
+
+client:
+  runAsUser: 1993
+  image:
+    repository: mcp-example-client
+  bindings:
+    auth:
+      serviceInstanceName: identity
+      parameters:
+        credential-type: X509_GENERATED
+        app-identifier: client
+    destination:
+      serviceInstanceName: destination
+
+  resources:
+    limits:
+      ephemeral-storage: 1G
+      memory: 500M
+    requests:
+      ephemeral-storage: 1G
+      cpu: 500m
+      memory: 500M
+  health:
+    liveness:
+      path: /
+    readiness:
+      path: /
+  networkSecurity:
+    allowNamespaceInternal: true
+  env:
+    - name: MCP_URL
+      value: "https://mcp-example-approuter-{{ .Release.Namespace }}.{{ .Values.global.domain }}/"
+    - name: PORT
+      value: "8080"
+    - name: HOST
+      value: "0.0.0.0"
+
+identity:
+  serviceOfferingName: identity
+  servicePlanName: application
+  parameters:
+    display-name: mcp
+    provided-apis:
+      - name: mcp-ias-api
+        description: API exposed by the application
+    oauth2-configuration:
+      token-policy:
+        access-token-format: "jwt"
+      redirect-uris:
+        - https://*.{{ tpl .Values.global.domain . }}/**
+      post-logout-redirect-uris:
+        - https://*.{{ tpl .Values.global.domain . }}/*/logout.html
+
+backendDestinations:
+  mcp-server:
+    service: srv
+    forwardAuthToken: true
+  mcp-client:
+    service: client
+    forwardAuthToken: true
+
+destination:
+  serviceOfferingName: destination
+  servicePlanName: lite
+  parameters:
+    version: 1.0.0
+
+connectivity:
+  serviceOfferingName: connectivity
+  servicePlanName: connectivity_proxy
+  externalName: connectivity-proxy

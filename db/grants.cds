@@ -19,7 +19,7 @@ entity Grants: managed {
   scope:String;
   consents: Composition of many Consents on consents.grant_id = $self.id;
   requests: Composition of many AuthorizationRequests on requests.grant = $self;
-  authorization_details: Composition of many AuthorizationDetail on authorization_details.consent.grant_id = $self.id;
+  authorization_details: Composition of many AuthorizationDetails on authorization_details.consent.grant_id = $self.id;
 }
 
 
@@ -84,7 +84,7 @@ entity Consents:cuid,managed {
   // Included to accept client-provided field during consent POSTs (not persisted elsewhere)
   client_id: String=request.client_id;
   scope: String=request.scope;
-  authorization_details: Composition of many AuthorizationDetail on authorization_details.consent = $self;
+  authorization_details: Composition of many AuthorizationDetails on authorization_details.consent = $self;
   duration: Timespan;
   subject: User; //@cds.on.insert: $user;
   previous_consent: Association to Consents; // Reference to the previous consent for this grant
@@ -97,7 +97,7 @@ entity Consents:cuid,managed {
 
 
 @cds.autoexpose :true
-entity AuthorizationDetail:cuid,managed, AuthorizationDetailMcpTools, AuthorizationDetailFileSystem, AuthorizationDetailDatabase, AuthorizationDetailApi {
+entity AuthorizationDetails:cuid,managed, AuthorizationDetailMcpTools, AuthorizationDetailFileSystem, AuthorizationDetailDatabase, AuthorizationDetailApi {
   consent: Association to Consents;
   type: String;
   locations: array of String;

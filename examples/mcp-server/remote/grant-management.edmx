@@ -1,0 +1,555 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Common.xml">
+    <edmx:Include Alias="Common" Namespace="com.sap.vocabularies.Common.v1"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Core.V1.xml">
+    <edmx:Include Alias="Core" Namespace="Org.OData.Core.V1"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/UI.xml">
+    <edmx:Include Alias="UI" Namespace="com.sap.vocabularies.UI.v1"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Validation.V1.xml">
+    <edmx:Include Alias="Validation" Namespace="Org.OData.Validation.V1"/>
+  </edmx:Reference>
+  <edmx:DataServices>
+    <Schema Namespace="sap.scai.grants.GrantsManagementService" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+      <Annotation Term="Core.Links">
+        <Collection>
+          <Record>
+            <PropertyValue Property="rel" String="author"/>
+            <PropertyValue Property="href" String="https://cap.cloud.sap"/>
+          </Record>
+        </Collection>
+      </Annotation>
+      <EntityContainer Name="EntityContainer">
+        <EntitySet Name="AuthorizationDetails" EntityType="sap.scai.grants.GrantsManagementService.AuthorizationDetails">
+          <NavigationPropertyBinding Path="consent" Target="Consents"/>
+        </EntitySet>
+        <EntitySet Name="Grants" EntityType="sap.scai.grants.GrantsManagementService.Grants">
+          <NavigationPropertyBinding Path="consents" Target="Consents"/>
+          <NavigationPropertyBinding Path="requests" Target="AuthorizationRequests"/>
+          <NavigationPropertyBinding Path="authorization_details" Target="AuthorizationDetails"/>
+        </EntitySet>
+        <EntitySet Name="Consents" EntityType="sap.scai.grants.GrantsManagementService.Consents">
+          <NavigationPropertyBinding Path="grant" Target="Grants"/>
+          <NavigationPropertyBinding Path="request" Target="AuthorizationRequests"/>
+          <NavigationPropertyBinding Path="authorization_details" Target="AuthorizationDetails"/>
+          <NavigationPropertyBinding Path="previous_consent" Target="Consents"/>
+        </EntitySet>
+        <EntitySet Name="AuthorizationRequests" EntityType="sap.scai.grants.GrantsManagementService.AuthorizationRequests">
+          <NavigationPropertyBinding Path="grant" Target="Grants"/>
+          <NavigationPropertyBinding Path="consent" Target="Consents"/>
+        </EntitySet>
+        <EntitySet Name="AuthorizationDetailType" EntityType="sap.scai.grants.GrantsManagementService.AuthorizationDetailType">
+          <NavigationPropertyBinding Path="texts" Target="AuthorizationDetailType_texts"/>
+          <NavigationPropertyBinding Path="localized" Target="AuthorizationDetailType_texts"/>
+        </EntitySet>
+        <EntitySet Name="AuthorizationDetailType_texts" EntityType="sap.scai.grants.GrantsManagementService.AuthorizationDetailType_texts"/>
+      </EntityContainer>
+      <EntityType Name="AuthorizationDetails">
+        <Key>
+          <PropertyRef Name="ID"/>
+        </Key>
+        <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+        <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <Property Name="createdBy" Type="Edm.String" MaxLength="255"/>
+        <Property Name="modifiedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <Property Name="modifiedBy" Type="Edm.String" MaxLength="255"/>
+        <Property Name="transport" Type="Edm.String"/>
+        <Property Name="tools" Type="sap.scai.grants.GrantsManagementService.cds_Map"/>
+        <Property Name="server" Type="Edm.String"/>
+        <Property Name="roots" Type="Collection(Edm.String)" Nullable="true"/>
+        <Property Name="permissions_read" Type="Edm.Boolean"/>
+        <Property Name="permissions_write" Type="Edm.Boolean"/>
+        <Property Name="permissions_execute" Type="Edm.Boolean"/>
+        <Property Name="permissions_delete" Type="Edm.Boolean"/>
+        <Property Name="permissions_list" Type="Edm.Boolean"/>
+        <Property Name="permissions_create" Type="Edm.Boolean"/>
+        <Property Name="databases" Type="Collection(Edm.String)" Nullable="true"/>
+        <Property Name="schemas" Type="Collection(Edm.String)" Nullable="true"/>
+        <Property Name="tables" Type="Collection(Edm.String)" Nullable="true"/>
+        <Property Name="urls" Type="Collection(Edm.String)" Nullable="true"/>
+        <Property Name="protocols" Type="Collection(Edm.String)" Nullable="true"/>
+        <NavigationProperty Name="consent" Type="sap.scai.grants.GrantsManagementService.Consents" Partner="authorization_details">
+          <ReferentialConstraint Property="consent_ID" ReferencedProperty="ID"/>
+          <ReferentialConstraint Property="consent_grant_id" ReferencedProperty="grant_id"/>
+        </NavigationProperty>
+        <Property Name="consent_ID" Type="Edm.Guid"/>
+        <Property Name="consent_grant_id" Type="Edm.String"/>
+        <Property Name="type" Type="Edm.String"/>
+        <Property Name="locations" Type="Collection(Edm.String)" Nullable="true"/>
+        <Property Name="actions" Type="Collection(Edm.String)" Nullable="true"/>
+        <Property Name="identifier" Type="Edm.String"/>
+        <Property Name="privileges" Type="Collection(Edm.String)" Nullable="true"/>
+        <Property Name="resources" Type="Collection(Edm.String)" Nullable="true"/>
+      </EntityType>
+      <EntityType Name="Grants">
+        <Key>
+          <PropertyRef Name="id"/>
+        </Key>
+        <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <Property Name="createdBy" Type="Edm.String" MaxLength="255"/>
+        <Property Name="modifiedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <Property Name="modifiedBy" Type="Edm.String" MaxLength="255"/>
+        <Property Name="id" Type="Edm.String" Nullable="false"/>
+        <Property Name="client_id" Type="Edm.String"/>
+        <Property Name="risk_level" Type="Edm.String"/>
+        <Property Name="status" Type="Edm.String" DefaultValue="active"/>
+        <Property Name="revoked_at" Type="Edm.DateTimeOffset"/>
+        <Property Name="revoked_by" Type="Edm.String" MaxLength="255"/>
+        <Property Name="subject" Type="Edm.String" MaxLength="255"/>
+        <Property Name="actor" Type="Edm.String"/>
+        <Property Name="scope" Type="Edm.String"/>
+        <NavigationProperty Name="consents" Type="Collection(sap.scai.grants.GrantsManagementService.Consents)">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+        <NavigationProperty Name="requests" Type="Collection(sap.scai.grants.GrantsManagementService.AuthorizationRequests)" Partner="grant">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+        <NavigationProperty Name="authorization_details" Type="Collection(sap.scai.grants.GrantsManagementService.AuthorizationDetails)">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+      </EntityType>
+      <EntityType Name="Consents">
+        <Key>
+          <PropertyRef Name="ID"/>
+          <PropertyRef Name="grant_id"/>
+        </Key>
+        <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+        <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <Property Name="createdBy" Type="Edm.String" MaxLength="255"/>
+        <Property Name="modifiedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <Property Name="modifiedBy" Type="Edm.String" MaxLength="255"/>
+        <Property Name="grant_id" Type="Edm.String" Nullable="false"/>
+        <NavigationProperty Name="grant" Type="sap.scai.grants.GrantsManagementService.Grants">
+          <ReferentialConstraint Property="grant_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <NavigationProperty Name="request" Type="sap.scai.grants.GrantsManagementService.AuthorizationRequests" Partner="consent">
+          <ReferentialConstraint Property="request_ID" ReferencedProperty="ID"/>
+        </NavigationProperty>
+        <Property Name="request_ID" Type="Edm.Guid"/>
+        <Property Name="client_id" Type="Edm.String"/>
+        <Property Name="scope" Type="Edm.String"/>
+        <NavigationProperty Name="authorization_details" Type="Collection(sap.scai.grants.GrantsManagementService.AuthorizationDetails)" Partner="consent">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+        <Property Name="duration" Type="Edm.Int32"/>
+        <Property Name="subject" Type="Edm.String" MaxLength="255"/>
+        <NavigationProperty Name="previous_consent" Type="sap.scai.grants.GrantsManagementService.Consents">
+          <ReferentialConstraint Property="previous_consent_ID" ReferencedProperty="ID"/>
+          <ReferentialConstraint Property="previous_consent_grant_id" ReferencedProperty="grant_id"/>
+        </NavigationProperty>
+        <Property Name="previous_consent_ID" Type="Edm.Guid"/>
+        <Property Name="previous_consent_grant_id" Type="Edm.String"/>
+        <Property Name="redirect_uri" Type="Edm.String"/>
+        <Property Name="actor" Type="Edm.String"/>
+      </EntityType>
+      <EntityType Name="AuthorizationRequests">
+        <Key>
+          <PropertyRef Name="ID"/>
+        </Key>
+        <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+        <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <Property Name="createdBy" Type="Edm.String" MaxLength="255"/>
+        <Property Name="modifiedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <Property Name="modifiedBy" Type="Edm.String" MaxLength="255"/>
+        <Property Name="client_id" Type="Edm.String"/>
+        <Property Name="redirect_uri" Type="Edm.String"/>
+        <Property Name="request_uri" Type="Edm.String"/>
+        <Property Name="scope" Type="Edm.String"/>
+        <Property Name="state" Type="Edm.String"/>
+        <Property Name="code_challenge" Type="Edm.String"/>
+        <Property Name="code_challenge_method" Type="Edm.String"/>
+        <Property Name="grant_management_action" Type="Edm.String"/>
+        <Property Name="authorization_details" Type="Edm.String"/>
+        <Property Name="requested_actor" Type="Edm.String"/>
+        <Property Name="expires_at" Type="Edm.String"/>
+        <Property Name="status" Type="Edm.String"/>
+        <Property Name="response_type" Type="Edm.String"/>
+        <Property Name="risk_level" Type="Edm.String"/>
+        <Property Name="subject_token_type" Type="Edm.String"/>
+        <Property Name="subject_token" Type="Edm.String"/>
+        <Property Name="subject" Type="Edm.String" MaxLength="255"/>
+        <Property Name="expires_in" Type="Edm.Int32"/>
+        <NavigationProperty Name="grant" Type="sap.scai.grants.GrantsManagementService.Grants" Partner="requests">
+          <ReferentialConstraint Property="grant_id" ReferencedProperty="id"/>
+        </NavigationProperty>
+        <Property Name="grant_id" Type="Edm.String"/>
+        <NavigationProperty Name="consent" Type="sap.scai.grants.GrantsManagementService.Consents" Partner="request">
+          <ReferentialConstraint Property="ID" ReferencedProperty="request_ID"/>
+        </NavigationProperty>
+        <Property Name="access" Type="Collection(sap.scai.grants.GrantsManagementService.AuthorizationRequests_access)" Nullable="true"/>
+      </EntityType>
+      <EntityType Name="AuthorizationDetailType">
+        <Key>
+          <PropertyRef Name="code"/>
+        </Key>
+        <Property Name="name" Type="Edm.String" MaxLength="255"/>
+        <Property Name="descr" Type="Edm.String" MaxLength="1000"/>
+        <Property Name="code" Type="Edm.String" MaxLength="60" Nullable="false"/>
+        <Property Name="template" Type="Edm.String"/>
+        <Property Name="description" Type="Edm.String"/>
+        <Property Name="riskLevel" Type="Edm.String"/>
+        <Property Name="category" Type="Edm.String"/>
+        <NavigationProperty Name="texts" Type="Collection(sap.scai.grants.GrantsManagementService.AuthorizationDetailType_texts)">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+        <NavigationProperty Name="localized" Type="sap.scai.grants.GrantsManagementService.AuthorizationDetailType_texts">
+          <ReferentialConstraint Property="code" ReferencedProperty="code"/>
+        </NavigationProperty>
+      </EntityType>
+      <EntityType Name="AuthorizationDetailType_texts">
+        <Key>
+          <PropertyRef Name="locale"/>
+          <PropertyRef Name="code"/>
+        </Key>
+        <Property Name="locale" Type="Edm.String" MaxLength="14" Nullable="false"/>
+        <Property Name="name" Type="Edm.String" MaxLength="255"/>
+        <Property Name="descr" Type="Edm.String" MaxLength="1000"/>
+        <Property Name="code" Type="Edm.String" MaxLength="60" Nullable="false"/>
+      </EntityType>
+      <ComplexType Name="cds_Map" OpenType="true"/>
+      <ComplexType Name="AuthorizationRequests_access">
+        <Property Name="server" Type="Edm.String"/>
+        <Property Name="transport" Type="Edm.String"/>
+        <Property Name="tools" Type="sap.scai.grants.GrantsManagementService.cds_Map"/>
+        <Property Name="locations" Type="Collection(Edm.String)" Nullable="true"/>
+        <Property Name="actions" Type="Collection(Edm.String)" Nullable="true"/>
+        <Property Name="permissions" Type="sap.scai.grants.GrantsManagementService.AuthorizationRequests_access_permissions"/>
+        <Property Name="roots" Type="Collection(Edm.String)" Nullable="true"/>
+        <Property Name="databases" Type="Collection(Edm.String)" Nullable="true"/>
+        <Property Name="schemas" Type="Collection(Edm.String)" Nullable="true"/>
+        <Property Name="tables" Type="Collection(Edm.String)" Nullable="true"/>
+        <Property Name="urls" Type="Collection(Edm.String)" Nullable="true"/>
+        <Property Name="protocols" Type="Collection(Edm.String)" Nullable="true"/>
+        <NavigationProperty Name="type" Type="sap.scai.grants.GrantsManagementService.AuthorizationDetailType">
+          <ReferentialConstraint Property="type_code" ReferencedProperty="code"/>
+        </NavigationProperty>
+        <Property Name="type_code" Type="Edm.String" MaxLength="60"/>
+      </ComplexType>
+      <ComplexType Name="AuthorizationRequests_access_permissions">
+        <Property Name="read" Type="sap.scai.grants.GrantsManagementService.sap_scai_grants_RARClaim"/>
+        <Property Name="write" Type="sap.scai.grants.GrantsManagementService.sap_scai_grants_RARClaim"/>
+        <Property Name="delete" Type="sap.scai.grants.GrantsManagementService.sap_scai_grants_RARClaim"/>
+        <Property Name="execute" Type="sap.scai.grants.GrantsManagementService.sap_scai_grants_RARClaim"/>
+        <Property Name="list" Type="sap.scai.grants.GrantsManagementService.sap_scai_grants_RARClaim"/>
+        <Property Name="create" Type="sap.scai.grants.GrantsManagementService.sap_scai_grants_RARClaim"/>
+      </ComplexType>
+      <ComplexType Name="sap_scai_grants_RARClaim">
+        <Property Name="essential" Type="Edm.Boolean"/>
+      </ComplexType>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.EntityContainer">
+        <Annotation Term="Core.Description" String="OAuth 2.0 Grant Management API (query, revoke, metadata)"/>
+        <Annotation Term="Core.LongDescription" String="Exposes grant status, revocation, and discovery per OAuth 2.0 Grant Management. See external docs for usage and examples."/>
+        <Annotation Term="Common.Label" String="Grants Management Service"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationDetails/ID">
+        <Annotation Term="Core.ComputedDefaultValue" Bool="true"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationDetails/createdAt">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+        <Annotation Term="Core.Immutable" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Common.Label" String="{i18n>CreatedAt}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationDetails/createdBy">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+        <Annotation Term="Core.Immutable" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Core.Description" String="{i18n>UserID.Description}"/>
+        <Annotation Term="Common.Label" String="{i18n>CreatedBy}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationDetails/modifiedAt">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Common.Label" String="{i18n>ChangedAt}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationDetails/modifiedBy">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Core.Description" String="{i18n>UserID.Description}"/>
+        <Annotation Term="Common.Label" String="{i18n>ChangedBy}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.Grants/createdAt">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+        <Annotation Term="Core.Immutable" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Common.Label" String="{i18n>CreatedAt}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.Grants/createdBy">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+        <Annotation Term="Core.Immutable" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Core.Description" String="{i18n>UserID.Description}"/>
+        <Annotation Term="Common.Label" String="{i18n>CreatedBy}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.Grants/modifiedAt">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Common.Label" String="{i18n>ChangedAt}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.Grants/modifiedBy">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Core.Description" String="{i18n>UserID.Description}"/>
+        <Annotation Term="Common.Label" String="{i18n>ChangedBy}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.Grants/client_id">
+        <Annotation Term="Core.Computed" Bool="true"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.Grants/risk_level">
+        <Annotation Term="Core.Computed" Bool="true"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.Grants/status">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="active"/>
+              <PropertyValue Property="Value" String="active"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="revoked"/>
+              <PropertyValue Property="Value" String="revoked"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.Grants/revoked_by">
+        <Annotation Term="Common.Label" String="{i18n>UserID}"/>
+        <Annotation Term="Core.Description" String="{i18n>UserID.Description}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.Grants/subject">
+        <Annotation Term="Common.Label" String="{i18n>UserID}"/>
+        <Annotation Term="Core.Description" String="{i18n>UserID.Description}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.Consents/ID">
+        <Annotation Term="Core.ComputedDefaultValue" Bool="true"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.Consents/createdAt">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+        <Annotation Term="Core.Immutable" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Common.Label" String="{i18n>CreatedAt}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.Consents/createdBy">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+        <Annotation Term="Core.Immutable" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Core.Description" String="{i18n>UserID.Description}"/>
+        <Annotation Term="Common.Label" String="{i18n>CreatedBy}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.Consents/modifiedAt">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Common.Label" String="{i18n>ChangedAt}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.Consents/modifiedBy">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Core.Description" String="{i18n>UserID.Description}"/>
+        <Annotation Term="Common.Label" String="{i18n>ChangedBy}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.Consents/grant_id">
+        <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.Consents/subject">
+        <Annotation Term="Common.Label" String="{i18n>UserID}"/>
+        <Annotation Term="Core.Description" String="{i18n>UserID.Description}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationRequests/ID">
+        <Annotation Term="Core.ComputedDefaultValue" Bool="true"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationRequests/createdAt">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+        <Annotation Term="Core.Immutable" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Common.Label" String="{i18n>CreatedAt}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationRequests/createdBy">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+        <Annotation Term="Core.Immutable" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Core.Description" String="{i18n>UserID.Description}"/>
+        <Annotation Term="Common.Label" String="{i18n>CreatedBy}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationRequests/modifiedAt">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Common.Label" String="{i18n>ChangedAt}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationRequests/modifiedBy">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Core.Description" String="{i18n>UserID.Description}"/>
+        <Annotation Term="Common.Label" String="{i18n>ChangedBy}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationRequests/expires_at">
+        <Annotation Term="Core.Computed" Bool="true"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationRequests/status">
+        <Annotation Term="Core.Computed" Bool="true"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationRequests/risk_level">
+        <Annotation Term="Core.Computed" Bool="true"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationRequests/subject">
+        <Annotation Term="Common.Label" String="{i18n>UserID}"/>
+        <Annotation Term="Core.Description" String="{i18n>UserID.Description}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationDetailType">
+        <Annotation Term="UI.Identification">
+          <Collection>
+            <Record Type="UI.DataField">
+              <PropertyValue Property="Value" Path="name"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationDetailType/name">
+        <Annotation Term="Common.Label" String="{i18n>Name}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationDetailType/descr">
+        <Annotation Term="Common.Label" String="{i18n>Description}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationDetailType/code">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="mcp"/>
+              <PropertyValue Property="Value" String="mcp"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="fs"/>
+              <PropertyValue Property="Value" String="fs"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="database"/>
+              <PropertyValue Property="Value" String="database"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="api"/>
+              <PropertyValue Property="Value" String="api"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="grant_management"/>
+              <PropertyValue Property="Value" String="grant_management"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="file_access"/>
+              <PropertyValue Property="Value" String="file_access"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="data_access"/>
+              <PropertyValue Property="Value" String="data_access"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="network_access"/>
+              <PropertyValue Property="Value" String="network_access"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationDetailType/riskLevel">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="low"/>
+              <PropertyValue Property="Value" String="low"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="medium"/>
+              <PropertyValue Property="Value" String="medium"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="high"/>
+              <PropertyValue Property="Value" String="high"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationDetailType_texts/locale">
+        <Annotation Term="Common.Label" String="{i18n>LanguageCode}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationDetailType_texts/name">
+        <Annotation Term="Common.Label" String="{i18n>Name}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationDetailType_texts/descr">
+        <Annotation Term="Common.Label" String="{i18n>Description}"/>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationDetailType_texts/code">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="mcp"/>
+              <PropertyValue Property="Value" String="mcp"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="fs"/>
+              <PropertyValue Property="Value" String="fs"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="database"/>
+              <PropertyValue Property="Value" String="database"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="api"/>
+              <PropertyValue Property="Value" String="api"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="grant_management"/>
+              <PropertyValue Property="Value" String="grant_management"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="file_access"/>
+              <PropertyValue Property="Value" String="file_access"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="data_access"/>
+              <PropertyValue Property="Value" String="data_access"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="network_access"/>
+              <PropertyValue Property="Value" String="network_access"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="sap.scai.grants.GrantsManagementService.AuthorizationRequests_access/type_code">
+        <Annotation Term="Common.ValueList">
+          <Record Type="Common.ValueListType">
+            <PropertyValue Property="Label" String="AuthorizationDetailType"/>
+            <PropertyValue Property="CollectionPath" String="AuthorizationDetailType"/>
+            <PropertyValue Property="Parameters">
+              <Collection>
+                <Record Type="Common.ValueListParameterInOut">
+                  <PropertyValue Property="LocalDataProperty" PropertyPath="type_code"/>
+                  <PropertyValue Property="ValueListProperty" String="code"/>
+                </Record>
+                <Record Type="Common.ValueListParameterDisplayOnly">
+                  <PropertyValue Property="ValueListProperty" String="name"/>
+                </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+      </Annotations>
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>
