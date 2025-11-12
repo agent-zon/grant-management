@@ -1,5 +1,7 @@
 namespace mcp.service;
  
+ using from './debug/auth-service.cds';
+
 @path: '/mcp'
 @protocol: 'rest'
 @impl: './service.tsx'

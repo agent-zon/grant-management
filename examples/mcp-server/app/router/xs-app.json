@@ -1,0 +1,17 @@
+{
+  "routes": [
+    {
+      "source": "^/mcp/client/(.*)$",
+      "target": "/$1",
+      "destination": "mcp-client",
+      "csrfProtection": false,
+      "authenticationType": "ias"
+    },
+    {
+      "source": "^/(.*)$",
+      "target": "$1",
+      "destination": "mcp-server",
+      "csrfProtection": true
+    }
+  ]
+}

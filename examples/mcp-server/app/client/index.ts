@@ -15,15 +15,8 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { TransportProvider } from "./transport";
 import {
-  alwaysSubscriber,
-  getDestinationFromServiceBinding,
-  getDestination,
-  getAllDestinationsFromDestinationService,
-  getServiceBinding,
-  getUserToken,
   alwaysProvider,
   useOrFetchDestination,
-  subscriberFirst,
 } from "@sap-cloud-sdk/connectivity";
 
 // Helper to create a fresh client + transport for each request (simple approach).
@@ -40,16 +33,16 @@ async function createClient(c: Context) {
     selectionStrategy: alwaysProvider,
   });
   const auth = destination?.authTokens
-      ?.filter((t) => t.http_header)
-      .reduce(
-          (headers, token) => {
-            headers[token.http_header.key] = token.http_header.value;
-            return headers;
-          },
-          {} as Record<string, string>
-      );
+    ?.filter((t) => t.http_header)
+    .reduce(
+      (headers, token) => {
+        headers[token.http_header.key] = token.http_header.value;
+        return headers;
+      },
+      {} as Record<string, string>
+    );
 
-  console.log("Destination:", destination, auth);
+  console.debug("Destination:", destination, auth);
   const transport = new StreamableHTTPClientTransport(
     new URL(`${destination?.url || c.env.MCP_URL}/mcp/streaming`),
     {
@@ -57,6 +50,13 @@ async function createClient(c: Context) {
         headers: {
           ...(c.req.header("Authorization")
             ? { Authorization: c.req.header("Authorization") }
+            : {}),
+          ...(c.req.header("x-approuter-authorization")
+            ? {
+                "x-approuter-authorization": c.req.header(
+                  "x-approuter-authorization"
+                ),
+              }
             : {}),
           ...auth,
         },
@@ -268,7 +268,7 @@ app.post("/complete", async (c) => {
 
 // Start the server only if this module is executed directly.
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const port = Number(process.env.PORT || 8787);
+  const port = Number(process.env.PORT || 4005);
   const hostname = process.env.HOST || "0.0.0.0";
   console.log(`[MCP Client] Running on ${hostname}:${port}`);
 

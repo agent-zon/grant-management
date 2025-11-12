@@ -107,8 +107,7 @@
     "test:grant-mgmt": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/grant-management.test.ts"
   },
   "workspaces": [
-    "app/*",
-    "examples/mcp-client"
+    "app/*"
   ],
   "private": true,
   "imports": {

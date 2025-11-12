@@ -145,7 +145,7 @@ service authorization_service {
     @Common.Label : '{i18n>ChangedBy}'
     modifiedBy : String(255);
     @Common.FieldControl : #Mandatory
-    key grant_id : LargeString not null;
+    key grant_id : String not null;
     grant : Association to one Grants {  };
     request : Association to one AuthorizationRequests {  };
     request_ID : UUID;
@@ -194,7 +194,7 @@ service authorization_service {
     @Core.Computed : true
     @Common.Label : '{i18n>ChangedBy}'
     modifiedBy : String(255);
-    key id : LargeString not null;
+    key id : String not null;
     @Core.Computed : true
     client_id : LargeString;
     @Core.Computed : true

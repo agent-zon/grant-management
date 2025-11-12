@@ -1,7 +1,7 @@
 {
-    "extends": "./tsconfig.json",
-    "compilerOptions": {
-      "outDir": "./gen/srv",
-    },
-    "exclude": ["app", "gen", "test"]
-  }
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./gen/srv"
+  },
+  "exclude": ["app", "gen", "test", "node_modules"]
+}

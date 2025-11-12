@@ -10,18 +10,15 @@
     "baseUrl": ".",
     "resolveJsonModule": true,
     "outDir": "./dist",
+    "skipLibCheck": true,
     "rootDirs": [".", "@cds-models", "types"],
     "typeRoots": ["./types", "./node_modules/@types"],
     "composite": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "paths": {
-      "#cds-models/*": [
-        "./@cds-models/*"
-      ],
-      "@cds-ssr": [
-        "./render/index.ts"
-      ]
+      "#cds-models/*": ["./@cds-models/*"],
+      "@cds-ssr": ["./render/index.ts"]
     }
   }
 }

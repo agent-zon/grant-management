@@ -1,7 +1,7 @@
 {
-  "name": "mcp",
+  "name": "mcp-example",
   "version": "1.0.0",
-  "description": "A simple CAP project.",
+  "description": "A simple MCP server example project.",
   "type": "module",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.21.1",
@@ -36,7 +36,10 @@
     "start": "npx cds-tsx serve",
     "watch": "npx cds-tsx watch",
     "debug": "npx cds debug ",
-    "hybrid": "npx cds bind --exec -- npm run start"
+    "hybrid": "npx cds bind --exec -- npm run start",
+    "build": "npx cds build --production",
+    "build:containers": "ctz containerize.yaml --log",
+    "deploy:helm": "npm run build && helm upgrade mcp-example ./gen/chart --install --create-namespace"
   },
   "private": true,
   "imports": {

@@ -97,11 +97,11 @@ service grant_management {
     @Core.Computed : true
     @Common.Label : '{i18n>ChangedBy}'
     modifiedBy : String(255);
-    key id : LargeString not null;
+    key id : String not null;
     @Core.Computed : true
-    client_id : LargeString;
+    client_id : String;
     @Core.Computed : true
-    risk_level : LargeString;
+    risk_level : String;
     @Validation.AllowedValues : [
       {
         $Type: 'Validation.AllowedValue',
@@ -165,7 +165,7 @@ service grant_management {
     @Common.Label : '{i18n>ChangedBy}'
     modifiedBy : String(255);
     @Common.FieldControl : #Mandatory
-    key grant_id : LargeString not null;
+    key grant_id : String not null;
     grant : Association to one Grants {  };
     request : Association to one AuthorizationRequests {  };
     request_ID : UUID;

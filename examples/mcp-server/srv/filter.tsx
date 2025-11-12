@@ -6,9 +6,7 @@ import GrantsManagementService, {
   type AuthorizationDetail,
 } from "#cds-models/grant_management";
 import { env } from "process";
-import AuthorizationService, {
-  AuthorizationDetails,
-} from "#cds-models/authorization_service";
+import AuthorizationService from "#cds-models/authorization_service";
 
 export default async function (
   this: McpProxyService,
@@ -65,8 +63,6 @@ export default async function (
       `MCP Proxy Filter - Tool "${params?.name}" not authorized, initiating authorization flow`
     );
 
-    const grantOAuthServerUrl =
-      cds.requires["authorization_service"].credentials.url;
     var response = await authService.par({
       response_type: "code",
       client_id: env.MCP_CLIENT_ID || "mcp-agent-client",
