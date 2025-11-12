@@ -3,7 +3,7 @@ import type {
   GrantHandler,
   GrantsHandler,
   GrantsManagementService,
-} from "./grant-management.tsx";
+} from "./grant-management";
 import { isNativeError } from "node:util/types";
 import type {
   Grants,
