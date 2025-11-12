@@ -14,5 +14,28 @@ modules:
   - name: grant-management/approuter
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t grant-management/approuter:v22 app/router --load
-#        - docker buildx build --platform linux/amd64 -t scai-dev.common.repositories.cloud.sap/grant-management/approuter:v22 app/router --push
+        - docker buildx build --platform linux/amd64 -t grant-management/approuter:v22 app/router --load #        - docker buildx build --platform linux/amd64 -t scai-dev.common.repositories.cloud.sap/grant-management/approuter:v22 app/router --push
+
+  - name: grant-management/sidecar
+    build-parameters:
+      commands:
+        - docker buildx build --platform linux/amd64 -t grant-management/sidecar:v22 -f mtx/sidecar/Dockerfile . --load
+  - name: grant-management-sidecar
+    build-parameters:
+      buildpack:
+        type: nodejs
+        builder: builder-jammy-base
+        path: gen/mtx/sidecar
+        env:
+          BP_NODE_RUN_SCRIPTS: ""
+  - name: grant-management-approuter
+    build-parameters:
+      buildpack:
+        type: nodejs
+        builder: builder-jammy-base
+        path: app/router
+        env:
+          BP_NODE_RUN_SCRIPTS: ""
+
+#        - docker buildx build --platform linux/amd64 -t scai-dev.common.repositories.cloud.sap/grant-management/sidecar:v22 -f mtx/sidecar/Dockerfile . --push
+#        - docker manifest inspect  scai-dev.common.repositories.cloud.sap/grant-management/sidecar:v22

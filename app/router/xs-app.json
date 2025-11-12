@@ -2,6 +2,25 @@
   "welcomeFile": "./api-docs/index.html",
   "routes": [
     {
+      "source": "^/-/cds/.*",
+      "destination": "mtx-api",
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/-/cds/(.*)$",
+      "destination": "mtx-api",
+      "csrfProtection": false,
+      "target": "/-/cds/$1",
+      "authenticationType": "ias"
+    },
+    {
+      "source": "^/-/cds",
+      "destination": "mtx-api",
+      "csrfProtection": false,
+      "target": "/-/cds",
+      "authenticationType": "ias"
+    },
+    {
       "source": "^/api-docs/openapi/(.*)$",
       "target": "/$1",
       "localDir": "./api-docs/openapi",
@@ -15,7 +34,6 @@
       "csrfProtection": false,
       "authenticationType": "ias"
     },
-
     {
       "source": "^/auth/debug(.*)$",
       "target": "/$1",
@@ -38,7 +56,6 @@
       "authenticationType": "ias",
       "service": "sap-approuter-userapi"
     },
-
     {
       "source": "^/(.*)$",
       "target": "$1",

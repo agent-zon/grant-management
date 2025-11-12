@@ -23,7 +23,15 @@ dependencies:
   - name: service-instance
     alias: identity
     version: ">0.0.0"
-    
+  - name: web-application
+    alias: sidecar
+    version: ">0.0.0"
+  - name: service-instance
+    alias: subscription-manager
+    version: ">0.0.0"
+  - name: service-instance
+    alias: service-manager
+    version: ">0.0.0"
   # - name: service-instance
   #   version: ">0.0.0"
   #   alias: "postgresql"

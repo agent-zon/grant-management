@@ -13,14 +13,14 @@ requires:
   auth:
     kind: ias
   db:
-    kind: sqlite
+    kind: "sqlite"
     credentials:
       url: db.sqlite
   grant-mcp:
     kind: rest
     credentials:
       destination: grant-mcp
-  
+
   destinations: true
   "[development]":
     db:
@@ -53,4 +53,8 @@ features:
   toggles:
     auth: true
   "[production]":
-    emulate_vcap_services": true
+    emulate_vcap_services: true
+    db:
+      kind: sqlite
+      credentials:
+        url: db.sqlite

@@ -1,0 +1,236 @@
+_schema-version: 3.3.0
+ID: grant-management
+version: 1.0.0
+description: "A simple CAP project."
+parameters:
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - echo "only update mta.yaml"
+        #        - npm ci
+        - npx cds build --production
+modules:
+  - name: grant-management-srv
+    type: nodejs
+    path: gen/srv
+
+    parameters:
+      instances: 1
+      buildpack: nodejs_buildpack
+      keep-existing-routes: true
+      disk-quota: 4GB
+      memory: 2GB
+      routes:
+        - route: "${default-url}"
+        - route: "${default-host}.cert.${default-domain}"
+    build-parameters:
+      builder: custom
+      commands:
+        - echo "say I build srv"
+    #         - npx cds build --production
+    #      builder: npm-ci
+    provides:
+      - name: srv-api # required by consumers of CAP services (e.g. approuter)
+        properties:
+          srv-url: ${default-url}
+          srv-cert-url: "${protocol}://${default-host}.cert.${default-domain}"
+    requires:
+      - name: grant-management-auth
+        parameters:
+          config:
+            credential-type: X509_GENERATED
+            app-identifier: srv
+      #      - name: grant-management-postgres
+      #      - name: grant-management-redis
+      - name: grant-management-destination
+      - name: grant-management-postgres
+      - name: grant-management-redis
+
+  - name: grant-management
+    type: approuter.nodejs
+    path: app/router
+    requires:
+      - name: grant-management-auth
+        parameters:
+          config:
+            credential-type: X509_GENERATED
+            app-identifier: approuter
+      - name: srv-api
+        group: destinations
+        properties:
+          url: ~{srv-cert-url}
+          forwardAuthCertificates: true
+          strictSSL: true
+      - name: mtx-api
+        group: destinations
+        properties:
+          name: mtx-api # must be used in xs-app.json as well
+          url: ~{mtx-url}
+      - name: grant-management-destination
+    parameters:
+      keep-existing-routes: true
+      disk-quota: 256M
+      memory: 256M
+    properties:
+      TENANT_HOST_PATTERN: "^(.*)-${default-uri}"
+    provides:
+      - name: app-api
+        properties:
+          app-protocol: ${protocol}
+          app-uri: ${default-uri}
+
+  - name: grant-management-mtx
+    type: nodejs
+    path: gen/mtx/sidecar
+    requires:
+      - name: grant-management-auth
+        parameters:
+          config:
+            credential-type: X509_GENERATED
+            app-identifier: mtx
+      - name: grant-management-sms
+      - name: app-api
+        properties:
+          SUBSCRIPTION_URL: ~{app-protocol}://\${tenant_subdomain}-~{app-uri}
+      - name: grant-management-destination
+    build-parameters:
+      #      builder: npm-ci
+      builder: custom
+      commands:
+        - echo "say I build mtx sidecar"
+    parameters:
+      instances: 1
+      memory: 256M
+      disk-quota: 512M
+      routes:
+        - route: "${default-url}"
+        - route: "${default-host}.cert.${default-domain}"
+    provides:
+      - name: mtx-api
+        properties:
+          mtx-url: ${default-url}
+          mtx-cert-url: ${protocol}://${default-host}.cert.${default-domain}
+
+#  - name: grant-management-postgres-deployer
+#    type: nodejs
+#    path: gen/pg
+#    parameters:
+#      buildpack: nodejs_buildpack
+#      no-route: true
+#      no-start: true
+#      tasks:
+#        - name: deploy-to-postgresql
+#          command: npm start
+#    requires:
+#      - name: grant-management-postgres
+
+#  - name: grant-management-postgres-deployer
+#    type: nodejs
+#    path: gen/pg
+#    parameters:
+#      buildpack: nodejs_buildpack
+#      no-route: true
+#      no-start: true
+#      tasks:
+#        - name: deploy-to-postgresql
+#          command: npm start
+#    requires:
+#      - name: grant-management-postgres
+
+resources:
+  - name: grant-management-auth
+    type: org.cloudfoundry.managed-service
+    requires:
+      - name: app-api
+    parameters:
+      service: identity
+      service-name: grant-management-auth
+      service-plan: application
+      config:
+        display-name: grant-management
+        oauth2-configuration:
+          token-policy:
+            access-token-format: "jwt"
+          redirect-uris:
+            - ~{app-api/app-protocol}://*.~{app-api/app-uri}/login/callback
+            - ~{app-api/app-protocol}://~{app-api/app-uri}/login/callback
+          post-logout-redirect-uris:
+            - ~{app-api/app-protocol}://*.~{app-api/app-uri}/*/logout.html
+        multi-tenant: true
+        xsuaa-cross-consumption: true
+      #  - name: grant-management-postgres
+      #    type: org.cloudfoundry.managed-service
+      #    parameters:
+      #      service: postgresql-db
+      #      service-plan: development
+      #  - name: grant-management-redis
+      #    type: org.cloudfoundry.managed-service
+      #    parameters:
+      #      service: redis-cache
+      #      service-plan: standard
+      # config:
+      # memory: 2 # GB, can be 2 or 4
+      # multi_az: true
+      # cluster_mode: true
+      # shard_count: 1
+      # node_count: 3 # per shard minimum is 3 (for standard plan)
+      # engine_version: "6.0" # can be "4.0" or "6.0"
+      # maintenance_window:
+      # day_of_week: Friday
+      # start_hour_utc: 0
+      # duration: 5 # hours
+
+  - name: grant-management-sms
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: subscription-manager
+      service-plan: provider
+      config:
+        applicationType: application
+        appName: grant-management-${org}-${space}
+        appCallbacks:
+          dependenciesCallbacks:
+            url: ~{mtx-api/mtx-cert-url}/-/cds/sms-provisioning/dependencies/{app_tid}
+          subscriptionCallbacks:
+            url: ~{mtx-api/mtx-cert-url}/-/cds/sms-provisioning/tenant/{app_tid}
+            async:
+              subscribeEnable: true
+              unSubscribeEnable: true
+              timeoutInMillis: 300000 # Increase if your deployments are taking longer than that
+        displayName: grant-management
+        description: Description for grant-management
+        category: Category
+        iasServiceInstanceName: grant-management-auth
+    requires:
+      - name: mtx-api
+    processed-after:
+      - grant-management-auth
+  - name: grant-management-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite
+  - name: grant-management-postgres
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: postgresql-db
+      service-plan: development
+  - name: grant-management-redis
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: redis-cache
+      service-plan: development
+
+      # config:
+      # memory: 2 # GB, can be 2 or 4
+      # multi_az: true
+      # cluster_mode: true
+      # shard_count: 1
+      # node_count: 3 # per shard minimum is 3 (for standard plan)
+      # engine_version: "6.0" # can be "4.0" or "6.0"
+      # maintenance_window:
+      # day_of_week: Friday
+      # start_hour_utc: 0
+      # duration: 5 # hours

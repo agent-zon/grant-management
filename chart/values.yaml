@@ -2,7 +2,7 @@
 
 global:
   domain: c-127c9ef.stage.kyma.ondemand.com
-  host: agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com
+  host: mtx-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com
   imagePullSecret:
     name: docker-registry
   image:
@@ -18,6 +18,8 @@ srv:
         app-identifier: grant-api
     destination:
       serviceInstanceName: destination
+    service-manager:
+      serviceInstanceName: service-manager
   image:
     repository: grant-management/api
   resources:
@@ -87,6 +89,7 @@ approuter:
       serviceInstanceName: destination
   image:
     repository: grant-management/approuter
+    tag: v23
   runAsUser: 1000
   resources:
     limits:
@@ -111,6 +114,7 @@ approuter:
     OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
     OTEL_SERVICE_NAME: approuter
     OTEL_PROPAGATORS: tracecontext,baggage
+    TENANT_HOST_PATTERN: ^(.*)-{{ .Release.Name }}-approuter-{{ .Release.Namespace }}.(cert.)?{{ .Values.global.domain }}
 
 portal:
   runAsUser: 1993
@@ -144,14 +148,14 @@ identity:
   serviceOfferingName: identity
   servicePlanName: application
   parameters:
-    name: "{{ .Release.Name }}-grant-management"
+    name: "grant-management-{{ .Release.Name }}"
     display-name: "Grant Management (rc-{{ .Release.Name }})"
     description: Identity service for Grant Management Application
     multi-tenant: true
     xsuaa-cross-consumption: true
-    home-url: "https://{{ tpl .Values.global.host . }}/"
-    consumed-services:
-      - service-instance-name: v04-destination
+    home-url: https://{{ .Release.Name }}-sidecar-{{ .Release.Namespace }}.{{ .Values.global.domain }}
+    #    consumed-services:
+    #      - service-instance-name: v04-destination
     provided-apis:
       - name: grant-management
         description: Grant Management API
@@ -202,7 +206,7 @@ backendDestinations:
     preserveHostHeader: true
     authentication: OAuth2UserTokenExchange
     IASDependencyName: grant-management
-    
+
   grant-api:
     service: srv
     forwardAuthToken: true
@@ -211,7 +215,8 @@ backendDestinations:
   grant-mcp:
     service: srv
     forwardAuthToken: true
-  
+  mtx-api:
+    service: sidecar
   # user-portal:
   #   service: portal
   #   forwardAuthToken: true
@@ -230,3 +235,64 @@ postgresql:
   serviceOfferingName: postgresql-db
   servicePlanName: development
   fullnameOverride: grants-postgres
+
+service-manager:
+  serviceOfferingName: service-manager
+  servicePlanName: container
+
+subscription-manager:
+  serviceOfferingName: subscription-manager
+  servicePlanName: provider
+  parameters:
+    appCallbacks:
+      # dependenciesCallbacks:
+      #   url: https://{{ .Release.Name }}-sidecar-{{ .Release.Namespace }}.cert.{{ .Values.global.domain }}/-/cds/sms-provisioning/dependencies/{app_tid}
+      subscriptionCallbacks:
+        url: https://{{ .Release.Name }}-sidecar-{{ .Release.Namespace }}.cert.{{ .Values.global.domain }}/-/cds/sms-provisioning/tenant/{app_tid}
+      dependenciesCallbacks:
+        url: https://{{ .Release.Name }}-sidecar-{{ .Release.Namespace }}.cert.{{ .Values.global.domain }}/-/cds/sms-provisioning/dependencies
+    appName: grant-management-{{ .Release.Name }}
+    applicationType: application
+    category: "CAP Application"
+    description: SAP AI Security Cloud - Agent Grant Management
+    displayName: SCAI - Grant Management
+    subscribeEnable: true
+    unsubscribeEnable: true
+    iasServiceInstanceName: "{{ .Release.Name }}-identity"
+
+sidecar:
+  bindings:
+    auth:
+      serviceInstanceName: identity
+      parameters:
+        credential-type: X509_GENERATED
+        app-identifier: mtx
+    subscription-manager:
+      serviceInstanceName: subscription-manager
+    service-manager:
+      serviceInstanceName: service-manager
+  image:
+    repository: grant-management/sidecar
+    tag: v23
+  expose:
+    enabled: true
+    host: mtx-sidecar-grant-management.cert
+    gateway: default/kyma-mtls-gateway
+
+  resources:
+    limits:
+      ephemeral-storage: 1G
+      memory: 500M
+    requests:
+      ephemeral-storage: 1G
+      cpu: 500m
+      memory: 500M
+  health:
+    liveness:
+      path: /health
+    readiness:
+      path: /health
+  env:
+    SUBSCRIPTION_URL: https://${tenant_subdomain}-{{ .Release.Name }}-approuter-{{ .Release.Namespace }}.{{ .Values.global.domain }}
+  networkSecurity:
+    allowNamespaceInternal: true

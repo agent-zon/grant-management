@@ -1,0 +1,50 @@
+{
+  "name": "grant-management-mtx",
+  "dependencies": {
+    "@cap-js/postgres": "^2.0.6",
+    "@cap-js/sqlite": "^2",
+    "@sap/cds": "^9",
+    "@sap/cds-mtxs": "^3",
+    "@sap/xssec": "^4",
+    "express": "^4"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "cds-serve"
+  },
+  "cds": {
+    "profiles": [
+      "mtx-sidecar",
+      "subscription-manager"
+    ],
+    "requires": {
+      "destinations": true,
+      "auth": {
+        "kind": "ias"
+      },
+      "db": {
+        "kind": "sqlite",
+        "credentials": {
+          "url": "mtx.sqlite"
+        }
+      },
+      "[production]": {
+        "db": {
+          "kind": "sqlite",
+          "credentials": {
+            "url": "mtx.sqlite"
+          }
+        },
+        "multitenancy": true
+      }
+    },
+    "[development]": {
+      "requires": {
+        "auth": "dummy"
+      }
+    },
+    "profile": "with-mtx-sidecar"
+  }
+}

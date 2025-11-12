@@ -6,17 +6,17 @@ managed give the createdBy createdAt, modifiedBy modifiedAt
 cuid give the ID:UUID
 */ 
 @cds.autoexpose :true
-// Grants as primary entity - not a projection
+// Grants as primary entity - aggregation handled in service layer
 entity Grants: managed {
   key id : String @cds.primary.key; 
-  client_id: String=max(requests.client_id);
-  risk_level:String=max(requests.risk_level);
+  client_id: String;
+  risk_level: String;
   status: String enum { active; revoked; } default 'active';
   revoked_at: DateTime;
   revoked_by: User;
   subject: User;
-  actor: String=consents.request.requested_actor;
-  scope:String;
+  actor: String;
+  scope: String;
   consents: Composition of many Consents on consents.grant_id = $self.id;
   requests: Composition of many AuthorizationRequests on requests.grant = $self;
   authorization_details: Composition of many AuthorizationDetails on authorization_details.consent.grant_id = $self.id;
