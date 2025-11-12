@@ -54,7 +54,7 @@
       "authorization_api": {
         "kind": "rest",
         "credentials": {
-          "url": "https://v04-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/oauth-server"
+          "url": "https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/oauth-server"
         },
         "[hybrid]": {
           "credentials": {
@@ -66,7 +66,7 @@
         "kind": "odata",
         "model": "srv/external/authorization-service",
         "credentials": {
-          "url": "https://v04-srv-grant-management.c-127c9ef.stage.kyma.ondemand.com/oauth-server",
+          "url": "https://agents-srv-grant-management.c-127c9ef.stage.kyma.ondemand.com/oauth-server",
           "forwardAuthToken": false
         },
         "[hybrid]": {
@@ -94,7 +94,7 @@
         "kind": "odata",
         "model": "srv/external/grant-management",
         "credentials": {
-          "url": "https://v04-srv-grant-management.c-127c9ef.stage.kyma.ondemand.com/grants-management",
+          "url": "https://agents-srv-grant-management.c-127c9ef.stage.kyma.ondemand.com/grants-management",
           "forwardAuthToken": true
         },
         "[hybrid]": {
