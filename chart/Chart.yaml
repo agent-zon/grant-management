@@ -13,9 +13,6 @@ dependencies:
   - name: web-application
     alias: approuter
     version: ">0.0.0"
-  - name: web-application
-    alias: mcp-client
-    version: ">0.0.0"
   # - name: web-application
   #   alias: portal
   #   version: ">0.0.0"
@@ -26,6 +23,7 @@ dependencies:
   - name: service-instance
     alias: identity
     version: ">0.0.0"
+    
   # - name: service-instance
   #   version: ">0.0.0"
   #   alias: "postgresql"
