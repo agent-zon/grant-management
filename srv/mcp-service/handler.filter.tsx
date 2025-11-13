@@ -97,17 +97,17 @@ export default async function(
         });
     }
 
-    var authUrl = `${origin}/oauth-server/authorize_dialog?request_uri=${encodeURIComponent(response.request_uri!)}`;
+    const authUrl = `${origin}/oauth-server/authorize_dialog?request_uri=${encodeURIComponent(response.request_uri!)}`;
 
     return {
         jsonrpc: "2.0",
 
         result: {
-            isError: true,
+            isError: false,
             content: [
                 {
                     type: "text",
-                    text: `Tool "${toolName}" is not authorized. Please authorize the tool by visiting the following URL:`,
+                    text: `Tool "${toolName}" is not authorized. Please ask the user to authorize the tool by visiting the following URL: ${authUrl} then try again after user consent.`,
                 },
                 {
                     type: "text",

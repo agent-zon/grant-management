@@ -20,6 +20,7 @@ srv:
       serviceInstanceName: destination
   image:
     repository: grant-management/api
+    tag: v23
   resources:
     limits:
       ephemeral-storage: 1G

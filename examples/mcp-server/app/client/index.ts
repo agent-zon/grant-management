@@ -34,13 +34,10 @@ async function createClient(c: Context) {
   });
   const auth = destination?.authTokens
     ?.filter((t) => t.http_header)
-    .reduce(
-      (headers, token) => {
-        headers[token.http_header.key] = token.http_header.value;
-        return headers;
-      },
-      {} as Record<string, string>
-    );
+    .reduce((headers, token) => {
+      headers[token.http_header.key] = token.http_header.value;
+      return headers;
+    }, {} as Record<string, string>);
 
   console.debug("Destination:", destination, auth);
   const transport = new StreamableHTTPClientTransport(
@@ -226,7 +223,7 @@ app.get("/resource-templates", async (c) => {
     return all;
   }
 });
-app.get("/tool/:name", async (c) => {
+app.get("/tools/:name", async (c) => {
   const name = c.req.param("name");
   try {
     const { client, transport } = await createClient(c);
@@ -239,7 +236,7 @@ app.get("/tool/:name", async (c) => {
   }
 });
 
-app.post("/call-tool/:name", async (c) => {
+app.post("/tools/:name", async (c) => {
   const name = c.req.param("name");
   const args = await c.req.json();
   try {
@@ -268,7 +265,7 @@ app.post("/complete", async (c) => {
 
 // Start the server only if this module is executed directly.
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const port = Number(process.env.PORT || 4005);
+  const port = Number(process.env.PORT || 5005);
   const hostname = process.env.HOST || "0.0.0.0";
   console.log(`[MCP Client] Running on ${hostname}:${port}`);
 
