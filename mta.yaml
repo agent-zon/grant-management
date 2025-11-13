@@ -113,6 +113,35 @@ modules:
           mtx-url: ${default-url}
           mtx-cert-url: ${protocol}://${default-host}.cert.${default-domain}
 
+  # - name: grant-management-portal
+  #   type: nodejs
+  #   path: app/portal
+  #   requires:
+  #     - name: grant-management-auth
+  #       parameters:
+  #         config:
+  #           credential-type: X509_GENERATED
+  #           app-identifier: portal
+  #   build-parameters:
+  #     builder: custom
+  #     commands:
+  #       - npm ci
+  #       - npm run build
+  #   parameters:
+  #     instances: 1
+  #     buildpack: nodejs_buildpack
+  #     keep-existing-routes: true
+  #     disk-quota: 512M
+  #     memory: 512M
+  #     routes:
+  #       - route: "${default-url}"
+  #       - route: "${default-host}.cert.${default-domain}"
+  #   provides:
+  #     - name: user-portal
+  #       properties:
+  #         portal-url: ${default-url}
+  #         portal-cert-url: ${protocol}://${default-host}.cert.${default-domain}
+
 #  - name: grant-management-postgres-deployer
 #    type: nodejs
 #    path: gen/pg
