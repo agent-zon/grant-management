@@ -8,3 +8,5 @@ using from './debug-service/auth-service.cds';
 
 using from './mcp-service/mcp-service.cds';
 
+using from './evaluation-service/evaluation-service.cds';
+

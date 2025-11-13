@@ -75,7 +75,7 @@
     "setup:dev": "npm install && npm run bind:auth && npm run serve",
     "deploy": "npm run build:push && npm run deploy:helm",
     "deploy:sqlite": "npx cds deploy --to sqlite --profile development",
-    "deploy:helm": "npm run build && helm upgrade mtx ./gen/chart --install --create-namespace",
+    "deploy:helm": "npm run build && helm upgrade evaluation ./gen/chart --install --create-namespace",
     "deploy:to:sqlite": "npx cds deploy --to sqlite",
     "deploy:to:postgres": "npx cds deploy",
     "copy-docker-secret": "./scripts/copy-docker-secret.sh",

@@ -1,0 +1,14 @@
+---
+alwaysApply: true
+---
+
+create new namespace for a feature with grant-management-<feature> name using the @setup-namespace.sh script
+
+development phases
+ - local testing works
+ - staging deployment works
+ 
+ npm run build to create production build, including build chart values into gen chart
+ npm run deploy:helm - build helm chart with npm run build and deploy to k8s cluster
+ npm run deploy , build container image run npm run deploy:helm
+ 
