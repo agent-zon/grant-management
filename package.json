@@ -66,7 +66,7 @@
     "build": "npx cds build --production",
     "build:containers": "ctz containerize.yaml --log",
     "build:push": "ctz containerize.yaml --log --push",
-    "bind:srv": "cds bind --to-app-services v11-srv --on k8s",
+    "bind:srv": "npx cds bind --to-app-services agents-srv --on k8s",
     "bind:router": "cds bind --to-app-services v11-approuter --on k8s",
     "bind:auth": "cds bind ias -2 v11-identity --on k8s",
     "bind:destination": "cds bind -2 v11-destination --on k8s",
@@ -104,7 +104,9 @@
     "test:oauth": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/oauth-*.test.ts",
     "test:oauth:basic": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/oauth-basic-flow.test.ts",
     "test:oauth:stepup": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/oauth-stepup-flow.test.ts",
-    "test:grant-mgmt": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/grant-management.test.ts"
+    "test:grant-mgmt": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/grant-management.test.ts",
+    "inspector:muppet":"npx muppet-kit inspector ",
+    "inspector:mcp":"npx @modelcontextprotocol/inspector  --config ./mcps.json --server grant-management"
   },
   "workspaces": [
     "app/*"

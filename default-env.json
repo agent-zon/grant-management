@@ -1,11 +1,14 @@
 {
   "ENABLE_FORWARD_CORPORATE_IDP_TOKEN": "true",
+  "BASE_API_URL": "http://localhost:9000",
   "destinations": [
     {
       "name": "srv-api",
       "url": "http://localhost:4004",
       "forwardAuthToken": true,
-      "forwardAuthCertificates": true
+      "forwardAuthCertificates": true,
+       "setXForwardedHeaders": true,
+      "strictSSL": false
     },
     {
       "name": "user-portal",
@@ -20,6 +23,11 @@
     {
       "name": "mcp-example",
       "url": "http://localhost:4005",
+      "forwardAuthToken": true
+    },
+    {
+      "name": "muppet-inspector",
+      "url": "http://localhost:3553",
       "forwardAuthToken": true
     }
   ]

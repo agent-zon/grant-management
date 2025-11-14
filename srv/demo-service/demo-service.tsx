@@ -174,7 +174,7 @@ function AuthorizationParams({
                   ))
                 ) : (
                   <span className="text-white text-sm">
-                    {JSON.stringify(authorization_details, null, 2)}
+                    {JSON.stringify(authorization_details, (key,value) =>value != null ? value: undefined, 2)}
                   </span>
                 )}
               </div>
@@ -811,7 +811,7 @@ export default class Service extends cds.ApplicationService {
                     grant_id,
                     ...rest,
                   },
-                  null,
+                    (_, value) => (value != null ? value : undefined),
                   2
                 )}
               </pre>

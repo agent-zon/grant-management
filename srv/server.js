@@ -1,14 +1,12 @@
-// CRITICAL: Filter Kubernetes service environment variables BEFORE CDS initializes
-// Kubernetes injects variables like AGENTS_SRV_SERVICE_PORT=tcp://10.105.88.213:8080
-// which CDS cannot parse correctly and causes: "Cannot create property '8080' on string"
+
 Object.keys(process.env).forEach((key) => {
   const value = process.env[key];
   // Remove any env vars that look like Kubernetes service URLs (tcp://host:port)
   if (typeof value === "string" && value.startsWith("tcp://")) {
     console.log(
-      `[ENV FILTER] Removing problematic K8s env var: ${key}=${value}`
+      `[ENV ] K8s env var: ${key}=${value}`
     );
-    delete process.env[key];
+    // delete process.env[key];
   }
 });
 
@@ -53,8 +51,9 @@ cds.on("bootstrap", (app) => {
   // Convert to JSON format that CDS REST protocol expects
   app.use((req, _res, next) => {
     const contentType = req.get("content-type") || "";
+    if(req.path !== '/health')
     console.log(
-      `[MIDDLEWARE] ${req.method} ${req.path} - Content-Type: ${contentType}`
+      `[${new Date(Date.now()).toUTCString()}] [MIDDLEWARE] ${req.method} ${req.path} - Content-Type: ${contentType}`
     );
 
     if (contentType.includes("application/x-www-form-urlencoded")) {

@@ -63,6 +63,13 @@ service AuthorizationService {
         code: String,
         code_verifier: String,
         redirect_uri: String,
+        refresh_token: String,
+        token_format: String,
+        resource: String,
+        audience: String,
+        scope: String,
+        resource_:String,
+        assertion:String
     ) returns { 
         access_token: String; 
         token_type: String; 
