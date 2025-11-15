@@ -3,11 +3,12 @@ import cds from "@sap/cds";
 // import authorize from "./handler.authorize.tsx";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import server from "./mcp.server";
- import { randomUUID } from "node:crypto";
-import filter from "./handler.filter";
+import filter, {MCPRequest} from "./handler.filter";
 import callback from "./handler.callback";
+import {errorHandler, logHandler} from "@/mcp-service/handler.debug.tsx";
 
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
+
 
 /**
  * MCP Service
@@ -17,6 +18,10 @@ const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
 export default class Service extends cds.ApplicationService {
   async init() {
     this.on("callback", callback);
+      this.on("streaming", logHandler);
+
+      this.on("streaming", errorHandler);
+
     this.on("streaming", filter);
     this.on("streaming", async (req) => {
       try {
@@ -24,9 +29,9 @@ export default class Service extends cds.ApplicationService {
         const request = req._.req;
         // @ts-ignore: req._.res is not typed in CAP context
         const response = req._.res;
-        const grant_id = req.user?.authInfo?.token.payload["sid"] || req.user?.authInfo?.token.payload.jti;
          const transport = new StreamableHTTPServerTransport({
-          sessionIdGenerator: ()=> grant_id || randomUUID(),
+          // sessionIdGenerator: ()=> grant_id || randomUUID(),
+          sessionIdGenerator: undefined
        
         });
         await server.connect(transport);
@@ -37,7 +42,7 @@ export default class Service extends cds.ApplicationService {
         );
         response.on('close', () => {
           transport.close();
-          // server.close?.();
+          server.close?.();
         });
       } catch (error) {
         console.error('Error handling MCP request:', error);

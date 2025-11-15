@@ -653,6 +653,7 @@ export default class Service extends cds.ApplicationService {
           cds.context?.http?.req.headers.referer
         ).href,
         grant_management_action: "create",
+        grant_id: cds.context?.user?.authInfo?.token?.payload["sid"],
         authorization_details: JSON.stringify(config.authorization_details),
         requested_actor: "urn:agent:analytics-bot-v1",
         scope: config.scope,

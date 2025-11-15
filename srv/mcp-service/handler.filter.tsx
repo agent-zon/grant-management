@@ -1,5 +1,5 @@
 import cds from "@sap/cds";
-import McpProxyService from "./mcp-service";
+import McpService from "./mcp-service";
 import GrantsManagementService, {
     AuthorizationDetails,
     Grants,
@@ -13,7 +13,7 @@ import {env} from "process";
 import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
  
 export default async function(
-    this: McpProxyService,
+    this: McpService,
     req: cds.Request<MCPRequest>,
     next: Function
 ) {
@@ -28,7 +28,7 @@ export default async function(
     //using sid for session based grants, jti for token based grants.
     const grant_id = req.user?.authInfo?.token.payload["sid"] || req.user?.authInfo?.token.payload.jti;
 
-    console.log(`MCP Proxy Filter - ${req.data?.method} - Grant Id:`, grant_id, "user:", req.user?.id, "agent:", agent, "origin:", origin, "authHeader", req.headers.authorization);
+    console.log(`[MCP Filter] - ${req.data?.method} - Grant Id:`, grant_id, "user:", req.user?.id, "agent:", agent, "origin:", origin, "authHeader", req.headers.authorization?.slice(0,5)+"...");
 
 
     // const details = mcpDetails(await grantService.read(
@@ -52,7 +52,7 @@ export default async function(
      */
 
     console.log(
-        "MCP Proxy Filter - Authorization Details:",
+        "[MCP Filter] - Authorization Details:",
         authorization_details,
         grant
     );
@@ -60,15 +60,15 @@ export default async function(
     const toolName = req.data.params?.name;
     if (authorization_details?.tools?.[toolName] || toolName.startsWith("grant:")) {
 
-        console.log(`MCP Proxy Filter - Tool "${toolName}" authorized`);
+        console.log(`[MCP Filter] - Tool "${toolName}" authorized`);
         return await next(req);
     }
 
     console.log(
-        `MCP Proxy Filter - Tool "${toolName}" not authorized, initiating authorization flow`
+        `MCP  Filter - Tool "${toolName}" not authorized, initiating authorization flow`
     );
 
-    var response = await authService.par({
+    const response = await authService.par({
         response_type: "code",
         client_id: process.env.MCP_CLIENT_ID || "mcp-agent-client",
         redirect_uri: `${env.BASE_API_URL|| origin}/mcp/callback`,
@@ -90,6 +90,8 @@ export default async function(
         state: `state_${Date.now()}`,
         subject_token_type: "urn:ietf:params:oauth:token-type:basic",
     });
+    
+    console.log("[MCP Filter] - PAR Response:", response);
 
     if (!response || !response.request_uri) {
         return cds.error("Failed to create authorization request", {
@@ -100,10 +102,9 @@ export default async function(
     const authUrl = `${env.BASE_API_URL || origin}/oauth-server/authorize_dialog?request_uri=${encodeURIComponent(response.request_uri!)}`;
 
     return {
-        jsonrpc: "2.0",
-
+        jsonrpc: "2.0", 
         result: {
-            isError: false,
+            isError: true,
             content: [
                 {
                     type: "text",

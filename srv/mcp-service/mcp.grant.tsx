@@ -45,7 +45,7 @@ export default function registerGrantTools(server: McpServer) {
         'grant:request',
         {
             title: 'Tool Authorization Request',
-            description: 'Authorize a tool for use',
+            description: 'Build authorization request to send back to user for tool approval',
             inputSchema: {
                 type: z.enum(['mcp']),
                 server: z.string().optional(),
@@ -91,7 +91,9 @@ export default function registerGrantTools(server: McpServer) {
 
             const authUrl = `${env.BASE_API_URL || origin}/oauth-server/authorize_dialog?request_uri=${encodeURIComponent(request_uri!)}`;
             return {
-                content: [{type: 'text', text: authUrl}],
+                content: [{type: 'text', text: authUrl}, {
+                    type: 'text', text: "show bellow URL to the user so they can approve the tool request"
+                }],
                 structuredContent: {
                     authorization_url: authUrl,
                     request_uri,

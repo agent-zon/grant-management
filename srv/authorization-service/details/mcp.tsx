@@ -81,7 +81,7 @@ export default function MCPAuthorizationDetail({
                   name={`authorization_details[${index}].transport`}
                   type="text"
                   className="inline-block bg-blue-500/20 text-blue-300 px-2 py-1 rounded text-xs"
-                  value={`🔗 ${detail.transport}`}
+                  value={`${detail.transport}`}
                   readOnly
                 />
               </div>
@@ -98,7 +98,7 @@ export default function MCPAuthorizationDetail({
                     name={`authorization_details[${index}].locations[${locIndex}]`}
                     type="text"
                     className="inline-block bg-blue-500/20 text-blue-300 px-2 py-1 rounded text-xs mr-1 mb-1"
-                    value={`🌐 ${loc}`}
+                    value={`${loc}`}
                     readOnly
                   />
                 ))}

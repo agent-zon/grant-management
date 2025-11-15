@@ -30,7 +30,8 @@
     "tsx": "^4.20.6",
     "ulid": "^3.0.1",
     "xstate": "^5.22.1",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "@cap-js/cds-test": "^0.4.0",
@@ -78,6 +79,7 @@
     "setup:dev": "npm install && npm run bind:auth && npm run serve",
     "deploy": "npm run build:push && npm run deploy:helm",
     "deploy:sqlite": "npx cds deploy --to sqlite --profile development",
+    "deploy:srv": "npm run build  && docker buildx build --platform linux/amd64 -t scai-dev.common.repositories.cloud.sap/grant-management/api:v31 -f Dockerfile . --push && kubectl rollout restart deployment agents-srv",
     "deploy:helm": "npm run build && helm upgrade agents ./gen/chart --install --create-namespace",
     "deploy:to:sqlite": "npx cds deploy --to sqlite",
     "copy-docker-secret": "./scripts/copy-docker-secret.sh",
