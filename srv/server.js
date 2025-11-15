@@ -47,6 +47,66 @@ cds.on("bootstrap", (app) => {
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json({ extended: true }));
 
+  async function errorHandler(req,res,next) {
+    try {
+      await next();
+    } catch (err) {
+      console.error("[ERROR HANDLER]", {
+        error: err.message,
+        stack: err.stack,
+        statusCode: err.statusCode || err.status,
+        method: req.method,
+        url: req.url,
+        contentType: req.headers["content-type"],
+        body: req.body,
+      });
+
+      // Don't crash the service - send appropriate error response
+      const statusCode = err.statusCode || err.status || 500;
+   
+      if(!res.headersSent && req.accepts("html")) {
+        return res.status(statusCode).send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Error ${statusCode}</title>
+            <style>
+              body { font-family: system-ui; padding: 40px; max-width: 600px; margin: 0 auto; }
+              .error { background: #fee; border: 1px solid #fcc; padding: 20px; border-radius: 8px; }
+                h1 { color: #c33; }
+                .details { margin-top: 20px; color: #666; font-size: 14px; }
+            </style>
+          </head>
+          <body>
+            <div class="error">
+              <h1>Error ${statusCode}</h1>
+              <p>${err.message || "Internal Server Error"}</p>
+              <div class="details">
+                <p><strong>Path:</strong> ${req.path}</p>
+                <p><strong>Method:</strong> ${req.method}</p>
+              </div>
+              <a href="/">← Go back to home</a>
+            </div>
+          </body>
+        </html>
+      `);
+      }
+
+      const errorMessage = err.message || "Internal Server Error";
+      // Check if headers have already been sent
+      if (!res.headersSent && req.accepts("json")) {
+
+        return res.status(statusCode).json({
+          error: errorMessage,
+          statusCode,
+        });
+      }
+
+
+    }
+  }
+
+  app.use(errorHandler);
   // OAuth 2.0 endpoints must accept application/x-www-form-urlencoded per RFC 6749
   // Convert to JSON format that CDS REST protocol expects
   app.use((req, _res, next) => {

@@ -69,7 +69,8 @@ service AuthorizationService {
         audience: String,
         scope: String,
         resource_:String,
-        assertion:String
+        assertion:String,
+        subject_token:String,
     ) returns { 
         access_token: String; 
         token_type: String; 
