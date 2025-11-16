@@ -88,7 +88,8 @@ export default async function(
         subject: cds.context?.user?.id,
         scope: "mcp",
         state: `state_${Date.now()}`,
-        subject_token_type: "urn:ietf:params:oauth:token-type:basic",
+        subject_token: req.user?.authInfo?.token.jwt,
+        subject_token_type: "urn:ietf:params:oauth:token-type:access_token",
     });
     
     console.log("[MCP Filter] - PAR Response:", response);

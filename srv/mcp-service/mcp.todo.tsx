@@ -5,7 +5,7 @@ import server from "@/mcp-service/mcp.server.tsx";
 export default function register(server: McpServer) {
 
 // Add an addition tool
-// In-memory task store for playaround
+// In-memory task store for playground
     const tasks: { id: number; title: string; completed: boolean }[] = [];
     let nextTaskId = 1;
 

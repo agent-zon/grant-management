@@ -51,6 +51,11 @@
     "#cds-ssr": "./srv/render/index.js"
   },
   "cds": {
+    "log":{
+      "levels": {
+        "cds": "debug"
+      }
+    },
     "requires": {
       "[production]": {
         "auth": "ias"
@@ -58,16 +63,16 @@
       "authorization_api": {
         "kind": "rest",
         "credentials": {
-          "url": "https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/oauth-server"
+          "url": "https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/oauth-server/authorize_dialog"
         },
         "[development]": {
           "credentials": {
-            "url": "http://localhost:9000/oauth-server"
+            "url": "http://localhost:9000/oauth-server/authorize_dialog"
           }
         },
         "[hybrid]": {
           "credentials": {
-            "url": "https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/oauth-server"
+            "url": "https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/oauth-server/authorize_dialog"
           }
         }
       },
@@ -86,22 +91,18 @@
         },
         "[hybrid]": {
           "credentials": {
-            "url": "https://agents-srv-grant-management.c-127c9ef.stage.kyma.ondemand.com/oauth-server",
-            "forwardAuthToken": false
+            "destination": "grant-management-oauth"
+          },
+          "destinationOptions": {
+            "useCache": false
           }
         },
         "[destination]": {
           "credentials": {
-            "destination": "grant-api",
-            "path": "/oauth-server",
-            "forwardAuthToken": true,
-            "forwardAuthCertificates": true
+            "destination": "grant-management-oauth" 
           },
           "destinationOptions": {
-            "selectionStrategy": "alwaysProvider",
-            "useCache": true,
-            "forwardAuthToken": true,
-            "forwardAuthCertificates": true
+            "useCache": false
           }
         }
       },
@@ -117,25 +118,13 @@
             "url": "http://localhost:4004/grants-management",
             "forwardAuthToken": true
           }
-        },
+        }, 
         "[hybrid]": {
           "credentials": {
-            "url": "https://agents-srv-grant-management.c-127c9ef.stage.kyma.ondemand.com/grants-management",
-            "forwardAuthToken": true
-          }
-        },
-        "[destination]": {
-          "credentials": {
-            "destination": "grant-api",
-            "path": "/grants-management",
-            "forwardAuthToken": true,
-            "forwardAuthCertificates": true
+            "destination": "grant-management"
           },
           "destinationOptions": {
-            "selectionStrategy": "alwaysProvider",
-            "useCache": true,
-            "forwardAuthToken": true,
-            "forwardAuthCertificates": true
+            "useCache": true
           }
         }
       },
