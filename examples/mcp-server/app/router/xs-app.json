@@ -12,6 +12,13 @@
       "target": "$1",
       "destination": "mcp-server",
       "csrfProtection": true
+    },
+    {
+      "source": "^/inspector(.*)$",
+      "target": "$1",
+      "destination": "muppet-inspector",
+      "authenticationType": "ias"
+
     }
   ]
 }

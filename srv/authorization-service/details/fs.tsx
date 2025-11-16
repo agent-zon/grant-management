@@ -72,7 +72,7 @@ export default function FSAuthorizationDetail({
                     name={`authorization_details[${index}].roots[${rootIndex}]`}
                     type="text"
                     className="inline-block bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded text-xs mr-1 mb-1"
-                    value={`📁 ${root}`}
+                    value={`${root}`}
                     readOnly
                   />
                 ))}

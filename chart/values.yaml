@@ -8,7 +8,7 @@ global:
   image:
     registry: scai-dev.common.repositories.cloud.sap
     tag: v22
-    imagePullPolicy: Always
+  imagePullPolicy: Always
 srv:
   bindings:
     auth:
@@ -20,6 +20,7 @@ srv:
       serviceInstanceName: destination
   image:
     repository: grant-management/api
+    tag: v31
   resources:
     limits:
       ephemeral-storage: 1G

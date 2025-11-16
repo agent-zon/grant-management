@@ -174,7 +174,7 @@ function AuthorizationParams({
                   ))
                 ) : (
                   <span className="text-white text-sm">
-                    {JSON.stringify(authorization_details, null, 2)}
+                    {JSON.stringify(authorization_details, (key,value) =>value != null ? value: undefined, 2)}
                   </span>
                 )}
               </div>
@@ -653,6 +653,7 @@ export default class Service extends cds.ApplicationService {
           cds.context?.http?.req.headers.referer
         ).href,
         grant_management_action: "create",
+        grant_id: cds.context?.user?.authInfo?.token?.payload["sid"],
         authorization_details: JSON.stringify(config.authorization_details),
         requested_actor: "urn:agent:analytics-bot-v1",
         scope: config.scope,
@@ -811,7 +812,7 @@ export default class Service extends cds.ApplicationService {
                     grant_id,
                     ...rest,
                   },
-                  null,
+                    (_, value) => (value != null ? value : undefined),
                   2
                 )}
               </pre>

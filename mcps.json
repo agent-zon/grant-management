@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "everything": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-everything"],
+      "env": {
+        "hello": "Hello MCP!"
+      }
+    },
+    "grant-management": {
+      "url": "http://localhost:4004/mcp/streaming"
+    }
+  }
+}
