@@ -5,30 +5,7 @@
     {
       "name": "srv-api",
       "url": "http://localhost:4004",
-      "forwardAuthToken": true,
-      "forwardAuthCertificates": true,
-       "setXForwardedHeaders": true,
-      "strictSSL": false
-    },
-    {
-      "name": "user-portal",
-      "url": "http://localhost:3000",
-      "forwardAuthToken": true
-    },
-    {
-      "name": "mcp-client-api",
-      "url": "http://localhost:8787",
-      "forwardAuthToken": true
-    },
-    {
-      "name": "mcp-example",
-      "url": "http://localhost:4005",
-      "forwardAuthToken": true
-    },
-    {
-      "name": "muppet-inspector",
-      "url": "http://localhost:3553",
-      "forwardAuthToken": true
+      "forwardAuthToken": true 
     }
   ]
 }

@@ -45,14 +45,7 @@
       "destination": "srv-api",
       "csrfProtection": false,
       "authenticationType": "ias"
-    },
-    {
-      "source": "^/inspector(.*)$",
-      "target": "$1",
-      "destination": "muppet-inspector",
-      "authenticationType": "ias"
-      
-    } 
+    }
   ],
   "login": {
     "callbackEndpoint": "/login/callback?authType=ias"
