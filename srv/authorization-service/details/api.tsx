@@ -57,7 +57,7 @@ export default function APIAuthorizationDetail({ index, description, riskLevel, 
                     name={`authorization_details[${index}].urls[${urlIndex}]`} 
                     type='text' 
                     className="inline-block bg-blue-500/20 text-blue-300 px-2 py-1 rounded text-xs mr-1 mb-1" 
-                    value={`🔗 ${url}`} 
+                    value={`${url}`} 
                     readOnly 
                   />
                 ))}
@@ -75,7 +75,7 @@ export default function APIAuthorizationDetail({ index, description, riskLevel, 
                     name={`authorization_details[${index}].protocols[${protocolIndex}]`} 
                     type='text' 
                     className="inline-block bg-green-500/20 text-green-300 px-2 py-1 rounded text-xs mr-1 mb-1" 
-                    value={`📡 ${protocol}`} 
+                    value={`${protocol}`} 
                     readOnly 
                   />
                 ))}

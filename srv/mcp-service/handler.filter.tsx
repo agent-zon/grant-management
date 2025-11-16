@@ -1,5 +1,5 @@
 import cds from "@sap/cds";
-import McpProxyService from "./mcp-service";
+import McpService from "./mcp-service";
 import GrantsManagementService, {
     AuthorizationDetails,
     Grants,
@@ -13,13 +13,13 @@ import {env} from "process";
 import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
  
 export default async function(
-    this: McpProxyService,
+    this: McpService,
     req: cds.Request<MCPRequest>,
     next: Function
 ) {
     const host = req.headers["x-forwarded-host"] || req.http?.req.headers.host;
     const protocol = req.headers["x-forwarded-proto"] || req.http?.req.protocol;
-    const origin = `${protocol}://${host}`
+    const origin =  `${protocol}://${host}`
     const agent =
         req.headers["x-agent"] || req.headers["user-agent"] || ("agent" as string);
     const grantService = await cds.connect.to(GrantsManagementService);
@@ -28,7 +28,7 @@ export default async function(
     //using sid for session based grants, jti for token based grants.
     const grant_id = req.user?.authInfo?.token.payload["sid"] || req.user?.authInfo?.token.payload.jti;
 
-    console.log(`MCP Proxy Filter - ${req.data?.method} - Grant Id:`, grant_id);
+    console.log(`[MCP Filter] - ${req.data?.method} - Grant Id:`, grant_id, "user:", req.user?.id, "agent:", agent, "origin:", origin, "authHeader", req.headers.authorization?.slice(0,5)+"...");
 
 
     // const details = mcpDetails(await grantService.read(
@@ -38,10 +38,10 @@ export default async function(
     if (req.data.method !== "tools/call") {
         return await next(req);
     }
-    var grant = await grantService.get(Grants, {
+    const grant = await grantService.get(Grants, {
         id: grant_id
     }) as Grant;
-    var authorization_details = mcpDetails(grant, origin);
+    const authorization_details = mcpDetails(grant, origin);
 
     /* fetch one authorization detail
         const authorization_details = await grantService.get(AuthorizationDetails,{
@@ -52,23 +52,23 @@ export default async function(
      */
 
     console.log(
-        "MCP Proxy Filter - Authorization Details:",
+        "[MCP Filter] - Authorization Details:",
         authorization_details,
         grant
     );
 
     const toolName = req.data.params?.name;
-    if (authorization_details?.tools?.[toolName]) {
+    if (authorization_details?.tools?.[toolName] || toolName.startsWith("grant:")) {
 
-        console.log(`MCP Proxy Filter - Tool "${toolName}" authorized`);
+        console.log(`[MCP Filter] - Tool "${toolName}" authorized`);
         return await next(req);
     }
 
     console.log(
-        `MCP Proxy Filter - Tool "${toolName}" not authorized, initiating authorization flow`
+        `MCP  Filter - Tool "${toolName}" not authorized, initiating authorization flow`
     );
 
-    var response = await authService.par({
+    const response = await authService.par({
         response_type: "code",
         client_id: process.env.MCP_CLIENT_ID || "mcp-agent-client",
         redirect_uri: `${env.BASE_API_URL|| origin}/mcp/callback`,
@@ -88,8 +88,11 @@ export default async function(
         subject: cds.context?.user?.id,
         scope: "mcp",
         state: `state_${Date.now()}`,
-        subject_token_type: "urn:ietf:params:oauth:token-type:basic",
+        subject_token: req.user?.authInfo?.token.jwt,
+        subject_token_type: "urn:ietf:params:oauth:token-type:access_token",
     });
+    
+    console.log("[MCP Filter] - PAR Response:", response);
 
     if (!response || !response.request_uri) {
         return cds.error("Failed to create authorization request", {
@@ -97,17 +100,16 @@ export default async function(
         });
     }
 
-    var authUrl = `${origin}/oauth-server/authorize_dialog?request_uri=${encodeURIComponent(response.request_uri!)}`;
+    const authUrl = `${env.BASE_API_URL || origin}/oauth-server/authorize_dialog?request_uri=${encodeURIComponent(response.request_uri!)}`;
 
     return {
-        jsonrpc: "2.0",
-
+        jsonrpc: "2.0", 
         result: {
             isError: true,
             content: [
                 {
                     type: "text",
-                    text: `Tool "${toolName}" is not authorized. Please authorize the tool by visiting the following URL:`,
+                    text: `Tool "${toolName}" is not authorized. Please ask the user to authorize the tool by visiting the following URL: ${authUrl} then try again after user consent.`,
                 },
                 {
                     type: "text",
@@ -119,13 +121,20 @@ export default async function(
     };
 }
 
+//workaround, should be done in grant server
 function mcpDetails(
     grant?: Grant,
     host?: string
 ): AuthorizationDetailMcpTool | undefined {
-    return grant?.authorization_details?.find(
+    return grant?.authorization_details?.filter(
         (detail) => detail.type === "mcp" && detail.server === host
-    ) as unknown as AuthorizationDetailMcpTool;
+    ) .reduce((acc, detail) => {
+        acc.tools = {
+            ...acc.tools,
+            ...detail.tools
+        };
+        return acc;
+    }, {type: "mcp", server: host, tools: {} } as AuthorizationDetailMcpTool );
 }
 
 

@@ -3,7 +3,7 @@ import McpProxyService from "./service";
 import AuthorizationService from "#cds-models/authorization_service";
 import { env } from "process";
 import { render } from "#cds-ssr";
-
+import React from "react";
 export default async function (
   this: McpProxyService,
   req: cds.Request<{
