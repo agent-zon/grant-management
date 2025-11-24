@@ -1,50 +1,37 @@
-# Hyperspace portal component metadata file
-# For more information, please see:
-# https://portal.hyperspace.tools.sap/projects/dxp/documentation/User-Guide/Manage-Metadata
-
 kind: Component
 metadata:
   displayName: grant-management
-  description: Implements the OAuth 2.0 Grant Management API specification with Rich Authorization Requests (RAR), enabling fine-grained permission management for AI agents, MCP servers, and API gateways.
+  description: >-
+    Implements the OAuth 2.0 Grant Management API specification with Rich
+    Authorization Requests (RAR), enabling fine-grained permission management
+    for AI agents, MCP servers, and API gateways.
   labels:
     language: typescript
-    # anyKey: anyValue
-  tags: # These tags are enriched with the Github repository topics
-     - Capjs
-     - OAuth 2.0
-     - Agent
-spec:
-  logo: # https://logo.svg
-  type:
-    name: # ui|microservice|operator|doc|cli
-    lifecycle: # experimental|production|deprecated.
-  team:
-    name: # Preferably team id in hyperspace portal
-    productOwner: # Preferably I/C/D number
-    technicalOwner: # Preferably I/C/D number
-    productManager: # Preferably I/C/D number
-    qualityLead: # Preferably I/C/D number
-    uxLead: # Preferably I/C/D number
-    securityLead: # Preferably I/C/D number
-#   contactChannels: 
-#     - channelType: # slack|teams
-#       value: # channel id
-#       link: # link to the channel
-#  links:
-#    - name: # link name
-#      url: # link url
-#      description: # link description
-#  ci:
-#    pipelineLinks:
-#      - name: # pipeline name
-#        url: # pipeline url 
- docs:
-   techDocsLinks:
-     - name: Readme
-       url: https://github.tools.sap/AIAM/grant-management/blob/main/README.md
-     - name: apiDocs
-       url: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/api-docs
-        
-   helpDocsLinks:
-     - name: Playground
-       url:  https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/demo/index
+    framwork: capjs
+  tags:
+    - OAuth
+    - Agent
+# spec:
+#   logo: null
+#   type:
+#     name: null
+#     lifecycle: null
+#   team:
+#     name: null
+#     productOwner: null
+#     technicalOwner: null
+#     productManager: null
+#     qualityLead: null
+#     uxLead: null
+#     securityLead: null
+  docs:
+    techDocsLinks:
+      - name: Readme
+        url: 'https://github.tools.sap/AIAM/grant-management/blob/main/README.md'
+      - name: apiDocs
+        url: >-
+          https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/api-docs
+    helpDocsLinks:
+      - name: Playground
+        url: >-
+          https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/demo/index
