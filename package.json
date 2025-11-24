@@ -112,7 +112,7 @@
     "inspector:mcp": "npx @modelcontextprotocol/inspector  --config ./mcps.json --server grant-management"
   },
   "workspaces": [
-    "app/*"
+    "app/router"
   ],
   "private": true,
   "imports": {
