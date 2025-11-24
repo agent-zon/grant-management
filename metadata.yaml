@@ -11,6 +11,20 @@ metadata:
   tags:
     - OAuth
     - Agent
+  links:
+    - name: Readme
+      url: 'https://github.tools.sap/AIAM/grant-management/blob/main/README.md'
+    - name: apiDocs
+      url: >-
+        https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/api-docs
+    - name: User Dashboard
+      url: >-
+        https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com
+    - name: Playground
+      url: >-
+        https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/demo/index
+
+
 # spec:
 #   logo: null
 #   type:
