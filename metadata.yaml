@@ -15,11 +15,6 @@ metadata:
 
 spec:
   links:
-    - name: Readme
-      url: 'https://github.tools.sap/AIAM/grant-management/blob/main/README.md'
-    - name: apiDocs
-      url: >-
-        https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/api-docs
     - name: User Dashboard
       url: >-
         https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com
@@ -30,9 +25,16 @@ spec:
     techDocsLinks:
       - name: Readme
         url: 'https://github.tools.sap/AIAM/grant-management/blob/main/README.md'
-      - name: apiDocs
+      - name: Api Reference
         url: >-
           https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/api-docs
+      - name: Usage Example
+        url: https://github.tools.sap/AIAM/grant-management/tree/main/examples/mcp-server
+      - name: Grant Mangment API
+        url: https://github.tools.sap/AIAM/grant-management/blob/main/GRANT_MANAGEMENT_API.md
+    ai:
+      - name: Task History
+        url: https://github.tools.sap/AIAM/grant-management/tree/main/.tasks
      # helpDocsLinks:
      #  - name: help
      #    url: >-
