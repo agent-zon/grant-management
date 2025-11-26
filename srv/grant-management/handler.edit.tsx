@@ -8,12 +8,14 @@ import { isNativeError } from "node:util/types";
 import type {
   Grants,
   Grant,
+  AuthorizationDetail,
 } from "#cds-models/sap/scai/grants/GrantsManagementService";
 import {
   Consents,
   AuthorizationDetails,
 } from "#cds-models/sap/scai/grants/GrantsManagementService";
 import { render } from "#cds-ssr";
+import { AuthorizationDetailMcpTool } from "#cds-models/sap/scai/grants";
 
 export function POST(
   this: GrantsManagementService,
@@ -41,7 +43,8 @@ export async function GET(
   console.log("🔧 Grant:", grant);
 
   if (req?.http?.req.accepts("html")) {
-    return render(req,
+    return render(
+      req,
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900 text-white">
         <div className="container mx-auto px-4 py-6 max-w-4xl">
           {/* Modal-style Header */}
@@ -397,6 +400,7 @@ async function getGrant(srv: GrantsManagementService, { id, ...grant }: Grant) {
     })
   );
 
+  console.log("🔧 Authorization Details:", authorization_details);
   // Collect unique client_ids, actors, and subjects from all consents
   const client_ids = consentRecords
     .map((c: any) => c.client_id)
@@ -427,7 +431,7 @@ async function getGrant(srv: GrantsManagementService, { id, ...grant }: Grant) {
     status: "active",
     ...grant,
     scope: aggregatedScope,
-    authorization_details,
+    authorization_details: mcpDetails(authorization_details),
     consents: consentRecords,
     client_id: client_ids.length > 1 ? client_ids : client_ids[0],
     actor: actors.length > 1 ? actors : actors[0],
@@ -465,4 +469,35 @@ function isGrant(grant: Grant | void | Grants | Error): grant is Grant {
     grant.hasOwnProperty("id") &&
     !Array.isArray(grant)
   );
+}
+
+//workaround, should be done in grant server
+function mcpDetails(
+  authorization_details?: AuthorizationDetail[]
+): AuthorizationDetailMcpTool[] | undefined {
+  const details = authorization_details
+    ?.filter((detail) => detail.type === "mcp")
+    .reduce(
+      (acc, detail) => {
+        const server = detail.server || "default";
+        if (!acc[server]) {
+          acc[server] = detail;
+        }
+        acc[server] = {
+          ...acc[server],
+          tools: {
+            ...acc[server].tools,
+            ...detail.tools,
+          },
+        };
+        return acc;
+      },
+      {} as Record<string, AuthorizationDetailMcpTool>
+    );
+
+  return details
+    ? Object.values(details).concat(
+        authorization_details?.filter((detail) => detail.type != "mcp") || []
+      )
+    : [];
 }
