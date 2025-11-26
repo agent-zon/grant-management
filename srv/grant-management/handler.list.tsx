@@ -11,7 +11,6 @@ import type {
   GrantsManagementService,
 } from "./grant-management";
 import { isNativeError } from "node:util/types";
-import e from "express";
 import { render } from "#cds-ssr";
 
 export async function LIST(
@@ -324,7 +323,7 @@ export async function LIST(
   return response;
 }
 
-//workround for last grant overwrite issue
+//TODO: workround for last grant overwrite issue
 async function getGrants(srv: GrantsManagementService, data: Grants) {
   const consentRecords = await srv.read(Consents);
   const authorization_details = await srv.run(
@@ -418,80 +417,7 @@ async function getGrants(srv: GrantsManagementService, data: Grants) {
 function unique<T>(value: T, index: number, array: T[]): value is T {
   return array.indexOf(value) === index;
 }
-
-//workaround for single grant query
-async function getGrant(
-  srv: GrantsManagementService,
-  grant: Grant
-): Promise<Grant> {
-  if (!grant.id) return grant;
-
-  const consentRecords = await srv.run(
-    cds.ql.SELECT.from(Consents).where({ grant_id: grant.id })
-  );
-  const authorization_details = await srv.run(
-    cds.ql.SELECT.from(AuthorizationDetails).where({
-      consent_grant_id: grant.id,
-    })
-  );
-
-  // Collect unique client_ids, actors, and subjects from all consents
-  const client_ids = consentRecords
-    .map((c: any) => c.client_id)
-    .filter(Boolean)
-    .filter(unique);
-
-  const actors = consentRecords
-    .map((c: any) => c.actor)
-    .filter(Boolean)
-    .filter(unique);
-
-  const subjects = consentRecords
-    .map((c: any) => c.subject)
-    .filter(Boolean)
-    .filter(unique);
-
-  // Aggregate scope from all consents
-  const aggregatedScope = consentRecords
-    .map((c: any) => c.scope)
-    .filter(unique)
-    .join(" ")
-    .split(/\s+/)
-    .filter((v: string, i: number, a: string[]) => v && a.indexOf(v) === i)
-    .join(" ");
-
-  return {
-    ...grant,
-    scope: aggregatedScope || grant.scope,
-    authorization_details,
-    consents: consentRecords,
-    client_id: (client_ids.length > 0
-      ? client_ids
-      : grant.client_id
-        ? [grant.client_id]
-        : []) as any,
-    actor: (actors.length > 0
-      ? actors
-      : grant.actor
-        ? [grant.actor]
-        : undefined) as any,
-    subject: (subjects.length > 0
-      ? subjects
-      : grant.subject
-        ? [grant.subject]
-        : undefined) as any,
-  } as Grant;
-}
-
-function isGrant(grant: Grant | void | Grants | Error): grant is Grant {
-  return (
-    !!grant &&
-    !isNativeError(grant) &&
-    grant.hasOwnProperty("id") &&
-    !Array.isArray(grant)
-  );
-}
-
+ 
 function isGrants(grant: Grant | void | Grants | Error): grant is Grants {
   return !!grant && !isNativeError(grant) && grant.hasOwnProperty("length");
 }

@@ -1,0 +1,16 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+
+Client -> Application: IAS ID token
+Application -> Application: extract token (tenant, user ID, etc.)
+Application -> "Application (Attribute Processor)": send token details (e.g. scopes)
+"Application (Attribute Processor)" -> "Application (Attribute Processor)": map scopes to base policies
+"Application (Attribute Processor)" --> Application: update policies attribute
+Application -> "Application (Security Lib)":  call "allow filter"
+"Application (Security Lib)" -> "AMS PDP": call "allow filter"
+"AMS PDP" --> Application: true/false/filterClause
+
+@enduml

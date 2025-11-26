@@ -1,0 +1,154 @@
+_schema-version: '2.1'
+ID: hybrid-ams
+version: 1.0.0
+description: "Multitenant SCI SpringBoot Application"
+parameters:
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+   - builder: custom
+     commands:
+      - echo "build"
+modules:
+# --------------------- SERVER MODULE ------------------------
+  - name: hybrid-ams-service
+# ------------------------------------------------------------
+    type: java
+    path: service
+    parameters:
+      memory: 1024M
+      disk-quota: 256M
+      buildpacks:
+        - https://github.com/SAP/cloud-authorization-buildpack/releases/latest/download/opa_buildpack.zip
+        - sap_java_buildpack
+      host: !sensitive ${org}-${space}-hybrid-ams-service
+    properties:
+      AMS_DCL_ROOT: /BOOT-INF/classes/
+      SPRING_PROFILES_ACTIVE: cloud,sandbox
+      SMS_CALLBACK_BASE_URI: ${org}-${space}-hybrid-ams-approuter.${default-domain}
+    build-parameters:
+      builder: custom
+      commands:
+        - mvn --batch-mode clean package
+      build-result: target/sci-spring-service.jar
+    requires:
+      - name: hybrid-ams-xsuaa
+      - name: hybrid-ams-ias
+        parameters:
+          config:
+            credential-type: X509_GENERATED
+            app-identifier: hybrid-ams-srv
+      - name: app
+        properties:
+          CDS_MULTITENANCY_APPUI_URL: ~{url}
+      - name: cf-logging
+    provides:
+      - name: srv
+        properties:
+          url: '${default-url}'
+# --------------------- APPROUTER MODULE ---------------------
+  - name: hybrid-ams-approuter
+# ------------------------------------------------------------
+    type: nodejs
+    path: web
+    parameters:
+      memory: 128M
+      disk-quota: 512M
+    properties:
+      TENANT_HOST_PATTERN: ^(.*)-${default-uri}
+    requires:
+    - name: srv
+      group: destinations
+      properties:
+        name: backend
+        url: ~{url}
+        forwardAuthToken: true
+        strictSSL: true
+    - name: hybrid-ams-xsuaa
+    - name: hybrid-ams-ias
+      parameters:
+        config:
+          credential-type: X509_GENERATED
+          app-identifier: hybrid-ams-approuter
+    - name: hybrid-ams-sms
+    provides:
+      - name: app
+        properties:
+          url: '${default-url}'
+# --------------------- RESOURCES ---------------------
+resources:
+# -----------------------------------------------------
+  - name: hybrid-ams-xsuaa
+    type: com.sap.xs.uaa
+    parameters:
+      service: xsuaa
+      service-plan: broker
+      path: ./xs-security.json
+      config: # override xsappname as it needs to be unique
+        xsappname: hybrid-ams-${org}-${space}
+
+  - name: hybrid-ams-saas
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: saas-registry
+      service-plan: application
+      config:
+        appName: hybrid-ams-saas-${org}-${space} # this is the text on the tile
+        xsappname: hybrid-ams-${org}-${space} # this is the value from xsuaa.parameters.config.xsappname
+        appUrls:
+          onSubscription: ~{srv/url}/mt/saas/onboard/{tenantId}
+    requires:
+      - name: srv
+      - name: hybrid-ams-xsuaa
+  - name: cf-logging
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: application-logs
+      service-plan: lite
+  # identity instance
+  - name: hybrid-ams-ias
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: identity
+      service-plan: application
+      config:
+        oauth2-configuration:
+          redirect-uris:
+            - https://*.${default-domain}/login/callback
+            - https://*.${default-domain}/login/callback?authType=ias
+            - https://*.${default-domain}/login/callback?scope=openid
+            - https://*.${default-domain}/login/oauth2/code/*
+            - https://*.internal.${default-domain}/node/signin-oidc/*
+            - http://localhost:5000/login/callback?authType=ias
+        xsuaa-cross-consumption: true
+        display-name: hybrid-ams-${org}-${space}
+        multi-tenant: true
+        authorization:
+          enabled: true
+          #value_help_url: <call back URL for value help, if required>
+
+# sms instance
+  - name: hybrid-ams-sms
+    type: org.cloudfoundry.managed-service
+    processed-after:
+      - hybrid-ams-saas
+    parameters:
+      service: subscription-manager
+      service-plan: provider
+      config:
+        iasServiceInstanceName: hybrid-ams-ias
+        applicationType: application
+        appName: hybrid-ams-ias-${org}-${space}
+        displayName: hybrid-ams-sms-${org}-${space}
+        appCallbacks:
+          dependenciesCallbacks:
+            url: ~{srv/url}/mt/sms/v1.0/callback/zones/{zoneId}/dependencies
+          subscriptionCallbacks:
+            url: ~{srv/url}/mt/sms/v1.0/callback/zones/{zoneId}
+        saasManagerServiceInstanceName: hybrid-ams-saas
+        commercialAppName: hybrid-ams-ias-${org}-${space}
+        isDefault: true
+    requires:
+      - name: hybrid-ams-service
+      - name: hybrid-ams-ias
+      - name: srv

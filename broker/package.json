@@ -1,0 +1,18 @@
+{
+  "name": "grant-management-broker",
+  "version": "1.0.0",
+  "description": "Service Broker Framework for Grant Management reusable service",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@sap/xssec": "^4",
+    "express": "^4"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
+

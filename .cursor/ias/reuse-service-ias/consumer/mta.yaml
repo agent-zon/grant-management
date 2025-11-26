@@ -1,0 +1,127 @@
+_schema-version: 3.0.0
+ID: sci-reuse-ias-consumer
+version: 1.0.0
+description: "Reuse Service consumer"
+parameters:
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+   - builder: custom
+     commands:
+      - echo "build"
+modules:
+# --------------------- SERVER MODULE ------------------------
+  - name: sci-reuse-ias-consumer-service
+# ------------------------------------------------------------
+    type: java
+    path: consumer-service
+    parameters:
+      memory: 750M
+      disk-quota: 256M
+      buildpack: java_buildpack
+    properties:
+      PRODUCTS_SERVICE_NAME: sci-reuse-ias-service-${org}
+      SMS_CALLBACK_BASE_URI: ${org}-${space}-sci-reuse-ias-approuter.${default-domain}
+    build-parameters:
+      builder: custom
+      commands:
+        - mvn --batch-mode clean package -DskipTests=true
+      build-result: target/sci-consumer-service.jar
+    requires:
+      - name: sci-reuse-ias-consumer-ias
+        parameters:
+          config:
+            credential-type: X509_GENERATED
+            app-identifier: sci-consumer-service
+      - name: sci-reuse-ias-service-instance
+      - name: app
+        properties:
+          CDS_MULTITENANCY_APPUI_URL: ~{url}
+    provides:
+      - name: srv
+        properties:
+          url: '${default-url}'
+# --------------------- APPROUTER MODULE ---------------------
+  - name: sci-reuse-ias-approuter
+# ------------------------------------------------------------
+    type: nodejs
+    path: approuter
+    parameters:
+      memory: 128M
+      disk-quota: 512M
+    properties:
+      TENANT_HOST_PATTERN: ^(.*)-${default-uri}
+    requires:
+    - name: srv
+      group: destinations
+      properties:
+        name: consumer
+        url: ~{url}
+        forwardAuthToken: true
+        strictSSL: true
+    - name: sci-reuse-ias-consumer-sms
+    - name: sci-reuse-ias-consumer-ias
+      parameters:
+        config:
+          credential-type: X509_GENERATED
+          app-identifier: sci-consumer-approut
+    provides:
+      - name: app
+        properties:
+          url: '${default-url}'
+# --------------------- RESOURCES ---------------------
+resources:
+# -----------------------------------------------------
+  - name: sci-reuse-ias-service-instance
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: sci-reuse-ias-service
+      service-name: sci-reuse-ias-service-${org}
+      service-plan: default
+
+  - name: sci-reuse-ias-consumer-ias
+    type: org.cloudfoundry.managed-service
+    processed-after:
+    - sci-reuse-ias-service-instance
+    parameters:
+      service: identity
+      service-plan: application
+      config:
+        oauth2-configuration:
+          redirect-uris:
+            - https://*.${default-domain}/login/callback
+            - https://*.${default-domain}/login/callback?authType=ias
+            - https://*.${default-domain}/login/callback?scope=openid
+            - https://*.${default-domain}/login/oauth2/code/*
+            - https://*.internal.${default-domain}/node/signin-oidc/*
+            - http://localhost:5000/login/callback?authType=ias
+        consumed-services:
+          - service-instance-name: sci-reuse-ias-service-${org}
+        xsuaa-cross-consumption: true
+        display-name: sci-reuse-ias-${org}-${space}
+        multi-tenant: true
+
+  # sms instance
+  - name: sci-reuse-ias-consumer-sms
+    type: org.cloudfoundry.managed-service
+    processed-after:
+      - sci-reuse-ias-consumer-ias
+    parameters:
+      service: subscription-manager
+      service-plan: provider
+      config:
+        iasServiceInstanceName: sci-reuse-ias-consumer-ias
+        applicationType: application
+        appName: sci-reuse-ias-${org}-${space}
+        displayName: sci-reuse-ias-${org}-${space}
+        appCallbacks:
+          dependenciesCallbacks:
+            url: ~{srv/url}/mt/sms/v1.0/callback/zones/{zoneId}/dependencies
+          subscriptionCallbacks:
+            url: ~{srv/url}/mt/sms/v1.0/callback/zones/{zoneId}
+        commercialAppName: sci-reuse-ias-${org}-${space}
+        isDefault: true
+    requires:
+      - name: sci-reuse-ias-consumer-service
+      - name: sci-reuse-ias-consumer-ias
+      - name: srv

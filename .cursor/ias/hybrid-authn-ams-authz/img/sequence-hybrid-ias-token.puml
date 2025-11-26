@@ -1,0 +1,11 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+Client -> Application: IAS ID token
+Application -> Application: extract token (tenant, user ID, etc.)
+Application -> "Application (Security Lib)":  call "allow filter"
+"Application (Security Lib)" -> "AMS PDP": call "allow filter"
+"AMS PDP" --> Application: true/false/filterClause
+@enduml

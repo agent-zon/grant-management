@@ -1,0 +1,130 @@
+_schema-version: "2.1"
+ID: sci-reuse-ias
+version:  1.0.0
+
+modules:
+################ Broker part #########################
+  - name: sci-reuse-ias-broker
+    type: nodejs
+    path: ./broker
+    parameters:
+      memory: 128M
+      domains:
+        - cert.${default-domain}
+    properties:
+      SBF_BROKER_CREDENTIALS: "{ \"~{broker-credentials/user}\": \"~{broker-credentials/password}\" }"
+    build-parameters:
+      ignore: [".gitignore", manifest.yml, "*.mtaext", "mta.*", "*.mtar", ".mta/"]
+    requires:
+      - name: sci-reuse-ias-ias
+        parameters:
+          config:
+            credential-type: X509_GENERATED # Required to access IAS OSB from SBF
+            app-identifier: sci-ias-approuter
+      - name: broker-credentials
+      - name: srv
+        properties:
+          SBF_SECURE_INCOMING_CONNECTIONS: true
+          # For other landscape other than EU12, get the value using `curl --location 'https://service-manager.cfapps.{landscape-domain}//v1/info' | jq --raw-output .service_manager_certificate_subject`
+          SBF_SERVICE_MANAGER_CERTIFICATE_SUBJECT: /C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Canary/OU=svcmgr-cf-eu12/L=service-manager/CN=service-manager
+          SBF_ENABLE_AUDITLOG: false
+          SBF_SERVICE_CONFIG:
+            sci-reuse-ias-service:
+              extend_credentials:
+                shared:
+                  url: ~{service-url}/
+
+  - name: sci-reuse-ias-service
+    type: java
+    path: service
+    parameters:
+      memory: 1024M
+      disk-quota: 256M
+      buildpack: java_buildpack
+    properties:
+      SPRING_PROFILES_ACTIVE: cloud,sandbox
+    build-parameters:
+      builder: custom
+      commands:
+        - mvn --batch-mode clean package -DskipTests=true
+      build-result: target/sci-provider-service.jar
+    requires:
+      - name: sci-reuse-ias-ias
+        parameters:
+          config:
+            credential-type: X509_GENERATED
+            app-identifier: sci-ias-service
+    provides:
+      - name: srv
+        properties:
+          service-url: ${default-url}
+
+resources:
+
+  - name: broker-credentials
+    properties:
+      user: broker-username
+      password: broker-password
+
+  - name: sci-reuse-ias-ias
+    type: org.cloudfoundry.managed-service
+    requires:
+      - name: srv
+    parameters:
+      service: identity
+      service-plan: application
+      config:
+        oauth2-configuration:
+          redirect-uris:
+            - https://*.${default-domain}/login/callback
+            - https://*.${default-domain}/login/callback?authType=ias
+            - https://*.${default-domain}/login/callback?scope=openid
+            - https://*.${default-domain}/login/oauth2/code/*
+            - https://*.internal.${default-domain}/node/signin-oidc/*
+            - http://localhost:5000/login/callback?authType=ias
+        xsuaa-cross-consumption: true
+        display-name: sci-reuse-ias-${org}-${space}
+        multi-tenant: true
+        catalog:
+          services:
+            - name: sci-reuse-ias-service
+              id: 367188a4-2511-4038-9be7-9694b05214dc
+              description: "Demo Products service"
+              bindings_retrievable: true
+              plans:
+                - name: default
+                  bindable: true
+                  id: 5fbe092f-7a44-4f69-ada8-181feec1b20f
+                  description: "SCI Reuse Service Migration - Demo products service plan"
+                  metadata:
+                    bindingData:
+                      url: ~{srv/service-url}
+                      custom-property-1: custom-value-1
+                      custom-property-2:
+                        - list-value-1
+                        - list-value-2
+                      custom-property-3:
+                        nested-property: nested-value
+
+  # sms instance
+  - name: sci-reuse-ias-sms
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: subscription-manager
+      service-plan: provider
+      config:
+        iasServiceInstanceName: sci-reuse-ias-ias
+        applicationType: service # for reuse service
+        appName: sci-reuse-ias-ias-${org}-${space}
+        displayName: sci-reuse-ias-ias-${org}-${space}
+        appCallbacks:
+          dependenciesCallbacks:
+            url: ~{srv/service-url}/mt/sms/v1.0/callback/zones/{zoneId}/dependencies
+          subscriptionCallbacks:
+            url: ~{srv/service-url}/mt/sms/v1.0/callback/zones/{zoneId}
+        commercialAppName: sci-reuse-ias-${org}-${space}
+        isDefault: true
+    requires:
+      - name: sci-reuse-ias-service
+      - name: sci-reuse-ias-ias
+      - name: srv

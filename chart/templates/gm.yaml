@@ -1,0 +1,8 @@
+apiVersion: destination.connectivity.api.sap/v1
+kind: Destination
+metadata:
+  name: grants
+spec:
+  destinationRef:
+    name: grant-management
+  destinationServiceInstanceName: agents-destination

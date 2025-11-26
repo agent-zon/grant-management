@@ -8,7 +8,10 @@ global:
   image:
     registry: scai-dev.common.repositories.cloud.sap
     tag: v22
-    imagePullPolicy: Always
+  imagePullPolicy: Always
+  transparent-proxy:
+    enabled: true
+
 srv:
   bindings:
     auth:
@@ -22,6 +25,7 @@ srv:
       serviceInstanceName: service-manager
   image:
     repository: grant-management/api
+    tag: v31
   resources:
     limits:
       ephemeral-storage: 1G
@@ -193,6 +197,27 @@ identity:
 
       post-logout-redirect-uris:
         - https://*.{{ tpl .Values.global.domain . }}/*/logout.html
+      
+      catalog:
+        services:
+          - name: grant-management
+            display_name: Grant Management Service
+            bindable: true
+            plan_updateable: true
+            instances_retrievable: true
+            bindings_retrievable: true
+            metadata:
+              displayName: Grant Management OAuth 2.0 Server
+              documentationUrl: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/api-docs/index.html
+              longDescription: SAP AI Security Cloud - Grant Management
+            plans:
+              - name: standard
+                description: Standard plan for Grant Management OAuth 2.0 Server
+                free: true
+                bindable: true
+                metadata:
+                  displayName: Standard Plan
+                  description: Standard plan for Grant Management OAuth 2.0 Server
 
 backendDestinations:
   srv-api:
@@ -231,6 +256,8 @@ destination:
   parameters:
     version: 1.0.0
 
+
+
 postgresql:
   serviceOfferingName: postgresql-db
   servicePlanName: development
@@ -255,7 +282,7 @@ subscription-manager:
     applicationType: application
     category: "CAP Application"
     description: SAP AI Security Cloud - Agent Grant Management
-    displayName: SCAI - Grant Management
+    displayName: SCAI - Grant Management (rc{{ .Release.Name }})
     subscribeEnable: true
     unsubscribeEnable: true
     iasServiceInstanceName: "{{ .Release.Name }}-identity"
@@ -277,7 +304,7 @@ sidecar:
   expose:
     enabled: true
     host: mtx-sidecar-grant-management.cert
-    gateway: default/kyma-mtls-gateway
+#    gateway: default/kyma-mtls-gateway
 
   resources:
     limits:

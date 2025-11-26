@@ -1,0 +1,6339 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "Authorization Server API",
+    "description": "Authorization Server endpoints for authorization, PAR, and token exchange with Rich Authorization Requests (RAR) support and grant_id propagation.",
+    "version": ""
+  },
+  "x-sap-api-type": "ODATAV4",
+  "x-odata-version": "4.01",
+  "x-sap-shortText": "OAuth 2.0 endpoints and metadata",
+  "servers": [
+    {
+      "url": "/oauth-server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "AuthorizationDetails"
+    },
+    {
+      "name": "AuthorizationDetailType"
+    },
+    {
+      "name": "AuthorizationDetailType_texts"
+    },
+    {
+      "name": "AuthorizationRequests"
+    },
+    {
+      "name": "Consents"
+    },
+    {
+      "name": "Grants"
+    }
+  ],
+  "paths": {
+    "/$batch": {
+      "post": {
+        "summary": "Sends a group of requests",
+        "description": "Group multiple requests into a single request payload, see [Batch Requests](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_BatchRequests).\n\n*Please note that \"Try it out\" is not supported for this request.*",
+        "tags": [
+          "Batch Requests"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Batch request",
+          "content": {
+            "multipart/mixed;boundary=request-separator": {
+              "schema": {
+                "type": "string"
+              },
+              "example": "--request-separator\nContent-Type: application/http\nContent-Transfer-Encoding: binary\n\nGET AuthorizationRequests HTTP/1.1\nAccept: application/json\n\n\n--request-separator--"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Batch response",
+            "content": {
+              "multipart/mixed": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "--response-separator\nContent-Type: application/http\n\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n{...}\n--response-separator--"
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/AuthorizationDetailType": {
+      "get": {
+        "summary": "Retrieves a list of authorization detail type.",
+        "tags": [
+          "AuthorizationDetailType"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "name",
+                  "name desc",
+                  "descr",
+                  "descr desc",
+                  "code",
+                  "code desc",
+                  "template",
+                  "template desc",
+                  "description",
+                  "description desc",
+                  "riskLevel",
+                  "riskLevel desc",
+                  "category",
+                  "category desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "name",
+                  "descr",
+                  "code",
+                  "template",
+                  "description",
+                  "riskLevel",
+                  "category"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "texts",
+                  "localized"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved authorization detail type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of AuthorizationDetailType",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetailType"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Creates a single authorization detail type.",
+        "tags": [
+          "AuthorizationDetailType"
+        ],
+        "requestBody": {
+          "description": "New authorization detail type",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetailType-create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created authorization detail type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetailType"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/AuthorizationDetailType('{code}')": {
+      "parameters": [
+        {
+          "description": "key: code",
+          "in": "path",
+          "name": "code",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "maxLength": 60,
+            "enum": [
+              "mcp",
+              "fs",
+              "database",
+              "api",
+              "grant_management",
+              "file_access",
+              "data_access",
+              "network_access"
+            ]
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a single authorization detail type.",
+        "tags": [
+          "AuthorizationDetailType"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "name",
+                  "descr",
+                  "code",
+                  "template",
+                  "description",
+                  "riskLevel",
+                  "category"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "texts",
+                  "localized"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved authorization detail type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetailType"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Changes a single authorization detail type.",
+        "tags": [
+          "AuthorizationDetailType"
+        ],
+        "requestBody": {
+          "description": "New property values",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetailType-update"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Deletes a single authorization detail type.",
+        "tags": [
+          "AuthorizationDetailType"
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/AuthorizationDetailType('{code}')/localized": {
+      "parameters": [
+        {
+          "description": "key: code",
+          "in": "path",
+          "name": "code",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "maxLength": 60,
+            "enum": [
+              "mcp",
+              "fs",
+              "database",
+              "api",
+              "grant_management",
+              "file_access",
+              "data_access",
+              "network_access"
+            ]
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves localized of a authorization detail type.",
+        "tags": [
+          "AuthorizationDetailType",
+          "AuthorizationDetailType_texts"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "locale",
+                  "name",
+                  "descr",
+                  "code"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved localized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetailType_texts"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/AuthorizationDetailType('{code}')/texts": {
+      "parameters": [
+        {
+          "description": "key: code",
+          "in": "path",
+          "name": "code",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "maxLength": 60,
+            "enum": [
+              "mcp",
+              "fs",
+              "database",
+              "api",
+              "grant_management",
+              "file_access",
+              "data_access",
+              "network_access"
+            ]
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a list of texts of a authorization detail type.",
+        "tags": [
+          "AuthorizationDetailType",
+          "AuthorizationDetailType_texts"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "locale",
+                  "locale desc",
+                  "name",
+                  "name desc",
+                  "descr",
+                  "descr desc",
+                  "code",
+                  "code desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "locale",
+                  "name",
+                  "descr",
+                  "code"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved texts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of AuthorizationDetailType_texts",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetailType_texts"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Creates a single text of a authorization detail type.",
+        "tags": [
+          "AuthorizationDetailType",
+          "AuthorizationDetailType_texts"
+        ],
+        "requestBody": {
+          "description": "New text",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetailType_texts-create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created text",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetailType_texts"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/AuthorizationDetailType_texts": {
+      "get": {
+        "summary": "Retrieves a list of authorization detail type_texts.",
+        "tags": [
+          "AuthorizationDetailType_texts"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "locale",
+                  "locale desc",
+                  "name",
+                  "name desc",
+                  "descr",
+                  "descr desc",
+                  "code",
+                  "code desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "locale",
+                  "name",
+                  "descr",
+                  "code"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved authorization detail type_texts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of AuthorizationDetailType_texts",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetailType_texts"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Creates a single authorization detail type_text.",
+        "tags": [
+          "AuthorizationDetailType_texts"
+        ],
+        "requestBody": {
+          "description": "New authorization detail type_text",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetailType_texts-create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created authorization detail type_text",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetailType_texts"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/AuthorizationDetailType_texts(locale='{locale}',code='{code}')": {
+      "parameters": [
+        {
+          "description": "key: locale",
+          "in": "path",
+          "name": "locale",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "maxLength": 14
+          }
+        },
+        {
+          "description": "key: code",
+          "in": "path",
+          "name": "code",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "maxLength": 60,
+            "enum": [
+              "mcp",
+              "fs",
+              "database",
+              "api",
+              "grant_management",
+              "file_access",
+              "data_access",
+              "network_access"
+            ]
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a single authorization detail type_text.",
+        "tags": [
+          "AuthorizationDetailType_texts"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "locale",
+                  "name",
+                  "descr",
+                  "code"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved authorization detail type_text",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetailType_texts"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Changes a single authorization detail type_text.",
+        "tags": [
+          "AuthorizationDetailType_texts"
+        ],
+        "requestBody": {
+          "description": "New property values",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetailType_texts-update"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Deletes a single authorization detail type_text.",
+        "tags": [
+          "AuthorizationDetailType_texts"
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/AuthorizationDetails": {
+      "get": {
+        "summary": "Retrieves a list of authorization details.",
+        "tags": [
+          "AuthorizationDetails"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "ID desc",
+                  "createdAt",
+                  "createdAt desc",
+                  "createdBy",
+                  "createdBy desc",
+                  "modifiedAt",
+                  "modifiedAt desc",
+                  "modifiedBy",
+                  "modifiedBy desc",
+                  "transport",
+                  "transport desc",
+                  "server",
+                  "server desc",
+                  "roots",
+                  "roots desc",
+                  "permissions_read",
+                  "permissions_read desc",
+                  "permissions_write",
+                  "permissions_write desc",
+                  "permissions_execute",
+                  "permissions_execute desc",
+                  "permissions_delete",
+                  "permissions_delete desc",
+                  "permissions_list",
+                  "permissions_list desc",
+                  "permissions_create",
+                  "permissions_create desc",
+                  "databases",
+                  "databases desc",
+                  "schemas",
+                  "schemas desc",
+                  "tables",
+                  "tables desc",
+                  "urls",
+                  "urls desc",
+                  "protocols",
+                  "protocols desc",
+                  "consent_ID",
+                  "consent_ID desc",
+                  "consent_grant_id",
+                  "consent_grant_id desc",
+                  "type",
+                  "type desc",
+                  "locations",
+                  "locations desc",
+                  "actions",
+                  "actions desc",
+                  "identifier",
+                  "identifier desc",
+                  "privileges",
+                  "privileges desc",
+                  "resources",
+                  "resources desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "transport",
+                  "tools",
+                  "server",
+                  "roots",
+                  "permissions_read",
+                  "permissions_write",
+                  "permissions_execute",
+                  "permissions_delete",
+                  "permissions_list",
+                  "permissions_create",
+                  "databases",
+                  "schemas",
+                  "tables",
+                  "urls",
+                  "protocols",
+                  "consent_ID",
+                  "consent_grant_id",
+                  "type",
+                  "locations",
+                  "actions",
+                  "identifier",
+                  "privileges",
+                  "resources"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "consent"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved authorization details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of AuthorizationDetails",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetails"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Creates a single authorization detail.",
+        "tags": [
+          "AuthorizationDetails"
+        ],
+        "requestBody": {
+          "description": "New authorization detail",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetails-create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created authorization detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetails"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/AuthorizationDetails({ID})": {
+      "parameters": [
+        {
+          "description": "key: ID",
+          "in": "path",
+          "name": "ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a single authorization detail.",
+        "tags": [
+          "AuthorizationDetails"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "transport",
+                  "tools",
+                  "server",
+                  "roots",
+                  "permissions_read",
+                  "permissions_write",
+                  "permissions_execute",
+                  "permissions_delete",
+                  "permissions_list",
+                  "permissions_create",
+                  "databases",
+                  "schemas",
+                  "tables",
+                  "urls",
+                  "protocols",
+                  "consent_ID",
+                  "consent_grant_id",
+                  "type",
+                  "locations",
+                  "actions",
+                  "identifier",
+                  "privileges",
+                  "resources"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "consent"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved authorization detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetails"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Changes a single authorization detail.",
+        "tags": [
+          "AuthorizationDetails"
+        ],
+        "requestBody": {
+          "description": "New property values",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetails-update"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Deletes a single authorization detail.",
+        "tags": [
+          "AuthorizationDetails"
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/AuthorizationDetails({ID})/consent": {
+      "parameters": [
+        {
+          "description": "key: ID",
+          "in": "path",
+          "name": "ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves consent of a authorization detail.",
+        "tags": [
+          "AuthorizationDetails",
+          "Consents"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "grant_id",
+                  "request_ID",
+                  "client_id",
+                  "scope",
+                  "duration",
+                  "subject",
+                  "previous_consent_ID",
+                  "previous_consent_grant_id",
+                  "redirect_uri",
+                  "actor"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "grant",
+                  "request",
+                  "authorization_details",
+                  "previous_consent"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved consent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Consents"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/AuthorizationRequests": {
+      "get": {
+        "summary": "Retrieves a list of authorization requests.",
+        "tags": [
+          "AuthorizationRequests"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "ID desc",
+                  "createdAt",
+                  "createdAt desc",
+                  "createdBy",
+                  "createdBy desc",
+                  "modifiedAt",
+                  "modifiedAt desc",
+                  "modifiedBy",
+                  "modifiedBy desc",
+                  "client_id",
+                  "client_id desc",
+                  "redirect_uri",
+                  "redirect_uri desc",
+                  "request_uri",
+                  "request_uri desc",
+                  "scope",
+                  "scope desc",
+                  "state",
+                  "state desc",
+                  "code_challenge",
+                  "code_challenge desc",
+                  "code_challenge_method",
+                  "code_challenge_method desc",
+                  "grant_management_action",
+                  "grant_management_action desc",
+                  "authorization_details",
+                  "authorization_details desc",
+                  "requested_actor",
+                  "requested_actor desc",
+                  "expires_at",
+                  "expires_at desc",
+                  "status",
+                  "status desc",
+                  "response_type",
+                  "response_type desc",
+                  "risk_level",
+                  "risk_level desc",
+                  "subject_token_type",
+                  "subject_token_type desc",
+                  "subject_token",
+                  "subject_token desc",
+                  "subject",
+                  "subject desc",
+                  "expires_in",
+                  "expires_in desc",
+                  "grant_id",
+                  "grant_id desc",
+                  "access/server",
+                  "access/server desc",
+                  "access/transport",
+                  "access/transport desc",
+                  "access/locations",
+                  "access/locations desc",
+                  "access/actions",
+                  "access/actions desc",
+                  "access/permissions/read/essential",
+                  "access/permissions/read/essential desc",
+                  "access/permissions/write/essential",
+                  "access/permissions/write/essential desc",
+                  "access/permissions/delete/essential",
+                  "access/permissions/delete/essential desc",
+                  "access/permissions/execute/essential",
+                  "access/permissions/execute/essential desc",
+                  "access/permissions/list/essential",
+                  "access/permissions/list/essential desc",
+                  "access/permissions/create/essential",
+                  "access/permissions/create/essential desc",
+                  "access/roots",
+                  "access/roots desc",
+                  "access/databases",
+                  "access/databases desc",
+                  "access/schemas",
+                  "access/schemas desc",
+                  "access/tables",
+                  "access/tables desc",
+                  "access/urls",
+                  "access/urls desc",
+                  "access/protocols",
+                  "access/protocols desc",
+                  "access/type_code",
+                  "access/type_code desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "client_id",
+                  "redirect_uri",
+                  "request_uri",
+                  "scope",
+                  "state",
+                  "code_challenge",
+                  "code_challenge_method",
+                  "grant_management_action",
+                  "authorization_details",
+                  "requested_actor",
+                  "expires_at",
+                  "status",
+                  "response_type",
+                  "risk_level",
+                  "subject_token_type",
+                  "subject_token",
+                  "subject",
+                  "expires_in",
+                  "grant_id",
+                  "access"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "grant",
+                  "consent",
+                  "access/type"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved authorization requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of AuthorizationRequests",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationRequests"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Creates a single authorization request.",
+        "tags": [
+          "AuthorizationRequests"
+        ],
+        "requestBody": {
+          "description": "New authorization request",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationRequests-create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created authorization request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationRequests"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/AuthorizationRequests({ID})": {
+      "parameters": [
+        {
+          "description": "key: ID",
+          "in": "path",
+          "name": "ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a single authorization request.",
+        "tags": [
+          "AuthorizationRequests"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "client_id",
+                  "redirect_uri",
+                  "request_uri",
+                  "scope",
+                  "state",
+                  "code_challenge",
+                  "code_challenge_method",
+                  "grant_management_action",
+                  "authorization_details",
+                  "requested_actor",
+                  "expires_at",
+                  "status",
+                  "response_type",
+                  "risk_level",
+                  "subject_token_type",
+                  "subject_token",
+                  "subject",
+                  "expires_in",
+                  "grant_id",
+                  "access"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "grant",
+                  "consent",
+                  "access/type"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved authorization request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationRequests"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Changes a single authorization request.",
+        "tags": [
+          "AuthorizationRequests"
+        ],
+        "requestBody": {
+          "description": "New property values",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationRequests-update"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Deletes a single authorization request.",
+        "tags": [
+          "AuthorizationRequests"
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/AuthorizationRequests({ID})/consent": {
+      "parameters": [
+        {
+          "description": "key: ID",
+          "in": "path",
+          "name": "ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves consent of a authorization request.",
+        "tags": [
+          "AuthorizationRequests",
+          "Consents"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "grant_id",
+                  "request_ID",
+                  "client_id",
+                  "scope",
+                  "duration",
+                  "subject",
+                  "previous_consent_ID",
+                  "previous_consent_grant_id",
+                  "redirect_uri",
+                  "actor"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "grant",
+                  "request",
+                  "authorization_details",
+                  "previous_consent"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved consent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Consents"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/AuthorizationRequests({ID})/grant": {
+      "parameters": [
+        {
+          "description": "key: ID",
+          "in": "path",
+          "name": "ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves grant of a authorization request.",
+        "tags": [
+          "AuthorizationRequests",
+          "Grants"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "id",
+                  "client_id",
+                  "risk_level",
+                  "status",
+                  "revoked_at",
+                  "revoked_by",
+                  "subject",
+                  "actor",
+                  "scope"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "consents",
+                  "requests",
+                  "authorization_details"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved grant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Grants"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Consents": {
+      "get": {
+        "summary": "Retrieves a list of consents.",
+        "tags": [
+          "Consents"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "ID desc",
+                  "createdAt",
+                  "createdAt desc",
+                  "createdBy",
+                  "createdBy desc",
+                  "modifiedAt",
+                  "modifiedAt desc",
+                  "modifiedBy",
+                  "modifiedBy desc",
+                  "grant_id",
+                  "grant_id desc",
+                  "request_ID",
+                  "request_ID desc",
+                  "client_id",
+                  "client_id desc",
+                  "scope",
+                  "scope desc",
+                  "duration",
+                  "duration desc",
+                  "subject",
+                  "subject desc",
+                  "previous_consent_ID",
+                  "previous_consent_ID desc",
+                  "previous_consent_grant_id",
+                  "previous_consent_grant_id desc",
+                  "redirect_uri",
+                  "redirect_uri desc",
+                  "actor",
+                  "actor desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "grant_id",
+                  "request_ID",
+                  "client_id",
+                  "scope",
+                  "duration",
+                  "subject",
+                  "previous_consent_ID",
+                  "previous_consent_grant_id",
+                  "redirect_uri",
+                  "actor"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "grant",
+                  "request",
+                  "authorization_details",
+                  "previous_consent"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved consents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of Consents",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Consents"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Creates a single consent.",
+        "tags": [
+          "Consents"
+        ],
+        "requestBody": {
+          "description": "New consent",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Consents-create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created consent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Consents"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Consents(ID={ID},grant_id='{grant_id}')": {
+      "parameters": [
+        {
+          "description": "key: ID",
+          "in": "path",
+          "name": "ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          }
+        },
+        {
+          "description": "key: grant_id",
+          "in": "path",
+          "name": "grant_id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a single consent.",
+        "tags": [
+          "Consents"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "grant_id",
+                  "request_ID",
+                  "client_id",
+                  "scope",
+                  "duration",
+                  "subject",
+                  "previous_consent_ID",
+                  "previous_consent_grant_id",
+                  "redirect_uri",
+                  "actor"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "grant",
+                  "request",
+                  "authorization_details",
+                  "previous_consent"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved consent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Consents"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Changes a single consent.",
+        "tags": [
+          "Consents"
+        ],
+        "requestBody": {
+          "description": "New property values",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Consents-update"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Deletes a single consent.",
+        "tags": [
+          "Consents"
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Consents(ID={ID},grant_id='{grant_id}')/authorization_details": {
+      "parameters": [
+        {
+          "description": "key: ID",
+          "in": "path",
+          "name": "ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          }
+        },
+        {
+          "description": "key: grant_id",
+          "in": "path",
+          "name": "grant_id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a list of authorization_details of a consent.",
+        "tags": [
+          "Consents",
+          "AuthorizationDetails"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "ID desc",
+                  "createdAt",
+                  "createdAt desc",
+                  "createdBy",
+                  "createdBy desc",
+                  "modifiedAt",
+                  "modifiedAt desc",
+                  "modifiedBy",
+                  "modifiedBy desc",
+                  "transport",
+                  "transport desc",
+                  "server",
+                  "server desc",
+                  "roots",
+                  "roots desc",
+                  "permissions_read",
+                  "permissions_read desc",
+                  "permissions_write",
+                  "permissions_write desc",
+                  "permissions_execute",
+                  "permissions_execute desc",
+                  "permissions_delete",
+                  "permissions_delete desc",
+                  "permissions_list",
+                  "permissions_list desc",
+                  "permissions_create",
+                  "permissions_create desc",
+                  "databases",
+                  "databases desc",
+                  "schemas",
+                  "schemas desc",
+                  "tables",
+                  "tables desc",
+                  "urls",
+                  "urls desc",
+                  "protocols",
+                  "protocols desc",
+                  "consent_ID",
+                  "consent_ID desc",
+                  "consent_grant_id",
+                  "consent_grant_id desc",
+                  "type",
+                  "type desc",
+                  "locations",
+                  "locations desc",
+                  "actions",
+                  "actions desc",
+                  "identifier",
+                  "identifier desc",
+                  "privileges",
+                  "privileges desc",
+                  "resources",
+                  "resources desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "transport",
+                  "tools",
+                  "server",
+                  "roots",
+                  "permissions_read",
+                  "permissions_write",
+                  "permissions_execute",
+                  "permissions_delete",
+                  "permissions_list",
+                  "permissions_create",
+                  "databases",
+                  "schemas",
+                  "tables",
+                  "urls",
+                  "protocols",
+                  "consent_ID",
+                  "consent_grant_id",
+                  "type",
+                  "locations",
+                  "actions",
+                  "identifier",
+                  "privileges",
+                  "resources"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "consent"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved authorization_details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of AuthorizationDetails",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetails"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Creates a single authorization_detail of a consent.",
+        "tags": [
+          "Consents",
+          "AuthorizationDetails"
+        ],
+        "requestBody": {
+          "description": "New authorization_detail",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetails-create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created authorization_detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetails"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Consents(ID={ID},grant_id='{grant_id}')/grant": {
+      "parameters": [
+        {
+          "description": "key: ID",
+          "in": "path",
+          "name": "ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          }
+        },
+        {
+          "description": "key: grant_id",
+          "in": "path",
+          "name": "grant_id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves grant of a consent.",
+        "tags": [
+          "Consents",
+          "Grants"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "id",
+                  "client_id",
+                  "risk_level",
+                  "status",
+                  "revoked_at",
+                  "revoked_by",
+                  "subject",
+                  "actor",
+                  "scope"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "consents",
+                  "requests",
+                  "authorization_details"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved grant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Grants"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Consents(ID={ID},grant_id='{grant_id}')/previous_consent": {
+      "parameters": [
+        {
+          "description": "key: ID",
+          "in": "path",
+          "name": "ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          }
+        },
+        {
+          "description": "key: grant_id",
+          "in": "path",
+          "name": "grant_id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves previous_consent of a consent.",
+        "tags": [
+          "Consents"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "grant_id",
+                  "request_ID",
+                  "client_id",
+                  "scope",
+                  "duration",
+                  "subject",
+                  "previous_consent_ID",
+                  "previous_consent_grant_id",
+                  "redirect_uri",
+                  "actor"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "grant",
+                  "request",
+                  "authorization_details",
+                  "previous_consent"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved previous_consent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Consents"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Consents(ID={ID},grant_id='{grant_id}')/request": {
+      "parameters": [
+        {
+          "description": "key: ID",
+          "in": "path",
+          "name": "ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          }
+        },
+        {
+          "description": "key: grant_id",
+          "in": "path",
+          "name": "grant_id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves request of a consent.",
+        "tags": [
+          "Consents",
+          "AuthorizationRequests"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "client_id",
+                  "redirect_uri",
+                  "request_uri",
+                  "scope",
+                  "state",
+                  "code_challenge",
+                  "code_challenge_method",
+                  "grant_management_action",
+                  "authorization_details",
+                  "requested_actor",
+                  "expires_at",
+                  "status",
+                  "response_type",
+                  "risk_level",
+                  "subject_token_type",
+                  "subject_token",
+                  "subject",
+                  "expires_in",
+                  "grant_id",
+                  "access"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "grant",
+                  "consent",
+                  "access/type"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationRequests"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Grants": {
+      "get": {
+        "summary": "Retrieves a list of grants.",
+        "tags": [
+          "Grants"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "createdAt",
+                  "createdAt desc",
+                  "createdBy",
+                  "createdBy desc",
+                  "modifiedAt",
+                  "modifiedAt desc",
+                  "modifiedBy",
+                  "modifiedBy desc",
+                  "id",
+                  "id desc",
+                  "client_id",
+                  "client_id desc",
+                  "risk_level",
+                  "risk_level desc",
+                  "status",
+                  "status desc",
+                  "revoked_at",
+                  "revoked_at desc",
+                  "revoked_by",
+                  "revoked_by desc",
+                  "subject",
+                  "subject desc",
+                  "actor",
+                  "actor desc",
+                  "scope",
+                  "scope desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "id",
+                  "client_id",
+                  "risk_level",
+                  "status",
+                  "revoked_at",
+                  "revoked_by",
+                  "subject",
+                  "actor",
+                  "scope"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "consents",
+                  "requests",
+                  "authorization_details"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved grants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of Grants",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Grants"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Creates a single grant.",
+        "tags": [
+          "Grants"
+        ],
+        "requestBody": {
+          "description": "New grant",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Grants-create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created grant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Grants"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Grants('{id}')": {
+      "parameters": [
+        {
+          "description": "key: id",
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a single grant.",
+        "tags": [
+          "Grants"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "id",
+                  "client_id",
+                  "risk_level",
+                  "status",
+                  "revoked_at",
+                  "revoked_by",
+                  "subject",
+                  "actor",
+                  "scope"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "consents",
+                  "requests",
+                  "authorization_details"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved grant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Grants"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Changes a single grant.",
+        "tags": [
+          "Grants"
+        ],
+        "requestBody": {
+          "description": "New property values",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Grants-update"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Deletes a single grant.",
+        "tags": [
+          "Grants"
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Grants('{id}')/authorization_details": {
+      "parameters": [
+        {
+          "description": "key: id",
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a list of authorization_details of a grant.",
+        "tags": [
+          "Grants",
+          "AuthorizationDetails"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "ID desc",
+                  "createdAt",
+                  "createdAt desc",
+                  "createdBy",
+                  "createdBy desc",
+                  "modifiedAt",
+                  "modifiedAt desc",
+                  "modifiedBy",
+                  "modifiedBy desc",
+                  "transport",
+                  "transport desc",
+                  "server",
+                  "server desc",
+                  "roots",
+                  "roots desc",
+                  "permissions_read",
+                  "permissions_read desc",
+                  "permissions_write",
+                  "permissions_write desc",
+                  "permissions_execute",
+                  "permissions_execute desc",
+                  "permissions_delete",
+                  "permissions_delete desc",
+                  "permissions_list",
+                  "permissions_list desc",
+                  "permissions_create",
+                  "permissions_create desc",
+                  "databases",
+                  "databases desc",
+                  "schemas",
+                  "schemas desc",
+                  "tables",
+                  "tables desc",
+                  "urls",
+                  "urls desc",
+                  "protocols",
+                  "protocols desc",
+                  "consent_ID",
+                  "consent_ID desc",
+                  "consent_grant_id",
+                  "consent_grant_id desc",
+                  "type",
+                  "type desc",
+                  "locations",
+                  "locations desc",
+                  "actions",
+                  "actions desc",
+                  "identifier",
+                  "identifier desc",
+                  "privileges",
+                  "privileges desc",
+                  "resources",
+                  "resources desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "transport",
+                  "tools",
+                  "server",
+                  "roots",
+                  "permissions_read",
+                  "permissions_write",
+                  "permissions_execute",
+                  "permissions_delete",
+                  "permissions_list",
+                  "permissions_create",
+                  "databases",
+                  "schemas",
+                  "tables",
+                  "urls",
+                  "protocols",
+                  "consent_ID",
+                  "consent_grant_id",
+                  "type",
+                  "locations",
+                  "actions",
+                  "identifier",
+                  "privileges",
+                  "resources"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "consent"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved authorization_details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of AuthorizationDetails",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetails"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Creates a single authorization_detail of a grant.",
+        "tags": [
+          "Grants",
+          "AuthorizationDetails"
+        ],
+        "requestBody": {
+          "description": "New authorization_detail",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetails-create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created authorization_detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetails"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Grants('{id}')/consents": {
+      "parameters": [
+        {
+          "description": "key: id",
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a list of consents of a grant.",
+        "tags": [
+          "Grants",
+          "Consents"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "ID desc",
+                  "createdAt",
+                  "createdAt desc",
+                  "createdBy",
+                  "createdBy desc",
+                  "modifiedAt",
+                  "modifiedAt desc",
+                  "modifiedBy",
+                  "modifiedBy desc",
+                  "grant_id",
+                  "grant_id desc",
+                  "request_ID",
+                  "request_ID desc",
+                  "client_id",
+                  "client_id desc",
+                  "scope",
+                  "scope desc",
+                  "duration",
+                  "duration desc",
+                  "subject",
+                  "subject desc",
+                  "previous_consent_ID",
+                  "previous_consent_ID desc",
+                  "previous_consent_grant_id",
+                  "previous_consent_grant_id desc",
+                  "redirect_uri",
+                  "redirect_uri desc",
+                  "actor",
+                  "actor desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "grant_id",
+                  "request_ID",
+                  "client_id",
+                  "scope",
+                  "duration",
+                  "subject",
+                  "previous_consent_ID",
+                  "previous_consent_grant_id",
+                  "redirect_uri",
+                  "actor"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "grant",
+                  "request",
+                  "authorization_details",
+                  "previous_consent"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved consents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of Consents",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Consents"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Creates a single consent of a grant.",
+        "tags": [
+          "Grants",
+          "Consents"
+        ],
+        "requestBody": {
+          "description": "New consent",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Consents-create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created consent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Consents"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Grants('{id}')/requests": {
+      "parameters": [
+        {
+          "description": "key: id",
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a list of requests of a grant.",
+        "tags": [
+          "Grants",
+          "AuthorizationRequests"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "ID desc",
+                  "createdAt",
+                  "createdAt desc",
+                  "createdBy",
+                  "createdBy desc",
+                  "modifiedAt",
+                  "modifiedAt desc",
+                  "modifiedBy",
+                  "modifiedBy desc",
+                  "client_id",
+                  "client_id desc",
+                  "redirect_uri",
+                  "redirect_uri desc",
+                  "request_uri",
+                  "request_uri desc",
+                  "scope",
+                  "scope desc",
+                  "state",
+                  "state desc",
+                  "code_challenge",
+                  "code_challenge desc",
+                  "code_challenge_method",
+                  "code_challenge_method desc",
+                  "grant_management_action",
+                  "grant_management_action desc",
+                  "authorization_details",
+                  "authorization_details desc",
+                  "requested_actor",
+                  "requested_actor desc",
+                  "expires_at",
+                  "expires_at desc",
+                  "status",
+                  "status desc",
+                  "response_type",
+                  "response_type desc",
+                  "risk_level",
+                  "risk_level desc",
+                  "subject_token_type",
+                  "subject_token_type desc",
+                  "subject_token",
+                  "subject_token desc",
+                  "subject",
+                  "subject desc",
+                  "expires_in",
+                  "expires_in desc",
+                  "grant_id",
+                  "grant_id desc",
+                  "access/server",
+                  "access/server desc",
+                  "access/transport",
+                  "access/transport desc",
+                  "access/locations",
+                  "access/locations desc",
+                  "access/actions",
+                  "access/actions desc",
+                  "access/permissions/read/essential",
+                  "access/permissions/read/essential desc",
+                  "access/permissions/write/essential",
+                  "access/permissions/write/essential desc",
+                  "access/permissions/delete/essential",
+                  "access/permissions/delete/essential desc",
+                  "access/permissions/execute/essential",
+                  "access/permissions/execute/essential desc",
+                  "access/permissions/list/essential",
+                  "access/permissions/list/essential desc",
+                  "access/permissions/create/essential",
+                  "access/permissions/create/essential desc",
+                  "access/roots",
+                  "access/roots desc",
+                  "access/databases",
+                  "access/databases desc",
+                  "access/schemas",
+                  "access/schemas desc",
+                  "access/tables",
+                  "access/tables desc",
+                  "access/urls",
+                  "access/urls desc",
+                  "access/protocols",
+                  "access/protocols desc",
+                  "access/type_code",
+                  "access/type_code desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "client_id",
+                  "redirect_uri",
+                  "request_uri",
+                  "scope",
+                  "state",
+                  "code_challenge",
+                  "code_challenge_method",
+                  "grant_management_action",
+                  "authorization_details",
+                  "requested_actor",
+                  "expires_at",
+                  "status",
+                  "response_type",
+                  "risk_level",
+                  "subject_token_type",
+                  "subject_token",
+                  "subject",
+                  "expires_in",
+                  "grant_id",
+                  "access"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$expand",
+            "description": "The value of $expand query option is a comma-separated list of navigation property names, stream property names, or $value indicating the stream content of a media-entity. The corresponding related entities and stream values will be represented inline, see [Expand](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "*",
+                  "grant",
+                  "consent",
+                  "access/type"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of AuthorizationRequests",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationRequests"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Creates a single request of a grant.",
+        "tags": [
+          "Grants",
+          "AuthorizationRequests"
+        ],
+        "requestBody": {
+          "description": "New request",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationRequests-create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationRequests"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/authorize": {
+      "post": {
+        "summary": "Invokes action authorize",
+        "tags": [
+          "Service Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "requestBody": {
+          "description": "Action parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "request_uri": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "client_id": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/authorize_dialog": {
+      "get": {
+        "summary": "Invokes function authorize_dialog",
+        "tags": [
+          "Service Operations"
+        ],
+        "parameters": [
+          {
+            "required": false,
+            "in": "query",
+            "name": "request_uri",
+            "description": "String value needs to be enclosed in single quotes",
+            "schema": {
+              "type": "string",
+              "nullable": true,
+              "pattern": "^(null|'([^']|'')*')$",
+              "default": "null"
+            }
+          },
+          {
+            "required": false,
+            "in": "query",
+            "name": "client_id",
+            "description": "String value needs to be enclosed in single quotes",
+            "schema": {
+              "type": "string",
+              "nullable": true,
+              "pattern": "^(null|'([^']|'')*')$",
+              "default": "null"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/callback": {
+      "get": {
+        "summary": "Invokes function callback",
+        "tags": [
+          "Service Operations"
+        ],
+        "parameters": [
+          {
+            "required": false,
+            "in": "query",
+            "name": "grant_id",
+            "description": "String value needs to be enclosed in single quotes",
+            "schema": {
+              "type": "string",
+              "nullable": true,
+              "pattern": "^(null|'([^']|'')*')$",
+              "default": "null"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/metadata": {
+      "post": {
+        "summary": "Invokes action metadata",
+        "tags": [
+          "Service Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.return_sap_scai_grants_AuthorizationService_metadata"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/par": {
+      "post": {
+        "summary": "Invokes action par",
+        "tags": [
+          "Service Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.return_sap_scai_grants_AuthorizationService_par"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "requestBody": {
+          "description": "Action parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "response_type": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "client_id": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "redirect_uri": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "scope": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "state": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "code_challenge": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "code_challenge_method": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "grant_management_action": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "grant_id": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "authorization_details": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "requested_actor": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "subject_token_type": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "subject_token": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "subject": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/token": {
+      "post": {
+        "summary": "Invokes action token",
+        "tags": [
+          "Service Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.return_sap_scai_grants_AuthorizationService_token"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "requestBody": {
+          "description": "Action parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "grant_type": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "client_id": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "code": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "code_verifier": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "redirect_uri": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "refresh_token": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "token_format": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "resource": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "audience": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "scope": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "resource_": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "assertion": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "subject_token": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "sap.scai.grants.AuthorizationService.AuthorizationDetailType": {
+        "title": "AuthorizationDetailType",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "descr": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 60,
+            "enum": [
+              "mcp",
+              "fs",
+              "database",
+              "api",
+              "grant_management",
+              "file_access",
+              "data_access",
+              "network_access"
+            ]
+          },
+          "template": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "riskLevel": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          },
+          "texts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetailType_texts"
+            }
+          },
+          "texts@count": {
+            "$ref": "#/components/schemas/count"
+          },
+          "localized": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetailType_texts"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.AuthorizationDetailType-create": {
+        "title": "AuthorizationDetailType (for create)",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "descr": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 60,
+            "enum": [
+              "mcp",
+              "fs",
+              "database",
+              "api",
+              "grant_management",
+              "file_access",
+              "data_access",
+              "network_access"
+            ]
+          },
+          "template": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "riskLevel": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          },
+          "texts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetailType_texts-create"
+            }
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "sap.scai.grants.AuthorizationService.AuthorizationDetailType-update": {
+        "title": "AuthorizationDetailType (for update)",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "descr": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "template": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "riskLevel": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          },
+          "texts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetailType_texts-create"
+            }
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.AuthorizationDetailType_texts": {
+        "title": "AuthorizationDetailType_texts",
+        "type": "object",
+        "properties": {
+          "locale": {
+            "type": "string",
+            "maxLength": 14
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "descr": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 60,
+            "enum": [
+              "mcp",
+              "fs",
+              "database",
+              "api",
+              "grant_management",
+              "file_access",
+              "data_access",
+              "network_access"
+            ]
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.AuthorizationDetailType_texts-create": {
+        "title": "AuthorizationDetailType_texts (for create)",
+        "type": "object",
+        "properties": {
+          "locale": {
+            "type": "string",
+            "maxLength": 14
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "descr": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 60,
+            "enum": [
+              "mcp",
+              "fs",
+              "database",
+              "api",
+              "grant_management",
+              "file_access",
+              "data_access",
+              "network_access"
+            ]
+          }
+        },
+        "required": [
+          "locale",
+          "code"
+        ]
+      },
+      "sap.scai.grants.AuthorizationService.AuthorizationDetailType_texts-update": {
+        "title": "AuthorizationDetailType_texts (for update)",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "descr": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.AuthorizationDetails": {
+        "title": "AuthorizationDetails",
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "modifiedBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "transport": {
+            "type": "string",
+            "nullable": true
+          },
+          "tools": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.cds_Map"
+              }
+            ],
+            "nullable": true
+          },
+          "server": {
+            "type": "string",
+            "nullable": true
+          },
+          "roots": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "permissions_read": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permissions_write": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permissions_execute": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permissions_delete": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permissions_list": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permissions_create": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "databases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "schemas": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "protocols": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "consent": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Consents"
+              }
+            ],
+            "nullable": true
+          },
+          "consent_ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef",
+            "nullable": true
+          },
+          "consent_grant_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "identifier": {
+            "type": "string",
+            "nullable": true
+          },
+          "privileges": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.AuthorizationDetails-create": {
+        "title": "AuthorizationDetails (for create)",
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          },
+          "transport": {
+            "type": "string",
+            "nullable": true
+          },
+          "tools": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.cds_Map-create"
+              }
+            ],
+            "nullable": true
+          },
+          "server": {
+            "type": "string",
+            "nullable": true
+          },
+          "roots": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "permissions_read": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permissions_write": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permissions_execute": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permissions_delete": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permissions_list": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permissions_create": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "databases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "schemas": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "protocols": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "consent_ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef",
+            "nullable": true
+          },
+          "consent_grant_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "identifier": {
+            "type": "string",
+            "nullable": true
+          },
+          "privileges": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.AuthorizationDetails-update": {
+        "title": "AuthorizationDetails (for update)",
+        "type": "object",
+        "properties": {
+          "transport": {
+            "type": "string",
+            "nullable": true
+          },
+          "tools": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.cds_Map-update"
+              }
+            ],
+            "nullable": true
+          },
+          "server": {
+            "type": "string",
+            "nullable": true
+          },
+          "roots": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "permissions_read": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permissions_write": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permissions_execute": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permissions_delete": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permissions_list": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "permissions_create": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "databases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "schemas": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "protocols": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "consent_ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef",
+            "nullable": true
+          },
+          "consent_grant_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "identifier": {
+            "type": "string",
+            "nullable": true
+          },
+          "privileges": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.AuthorizationRequests": {
+        "title": "AuthorizationRequests",
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "modifiedBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "client_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "redirect_uri": {
+            "type": "string",
+            "nullable": true
+          },
+          "request_uri": {
+            "type": "string",
+            "nullable": true
+          },
+          "scope": {
+            "type": "string",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "nullable": true
+          },
+          "code_challenge": {
+            "type": "string",
+            "nullable": true
+          },
+          "code_challenge_method": {
+            "type": "string",
+            "nullable": true
+          },
+          "grant_management_action": {
+            "type": "string",
+            "nullable": true
+          },
+          "authorization_details": {
+            "type": "string",
+            "nullable": true
+          },
+          "requested_actor": {
+            "type": "string",
+            "nullable": true
+          },
+          "expires_at": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "response_type": {
+            "type": "string",
+            "nullable": true
+          },
+          "risk_level": {
+            "type": "string",
+            "nullable": true
+          },
+          "subject_token_type": {
+            "type": "string",
+            "nullable": true
+          },
+          "subject_token": {
+            "type": "string",
+            "nullable": true
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "expires_in": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "grant": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Grants"
+              }
+            ],
+            "nullable": true
+          },
+          "grant_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "consent": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Consents"
+              }
+            ],
+            "nullable": true
+          },
+          "access": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationRequests_access"
+                }
+              ],
+              "nullable": true
+            }
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.AuthorizationRequests-create": {
+        "title": "AuthorizationRequests (for create)",
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          },
+          "client_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "redirect_uri": {
+            "type": "string",
+            "nullable": true
+          },
+          "request_uri": {
+            "type": "string",
+            "nullable": true
+          },
+          "scope": {
+            "type": "string",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "nullable": true
+          },
+          "code_challenge": {
+            "type": "string",
+            "nullable": true
+          },
+          "code_challenge_method": {
+            "type": "string",
+            "nullable": true
+          },
+          "grant_management_action": {
+            "type": "string",
+            "nullable": true
+          },
+          "authorization_details": {
+            "type": "string",
+            "nullable": true
+          },
+          "requested_actor": {
+            "type": "string",
+            "nullable": true
+          },
+          "response_type": {
+            "type": "string",
+            "nullable": true
+          },
+          "subject_token_type": {
+            "type": "string",
+            "nullable": true
+          },
+          "subject_token": {
+            "type": "string",
+            "nullable": true
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "expires_in": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "grant_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "access": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationRequests_access-create"
+                }
+              ],
+              "nullable": true
+            }
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.AuthorizationRequests-update": {
+        "title": "AuthorizationRequests (for update)",
+        "type": "object",
+        "properties": {
+          "client_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "redirect_uri": {
+            "type": "string",
+            "nullable": true
+          },
+          "request_uri": {
+            "type": "string",
+            "nullable": true
+          },
+          "scope": {
+            "type": "string",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "nullable": true
+          },
+          "code_challenge": {
+            "type": "string",
+            "nullable": true
+          },
+          "code_challenge_method": {
+            "type": "string",
+            "nullable": true
+          },
+          "grant_management_action": {
+            "type": "string",
+            "nullable": true
+          },
+          "authorization_details": {
+            "type": "string",
+            "nullable": true
+          },
+          "requested_actor": {
+            "type": "string",
+            "nullable": true
+          },
+          "response_type": {
+            "type": "string",
+            "nullable": true
+          },
+          "subject_token_type": {
+            "type": "string",
+            "nullable": true
+          },
+          "subject_token": {
+            "type": "string",
+            "nullable": true
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "expires_in": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "grant_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "access": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationRequests_access-update"
+                }
+              ],
+              "nullable": true
+            }
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.AuthorizationRequests_access": {
+        "title": "AuthorizationRequests_access",
+        "type": "object",
+        "properties": {
+          "server": {
+            "type": "string",
+            "nullable": true
+          },
+          "transport": {
+            "type": "string",
+            "nullable": true
+          },
+          "tools": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.cds_Map"
+              }
+            ],
+            "nullable": true
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "permissions": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationRequests_access_permissions"
+              }
+            ],
+            "nullable": true
+          },
+          "roots": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "databases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "schemas": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "protocols": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetailType"
+              }
+            ],
+            "nullable": true
+          },
+          "type_code": {
+            "type": "string",
+            "maxLength": 60,
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.AuthorizationRequests_access-create": {
+        "title": "AuthorizationRequests_access (for create)",
+        "type": "object",
+        "properties": {
+          "server": {
+            "type": "string",
+            "nullable": true
+          },
+          "transport": {
+            "type": "string",
+            "nullable": true
+          },
+          "tools": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.cds_Map-create"
+              }
+            ],
+            "nullable": true
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "permissions": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationRequests_access_permissions-create"
+              }
+            ],
+            "nullable": true
+          },
+          "roots": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "databases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "schemas": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "protocols": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "type_code": {
+            "type": "string",
+            "maxLength": 60,
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.AuthorizationRequests_access-update": {
+        "title": "AuthorizationRequests_access (for update)",
+        "type": "object",
+        "properties": {
+          "server": {
+            "type": "string",
+            "nullable": true
+          },
+          "transport": {
+            "type": "string",
+            "nullable": true
+          },
+          "tools": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.cds_Map-update"
+              }
+            ],
+            "nullable": true
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "permissions": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationRequests_access_permissions-update"
+              }
+            ],
+            "nullable": true
+          },
+          "roots": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "databases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "schemas": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "protocols": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "type_code": {
+            "type": "string",
+            "maxLength": 60,
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.AuthorizationRequests_access_permissions": {
+        "title": "AuthorizationRequests_access_permissions",
+        "type": "object",
+        "properties": {
+          "read": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim"
+              }
+            ],
+            "nullable": true
+          },
+          "write": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim"
+              }
+            ],
+            "nullable": true
+          },
+          "delete": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim"
+              }
+            ],
+            "nullable": true
+          },
+          "execute": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim"
+              }
+            ],
+            "nullable": true
+          },
+          "list": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim"
+              }
+            ],
+            "nullable": true
+          },
+          "create": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.AuthorizationRequests_access_permissions-create": {
+        "title": "AuthorizationRequests_access_permissions (for create)",
+        "type": "object",
+        "properties": {
+          "read": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim-create"
+              }
+            ],
+            "nullable": true
+          },
+          "write": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim-create"
+              }
+            ],
+            "nullable": true
+          },
+          "delete": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim-create"
+              }
+            ],
+            "nullable": true
+          },
+          "execute": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim-create"
+              }
+            ],
+            "nullable": true
+          },
+          "list": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim-create"
+              }
+            ],
+            "nullable": true
+          },
+          "create": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim-create"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.AuthorizationRequests_access_permissions-update": {
+        "title": "AuthorizationRequests_access_permissions (for update)",
+        "type": "object",
+        "properties": {
+          "read": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim-update"
+              }
+            ],
+            "nullable": true
+          },
+          "write": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim-update"
+              }
+            ],
+            "nullable": true
+          },
+          "delete": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim-update"
+              }
+            ],
+            "nullable": true
+          },
+          "execute": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim-update"
+              }
+            ],
+            "nullable": true
+          },
+          "list": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim-update"
+              }
+            ],
+            "nullable": true
+          },
+          "create": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim-update"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.Consents": {
+        "title": "Consents",
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "modifiedBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "grant_id": {
+            "type": "string"
+          },
+          "grant": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Grants"
+              }
+            ],
+            "nullable": true
+          },
+          "request": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationRequests"
+              }
+            ],
+            "nullable": true
+          },
+          "request_ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef",
+            "nullable": true
+          },
+          "client_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "scope": {
+            "type": "string",
+            "nullable": true
+          },
+          "authorization_details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetails"
+            }
+          },
+          "authorization_details@count": {
+            "$ref": "#/components/schemas/count"
+          },
+          "duration": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "previous_consent": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Consents"
+              }
+            ],
+            "nullable": true
+          },
+          "previous_consent_ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef",
+            "nullable": true
+          },
+          "previous_consent_grant_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "redirect_uri": {
+            "type": "string",
+            "nullable": true
+          },
+          "actor": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.Consents-create": {
+        "title": "Consents (for create)",
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          },
+          "grant_id": {
+            "type": "string"
+          },
+          "request_ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef",
+            "nullable": true
+          },
+          "client_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "scope": {
+            "type": "string",
+            "nullable": true
+          },
+          "authorization_details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetails-create"
+            }
+          },
+          "duration": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "previous_consent_ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef",
+            "nullable": true
+          },
+          "previous_consent_grant_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "redirect_uri": {
+            "type": "string",
+            "nullable": true
+          },
+          "actor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "grant_id"
+        ]
+      },
+      "sap.scai.grants.AuthorizationService.Consents-update": {
+        "title": "Consents (for update)",
+        "type": "object",
+        "properties": {
+          "request_ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef",
+            "nullable": true
+          },
+          "client_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "scope": {
+            "type": "string",
+            "nullable": true
+          },
+          "authorization_details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetails-create"
+            }
+          },
+          "duration": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "previous_consent_ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef",
+            "nullable": true
+          },
+          "previous_consent_grant_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "redirect_uri": {
+            "type": "string",
+            "nullable": true
+          },
+          "actor": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.Grants": {
+        "title": "Grants",
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "modifiedBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "id": {
+            "type": "string"
+          },
+          "client_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "risk_level": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "revoked"
+            ],
+            "nullable": true,
+            "default": "active"
+          },
+          "revoked_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04Z",
+            "nullable": true
+          },
+          "revoked_by": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "actor": {
+            "type": "string",
+            "nullable": true
+          },
+          "scope": {
+            "type": "string",
+            "nullable": true
+          },
+          "consents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Consents"
+            }
+          },
+          "consents@count": {
+            "$ref": "#/components/schemas/count"
+          },
+          "requests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationRequests"
+            }
+          },
+          "requests@count": {
+            "$ref": "#/components/schemas/count"
+          },
+          "authorization_details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetails"
+            }
+          },
+          "authorization_details@count": {
+            "$ref": "#/components/schemas/count"
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.Grants-create": {
+        "title": "Grants (for create)",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "revoked"
+            ],
+            "nullable": true,
+            "default": "active"
+          },
+          "revoked_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04Z",
+            "nullable": true
+          },
+          "revoked_by": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "actor": {
+            "type": "string",
+            "nullable": true
+          },
+          "scope": {
+            "type": "string",
+            "nullable": true
+          },
+          "consents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Consents-create"
+            }
+          },
+          "requests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationRequests-create"
+            }
+          },
+          "authorization_details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetails-create"
+            }
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "sap.scai.grants.AuthorizationService.Grants-update": {
+        "title": "Grants (for update)",
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "revoked"
+            ],
+            "nullable": true,
+            "default": "active"
+          },
+          "revoked_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04Z",
+            "nullable": true
+          },
+          "revoked_by": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "actor": {
+            "type": "string",
+            "nullable": true
+          },
+          "scope": {
+            "type": "string",
+            "nullable": true
+          },
+          "consents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.Consents-create"
+            }
+          },
+          "requests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationRequests-create"
+            }
+          },
+          "authorization_details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.AuthorizationDetails-create"
+            }
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.cds_Map": {
+        "title": "cds_Map",
+        "type": "object"
+      },
+      "sap.scai.grants.AuthorizationService.cds_Map-create": {
+        "title": "cds_Map (for create)",
+        "type": "object"
+      },
+      "sap.scai.grants.AuthorizationService.cds_Map-update": {
+        "title": "cds_Map (for update)",
+        "type": "object"
+      },
+      "sap.scai.grants.AuthorizationService.return_sap_scai_grants_AuthorizationService_metadata": {
+        "title": "return_sap_scai_grants_AuthorizationService_metadata",
+        "type": "object",
+        "properties": {
+          "issuer": {
+            "type": "string",
+            "nullable": true
+          },
+          "authorization_endpoint": {
+            "type": "string",
+            "nullable": true
+          },
+          "token_endpoint": {
+            "type": "string",
+            "nullable": true
+          },
+          "pushed_authorization_request_endpoint": {
+            "type": "string",
+            "nullable": true
+          },
+          "authorization_details_types_supported": {
+            "type": "string",
+            "nullable": true
+          },
+          "grant_types_supported": {
+            "type": "string",
+            "nullable": true
+          },
+          "response_types_supported": {
+            "type": "string",
+            "nullable": true
+          },
+          "code_challenge_methods_supported": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.return_sap_scai_grants_AuthorizationService_par": {
+        "title": "return_sap_scai_grants_AuthorizationService_par",
+        "type": "object",
+        "properties": {
+          "request_uri": {
+            "type": "string",
+            "nullable": true
+          },
+          "expires_in": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.return_sap_scai_grants_AuthorizationService_token": {
+        "title": "return_sap_scai_grants_AuthorizationService_token",
+        "type": "object",
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "nullable": true
+          },
+          "token_type": {
+            "type": "string",
+            "nullable": true
+          },
+          "expires_in": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "scope": {
+            "type": "string",
+            "nullable": true
+          },
+          "grant_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "actor": {
+            "type": "string",
+            "nullable": true
+          },
+          "authorization_details": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_AuthorizationDetailRequest"
+                }
+              ],
+              "nullable": true
+            }
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.sap_scai_grants_AuthorizationDetailRequest": {
+        "title": "sap_scai_grants_AuthorizationDetailRequest",
+        "type": "object",
+        "properties": {
+          "server": {
+            "type": "string",
+            "nullable": true
+          },
+          "transport": {
+            "type": "string",
+            "nullable": true
+          },
+          "tools": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.cds_Map"
+              }
+            ],
+            "nullable": true
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "permissions": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_AuthorizationDetailRequest_permissions"
+              }
+            ],
+            "nullable": true
+          },
+          "roots": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "databases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "schemas": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "protocols": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "type_code": {
+            "type": "string",
+            "maxLength": 60,
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.sap_scai_grants_AuthorizationDetailRequest_permissions": {
+        "title": "sap_scai_grants_AuthorizationDetailRequest_permissions",
+        "type": "object",
+        "properties": {
+          "read": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim"
+              }
+            ],
+            "nullable": true
+          },
+          "write": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim"
+              }
+            ],
+            "nullable": true
+          },
+          "delete": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim"
+              }
+            ],
+            "nullable": true
+          },
+          "execute": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim"
+              }
+            ],
+            "nullable": true
+          },
+          "list": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim"
+              }
+            ],
+            "nullable": true
+          },
+          "create": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim": {
+        "title": "sap_scai_grants_RARClaim",
+        "type": "object",
+        "properties": {
+          "essential": {
+            "type": "boolean",
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim-create": {
+        "title": "sap_scai_grants_RARClaim (for create)",
+        "type": "object",
+        "properties": {
+          "essential": {
+            "type": "boolean",
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.grants.AuthorizationService.sap_scai_grants_RARClaim-update": {
+        "title": "sap_scai_grants_RARClaim (for update)",
+        "type": "object",
+        "properties": {
+          "essential": {
+            "type": "boolean",
+            "nullable": true
+          }
+        }
+      },
+      "count": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "description": "The number of entities in the collection. Available when using the [$count](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptioncount) query option."
+      },
+      "error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "target": {
+                "type": "string"
+              },
+              "details": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "target": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "innererror": {
+                "type": "object",
+                "description": "The structure of this object is service-specific"
+              }
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "top": {
+        "name": "$top",
+        "in": "query",
+        "description": "Show only the first n items, see [Paging - Top](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptiontop)",
+        "schema": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "example": 50
+      },
+      "skip": {
+        "name": "$skip",
+        "in": "query",
+        "description": "Skip the first n items, see [Paging - Skip](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionskip)",
+        "schema": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "count": {
+        "name": "$count",
+        "in": "query",
+        "description": "Include count of items, see [Count](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptioncount)",
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "search": {
+        "name": "$search",
+        "in": "query",
+        "description": "Search items by search phrases, see [Searching](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionsearch)",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "error": {
+        "description": "Error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/error"
+            }
+          }
+        }
+      }
+    }
+  },
+  "externalDocs": {
+    "description": "Playground",
+    "url": "/demo/index"
+  }
+}

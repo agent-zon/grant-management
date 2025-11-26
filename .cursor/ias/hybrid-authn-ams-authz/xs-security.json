@@ -1,0 +1,51 @@
+{
+	"xsappname": "hybrid-ams",
+	"tenant-mode": "shared",
+	"scopes": [
+		{
+			"name": "$XSAPPNAME.mtcallback",
+			"description": "Multi Tenancy Callback Access",
+			"grant-as-authority-to-apps": [
+				"$XSAPPNAME(application,sap-provisioning,tenant-onboarding)"
+			]
+		},
+		{
+			"name": "$XSAPPNAME.adminRead",
+			"description": "Sales read"
+		},
+		{
+			"name": "$XSAPPNAME.adminWrite",
+			"description": "Sales write"
+		},
+		{
+			"name": "$XSAPPNAME.AMS_POLICY.sales.adminAllSales",
+			"description": "AMS Policy admin sales"
+		}
+	],
+	"role-templates": [
+		{
+			"name": "admin",
+			"description": "Admin sales",
+			"default-role-name": "Admin Sales (unrestricted)",
+			"scope-references": [
+				"$XSAPPNAME.AMS_POLICY.sales.adminAllSales"
+			]
+		}
+	],
+	"role-collections": [
+		{
+			"name": "Admin RC",
+			"description": "Admin Sales Role Collections",
+			"role-template-references": [
+				"$XSAPPNAME.admin"
+			]
+		}
+	],
+	"oauth2-configuration": {
+		"token-validity": 900,
+		"refresh-token-validity": 1800,
+		"credential-types": [
+			"binding-secret"
+		]
+	}
+}

@@ -112,8 +112,6 @@ client:
   networkSecurity:
     allowNamespaceInternal: true
   env:
-    - name: MCP_URL
-      value: "https://mcp-example-approuter-{{ .Release.Namespace }}.{{ .Values.global.domain }}/"
     - name: PORT
       value: "8080"
     - name: HOST
@@ -129,6 +127,7 @@ identity:
         description: API exposed by the application
     consumed-services:
        - service-instance-name: agents-destination
+       # - service-instance-name: grant-management
 
     oauth2-configuration:
       token-policy:

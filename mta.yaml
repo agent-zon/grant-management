@@ -1,21 +1,51 @@
 _schema-version: 3.3.0
 ID: grant-management
 version: 1.0.0
-description: "A simple CAP project."
+description: "SAP AI Security Cloud - Grant Management (Reusable Service)"
 parameters:
   enable-parallel-deployments: true
 build-parameters:
   before-all:
     - builder: custom
       commands:
-        - echo "only update mta.yaml"
-        #        - npm ci
+        - npm i
         - npx cds build --production
 modules:
+  ################ Broker part #########################
+  - name: grant-management-broker
+    type: nodejs
+    path: ./broker
+    parameters:
+      memory: 128M
+      domains:
+        - cert.${default-domain}
+    properties:
+      SBF_BROKER_CREDENTIALS: '{ "~{broker-credentials/user}": "~{broker-credentials/password}" }'
+    build-parameters:
+      ignore:
+        [".gitignore", manifest.yml, "*.mtaext", "mta.*", "*.mtar", ".mta/"]
+    requires:
+      - name: grant-management-auth
+        parameters:
+          config:
+            credential-type: X509_GENERATED # Required to access IAS OSB from SBF
+            app-identifier: broker
+      - name: broker-credentials
+      - name: srv
+        properties:
+          SBF_SECURE_INCOMING_CONNECTIONS: true
+          # For other landscape other than EU12, get the value using `curl --location 'https://service-manager.cfapps.{landscape-domain}//v1/info' | jq --raw-output .service_manager_certificate_subject`
+          SBF_SERVICE_MANAGER_CERTIFICATE_SUBJECT: /C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Canary/OU=svcmgr-cf-eu12/L=service-manager/CN=service-manager
+          SBF_ENABLE_AUDITLOG: false
+          SBF_SERVICE_CONFIG:
+            grant-management-service:
+              extend_credentials:
+                shared:
+                  url: ~{service-url}/
+
   - name: grant-management-srv
     type: nodejs
     path: gen/srv
-
     parameters:
       instances: 1
       buildpack: nodejs_buildpack
@@ -28,58 +58,48 @@ modules:
     build-parameters:
       builder: custom
       commands:
-        - echo "say I build srv"
-    #         - npx cds build --production
-    #      builder: npm-ci
+        - npm ci --production --ignore-scripts || npm ci --production
     provides:
-      - name: srv-api # required by consumers of CAP services (e.g. approuter)
+      - name: srv
         properties:
-          srv-url: ${default-url}
-          srv-cert-url: "${protocol}://${default-host}.cert.${default-domain}"
+          service-url: ${default-url}
+          service-cert-url: "${protocol}://${default-host}.cert.${default-domain}"
     requires:
       - name: grant-management-auth
         parameters:
           config:
             credential-type: X509_GENERATED
             app-identifier: srv
-      #      - name: grant-management-postgres
-      #      - name: grant-management-redis
       - name: grant-management-destination
       - name: grant-management-postgres
       - name: grant-management-redis
 
-  - name: grant-management
-    type: approuter.nodejs
-    path: app/router
-    requires:
-      - name: grant-management-auth
-        parameters:
-          config:
-            credential-type: X509_GENERATED
-            app-identifier: approuter
-      - name: srv-api
-        group: destinations
-        properties:
-          url: ~{srv-cert-url}
-          forwardAuthCertificates: true
-          strictSSL: true
-      - name: mtx-api
-        group: destinations
-        properties:
-          name: mtx-api # must be used in xs-app.json as well
-          url: ~{mtx-url}
-      - name: grant-management-destination
-    parameters:
-      keep-existing-routes: true
-      disk-quota: 256M
-      memory: 256M
-    properties:
-      TENANT_HOST_PATTERN: "^(.*)-${default-uri}"
-    provides:
-      - name: app-api
-        properties:
-          app-protocol: ${protocol}
-          app-uri: ${default-uri}
+  # Optional: Keep approuter for admin/management UI if needed
+  # - name: grant-management
+  #   type: approuter.nodejs
+  #   path: app/router
+  #   requires:
+  #     - name: grant-management-auth
+  #       parameters:
+  #         config:
+  #           credential-type: X509_GENERATED
+  #           app-identifier: approuter
+  #     - name: srv
+  #       group: destinations
+  #       properties:
+  #         url: ~{service-cert-url}
+  #         forwardAuthCertificates: true
+  #         strictSSL: true
+  #     - name: mtx-api
+  #       group: destinations
+  #       properties:
+  #         name: mtx-api
+  #         url: ~{mtx-url}
+  #     - name: grant-management-destination
+  #   parameters:
+  #     keep-existing-routes: true
+  #     disk-quota: 256M
+  #     memory: 256M
 
   - name: grant-management-mtx
     type: nodejs
@@ -91,15 +111,14 @@ modules:
             credential-type: X509_GENERATED
             app-identifier: mtx
       - name: grant-management-sms
-      - name: app-api
+      - name: srv
         properties:
-          SUBSCRIPTION_URL: ~{app-protocol}://\${tenant_subdomain}-~{app-uri}
+          SUBSCRIPTION_URL: ~{service-url}
       - name: grant-management-destination
     build-parameters:
-      #      builder: npm-ci
       builder: custom
       commands:
-        - echo "say I build mtx sidecar"
+        - echo "Building MTX sidecar for reusable service"
     parameters:
       instances: 1
       memory: 256M
@@ -169,26 +188,100 @@ modules:
 #      - name: grant-management-postgres
 
 resources:
+  - name: broker-credentials
+    properties:
+      user: broker-username
+      password: broker-password
+
   - name: grant-management-auth
     type: org.cloudfoundry.managed-service
     requires:
-      - name: app-api
+      - name: srv
     parameters:
       service: identity
       service-name: grant-management-auth
       service-plan: application
       config:
-        display-name: grant-management
+        display-name: "SAP AI Security Cloud - Grant Management ({{org}} - {{space}})"
+        multi-tenant: true
+        xsuaa-cross-consumption: true
+        additional-domains: ["accounts400.sap.com"]
         oauth2-configuration:
+          grant-types:
+            - authorization_code
+            - client_credentials
+            - refresh_token
+            - urn:ietf:params:oauth:grant-type:jwt-bearer
+            - urn:ietf:params:oauth:grant-type:token-exchange
           token-policy:
             access-token-format: "jwt"
           redirect-uris:
-            - ~{app-api/app-protocol}://*.~{app-api/app-uri}/login/callback
-            - ~{app-api/app-protocol}://~{app-api/app-uri}/login/callback
-          post-logout-redirect-uris:
-            - ~{app-api/app-protocol}://*.~{app-api/app-uri}/*/logout.html
-        multi-tenant: true
-        xsuaa-cross-consumption: true
+            - https://*.${default-domain}/login/callback
+            - https://*.${default-domain}/login/callback?authType=ias
+            - https://*.${default-domain}/login/callback?scope=openid
+            - https://*.${default-domain}/login/oauth2/code/*
+            - https://*.internal.${default-domain}/node/signin-oidc/*
+            - https://*.euw.devtunnels.ms/login/callback?authType=ias
+            - https://*.oauth.pw/login/callback?authType=ias
+            - https://*.local.oauth.pw/login/callback?authType=ias
+            - https://*.oauth.pw:5000/login/callback?authType=ias
+            - https://*.local.oauth.pw:5000/login/callback?authType=ias
+            - https://*.authz.id/login/callback?authType=ias
+            - https://*.local.authz.id/login/callback?authType=ias
+            - https://*.authz.id:5000/login/callback?authType=ias
+            - https://*.local.authz.id:5000/login/callback?authType=ias
+            - http://localhost:5000/login/callback?authType=ias
+            - http://localhost:9000/login/callback?authType=ias
+        catalog:
+          services:
+            - name: grant-management-service
+              id: grant-management-service-id
+              display_name: Grant Management Service
+              description: "SAP AI Security Cloud - OAuth 2.0 Grant Management Service"
+              bindable: true
+              plan_updateable: true
+              instances_retrievable: true
+              bindings_retrievable: true
+              metadata:
+                displayName: Grant Management OAuth 2.0 Server
+                documentationUrl: https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/api-docs/index.html
+                longDescription: SAP AI Security Cloud - Grant Management OAuth 2.0 Server for managing grants, authorizations, and tokens
+              plans:
+                - name: standard
+                  id: grant-management-standard-plan-id
+                  description: Standard plan for Grant Management OAuth 2.0 Server
+                  free: true
+                  bindable: true
+                  metadata:
+                    displayName: Standard Plan
+                    description: Standard plan for Grant Management OAuth 2.0 Server
+                    bindingData:
+                      url: ~{srv/service-url}
+                      cert_url: ~{srv/service-cert-url}
+           
+            - name: grant-management-mcp-example-client
+              id: grant-management-mcp-example-client-id
+              display_name: Grant Management MCP Server Example (${org}-${space})
+              description: Exmplae Implementation of an MCP Server using Grant Management Service (${org}-${space})
+              bindable: true
+              plan_updateable: true
+              instances_retrievable: true
+              bindings_retrievable: true
+              metadata:
+                displayName: Grant Management MCP Server Example (${org}-${space})
+                description: Exmplae Implementation of an MCP Server using Grant Management Service (${org}-${space})
+              plans:
+                - name: standard
+                  id: grant-mgmt-mcp-ex-client-std-plan-id
+                  description: Standard plan for Grant Management MCP Server Example (${org}-${space})
+                  free: true
+                  bindable: true
+                  metadata:
+                    displayName: Standard Plan
+                    description: Standard plan for Grant Management MCP Server Example (${org}-${space})
+                    bindingData:
+                      url: ~{srv/service-url}/mcp/streaming
+                      cert_url: ~{srv/service-cert-url}
       #  - name: grant-management-postgres
       #    type: org.cloudfoundry.managed-service
       #    parameters:
@@ -217,8 +310,12 @@ resources:
       service: subscription-manager
       service-plan: provider
       config:
-        applicationType: application
-        appName: grant-management-${org}-${space}
+        applicationType: service # Changed from 'application' to 'service' for reusable service
+        appName: ${org}-${space}
+        displayName: Security Cloud AI - Grant Management (${org}-${space})
+        description: Grant Management for AI Agents
+        category: AI
+        iasServiceInstanceName: grant-management-auth
         appCallbacks:
           dependenciesCallbacks:
             url: ~{mtx-api/mtx-cert-url}/-/cds/sms-provisioning/dependencies/{app_tid}
@@ -228,12 +325,13 @@ resources:
               subscribeEnable: true
               unSubscribeEnable: true
               timeoutInMillis: 300000 # Increase if your deployments are taking longer than that
-        displayName: grant-management
-        description: Description for grant-management
-        category: Category
-        iasServiceInstanceName: grant-management-auth
+        commercialAppName: grant-management-${org}-${space}
+        isDefault: true
     requires:
+      - name: grant-management-srv
+      - name: grant-management-auth
       - name: mtx-api
+      - name: srv
     processed-after:
       - grant-management-auth
   - name: grant-management-destination

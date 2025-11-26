@@ -1,0 +1,13 @@
+{
+  "xsappname": "sci-reuse-service-consumer",
+  "tenant-mode": "dedicated",
+  "identityzone": "17e0cf68-1c4c-45c2-b217-9a83a3be86aa",
+  "role-templates": [
+    {
+      "name": "Test",
+      "scope-references": [
+        "uaa.user"
+      ]
+    }
+  ]
+}

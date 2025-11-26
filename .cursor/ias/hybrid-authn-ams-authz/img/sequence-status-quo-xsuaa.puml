@@ -1,0 +1,9 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+Client -> Application: XSUAA access token with scopes
+Application -> Application: authorize scope
+
+@enduml

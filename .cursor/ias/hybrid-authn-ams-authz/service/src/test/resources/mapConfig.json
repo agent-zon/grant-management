@@ -1,0 +1,6 @@
+[
+    {
+        "scope": "xsuaaAdmin",
+        "policy": "sales.adminAllSales"
+    }
+]

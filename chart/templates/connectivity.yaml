@@ -1,0 +1,12 @@
+apiVersion: destination.connectivity.api.sap/v1
+kind: Destination
+metadata:
+  name: cdc
+spec:
+  destinationRef:
+    name: cdc-api
+    
+  accessControl: 
+    scope: "clusterWide"
+
+

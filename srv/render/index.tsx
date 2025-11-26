@@ -46,3 +46,4 @@ export function sendHtml(req: cds.Request, html: string) {
   req?.http?.res.setHeader("Content-Type", "text/html");
   return req?.http?.res.send(html);
 }
+
