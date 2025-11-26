@@ -84,16 +84,16 @@ export const permissionsElevationMachine = createMachine(
                 actions: ["read", "query"],
                 locations: ["analytics"],
               },
-              {
-                type: "fs",
-                roots: ["/workspace/configs", "/home/agent/analytics"],
-                permissions: {
-                  read: { essential: true },
-                  write: null,
-                  create: null,
-                  list: null,
-                },
-              },
+              // {
+              //   type: "fs",
+              //   roots: ["/workspace/configs", "/home/agent/analytics"],
+              //   permissions: {
+              //     read: { essential: true },
+              //     write: null,
+              //     create: null,
+              //     list: null,
+              //   },
+              // },
             ],
             color: "blue",
             risk: "low",
@@ -228,7 +228,7 @@ export const permissionsElevationMachine = createMachine(
             target: "subscription_granted",
             actions: assign({
               access_token: ({ event }) => event.access_token,
-              current_permissions: ({ event }) => event.scope.split(" "),
+              current_permissions: ({ event }) => event.scope?.split(" "),
               actor: ({ event }) => event.actor,
               risk_level: "high",
               step: 3,

@@ -1,6 +1,15 @@
 import cds from "@sap/cds";
-import {IdentityService, IdentityServiceToken, SecurityContext} from "@sap/xssec";
+import {
+  IdentityService,
+  IdentityServiceToken,
+  SecurityContext,
+} from "@sap/xssec";
 
+import {
+  McpServer,
+  RegisteredTool,
+} from "@modelcontextprotocol/sdk/server/mcp.js";
+import React from "react";
 declare module "@sap/cds" {
   interface EventContext {
     render: (
@@ -86,9 +95,24 @@ declare module "#cds-models/GrantsManagementService" {
   }
 }
 
-
 declare module "@sap/cds" {
   interface User {
     authInfo?: SecurityContext<IdentityService, IdentityServiceToken>;
   }
 }
+
+export type MCPRequest = {
+  jsonrpc?: string;
+  id?: number;
+  method?: string;
+  params?: Record<string, any>;
+
+  //extra -virtual
+  origin: string;
+  serverId: string;
+  grant_id: string;
+  grant: Grant;
+  authorizationDetails: AuthorizationDetailMcpTool;
+  server: McpServer;
+  tools: Record<string, RegisteredTool>;
+};

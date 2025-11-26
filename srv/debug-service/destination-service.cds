@@ -1,10 +1,19 @@
-//destination debug service, endpoints to query and to create destinations
+using sap.scai.debug as debug from '../../db/destination.cds';
 
-@path: '/debug/destinations'
-service  DestinationService {
+namespace sap.scai.debug;
+@path: '/debug/destinations' 
+@protocol: 'rest' 
+@impl: './destination-service.tsx' 
+@Core.title: 'Destination Debug Service'
+service  DestinationService { 
+         
+    entity Destinations as projection on debug.Destinations actions { 
+        //bound to the collection and not a specific instance of Foo
+        action customCreate (in: many $self, name: String) returns Destinations;
 
-    function destinations() returns Map;
-    
-    function destination(name: String) returns Map;
+        function token() returns Map; 
+        @Core.MediaType: 'application/octet-stream'
+        function ui() returns String; 
+    }
 
 }

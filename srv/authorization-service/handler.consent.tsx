@@ -24,6 +24,7 @@ export async function POST(
   req: Parameters<ConsentHandler>[0],
   next: Parameters<ConsentHandler>[1]
 ) {
+  console.log("🔐 Consent request:", req.data);
   // Normalize consent payload: ensure request association gets set when request_ID is provided
   if (req.data && req.data.request_ID && !req.data.request) {
     // set the structured association foreign key

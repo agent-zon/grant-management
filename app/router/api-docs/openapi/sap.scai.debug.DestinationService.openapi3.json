@@ -1,0 +1,943 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "Use @title: '...' on your CDS service to provide a meaningful title.",
+    "description": "Use @Core.LongDescription: '...' on your CDS service to provide a meaningful description.",
+    "version": ""
+  },
+  "x-sap-api-type": "ODATAV4",
+  "x-odata-version": "4.01",
+  "x-sap-shortText": "Use @Core.Description: '...' on your CDS service to provide a meaningful short text.",
+  "servers": [
+    {
+      "url": "/debug/destinations"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Destinations"
+    }
+  ],
+  "paths": {
+    "/$batch": {
+      "post": {
+        "summary": "Sends a group of requests",
+        "description": "Group multiple requests into a single request payload, see [Batch Requests](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_BatchRequests).\n\n*Please note that \"Try it out\" is not supported for this request.*",
+        "tags": [
+          "Batch Requests"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Batch request",
+          "content": {
+            "multipart/mixed;boundary=request-separator": {
+              "schema": {
+                "type": "string"
+              },
+              "example": "--request-separator\nContent-Type: application/http\nContent-Transfer-Encoding: binary\n\nGET Destinations HTTP/1.1\nAccept: application/json\n\n\n--request-separator--"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Batch response",
+            "content": {
+              "multipart/mixed": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "--response-separator\nContent-Type: application/http\n\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n{...}\n--response-separator--"
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Destinations": {
+      "get": {
+        "summary": "Retrieves a list of destinations.",
+        "tags": [
+          "Destinations"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "name",
+                  "name desc",
+                  "url",
+                  "url desc",
+                  "authentication",
+                  "authentication desc",
+                  "proxyType",
+                  "proxyType desc",
+                  "sapClient",
+                  "sapClient desc",
+                  "username",
+                  "username desc",
+                  "password",
+                  "password desc",
+                  "isTrustingAllCertificates",
+                  "isTrustingAllCertificates desc",
+                  "clientId",
+                  "clientId desc",
+                  "clientSecret",
+                  "clientSecret desc",
+                  "tokenServiceUrl",
+                  "tokenServiceUrl desc",
+                  "tokenServiceUser",
+                  "tokenServiceUser desc",
+                  "tokenServicePassword",
+                  "tokenServicePassword desc",
+                  "type",
+                  "type desc",
+                  "isTestDestination",
+                  "isTestDestination desc",
+                  "cloudConnectorLocationId",
+                  "cloudConnectorLocationId desc",
+                  "systemUser",
+                  "systemUser desc",
+                  "forwardAuthToken",
+                  "forwardAuthToken desc",
+                  "mtls",
+                  "mtls desc",
+                  "authTokens/type",
+                  "authTokens/type desc",
+                  "authTokens/value",
+                  "authTokens/value desc",
+                  "authTokens/expiresIn",
+                  "authTokens/expiresIn desc",
+                  "authTokens/error",
+                  "authTokens/error desc",
+                  "authTokens/http_header/name",
+                  "authTokens/http_header/name desc",
+                  "authTokens/http_header/value",
+                  "authTokens/http_header/value desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "name",
+                  "url",
+                  "authentication",
+                  "proxyType",
+                  "sapClient",
+                  "username",
+                  "password",
+                  "isTrustingAllCertificates",
+                  "clientId",
+                  "clientSecret",
+                  "tokenServiceUrl",
+                  "tokenServiceUser",
+                  "tokenServicePassword",
+                  "type",
+                  "isTestDestination",
+                  "cloudConnectorLocationId",
+                  "systemUser",
+                  "forwardAuthToken",
+                  "mtls",
+                  "authTokens"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved destinations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of Destinations",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/sap.scai.debug.DestinationService.Destinations"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Creates a single destination.",
+        "tags": [
+          "Destinations"
+        ],
+        "requestBody": {
+          "description": "New destination",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sap.scai.debug.DestinationService.Destinations-create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created destination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.debug.DestinationService.Destinations"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Destinations('{name}')": {
+      "parameters": [
+        {
+          "description": "key: name",
+          "in": "path",
+          "name": "name",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "maxLength": 100
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a single destination.",
+        "tags": [
+          "Destinations"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "name",
+                  "url",
+                  "authentication",
+                  "proxyType",
+                  "sapClient",
+                  "username",
+                  "password",
+                  "isTrustingAllCertificates",
+                  "clientId",
+                  "clientSecret",
+                  "tokenServiceUrl",
+                  "tokenServiceUser",
+                  "tokenServicePassword",
+                  "type",
+                  "isTestDestination",
+                  "cloudConnectorLocationId",
+                  "systemUser",
+                  "forwardAuthToken",
+                  "mtls",
+                  "authTokens"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved destination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sap.scai.debug.DestinationService.Destinations"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Changes a single destination.",
+        "tags": [
+          "Destinations"
+        ],
+        "requestBody": {
+          "description": "New property values",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sap.scai.debug.DestinationService.Destinations-update"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Deletes a single destination.",
+        "tags": [
+          "Destinations"
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/dest": {
+      "get": {
+        "summary": "Invokes function dest",
+        "tags": [
+          "Service Operations"
+        ],
+        "parameters": [
+          {
+            "required": false,
+            "in": "query",
+            "name": "name",
+            "description": "String value needs to be enclosed in single quotes",
+            "schema": {
+              "type": "string",
+              "nullable": true,
+              "pattern": "^(null|'([^']|'')*')$",
+              "default": "null"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/sap.scai.debug.DestinationService.cds_Map"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "sap.scai.debug.DestinationService.Destinations": {
+        "title": "Destinations",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "authentication": {
+            "type": "string",
+            "maxLength": 100,
+            "nullable": true
+          },
+          "proxyType": {
+            "type": "string",
+            "maxLength": 100,
+            "nullable": true
+          },
+          "sapClient": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "username": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          },
+          "isTrustingAllCertificates": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "clientId": {
+            "type": "string",
+            "nullable": true
+          },
+          "clientSecret": {
+            "type": "string",
+            "nullable": true
+          },
+          "tokenServiceUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "tokenServiceUser": {
+            "type": "string",
+            "nullable": true
+          },
+          "tokenServicePassword": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "isTestDestination": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "cloudConnectorLocationId": {
+            "type": "string",
+            "nullable": true
+          },
+          "systemUser": {
+            "type": "string",
+            "nullable": true
+          },
+          "forwardAuthToken": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "mtls": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "authTokens": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/sap.scai.debug.DestinationService.Destinations_authTokens"
+                }
+              ],
+              "nullable": true
+            }
+          }
+        }
+      },
+      "sap.scai.debug.DestinationService.Destinations-create": {
+        "title": "Destinations (for create)",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "authentication": {
+            "type": "string",
+            "maxLength": 100,
+            "nullable": true
+          },
+          "proxyType": {
+            "type": "string",
+            "maxLength": 100,
+            "nullable": true
+          },
+          "sapClient": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "username": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          },
+          "isTrustingAllCertificates": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "clientId": {
+            "type": "string",
+            "nullable": true
+          },
+          "clientSecret": {
+            "type": "string",
+            "nullable": true
+          },
+          "tokenServiceUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "tokenServiceUser": {
+            "type": "string",
+            "nullable": true
+          },
+          "tokenServicePassword": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "isTestDestination": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "cloudConnectorLocationId": {
+            "type": "string",
+            "nullable": true
+          },
+          "systemUser": {
+            "type": "string",
+            "nullable": true
+          },
+          "forwardAuthToken": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "mtls": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "authTokens": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/sap.scai.debug.DestinationService.Destinations_authTokens-create"
+                }
+              ],
+              "nullable": true
+            }
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "sap.scai.debug.DestinationService.Destinations-update": {
+        "title": "Destinations (for update)",
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "authentication": {
+            "type": "string",
+            "maxLength": 100,
+            "nullable": true
+          },
+          "proxyType": {
+            "type": "string",
+            "maxLength": 100,
+            "nullable": true
+          },
+          "sapClient": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "username": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          },
+          "isTrustingAllCertificates": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "clientId": {
+            "type": "string",
+            "nullable": true
+          },
+          "clientSecret": {
+            "type": "string",
+            "nullable": true
+          },
+          "tokenServiceUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "tokenServiceUser": {
+            "type": "string",
+            "nullable": true
+          },
+          "tokenServicePassword": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "isTestDestination": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "cloudConnectorLocationId": {
+            "type": "string",
+            "nullable": true
+          },
+          "systemUser": {
+            "type": "string",
+            "nullable": true
+          },
+          "forwardAuthToken": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "mtls": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "authTokens": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/sap.scai.debug.DestinationService.Destinations_authTokens-update"
+                }
+              ],
+              "nullable": true
+            }
+          }
+        }
+      },
+      "sap.scai.debug.DestinationService.Destinations_authTokens": {
+        "title": "Destinations_authTokens",
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiresIn": {
+            "type": "string",
+            "nullable": true
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          },
+          "http_header": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.debug.DestinationService.Destinations_authTokens_http_header"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.debug.DestinationService.Destinations_authTokens-create": {
+        "title": "Destinations_authTokens (for create)",
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiresIn": {
+            "type": "string",
+            "nullable": true
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          },
+          "http_header": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.debug.DestinationService.Destinations_authTokens_http_header-create"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.debug.DestinationService.Destinations_authTokens-update": {
+        "title": "Destinations_authTokens (for update)",
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiresIn": {
+            "type": "string",
+            "nullable": true
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          },
+          "http_header": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/sap.scai.debug.DestinationService.Destinations_authTokens_http_header-update"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.debug.DestinationService.Destinations_authTokens_http_header": {
+        "title": "Destinations_authTokens_http_header",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.debug.DestinationService.Destinations_authTokens_http_header-create": {
+        "title": "Destinations_authTokens_http_header (for create)",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.debug.DestinationService.Destinations_authTokens_http_header-update": {
+        "title": "Destinations_authTokens_http_header (for update)",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "sap.scai.debug.DestinationService.cds_Map": {
+        "title": "cds_Map",
+        "type": "object"
+      },
+      "count": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "description": "The number of entities in the collection. Available when using the [$count](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptioncount) query option."
+      },
+      "error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "target": {
+                "type": "string"
+              },
+              "details": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "target": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "innererror": {
+                "type": "object",
+                "description": "The structure of this object is service-specific"
+              }
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "top": {
+        "name": "$top",
+        "in": "query",
+        "description": "Show only the first n items, see [Paging - Top](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptiontop)",
+        "schema": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "example": 50
+      },
+      "skip": {
+        "name": "$skip",
+        "in": "query",
+        "description": "Skip the first n items, see [Paging - Skip](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionskip)",
+        "schema": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "count": {
+        "name": "$count",
+        "in": "query",
+        "description": "Include count of items, see [Count](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptioncount)",
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "search": {
+        "name": "$search",
+        "in": "query",
+        "description": "Search items by search phrases, see [Searching](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionsearch)",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "error": {
+        "description": "Error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/error"
+            }
+          }
+        }
+      }
+    }
+  }
+}

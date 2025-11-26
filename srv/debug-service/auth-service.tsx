@@ -1,12 +1,16 @@
 import cds from "@sap/cds";
-import {IdentityService, IdentityServiceToken, SecurityContext} from "@sap/xssec";
+import {
+  IdentityService,
+  IdentityServiceToken,
+  SecurityContext,
+} from "@sap/xssec";
 
 class AuthService extends cds.ApplicationService {
   public me(req) {
     console.log("cds.context.user", cds.context?.user);
 
     // Get user from CDS context (this is the authenticated user)
-    const user = cds.context?.user ;
+    const user = req?.user;
 
     return {
       correlationId: user?.authInfo?.config?.correlationId,
@@ -40,6 +44,10 @@ class AuthService extends cds.ApplicationService {
         },
       },
     };
+  }
+
+  public token(req) {
+    return cds.context?.user?.authInfo?.config?.jwt;
   }
 }
 

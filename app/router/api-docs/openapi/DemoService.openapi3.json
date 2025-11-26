@@ -2,7 +2,7 @@
   "openapi": "3.0.2",
   "info": {
     "title": "Demo Service",
-    "description": "Provides interactive demo flows and helper HTML to showcase grant flows, events, and integrations. Visit [Playground](/demo/index) .",
+    "description": "Provides interactive demo flows and helper HTML to showcase grant flows, events, and integrations.",
     "version": ""
   },
   "x-sap-api-type": "ODATAV4",
@@ -550,5 +550,9 @@
         }
       }
     }
+  },
+  "externalDocs": {
+    "description": "Playground",
+    "url": "/demo/index"
   }
 }
