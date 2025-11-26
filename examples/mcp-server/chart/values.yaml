@@ -127,6 +127,9 @@ identity:
     provided-apis:
       - name: mcp-ias-api
         description: API exposed by the application
+    consumed-services:
+       - service-instance-name: agents-destination
+
     oauth2-configuration:
       token-policy:
         access-token-format: "jwt"
