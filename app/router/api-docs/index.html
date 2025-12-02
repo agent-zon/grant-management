@@ -63,6 +63,12 @@
           description: "Demo and testing endpoints",
           spec: "DemoService.openapi3.json",
         },
+        {
+          id: "Destinations",
+          name: "Destinations Service",
+          description: "Grant Destinations Management API",
+          spec: "sap.scai.debug.DestinationService.openapi3.json",
+        }
       ];
       function selectSpec(id) {
         const s = services.find((x) => x.id === id) || services[0];

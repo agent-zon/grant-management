@@ -7,4 +7,6 @@
 @Core.LongDescription: 'Provides simple authenticated user information and helper endpoints for demos and integration tests.'
 service AuthService { 
   @rest function me() returns Map; 
+
+  @rest function token() returns String;
 }

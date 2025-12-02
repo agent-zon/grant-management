@@ -2,7 +2,10 @@ import cds from "@sap/cds";
 import AuthorizationDetailsComponent from "./details/index.tsx";
 import "./handler.authorize.tsx";
 import type { AuthorizationService } from "./authorization-service.tsx";
-import { AuthorizationRequests } from "#cds-models/sap/scai/grants/AuthorizationService";
+import {
+  AuthorizationRequest,
+  AuthorizationRequests,
+} from "#cds-models/sap/scai/grants/AuthorizationService";
 import GrantsManagementService, {
   Grants,
 } from "#cds-models/sap/scai/grants/GrantsManagementService";
@@ -18,12 +21,27 @@ export default async function authorize(
 
   const id = request_uri.split(":").pop();
   console.log("🔧 Reading authorization request:", id);
-  const request = (await this.read(AuthorizationRequests, id)) as any;
+  const request = (await this.get(AuthorizationRequests, {
+    ID: id,
+  })) as AuthorizationRequest;
 
   if (!request) {
     return cds.context?.http?.res
       .status(404)
       .send("Authorization request not found");
+  }
+
+  if (request.subject && request.subject !== cds.context?.user?.id) {
+    return cds.context?.http?.res
+      .status(403)
+      .send(
+        "Authorization request subject does not match the authenticated user"
+      );
+  }
+  if (!request.subject_token || !request.subject) {
+    await this.update(AuthorizationRequests, id)
+      .set`subject_token = ${cds.context?.user?.authInfo?.token.jwt}`
+      .set`subject = ${cds.context?.user?.id}`;
   }
 
   // Load the grant associated with this request

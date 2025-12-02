@@ -1,0 +1,54 @@
+kind: Component
+metadata:
+  displayName: grant-management
+  description: >-
+    Implements the OAuth 2.0 Grant Management API specification with Rich
+    Authorization Requests (RAR), enabling fine-grained permission management
+    for AI agents, MCP servers, and API gateways.
+  labels:
+    language: typescript
+    framwork: capjs
+  tags:
+    - OAuth
+    - Agent
+
+
+spec:
+  links:
+    - name: User Dashboard
+      url: >-
+        https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com
+    - name: Playground
+      url: >-
+        https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/demo/index
+  docs:
+    techDocsLinks:
+      - name: Readme
+        url: 'https://github.tools.sap/AIAM/grant-management/blob/main/README.md'
+      - name: Api Reference
+        url: >-
+          https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/api-docs
+      - name: Usage Example
+        url: https://github.tools.sap/AIAM/grant-management/tree/main/examples/mcp-server
+      - name: Grant Mangment API
+        url: https://github.tools.sap/AIAM/grant-management/blob/main/GRANT_MANAGEMENT_API.md
+    ai:
+      - name: Task History
+        url: https://github.tools.sap/AIAM/grant-management/tree/main/.tasks
+     # helpDocsLinks:
+     #  - name: help
+     #    url: >-
+     #      https://sap.help....
+
+#   logo: null
+#   type:
+#     name: null
+#     lifecycle: null
+#   team:
+#     name: null
+#     productOwner: null
+#     technicalOwner: null
+#     productManager: null
+#     qualityLead: null
+#     uxLead: null
+#     securityLead: null

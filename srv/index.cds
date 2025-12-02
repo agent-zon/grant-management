@@ -6,5 +6,7 @@ using from './demo-service/demo-service.cds';
 
 using from './debug-service/auth-service.cds';
 
+using from './debug-service/destination-service.cds';
+
 using from './mcp-service/mcp-service.cds';
 

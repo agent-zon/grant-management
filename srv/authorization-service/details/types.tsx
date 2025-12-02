@@ -5,12 +5,10 @@ import type {
 
 export type AuthorizationDetailProps = AuthorizationDetailRequest & {
   index: number;
-  description: string;
-  riskLevel: "low" | "medium" | "high";
-  category: string;
-  type_code: string;
+  riskLevel?: "low" | "medium" | "high";
+  description?: string;
+  category?: string;
   permissions?: Record<string, RARClaim | null>;
-  tools?: Record<string, RARClaim | null>;
 };
 
 // declare module "#cds-models/com/sap/agent/grants" {

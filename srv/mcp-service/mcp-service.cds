@@ -1,5 +1,6 @@
 namespace sap.scai.grants.mcp;
 
+
 entity McpDestination {
   key name: String;
   virtual destination: Map;
@@ -37,6 +38,7 @@ service McpService {
         
   @method: [POST]
   action streaming(jsonrpc: String, id: Integer, method: String, params: Map) returns Map;
+ 
   @requires: 'authenticated-user'
   function dest (name : McpDestination:name) returns Map;
   

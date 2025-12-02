@@ -43,12 +43,13 @@
       "authenticationType": "ias"
     },
     {
-      "source": "^/auth/api/me",
-      "target": "/auth/me",
+      "source": "^/auth/api/(.*)$",
+      "target": "/auth/$1",
       "destination": "srv-api",
       "csrfProtection": false,
       "authenticationType": "ias"
     },
+
     {
       "source": "^/user-api(.*)",
       "target": "$1",
