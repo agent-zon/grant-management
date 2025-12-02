@@ -3942,13 +3942,14 @@
     },
     "/token": {
       "post": {
-        "summary": "Invokes action token",
+        "summary": "OAuth 2.0 Token Endpoint",
+        "description": "Exchanges authorization code for access token. Implements OAuth 2.0 token endpoint with PKCE, Grant Management, and Rich Authorization Requests support.\n\n**Supported Grant Types:**\n- authorization_code (RFC 6749)\n\n**Response Includes:**\n- access_token with embedded grant_id\n- grant_id for Grant Management API\n- authorization_details (RAR)\n- actor (On-Behalf-Of)\n\n**Security:**\n- PKCE code_verifier validation\n- Single-use authorization codes\n- Client authentication",
         "tags": [
           "Service Operations"
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Successfully issued access token with grant_id and authorization_details",
             "content": {
               "application/json": {
                 "schema": {
@@ -3962,68 +3963,84 @@
               }
             }
           },
+          "400": {
+            "description": "Bad Request - Invalid grant, PKCE failed, or unsupported grant type"
+          },
           "4XX": {
             "$ref": "#/components/responses/error"
           }
         },
         "requestBody": {
-          "description": "Action parameters",
+          "description": "OAuth 2.0 token request parameters. PKCE code_verifier required if code_challenge was sent in PAR.",
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": ["grant_type", "client_id"],
                 "properties": {
                   "grant_type": {
                     "type": "string",
-                    "nullable": true
+                    "enum": ["authorization_code"],
+                    "description": "OAuth 2.0 grant type. Currently only authorization_code is supported."
                   },
                   "client_id": {
                     "type": "string",
-                    "nullable": true
+                    "description": "OAuth client identifier"
                   },
                   "code": {
                     "type": "string",
-                    "nullable": true
+                    "description": "Authorization code from authorization endpoint (required for authorization_code grant)"
                   },
                   "code_verifier": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "description": "PKCE code verifier. REQUIRED if code_challenge was sent in PAR request."
                   },
                   "redirect_uri": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "description": "Must match redirect_uri from authorization request"
                   },
                   "refresh_token": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "description": "Refresh token (for future refresh_token grant type)"
                   },
                   "token_format": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "description": "Requested token format (future extension)"
                   },
                   "resource": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "description": "Resource indicator (RFC 8707)"
                   },
                   "audience": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "description": "Intended audience for the token"
                   },
                   "scope": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "description": "Requested scope (for refresh_token grant)"
                   },
                   "resource_": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "description": "Alternative resource parameter"
                   },
                   "assertion": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "description": "JWT assertion for urn:ietf:params:oauth:grant-type:jwt-bearer"
                   },
                   "subject_token": {
                     "type": "string",
-                    "nullable": true
+                    "nullable": true,
+                    "description": "Subject token for token exchange (RFC 8693)"
                   }
                 }
               }
