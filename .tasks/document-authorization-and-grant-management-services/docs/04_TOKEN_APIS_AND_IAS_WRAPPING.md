@@ -36,16 +36,22 @@ This document covers:
                             │
                             ▼
 ┌──────────────────────────────────────────────────────────────┐
-│  Authorization Service                                       │
+│  Authorization Service (handler.token.tsx)                   │
 │  ┌────────────────────────────────────────────────────────┐ │
-│  │  handler.token.tsx                                     │ │
-│  │                                                        │ │
-│  │  1. Validate grant_type                               │ │
-│  │  2. Verify authorization code                         │ │
-│  │  3. Fetch grant details                               │ │
-│  │  4. Fetch authorization_details                       │ │
-│  │  5. Generate access token                             │ │
+│  │  1. Determine grant_type                              │ │
+│  │  2. Check if IAS is configured                        │ │
+│  │  3. Call IAS token endpoint OR use mock               │ │
+│  │  4. Extract grant_id from JWT (sid claim)             │ │
+│  │  5. Fetch authorization_details from DB               │ │
 │  │  6. Return token response with grant_id               │ │
+│  └────────────────────────────────────────────────────────┘ │
+│                                                              │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │  IAS Integration (when configured)                    │ │
+│  │  • Uses @sap/xssec IdentityService                    │ │
+│  │  • mTLS with certificates                             │ │
+│  │  • Supports multiple grant types                      │ │
+│  │  • Returns JWT tokens                                 │ │
 │  └────────────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────────────┘
                             │
@@ -53,12 +59,11 @@ This document covers:
 ┌──────────────────────────────────────────────────────────────┐
 │  Token Response                                              │
 │  {                                                           │
-│    "access_token": "at_01HXG...:grant_01HXG...",           │
+│    "access_token": "eyJhbGciOiJSUzI1NiIs...", // JWT       │
 │    "token_type": "Bearer",                                  │
 │    "expires_in": 3600,                                      │
-│    "scope": "filesystem_read filesystem_write",             │
-│    "grant_id": "grant_01HXG...",                           │
-│    "actor": "urn:agent:finance-v1",                        │
+│    "refresh_token": "rt_...", // (if requested)            │
+│    "grant_id": "grant_01HXG...", // from JWT sid claim     │
 │    "authorization_details": [...]                           │
 │  }                                                           │
 └──────────────────────────────────────────────────────────────┘
@@ -68,75 +73,73 @@ This document covers:
 
 ## Token Endpoint Implementation
 
-### Authorization Code Grant
+### Core Token Handler Structure
 
-**Most common OAuth flow** - Used after user consents
+**Actual implementation** - Wraps IAS (Identity Authentication Service) with fallback
 
 ```typescript
 // srv/authorization-service/handler.token.tsx
 import cds from "@sap/cds";
+import { IdentityService } from "@sap/xssec";
+import { jwtDecode } from "jwt-decode";
 import { ulid } from "ulid";
+import fetch from "node-fetch";
+import { Agent } from "https";
 
 export default async function token(
   this: AuthorizationService,
-  req: cds.Request<{ grant_type: string; code: string }>
+  req: cds.Request<{
+    grant_type: string;
+    code?: string;
+    refresh_token?: string;
+    subject_token?: string;
+  }>
 ) {
-  console.log("🔐 Token request:", req.data);
-  const { grant_type, code } = req.data;
+  const { grant_type, code, refresh_token, subject_token } = req.data;
   
-  // 1. Validate grant type
-  if (grant_type !== "authorization_code") {
-    return req.error(400, "unsupported_grant_type");
+  // 1. Get tokens from IAS or mock implementation
+  const { access_token, ...tokens } = await getTokens();
+  
+  if (!access_token) {
+    return tokens;
   }
   
-  // 2. Fetch authorization request (code = request ID)
-  const { grant_id } = await this.read(AuthorizationRequests, code);
+  // 2. Extract grant_id from JWT sid claim
+  const { sid: grant_id } = jwtDecode<{ sid: string }>(access_token);
   
-  if (!grant_id) {
-    return req.error(400, "invalid_grant");
-  }
-  
-  // 3. Fetch grant record (bypass UI handlers)
-  const grantRecord = await cds.run(
-    cds.ql.SELECT.one.from(Grants).where({ id: grant_id })
-  );
-  
-  if (!grantRecord) {
-    return req.error(400, "invalid_grant");
-  }
-  
-  // 4. Fetch authorization details
+  // 3. Fetch authorization details from DB by consent foreign key
   const authorization_details = await cds.run(
-    cds.ql.SELECT.from(AuthorizationDetails)
-      .where({ consent_grant_id: grant_id })
+    cds.ql.SELECT.from(AuthorizationDetails).where({
+      consent_grant_id: grant_id,
+    })
   );
   
-  // 5. Extract grant data
-  const scope = grantRecord.scope || "";
-  const actor = grantRecord.actor;
-  
-  // 6. Generate access token
-  const access_token = `at_${ulid()}:${grant_id}`;
-  
-  console.log("✅ Token response", {
-    scope,
+  console.log("[token] response", {
+    access_token: access_token?.slice(0, 5),
     grant_id,
     authorization_details: authorization_details.length,
-    actor,
+    ...tokens,
   });
   
-  // 7. Return OAuth token response
+  // 4. Return OAuth token response with Grant Management extension
   return {
     access_token,
+    ...tokens,
     token_type: "Bearer",
     expires_in: 3600,
-    scope,
     grant_id,              // Grant Management extension
     authorization_details, // Rich Authorization Requests
-    actor,                 // On-Behalf-Of extension
   };
 }
 ```
+
+**Key Implementation Details:**
+
+1. **IAS Integration** - Uses `@sap/xssec` `IdentityService` when credentials available
+2. **JWT Tokens** - Returns actual JWT tokens from IAS, not simple strings
+3. **Grant ID Extraction** - Uses `jwt-decode` to extract `sid` claim as `grant_id`
+4. **Fallback** - Mock implementation when `cds.requires.auth.credentials` not configured
+5. **Authorization Details** - Always fetched from local DB after token issuance
 
 ---
 
@@ -190,61 +193,113 @@ export default async function token(
 
 ### Access Token Format
 
+**JWT Tokens from IAS (Production)**
+
+When IAS is configured, tokens are standard JWT format:
+
 ```
-at_01HXG123456789ABCDEF:grant_01HXG456789ABCDEF012
-│   │                    │
-│   └─ ULID (sortable)   └─ Grant ID (for introspection)
-└─ Token prefix
+eyJhbGciOiJSUzI1NiIsImtpZCI6IjEyMyIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyQGV4YW1wbGUuY29tIiwic2lkIjoiZ3JhbnRfMDFIWEciLCJleHAiOjE3MzI5ODY0MDAsImlzcyI6Imh0dHBzOi8vaWFzLmV4YW1wbGUuY29tIn0.signature
+│                                                      │                                                                                                │
+└─ Header (algorithm, key ID, type)                   └─ Payload (sub, sid=grant_id, exp, iss, ...)                                                    └─ Signature
 ```
 
-**Design Decisions**:
+**JWT Payload Structure:**
 
-1. **ULID prefix** - Sortable, URL-safe, globally unique
-2. **Grant ID suffix** - Enables token introspection without database lookup
-3. **Colon separator** - Easy to parse
-4. **No cryptographic signature** - Simple for demos, should use JWT in production
+```json
+{
+  "sub": "user@example.com",
+  "sid": "grant_01HXG456789ABCDEF012",  // ← grant_id
+  "exp": 1732986400,
+  "iss": "https://ias.example.com",
+  "aud": "client-id",
+  "iat": 1732982800,
+  "jti": "unique-token-id"
+}
+```
 
-**Production considerations**:
+**Mock Tokens (Development)**
+
+When IAS is not configured, mock tokens are generated:
+
+```
+mk_01HXG123456789ABCDEF
+│   │
+│   └─ ULID (unique identifier)
+└─ Mock prefix
+```
+
+**Implementation Details:**
 
 ```typescript
-// Use JWT for production
-const access_token = jwt.sign(
-  {
-    sub: grantRecord.subject,
-    scope: grantRecord.scope,
-    grant_id: grant_id,
-    authorization_details: authorization_details,
-    actor: grantRecord.actor,
-  },
-  process.env.JWT_SECRET,
-  {
-    expiresIn: "1h",
-    issuer: "https://auth.example.com",
-    audience: "https://api.example.com",
-  }
-);
+// Extract grant_id from JWT using jwt-decode
+const { sid: grant_id } = jwtDecode<{ sid: string }>(access_token);
+
+// Mock token generation (no IAS)
+const access_token = req.user?.authInfo?.token?.jwt || `mk_${ulid()}`;
 ```
+
+**Key Differences:**
+
+| Aspect | IAS (Production) | Mock (Development) |
+|--------|------------------|-------------------|
+| Format | JWT (signed) | Simple string |
+| Grant ID | In `sid` claim | From DB lookup |
+| Expiration | IAS manages | Fixed or from session |
+| Validation | JWT signature | Not validated |
+| Refresh | Via IAS | Not supported |
 
 ---
 
 ## Grant Types Supported
 
-### 1. Authorization Code (Implemented)
+### 1. Authorization Code (Primary Flow)
 
 **Use case**: User authorizes application to access resources
 
-**Flow**:
+**Implementation**:
 
-```mermaid
-sequenceDiagram
-    Client->>AuthServer: PAR (authorization_details)
-    AuthServer-->>Client: request_uri
-    Client->>User: Redirect to /authorize
-    User->>AuthServer: View consent page
-    User->>AuthServer: Approve consent
-    AuthServer-->>Client: Redirect with code
-    Client->>AuthServer: POST /token (code)
-    AuthServer-->>Client: access_token + grant_id
+```typescript
+if (grant_type === "authorization_code") {
+  const request = await cds.read(AuthorizationRequests, code);
+  
+  // If request has subject_token, exchange it via IAS
+  if (request.subject_token && authService) {
+    const tokenUrl = await authService.getTokenUrl(
+      "urn:ietf:params:oauth:grant-type:token-exchange"
+    );
+    
+    const response = await fetch(tokenUrl.href, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "urn:ietf:params:oauth:grant-type:token-exchange",
+        subject_token: request.subject_token,
+        subject_token_type: "urn:ietf:params:oauth:token-type:jwt",
+        client_id: authService.credentials.clientid!,
+      }),
+      agent: new Agent({
+        key: authService.credentials.key,
+        cert: authService.credentials.certificate,
+      }),
+    });
+    
+    const { access_token, ...tokens } = await response.json();
+    const { sid } = jwtDecode<{ sid: string }>(access_token);
+    
+    return {
+      access_token,
+      ...tokens,
+      grant_id: request.grant_id || sid,
+    };
+  }
+  
+  // Fallback: use current session token
+  return {
+    access_token: req.user?.authInfo?.token?.jwt || `mk_${ulid()}`,
+    expires_in: 3600,
+    grant_id: request.grant_id,
+  };
+}
 ```
 
 **Request**:
@@ -255,68 +310,47 @@ Content-Type: application/x-www-form-urlencoded
 
 grant_type=authorization_code
 &code=01HXG...
-&code_verifier=dBjftJeZ4CVP...
 &redirect_uri=https://client.app/callback
 &client_id=mcp-client
 ```
 
----
-
-### 2. Client Credentials (Future)
-
-**Use case**: Service-to-service authentication (no user)
-
-**Flow**:
-
-```mermaid
-sequenceDiagram
-    Service->>AuthServer: POST /token (client_credentials)
-    AuthServer->>AuthServer: Verify client secret
-    AuthServer-->>Service: access_token (no grant_id)
-```
-
-**Request**:
-
-```http
-POST /oauth-server/token
-Content-Type: application/x-www-form-urlencoded
-Authorization: Basic base64(client_id:client_secret)
-
-grant_type=client_credentials
-&scope=service_read service_write
-```
-
-**Implementation** (placeholder):
-
-```typescript
-if (grant_type === "client_credentials") {
-  // 1. Verify client credentials
-  const client = await verifyClient(req.headers.authorization);
-  
-  // 2. Issue token without grant_id (no user consent)
-  return {
-    access_token: `at_${ulid()}`,
-    token_type: "Bearer",
-    expires_in: 3600,
-    scope: req.data.scope,
-  };
-}
-```
+**Note**: PKCE (`code_verifier`) is validated at the PAR stage, not in token endpoint.
 
 ---
 
-### 3. Refresh Token (Future)
+### 2. Refresh Token (IAS Integration)
 
 **Use case**: Obtain new access token without user interaction
 
-**Flow**:
+**Implementation**:
 
-```mermaid
-sequenceDiagram
-    Client->>AuthServer: POST /token (refresh_token)
-    AuthServer->>AuthServer: Verify refresh token
-    AuthServer->>AuthServer: Check grant still active
-    AuthServer-->>Client: new access_token + grant_id
+```typescript
+if (refresh_token != null) {
+  const authService = new IdentityService(cds.requires.auth.credentials);
+  const tokenUrl = await authService.getTokenUrl("refresh_token");
+  
+  const response = await fetch(tokenUrl.href, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token,
+    }),
+    agent: new Agent({
+      key: authService.credentials.key,
+      cert: authService.credentials.certificate,
+    }),
+  });
+  
+  const { access_token, ...tokens } = await response.json();
+  const { sid: grant_id } = jwtDecode<{ sid: string }>(access_token);
+  
+  return {
+    access_token,
+    ...tokens,
+    grant_id,
+  };
+}
 ```
 
 **Request**:
@@ -330,59 +364,52 @@ grant_type=refresh_token
 &client_id=mcp-client
 ```
 
-**Implementation** (future):
+**Key Points**:
 
-```typescript
-if (grant_type === "refresh_token") {
-  const { refresh_token } = req.data;
-  
-  // 1. Verify refresh token
-  const tokenRecord = await cds.run(
-    cds.ql.SELECT.one.from(RefreshTokens)
-      .where({ token_hash: sha256(refresh_token) })
-  );
-  
-  if (!tokenRecord || tokenRecord.revoked) {
-    return req.error(400, "invalid_grant");
-  }
-  
-  // 2. Check grant still active
-  const grant = await cds.run(
-    cds.ql.SELECT.one.from(Grants)
-      .where({ id: tokenRecord.grant_id })
-  );
-  
-  if (grant.status !== "active") {
-    return req.error(400, "invalid_grant");
-  }
-  
-  // 3. Issue new access token
-  return {
-    access_token: `at_${ulid()}:${grant.id}`,
-    token_type: "Bearer",
-    expires_in: 3600,
-    scope: grant.scope,
-    grant_id: grant.id,
-  };
-}
-```
+- Delegates to IAS token endpoint
+- Uses mTLS with client certificates
+- Extracts grant_id from JWT `sid` claim
+- Only works when IAS is configured
 
 ---
 
-### 4. Token Exchange (JWT Bearer) - IAS Integration
+### 3. Token Exchange (IAS Integration)
 
-**Use case**: Exchange external token (IAS) for application token
+**Use case**: Exchange one token for another (RFC 8693)
 
-**Flow**:
+**Implementation**:
 
-```mermaid
-sequenceDiagram
-    Client->>IAS: Authenticate user
-    IAS-->>Client: IAS JWT token
-    Client->>AuthServer: POST /token (urn:ietf:params:oauth:grant-type:jwt-bearer)
-    AuthServer->>IAS: Verify JWT signature
-    AuthServer->>AuthServer: Create grant for user
-    AuthServer-->>Client: access_token + grant_id
+```typescript
+if (grant_type === "urn:ietf:params:oauth:grant-type:token-exchange") {
+  const authService = new IdentityService(cds.requires.auth.credentials);
+  const tokenUrl = await authService.getTokenUrl(
+    "urn:ietf:params:oauth:grant-type:token-exchange"
+  );
+  
+  const response = await fetch(tokenUrl.href, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:token-exchange",
+      subject_token: subject_token || req.user?.authInfo?.token.jwt || "",
+      subject_token_type: "urn:ietf:params:oauth:token-type:jwt",
+      client_id: authService.credentials.clientid!,
+    }),
+    agent: new Agent({
+      key: authService.credentials.key,
+      cert: authService.credentials.certificate,
+    }),
+  });
+  
+  const { access_token, ...tokens } = await response.json();
+  const { sid: grant_id } = jwtDecode<{ sid: string }>(access_token);
+  
+  return {
+    access_token,
+    ...tokens,
+    grant_id,
+  };
+}
 ```
 
 **Request**:
@@ -391,40 +418,96 @@ sequenceDiagram
 POST /oauth-server/token
 Content-Type: application/x-www-form-urlencoded
 
-grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer
-&assertion=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
-&scope=filesystem_read
+grant_type=urn:ietf:params:oauth:grant-type:token-exchange
+&subject_token=eyJhbGciOiJSUzI1NiIs...
+&subject_token_type=urn:ietf:params:oauth:token-type:jwt
+&client_id=mcp-client
 ```
 
-**Implementation** (future):
+**Use Cases**:
+
+- Convert IAS token to application-specific token
+- Downscope tokens for least privilege
+- Cross-service authentication
+
+---
+
+### 4. User Token (Custom Grant Type)
+
+**Use case**: Exchange user's JWT token for application token with grant_id
+
+**Implementation**:
 
 ```typescript
-if (grant_type === "urn:ietf:params:oauth:grant-type:jwt-bearer") {
-  const { assertion } = req.data;
+if (grant_type === "user_token") {
+  console.log("user_token request", {
+    jwt: req.user?.authInfo?.token.jwt?.slice(0, 10),
+    header: req.http?.req?.headers.authorization?.slice(0, 20),
+  });
   
-  // 1. Verify JWT (IAS token)
-  const payload = await verifyIASToken(assertion);
-  
-  // 2. Create or find grant for user
-  const grant = await cds.run(
-    cds.ql.UPSERT.into(Grants).entries({
-      id: `grant_${ulid()}`,
-      subject: payload.sub,
-      scope: req.data.scope,
-      client_id: req.data.client_id,
-    })
-  );
-  
-  // 3. Issue application token
-  return {
-    access_token: `at_${ulid()}:${grant.id}`,
-    token_type: "Bearer",
-    expires_in: 3600,
-    scope: req.data.scope,
-    grant_id: grant.id,
-  };
+  // Use JWT bearer token exchange via IAS
+  if (req.user?.authInfo?.token.jwt && cds.requires.auth.credentials) {
+    const authService = new IdentityService(cds.requires.auth.credentials);
+    
+    const { access_token, ...tokens } = 
+      await authService.fetchJwtBearerToken(
+        req.user.authInfo?.getAppToken()
+      );
+    
+    const { sid: grant_id } = 
+      jwtDecode<{ sid: string }>(access_token) || {};
+    
+    return {
+      access_token,
+      ...tokens,
+      grant_id,
+    };
+  }
 }
 ```
+
+**Request**:
+
+```http
+POST /oauth-server/token
+Content-Type: application/x-www-form-urlencoded
+Authorization: Bearer eyJhbGciOiJSUzI1NiIs...
+
+grant_type=user_token
+```
+
+**Key Points**:
+
+- Custom grant type (not OAuth 2.0 standard)
+- Uses `IdentityService.fetchJwtBearerToken()` method
+- Extracts user token from request authorization header
+- Returns IAS-issued JWT with grant_id from `sid` claim
+
+### 5. Fallback (No Grant Type)
+
+**Use case**: Development/testing - return current session token
+
+**Implementation**:
+
+```typescript
+// No specific grant_type - return current session
+console.log("no grant type return current session");
+
+return {
+  access_token: req.user?.authInfo?.token?.jwt || `mk_${ulid()}`,
+  expires_in: 
+    (req.user?.authInfo?.token.expirationDate?.getUTCDate() || 
+     new Date(Date.now() + 36000).getUTCDate()) - 
+    new Date(Date.now()).getUTCDate(),
+  grant_id: req.user?.authInfo?.token?.payload["sid"],
+};
+```
+
+**Use Cases**:
+
+- Local development without OAuth flow
+- Testing with mock authentication
+- Quick prototyping
 
 ---
 
@@ -439,101 +522,179 @@ if (grant_type === "urn:ietf:params:oauth:grant-type:jwt-bearer") {
 - OAuth 2.0
 - User management
 - Multi-factor authentication (MFA)
+- mTLS client authentication
 
-### Why Wrap IAS?
+### How We Use IAS
 
-Our Authorization Service acts as a **facade/proxy** between MCP clients and IAS:
+Our Authorization Service **wraps** IAS token endpoints using `@sap/xssec`:
 
 ```
-┌─────────────┐       ┌──────────────────┐       ┌─────────┐
-│  MCP Client │ ←────→ │ Auth Service     │ ←────→ │   IAS   │
-│             │  (1)   │ (Token Wrapper)  │  (2)   │  (IdP)  │
-└─────────────┘       └──────────────────┘       └─────────┘
-     OAuth 2.0              OAuth 2.0              OIDC/SAML
-  + RAR + Grant Mgmt     Translation Layer      Standard IdP
+┌─────────────┐       ┌──────────────────────────────┐       ┌─────────┐
+│  MCP Client │ ←────→ │ Auth Service                 │ ←────→ │   IAS   │
+│             │  (1)   │ (handler.token.tsx)          │  (2)   │  (IdP)  │
+│             │        │                              │        │         │
+│             │        │ • @sap/xssec IdentityService │        │         │
+│             │        │ • mTLS authentication        │        │         │
+│             │        │ • Token extraction           │        │         │
+│             │        │ • Grant ID from JWT sid      │        │         │
+└─────────────┘       └──────────────────────────────┘       └─────────┘
+     OAuth 2.0              OAuth 2.0 → IAS               OIDC + mTLS
+  + RAR + Grant Mgmt     + Authorization Details       Standard IdP + JWT
 ```
 
 **Benefits**:
 
-1. **Protocol translation** - IAS → OAuth 2.0 with extensions
-2. **Grant management** - IAS has no grant management API
-3. **Authorization details** - IAS has no RAR support
-4. **Logging/monitoring** - Centralized observability
-5. **Custom flows** - On-behalf-of, grant merging
-6. **Testing** - Mock IAS responses for development
+1. **JWT Tokens** - Production-ready signed tokens from IAS
+2. **Grant Management** - Add grant_id from JWT `sid` claim
+3. **Authorization Details** - Attach RAR details from local DB
+4. **mTLS Security** - Certificate-based authentication to IAS
+5. **Refresh Tokens** - Delegate to IAS for refresh flow
+6. **Token Exchange** - Support RFC 8693 token exchange
+7. **Fallback** - Mock implementation for local development
 
----
+### IAS Configuration
 
-### IAS Token Verification
+**Required in `cds.requires.auth.credentials`:**
+
+```json
+{
+  "clientid": "your-client-id",
+  "clientsecret": "your-client-secret",
+  "url": "https://ias.cfapps.eu12.hana.ondemand.com",
+  "key": "-----BEGIN PRIVATE KEY-----\n...",
+  "certificate": "-----BEGIN CERTIFICATE-----\n..."
+}
+```
+
+**Implementation Check:**
 
 ```typescript
-// srv/authorization-service/ias-integration.tsx
-import { JWK, JWT } from "jose";
-
-async function verifyIASToken(token: string) {
-  // 1. Fetch IAS JWKS (JSON Web Key Set)
-  const jwks = await fetch(
-    "https://ias.cfapps.eu12.hana.ondemand.com/.well-known/jwks.json"
-  ).then(res => res.json());
-  
-  // 2. Verify JWT signature
-  const { payload } = await JWT.verify(token, jwks, {
-    issuer: "https://ias.cfapps.eu12.hana.ondemand.com",
-    audience: "your-client-id",
-  });
-  
-  // 3. Validate claims
-  if (!payload.sub) {
-    throw new Error("Missing subject claim");
-  }
-  
-  if (payload.exp < Date.now() / 1000) {
-    throw new Error("Token expired");
-  }
-  
-  return payload;
+// Check if IAS is configured
+if (!cds.requires.auth.credentials) {
+  // Use mock implementation
+  return {
+    access_token: `mk_${ulid()}`,
+    expires_in: 3600,
+    grant_id: request.grant_id,
+  };
 }
+
+// IAS is configured - use IdentityService
+const authService = new IdentityService(cds.requires.auth.credentials);
 ```
 
 ---
 
-### IAS Token Exchange Pattern
+### IAS Token Endpoint Integration
 
-**Scenario**: User authenticates with IAS, client needs application token
+**Using @sap/xssec IdentityService:**
 
 ```typescript
-// srv/authorization-service/handler.token.tsx
-if (grant_type === "urn:ietf:params:oauth:grant-type:jwt-bearer") {
-  const { assertion, scope } = req.data;
-  
-  // 1. Verify IAS token
-  const iasPayload = await verifyIASToken(assertion);
-  
-  // 2. Extract user info
-  const userId = iasPayload.sub;
-  const email = iasPayload.email;
-  
-  // 3. Create grant
-  const grantId = `grant_${ulid()}`;
-  await cds.run(
-    cds.ql.INSERT.into(Grants).entries({
-      id: grantId,
-      subject: userId,
-      scope: scope,
-      client_id: req.data.client_id,
-      status: "active",
-    })
+import { IdentityService } from "@sap/xssec";
+import { Agent } from "https";
+import fetch from "node-fetch";
+
+// 1. Initialize IdentityService with credentials
+const authService = new IdentityService(cds.requires.auth.credentials);
+
+// 2. Get IAS token endpoint URL for specific grant type
+const tokenUrl = await authService.getTokenUrl("refresh_token");
+// Returns: https://ias.example.com/oauth2/token
+
+// 3. Call IAS token endpoint with mTLS
+const response = await fetch(tokenUrl.href, {
+  method: "POST",
+  headers: { "Content-Type": "application/x-www-form-urlencoded" },
+  body: new URLSearchParams({
+    grant_type: "refresh_token",
+    refresh_token: "rt_...",
+  }),
+  agent: new Agent({
+    key: authService.credentials.key,         // Private key
+    cert: authService.credentials.certificate, // Certificate
+  }),
+});
+
+const { access_token, ...tokens } = await response.json();
+
+// 4. Extract grant_id from JWT
+import { jwtDecode } from "jwt-decode";
+const { sid: grant_id } = jwtDecode<{ sid: string }>(access_token);
+```
+
+**JWT Bearer Token Method:**
+
+```typescript
+// Simpler method for JWT bearer exchange
+const authService = new IdentityService(cds.requires.auth.credentials);
+
+const { access_token, ...tokens } = 
+  await authService.fetchJwtBearerToken(
+    req.user.authInfo?.getAppToken()
   );
+
+const { sid: grant_id } = jwtDecode<{ sid: string }>(access_token);
+```
+
+---
+
+### Mock Implementation (Development)
+
+**When IAS is not configured:**
+
+```typescript
+// No IAS credentials - return mock data
+if (!cds.requires.auth.credentials) {
+  const request = code && 
+    (await cds.read(AuthorizationRequests, code) as AuthorizationRequest);
   
-  // 4. Issue application token
+  if (!request) {
+    console.log("missing request for code", grant_type, code);
+    throw Error("invalid_grant");
+  }
+  
   return {
-    access_token: `at_${ulid()}:${grantId}`,
-    token_type: "Bearer",
     expires_in: 3600,
-    scope: scope,
-    grant_id: grantId,
+    refresh_token: ulid(),
+    access_token: req.user?.authInfo?.token?.jwt || `mk_${ulid()}`,
+    token_type: "urn:ietf:params:oauth:token-type:jwt",
+    grant_id: request.grant_id!,
   };
 }
+```
+
+**Key Points:**
+
+- Checks `cds.requires.auth.credentials` existence
+- Uses current session JWT if available
+- Falls back to `mk_${ulid()}` mock token
+- Always returns grant_id from authorization request
+- Enables local development without IAS setup
+
+### Grant ID Extraction Strategy
+
+**From JWT (Production):**
+
+```typescript
+import { jwtDecode } from "jwt-decode";
+
+// IAS tokens have grant_id in 'sid' claim
+const { sid: grant_id } = jwtDecode<{ sid: string }>(access_token);
+```
+
+**From Database (Fallback):**
+
+```typescript
+// When using authorization_code, get from request
+const request = await cds.read(AuthorizationRequests, code);
+const grant_id = request.grant_id;
+```
+
+**From Session (Mock):**
+
+```typescript
+// Extract from current user session
+const grant_id = req.user?.authInfo?.token?.payload["sid"];
 ```
 
 ---
@@ -950,124 +1111,240 @@ describe("IAS Token Exchange", () => {
 
 ## Security Considerations
 
-### 1. PKCE Verification
+### 1. mTLS (Mutual TLS)
+
+**IAS communication uses certificate-based authentication:**
 
 ```typescript
-// Verify code_verifier against code_challenge
-const challenge = base64url(sha256(req.data.code_verifier));
-if (challenge !== request.code_challenge) {
-  return req.error(400, "invalid_request", "PKCE verification failed");
-}
+agent: new Agent({
+  key: authService.credentials.key,         // Private key from credentials
+  cert: authService.credentials.certificate, // X.509 certificate
+})
 ```
+
+**Benefits:**
+
+- Prevents man-in-the-middle attacks
+- Ensures only authorized services can request tokens
+- Standard for OAuth 2.0 Mutual-TLS Client Authentication (RFC 8705)
 
 ---
 
-### 2. Client Authentication
+### 2. JWT Signature Verification
 
-```typescript
-// Verify client credentials
-if (req.data.client_id !== request.client_id) {
-  return req.error(400, "invalid_client");
-}
+**IAS tokens are signed JWTs:**
 
-// For confidential clients, verify client_secret
-if (isConfidentialClient(req.data.client_id)) {
-  await verifyClientSecret(req.headers.authorization);
-}
-```
+- IAS signs tokens with RSA or ECDSA private key
+- Signature verified using IAS public keys (JWKS)
+- `@sap/xssec` handles verification automatically
+- No manual signature verification needed in application
 
----
-
-### 3. Authorization Code Single Use
-
-```typescript
-// Mark code as used
-await cds.run(
-  cds.ql.UPDATE(AuthorizationRequests)
-    .set({ status: "used" })
-    .where({ ID: code })
-);
-
-// Reject if already used
-if (request.status === "used") {
-  return req.error(400, "invalid_grant", "Code already used");
-}
-```
-
----
-
-### 4. Token Expiration
-
-```typescript
-// Check if grant still active
-if (grant.status !== "active") {
-  return req.error(400, "invalid_grant", "Grant revoked or expired");
-}
-
-// Check grant expiration
-if (grant.expires_at && new Date(grant.expires_at) < new Date()) {
-  return req.error(400, "invalid_grant", "Grant expired");
-}
-```
-
----
-
-## Future Enhancements
-
-### 1. Refresh Token Support
-
-```typescript
-// Store refresh token
-await cds.run(
-  cds.ql.INSERT.into(RefreshTokens).entries({
-    id: `rt_${ulid()}`,
-    grant_id: grant_id,
-    token_hash: sha256(refresh_token),
-    expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-  })
-);
-
-return {
-  access_token,
-  refresh_token,
-  expires_in: 3600,
-};
-```
-
----
-
-### 2. Token Introspection Endpoint
-
-```http
-POST /oauth-server/introspect
-Content-Type: application/x-www-form-urlencoded
-
-token=at_01HXG...:grant_01HXG...
-```
-
-**Response**:
+**JWT Claims Used:**
 
 ```json
 {
-  "active": true,
-  "scope": "filesystem_read filesystem_write",
-  "client_id": "mcp-client",
-  "grant_id": "grant_01HXG...",
-  "exp": 1732986000,
-  "sub": "user@example.com"
+  "sid": "grant_01HXG...",  // Session ID → grant_id
+  "exp": 1732986400,        // Expiration timestamp
+  "iss": "https://ias...",  // Issuer verification
+  "sub": "user@example.com", // Subject (user ID)
+  "aud": "client-id"        // Audience validation
 }
 ```
 
 ---
 
-### 3. Token Revocation Endpoint
+### 3. Token Expiration
 
-```http
-POST /oauth-server/revoke
-Content-Type: application/x-www-form-urlencoded
+**Managed by IAS:**
 
-token=at_01HXG...
-&token_type_hint=access_token
+```typescript
+// IAS sets expiration in JWT
+const { exp } = jwtDecode(access_token);
+
+// Check if token is expired
+if (Date.now() / 1000 > exp) {
+  throw Error("token_expired");
+}
+```
+
+**No local token storage** - tokens are short-lived JWTs validated by signature and expiration.
+
+---
+
+### 4. Grant Lifecycle Validation
+
+**Check grant status before attaching authorization_details:**
+
+```typescript
+// Fetch authorization details only if grant exists
+const authorization_details = await cds.run(
+  cds.ql.SELECT.from(AuthorizationDetails).where({
+    consent_grant_id: grant_id,
+  })
+);
+
+// If no grant found, authorization_details will be empty array
+```
+
+---
+
+### 5. Error Handling
+
+**Never expose internal errors:**
+
+```typescript
+try {
+  const tokens = await callIAS();
+  return tokens;
+} catch (error) {
+  console.error("[token] IAS error:", error);
+  // Return generic error to client
+  throw Error("invalid_grant");
+}
+```
+
+---
+
+## Complete Implementation Summary
+
+### Supported Grant Types
+
+| Grant Type | Status | IAS Required | Implementation |
+|------------|--------|--------------|----------------|
+| `authorization_code` | ✅ Implemented | Optional | Exchanges auth code, optionally via IAS |
+| `refresh_token` | ✅ Implemented | Required | Delegates to IAS token endpoint |
+| `urn:ietf:params:oauth:grant-type:token-exchange` | ✅ Implemented | Required | RFC 8693 token exchange via IAS |
+| `user_token` | ✅ Implemented | Required | Custom - JWT bearer via IAS |
+| (no grant_type) | ✅ Implemented | Optional | Returns current session token |
+
+### Token Flow Decision Tree
+
+```typescript
+async function getTokens() {
+  // 1. Check if IAS configured
+  if (!cds.requires.auth.credentials) {
+    return mockImplementation();
+  }
+  
+  // 2. Initialize IAS service
+  const authService = new IdentityService(cds.requires.auth.credentials);
+  
+  // 3. Route by grant_type
+  if (refresh_token) {
+    return refreshTokenViaIAS(authService, refresh_token);
+  }
+  
+  if (grant_type === "urn:ietf:params:oauth:grant-type:token-exchange") {
+    return tokenExchangeViaIAS(authService, subject_token);
+  }
+  
+  if (grant_type === "user_token") {
+    return jwtBearerViaIAS(authService);
+  }
+  
+  if (grant_type === "authorization_code") {
+    const request = await cds.read(AuthorizationRequests, code);
+    if (request.subject_token) {
+      return tokenExchangeViaIAS(authService, request.subject_token);
+    }
+    return useSessionToken(request);
+  }
+  
+  // 4. Fallback - current session
+  return useSessionToken();
+}
+```
+
+### Key Implementation Patterns
+
+**1. mTLS Authentication:**
+
+```typescript
+agent: new Agent({
+  key: authService.credentials.key,
+  cert: authService.credentials.certificate,
+})
+```
+
+**2. Grant ID Extraction:**
+
+```typescript
+const { sid: grant_id } = jwtDecode<{ sid: string }>(access_token);
+```
+
+**3. Authorization Details:**
+
+```typescript
+const authorization_details = await cds.run(
+  cds.ql.SELECT.from(AuthorizationDetails).where({
+    consent_grant_id: grant_id,
+  })
+);
+```
+
+### Error Handling
+
+```typescript
+try {
+  const { access_token } = await callIAS();
+  return { access_token, grant_id: extractGrantId(access_token) };
+} catch (error) {
+  console.error("IAS token request failed:", error);
+  throw Error("invalid_grant");
+}
+```
+
+---
+
+### Future Enhancements
+
+**1. Token Introspection** (RFC 7662)
+
+Currently not implemented. Would require:
+
+```typescript
+// Future: Token introspection endpoint
+async function introspect(token: string) {
+  // For JWT tokens, decode and verify signature
+  const payload = jwtDecode(token);
+  const grant_id = payload.sid;
+  
+  // Check if grant is still active
+  const grant = await cds.read(Grants, grant_id);
+  
+  return {
+    active: grant.status === "active",
+    grant_id,
+    scope: grant.scope,
+    exp: payload.exp,
+    sub: payload.sub,
+  };
+}
+```
+
+**2. PKCE Validation in Token Endpoint**
+
+Currently PKCE validation happens at PAR stage. Could add:
+
+```typescript
+// Future: PKCE validation in token endpoint
+if (code_challenge) {
+  const computed = base64url(sha256(code_verifier));
+  if (computed !== code_challenge) {
+    throw Error("invalid_request");
+  }
+}
+```
+
+**3. Client Credentials Grant**
+
+Not currently implemented. Would delegate to IAS:
+
+```typescript
+// Future: Client credentials grant
+if (grant_type === "client_credentials") {
+  return await authService.fetchClientCredentialsToken(scope);
+}
 ```
 
 ---
