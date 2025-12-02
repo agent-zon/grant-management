@@ -239,12 +239,12 @@
     "/token": {
       "post": {
         "summary": "Token Endpoint",
-        "description": "Exchanges authorization code for access token. Returns grant_id and authorization_details in the response.",
+        "description": "Exchanges authorization code for access token. This endpoint implements the OAuth 2.0 token endpoint with support for:\n\n- **Authorization Code Grant** (RFC 6749)\n- **PKCE** (RFC 7636) - code_verifier required if code_challenge was sent\n- **Grant Management** - Returns grant_id for use with Grant Management API\n- **Rich Authorization Requests** - Returns authorization_details array\n- **Actor Token** - Returns actor field for On-Behalf-Of flows\n\n**Token Response Includes:**\n- `access_token` - Bearer token in format `at_{ulid}:{grant_id}`\n- `grant_id` - For querying/revoking grants via Grant Management API\n- `authorization_details` - Approved permissions and resources\n- `actor` - Actor URN for delegated authorization\n\n**Security:**\n- Validates PKCE code_verifier against code_challenge from PAR\n- Verifies client_id matches the authorization request\n- Ensures redirect_uri matches the original request\n- Authorization code is single-use and expires after exchange",
         "operationId": "token",
         "tags": ["Service Operations"],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Successfully issued access token with grant_id and authorization_details",
             "content": {
               "application/json": {
                 "schema": {
@@ -254,6 +254,63 @@
                     }
                   ],
                   "nullable": true
+                },
+                "examples": {
+                  "successful_token": {
+                    "summary": "Successful token response",
+                    "value": {
+                      "access_token": "at_01HXG123456789ABCDEF:grant_01HXG456789ABCDEF012",
+                      "token_type": "Bearer",
+                      "expires_in": 3600,
+                      "scope": "filesystem_read filesystem_write",
+                      "grant_id": "grant_01HXG456789ABCDEF012",
+                      "actor": "urn:agent:analytics-bot-v1",
+                      "authorization_details": [
+                        {
+                          "type": "fs",
+                          "roots": ["/workspace"],
+                          "permissions": {
+                            "read": {
+                              "essential": true
+                            },
+                            "write": {
+                              "essential": true
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid grant_type, code, or PKCE verification failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error"
+                },
+                "examples": {
+                  "invalid_grant": {
+                    "summary": "Invalid or expired authorization code",
+                    "value": {
+                      "error": {
+                        "code": "invalid_grant",
+                        "message": "Authorization code is invalid or has already been used"
+                      }
+                    }
+                  },
+                  "pkce_failed": {
+                    "summary": "PKCE verification failed",
+                    "value": {
+                      "error": {
+                        "code": "invalid_request",
+                        "message": "PKCE verification failed"
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -263,46 +320,61 @@
           }
         },
         "requestBody": {
-          "description": "Token exchange parameters",
+          "description": "Token request parameters per OAuth 2.0 specification. PKCE code_verifier is required if code_challenge was included in the PAR request.",
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": ["grant_type", "client_id", "code"],
                 "properties": {
                   "grant_type": {
                     "type": "string",
-                    "nullable": true,
+                    "enum": ["authorization_code"],
+                    "description": "OAuth 2.0 grant type. Currently only 'authorization_code' is supported.",
                     "example": "authorization_code"
                   },
                   "client_id": {
                     "type": "string",
-                    "nullable": true,
+                    "description": "OAuth client identifier. Must match the client_id from the authorization request.",
                     "example": "demo-client-app"
                   },
                   "code": {
                     "type": "string",
-                    "nullable": true,
-                    "example": "auth_code_xyz123"
+                    "description": "Authorization code received from the authorization endpoint. Single-use only.",
+                    "example": "01HXG123456789ABCDEF"
                   },
                   "code_verifier": {
                     "type": "string",
                     "nullable": true,
-                    "description": "PKCE code verifier (required if code_challenge was sent in PAR)"
+                    "description": "PKCE code verifier. REQUIRED if code_challenge was sent in the PAR request. Must be the original random string that was hashed to create code_challenge.",
+                    "example": "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
                   },
                   "redirect_uri": {
                     "type": "string",
-                    "nullable": true,
+                    "description": "Redirect URI. Must exactly match the redirect_uri from the authorization request.",
                     "example": "https://example.com/callback"
                   }
                 }
               },
               "examples": {
-                "token_exchange": {
-                  "summary": "Exchange authorization code for token",
+                "basic_token_exchange": {
+                  "summary": "Basic token exchange (no PKCE)",
                   "value": {
                     "grant_type": "authorization_code",
                     "client_id": "demo-client-app",
-                    "code": "auth_code_xyz123",
+                    "code": "01HXG123456789ABCDEF",
+                    "redirect_uri": "https://example.com/callback"
+                  }
+                },
+                "token_exchange_with_pkce": {
+                  "summary": "Token exchange with PKCE",
+                  "description": "Recommended for public clients (SPAs, mobile apps) to prevent authorization code interception attacks",
+                  "value": {
+                    "grant_type": "authorization_code",
+                    "client_id": "demo-client-app",
+                    "code": "01HXG123456789ABCDEF",
+                    "code_verifier": "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
                     "redirect_uri": "https://example.com/callback"
                   }
                 }
