@@ -4,4 +4,4 @@ globs:
 alwaysApply: true
 ---
 
-each componnet and page is served with one file as direct implementation of the api with no additional componnet folder
+each component and page is served with one file as direct implementation of the api with no additional components folder
