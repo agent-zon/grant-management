@@ -2,12 +2,12 @@
 
 global:
   domain: c-127c9ef.stage.kyma.ondemand.com
-  host: agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com
+  host: agents-approuter-grants.c-127c9ef.stage.kyma.ondemand.com
   imagePullSecret:
     name: docker-registry
   image:
     registry: scai-dev.common.repositories.cloud.sap
-    tag: v22
+    tag: v31
   imagePullPolicy: Always
 srv:
   bindings:
@@ -20,7 +20,6 @@ srv:
       serviceInstanceName: destination
   image:
     repository: grant-management/api
-    tag: v31
   resources:
     limits:
       ephemeral-storage: 1G
@@ -145,14 +144,14 @@ identity:
   serviceOfferingName: identity
   servicePlanName: application
   parameters:
-    name: "{{ .Release.Name }}-grant-management"
+    name: "{{ .Release.Name }}-{{ .Release.Namespace }}"
     display-name: "Grant Management (rc-{{ .Release.Name }})"
     description: Identity service for Grant Management Application
     multi-tenant: true
     xsuaa-cross-consumption: true
     home-url: "https://{{ tpl .Values.global.host . }}/"
     consumed-services:
-      - service-instance-name: v04-destination
+      - service-instance-name: agents-destination
     provided-apis:
       - name: grant-management
         description: Grant Management API
@@ -203,16 +202,17 @@ backendDestinations:
     preserveHostHeader: true
     authentication: OAuth2UserTokenExchange
     IASDependencyName: grant-management
-    
+
   grant-api:
     service: srv
     forwardAuthToken: true
     authentication: OAuth2UserTokenExchange
+    IASDependencyName: grant-api
 
   grant-mcp:
     service: srv
     forwardAuthToken: true
-  
+
   # user-portal:
   #   service: portal
   #   forwardAuthToken: true
