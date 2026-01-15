@@ -7,9 +7,9 @@ fine-grained permission management for AI agents, MCP servers, and API gateways.
 ## 🚀 Deployment
 
 - **API Docs**: \
-  https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/api-docs
+  https://agents-approuter-grants.c-127c9ef.stage.kyma.ondemand.com/api-docs
 - **Grant Management Dashboard**: \
-  https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/grants-management/Grants
+ https://agents-approuter-grants.c-127c9ef.stage.kyma.ondemand.com/grants-management/Grants
 - **OAuth Flow Step-by-Step Demo**: \
 https://agents-approuter-grant-management.c-127c9ef.stage.kyma.ondemand.com/demo/index
 <!-- 
