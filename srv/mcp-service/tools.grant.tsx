@@ -10,8 +10,6 @@ import GrantsManagementService, {
 } from "#cds-models/sap/scai/grants/GrantsManagementService";
 import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
 import { env } from "process";
-import { AuthorizationDetailMcpTool } from "#cds-models/sap/scai/grants";
-import { MCPRequest } from "@types";
 import z from "zod";
 import { ulid } from "ulid";
 
