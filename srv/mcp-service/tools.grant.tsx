@@ -17,63 +17,63 @@ export default function registerGrantTools(
   server: McpServer,
   tools: Record<string, RegisteredTool>
 ) {
-  server.registerTool(
-    "grant:query",
-    {
-      title: "What granted to me?",
-      description: "Show all registered tools",
-      outputSchema: {
-        id: z.string(),
-        actor: z.string().optional(),
-        subject: z.string().optional(),
-        iat: z.string().optional(),
-        authorization_details: z.array(
-          z.object({
-            type: z.string(),
-            server: z.string(),
-            tools: z.record(z.boolean()).optional(),
-          })
-        ),
-      },
-    },
-    async () => {
-      const grantService = await cds.connect.to(GrantsManagementService);
-      const grant_id =
-        cds.context?.user?.authInfo?.token.payload["sid"] ||
-        cds.context?.user?.authInfo?.token.payload.jti;
-      const grant = (await grantService.read(Grants, grant_id)) as Grant;
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(
-              {
-                grant_id,
-                authorization_details: grant?.authorization_details,
-                actor: grant?.scope,
-                subject: grant?.subject,
-                iat: grant?.createdAt,
-              },
-              (key, value) => (value != null ? value : undefined)
-            ),
-          },
-        ],
-        structuredContent: {
-          id: grant_id,
-          authorization_details: grant?.authorization_details?.map(
-            (detail) => ({
-              type: detail.type,
-              server: detail.server,
-              tools: detail.tools || {},
-            })
-          ),
-          actor: grant?.scope,
-          subject: grant?.subject,
-          iat: grant?.createdAt,
-        },
-      };
-    }
-  );
+  // server.registerTool(
+  //   "grant:query",
+  //   {
+  //     title: "What granted to me?",
+  //     description: "Show all registered tools",
+  //     outputSchema: {
+  //       id: z.string(),
+  //       actor: z.string().optional(),
+  //       subject: z.string().optional(),
+  //       iat: z.string().optional(),
+  //       authorization_details: z.array(
+  //         z.object({
+  //           type: z.string(),
+  //           server: z.string(),
+  //           tools: z.record(z.boolean()).optional(),
+  //         })
+  //       ),
+  //     },
+  //   },
+  //   async () => {
+  //     const grantService = await cds.connect.to(GrantsManagementService);
+  //     const grant_id =
+  //       cds.context?.user?.authInfo?.token.payload["sid"] ||
+  //       cds.context?.user?.authInfo?.token.payload.jti;
+  //     const grant = (await grantService.read(Grants, grant_id)) as Grant;
+  //     return {
+  //       content: [
+  //         {
+  //           type: "text",
+  //           text: JSON.stringify(
+  //             {
+  //               grant_id,
+  //               authorization_details: grant?.authorization_details,
+  //               actor: grant?.scope,
+  //               subject: grant?.subject,
+  //               iat: grant?.createdAt,
+  //             },
+  //             (key, value) => (value != null ? value : undefined)
+  //           ),
+  //         },
+  //       ],
+  //       structuredContent: {
+  //         id: grant_id,
+  //         authorization_details: grant?.authorization_details?.map(
+  //           (detail) => ({
+  //             type: detail.type,
+  //             server: detail.server,
+  //             tools: detail.tools || {},
+  //           })
+  //         ),
+  //         actor: grant?.scope,
+  //         subject: grant?.subject,
+  //         iat: grant?.createdAt,
+  //       },
+  //     };
+  //   }
+  // );
 
   server.registerTool(
     "grant:request",

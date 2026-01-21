@@ -17,8 +17,8 @@ export default function register(
   // Email Inbox Tools
   // ============================================================================
 
-  tools["messages.search"] = server.registerTool(
-    "messages.search",
+  tools["messages_search"] = server.registerTool(
+    "messages_search",
     {
       title: "Search Messages",
       description: "Search for email messages in the inbox",
@@ -73,8 +73,8 @@ export default function register(
     }
   );
 
-  tools["messages.read"] = server.registerTool(
-    "messages.read",
+  tools["messages_read"] = server.registerTool(
+    "messages_read",
     {
       title: "Read Message",
       description: "Read the content of a specific email message",
@@ -139,8 +139,8 @@ export default function register(
     }
   );
 
-  tools["messages.send"] = server.registerTool(
-    "messages.send",
+  tools["messages_send"] = server.registerTool(
+    "messages_send",
     {
       title: "Send Message",
       description: "Send a new email message",
@@ -195,8 +195,8 @@ export default function register(
   // SAP Concur Tools
   // ============================================================================
 
-  tools["trips.read"] = server.registerTool(
-    "trips.read",
+  tools["trips_read"] = server.registerTool(
+    "trips_read",
     {
       title: "Read Trips",
       description: "Retrieve upcoming trips and travel itineraries from Concur",
@@ -271,8 +271,8 @@ export default function register(
     }
   );
 
-  tools["expenses.create"] = server.registerTool(
-    "expenses.create",
+  tools["expenses_create"] = server.registerTool(
+    "expenses_create",
     {
       title: "Create Expense Report",
       description: "Create a new expense report in Concur",
@@ -324,8 +324,8 @@ export default function register(
     }
   );
 
-  tools["receipts.attach"] = server.registerTool(
-    "receipts.attach",
+  tools["receipts_attach"] = server.registerTool(
+    "receipts_attach",
     {
       title: "Attach Receipt",
       description: "Attach a receipt image to an expense entry",
@@ -364,8 +364,8 @@ export default function register(
   // SAP Commerce Platform Tools
   // ============================================================================
 
-  tools["orders.create"] = server.registerTool(
-    "orders.create",
+  tools["orders_create"] = server.registerTool(
+    "orders_create",
     {
       title: "Create Order",
       description: "Create a new sales order in the commerce platform",
@@ -422,8 +422,8 @@ export default function register(
     }
   );
 
-  tools["orders.read"] = server.registerTool(
-    "orders.read",
+  tools["orders_read"] = server.registerTool(
+    "orders_read",
     {
       title: "Read Order",
       description: "Retrieve order details by order ID",
@@ -486,8 +486,8 @@ export default function register(
     }
   );
 
-  tools["orders.search"] = server.registerTool(
-    "orders.search",
+  tools["orders_search"] = server.registerTool(
+    "orders_search",
     {
       title: "Search Orders",
       description: "Search for orders with filters",
@@ -535,8 +535,8 @@ export default function register(
     }
   );
 
-  tools["products.search"] = server.registerTool(
-    "products.search",
+  tools["products_search"] = server.registerTool(
+    "products_search",
     {
       title: "Search Products",
       description: "Search for products in the catalog",
@@ -612,8 +612,8 @@ export default function register(
     }
   );
 
-  tools["products.read"] = server.registerTool(
-    "products.read",
+  tools["products_read"] = server.registerTool(
+    "products_read",
     {
       title: "Read Product",
       description: "Retrieve detailed product information",
@@ -686,8 +686,8 @@ export default function register(
     }
   );
 
-  tools["customers.read"] = server.registerTool(
-    "customers.read",
+  tools["customers_read"] = server.registerTool(
+    "customers_read",
     {
       title: "Read Customer",
       description: "Retrieve customer master data",
@@ -742,8 +742,8 @@ export default function register(
     }
   );
 
-  tools["customers.create"] = server.registerTool(
-    "customers.create",
+  tools["customers_create"] = server.registerTool(
+    "customers_create",
     {
       title: "Create Customer",
       description: "Create a new customer record",
@@ -780,8 +780,8 @@ export default function register(
     }
   );
 
-  tools["analytics.salesInsights"] = server.registerTool(
-    "analytics.salesInsights",
+  tools["analytics_salesInsights"] = server.registerTool(
+    "analytics_salesInsights",
     {
       title: "Get Sales Insights",
       description: "Retrieve sales analytics and insights",
@@ -832,8 +832,8 @@ export default function register(
     }
   );
 
-  tools["workflows.orderApproval"] = server.registerTool(
-    "workflows.orderApproval",
+  tools["orders_orderApproval"] = server.registerTool(
+    "orders_orderApproval",
     {
       title: "Request Order Approval",
       description: "Initiate order approval workflow",
@@ -870,8 +870,9 @@ export default function register(
     }
   );
 
-  tools["fraud.detect"] = server.registerTool(
-    "fraud.detect",
+
+  tools["fraud_detect"] = server.registerTool(
+    "fraud_detect",
     {
       title: "Detect Fraud",
       description: "Run fraud detection on a transaction",
