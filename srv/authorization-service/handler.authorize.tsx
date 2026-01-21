@@ -177,7 +177,6 @@ export default async function authorize(
                       return (
                         <AuthorizationDetailsComponent
                           {...detail}
-                          key={index}
                           index={index}
                         />
                       );
