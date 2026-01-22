@@ -42,344 +42,188 @@ export async function GET(
   });
   console.log("🔧 Grant:", grant);
 
-  if (req?.http?.req.accepts("html")) {
+    if (req?.http?.req.accepts("html")) {
     return render(
       req,
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900 text-white">
-        <div className="container mx-auto px-4 py-6 max-w-4xl">
-          {/* Modal-style Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-              <a
-                href="/grants-management/Grants"
-                className="w-10 h-10 bg-white/10 hover:bg-white/15 rounded-xl flex items-center justify-center transition-colors border border-white/20"
-              >
-                <span className="text-lg text-white">←</span>
-              </a>
-              <div>
-                <h1 className="text-xl font-bold text-white">Grant Details</h1>
-                <p className="text-sm text-slate-400">
-                  Manage permissions & access
-                </p>
+      <div className="min-h-screen bg-[#f5f7fa] text-gray-900 font-sans pb-10">
+        {/* SAP Fiori Shell Bar */}
+        <div className="bg-[#354a5f] text-white h-11 flex items-center justify-between px-4 shadow-sm z-50 relative sticky top-0">
+           <div className="flex items-center space-x-3">
+             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 73 36" className="h-6 w-auto fill-current">
+                 <path d="M36.1 0L18 0l18 36h18L36.1 0zM10.8 12L0 36h18l10.8-24h-18zm54 0l-10.8 24h18L72 12h-7.2z"/>
+                 <text x="36" y="24" fontSize="24" fontFamily="Arial" fontWeight="bold" textAnchor="middle" fill="white">SAP</text>
+             </svg>
+             <span className="text-sm font-semibold tracking-tight opacity-90">Cloud Identity Services</span>
+           </div>
+           <div className="flex items-center space-x-4">
+              <div className="w-8 h-8 rounded-full bg-blue-400/20 flex items-center justify-center text-xs border border-white/20 cursor-pointer">
+                JD
               </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div
-                className={`w-3 h-3 rounded-full ${grant.status !== "revoked" ? "bg-emerald-400" : "bg-red-400"}`}
-              ></div>
-              <span className="text-sm text-slate-300 capitalize">
-                {grant.status !== "revoked" ? "Active" : "Revoked"}
-              </span>
-            </div>
+           </div>
+        </div>
+
+        <div className="container mx-auto px-6 py-6 max-w-5xl">
+          {/* Back Nav */}
+          <div className="flex items-center space-x-2 mb-6 text-sm">
+            <a href="/grants-management/Grants" className="text-blue-600 hover:underline">Home</a>
+            <span className="text-gray-400">/</span>
+            <span className="text-gray-600">Grant Details</span>
           </div>
 
-          {/* Application Info Card */}
-          <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 mb-6">
-            <div className="flex items-start space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center flex-shrink-0 border border-blue-500/20">
-                <span className="text-2xl">🔑</span>
-              </div>
-              <div className="flex-1">
-                <h2 className="text-xl font-bold text-white mb-1">
-                  {Array.isArray(grant.client_id)
-                    ? grant.client_id.join(", ")
-                    : grant.client_id || "Unknown Application"}
-                </h2>
-                {grant.actor && (
-                  <p className="text-slate-400 mb-3">
-                    {Array.isArray(grant.actor)
-                      ? grant.actor.join(", ")
-                      : grant.actor}
-                  </p>
-                )}
-
-                {/* Risk Badge */}
-                <div className="flex items-center space-x-3">
-                  <div
-                    className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium border ${getRiskColor(grant.risk_level || "low")}`}
-                  >
-                    <span>⚠️</span>
-                    <span className="capitalize">
-                      {grant.risk_level || "low"} Risk
-                    </span>
+          {/* Header Card */}
+          <div className="bg-white rounded shadow-sm border border-gray-200 p-6 mb-6">
+            <div className="flex items-start justify-between">
+               <div className="flex items-start space-x-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-700 text-2xl">
+                     🔑
                   </div>
-                  <span className="text-xs text-slate-400">
-                    ID: {grant.id?.slice(-8) || "N/A"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Risk Warning */}
-            {grant.risk_level === "high" && (
-              <div className="mt-4 bg-red-500/10 border border-red-500/20 rounded-xl p-4">
-                <div className="flex items-start space-x-3">
-                  <span className="text-red-400 mt-0.5 text-lg">⚠️</span>
                   <div>
-                    <h4 className="text-sm font-medium text-red-400">
-                      High Risk Access
-                    </h4>
-                    <p className="text-xs text-red-300 mt-1">
-                      This grant provides access to sensitive system functions.
-                      Review permissions carefully.
-                    </p>
+                     <h1 className="text-xl font-bold text-gray-800">
+                         {Array.isArray(grant.client_id)
+                            ? grant.client_id.join(", ")
+                            : grant.client_id || "Unknown Application"}
+                     </h1>
+                     <div className="flex items-center space-x-2 mt-1">
+                         <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase ${grant.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                             {grant.status || 'Unknown'}
+                         </span>
+                         <span className="text-gray-500 text-sm">ID: {grant.id}</span>
+                     </div>
                   </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Grant Metadata */}
-          <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 mb-6">
-            <h3 className="text-lg font-semibold text-white mb-4">
-              Grant Information
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">Subject</p>
-                  <p className="text-sm text-white">
-                    {grant.subject
-                      ? Array.isArray(grant.subject)
-                        ? grant.subject.join(", ")
-                        : grant.subject
-                      : "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">
-                    Client ID
-                    {Array.isArray(grant.client_id) &&
-                    grant.client_id.length > 1
-                      ? "s"
-                      : ""}
-                  </p>
-                  <p className="text-sm text-white font-mono">
-                    {grant.client_id
-                      ? Array.isArray(grant.client_id)
-                        ? grant.client_id.join(", ")
-                        : grant.client_id
-                      : "N/A"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">Created</p>
-                  <p className="text-sm text-white">
-                    {grant.createdAt
-                      ? new Date(grant.createdAt).toLocaleString()
-                      : "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">Grant ID</p>
-                  <p className="text-sm text-white font-mono">
-                    {grant.id || "N/A"}
-                  </p>
-                </div>
-              </div>
+               </div>
+               {/* Risk Badge */}
+               <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase border ${getRiskColor(grant.risk_level || "low")}`}>
+                  {grant.risk_level || "low"} Risk
+               </div>
             </div>
           </div>
 
-          {/* Permissions & Scopes */}
-          <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">
-                Granted Permissions
-              </h3>
-              <button className="px-3 py-1 bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 rounded-lg text-sm transition-colors border border-blue-500/20">
-                Edit Scopes
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
-              {grant.scope?.split(" ").map((scope: string, idx: number) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between bg-white/5 rounded-xl p-3 border border-white/10"
-                >
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm">{getScopeIcon(scope)}</span>
-                    <span className="text-sm text-white">{scope}</span>
-                  </div>
-                  <button className="text-xs text-slate-400 hover:text-red-400 transition-colors">
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Authorization Details with Editing */}
-          <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">
-                Access Details
-              </h3>
-              <button className="px-3 py-1 bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 rounded-lg text-sm transition-colors border border-purple-500/20">
-                Manage Access
-              </button>
-            </div>
-
-            {/* Authorization Details for Demo */}
-            <div className="space-y-4">
-              {/* MCP Tools Access */}
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">🔧</span>
-                    <div>
-                      <h4 className="text-sm font-medium text-white">
-                        MCP Tools Access
-                      </h4>
-                      <p className="text-xs text-slate-400">
-                        Development & monitoring tools
-                      </p>
-                    </div>
-                  </div>
-                  <button className="text-xs text-blue-400 hover:text-blue-300">
-                    Edit
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {["metrics.read", "logs.query", "dashboard.view"].map(
-                    (tool, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between bg-emerald-500/10 rounded-lg p-2 border border-emerald-500/20"
-                      >
-                        <span className="text-xs text-emerald-300">{tool}</span>
-                        <input
-                          type="checkbox"
-                          checked
-                          className="w-3 h-3 text-emerald-500"
-                          title={`Toggle ${tool}`}
-                        />
+          {/* Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+             {/* Main Info */}
+             <div className="lg:col-span-2 space-y-6">
+                
+                {/* Details Panel */}
+                <div className="bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
+                   <div className="bg-gray-50 px-6 py-3 border-b border-gray-100">
+                      <h3 className="text-sm font-bold text-gray-700 uppercase">General Information</h3>
+                   </div>
+                   <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8">
+                      <div>
+                         <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Subject / User</p>
+                         <p className="text-sm text-gray-900 font-medium">{grant.subject || "N/A"}</p>
                       </div>
-                    )
-                  )}
-                </div>
-              </div>
-
-              {/* API Access */}
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">🌐</span>
-                    <div>
-                      <h4 className="text-sm font-medium text-white">
-                        API Access
-                      </h4>
-                      <p className="text-xs text-slate-400">
-                        External service endpoints
-                      </p>
-                    </div>
-                  </div>
-                  <button className="text-xs text-blue-400 hover:text-blue-300">
-                    Edit
-                  </button>
+                      <div>
+                         <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Actor / Client</p>
+                         <p className="text-sm text-gray-900 font-medium">{grant.actor || "N/A"}</p>
+                      </div>
+                      <div>
+                         <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Created At</p>
+                         <p className="text-sm text-gray-900 font-medium">{grant.createdAt ? new Date(grant.createdAt).toLocaleString() : "N/A"}</p>
+                      </div>
+                      <div>
+                         <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Grant Type</p>
+                         <p className="text-sm text-gray-900 font-medium">OAuth 2.0 / UMA</p>
+                      </div>
+                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between bg-blue-500/10 rounded-lg p-2 border border-blue-500/20">
-                    <span className="text-xs text-blue-300">
-                      https://api.monitoring.internal/v1/metrics
-                    </span>
-                    <span className="text-xs text-slate-400">HTTPS</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* File System Access */}
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">📁</span>
-                    <div>
-                      <h4 className="text-sm font-medium text-white">
-                        File System Access
-                      </h4>
-                      <p className="text-xs text-slate-400">
-                        Directory and file permissions
-                      </p>
-                    </div>
-                  </div>
-                  <button className="text-xs text-blue-400 hover:text-blue-300">
-                    Edit
-                  </button>
+                {/* Permissions Panel */}
+                 <div className="bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
+                   <div className="bg-gray-50 px-6 py-3 border-b border-gray-100 flex justify-between items-center">
+                      <h3 className="text-sm font-bold text-gray-700 uppercase">Scopes & Permissions</h3>
+                   </div>
+                   <div className="p-6">
+                      <div className="flex flex-wrap gap-2">
+                         {grant.scope?.split(" ").map((scope: string, idx: number) => (
+                            <span key={idx} className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 border border-blue-100">
+                               <span className="mr-1.5 text-xs">{getScopeIcon(scope)}</span>
+                               {scope}
+                            </span>
+                         ))}
+                      </div>
+                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  {["read", "write", "execute", "list"].map((perm, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between bg-yellow-500/10 rounded-lg p-2 border border-yellow-500/20"
-                    >
-                      <span className="text-xs text-yellow-300">{perm}</span>
-                      <input
-                        type="checkbox"
-                        checked={perm !== "execute"}
-                        className="w-3 h-3 text-yellow-500"
-                        title={`Toggle ${perm} permission`}
-                      />
-                    </div>
-                  ))}
+                {/* Access Details Panel */}
+                <div className="bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
+                   <div className="bg-gray-50 px-6 py-3 border-b border-gray-100 flex justify-between items-center">
+                      <h3 className="text-sm font-bold text-gray-700 uppercase">Detailed Access Control</h3>
+                      <button className="text-xs text-blue-600 hover:underline">Edit Access</button>
+                   </div>
+                   <div className="p-6 space-y-4">
+                       {/* Authorization details logic similar to list but light theme */}
+                       <div className="space-y-4">
+                         {/* ... demo content or real content ... */}
+                         {/* Using the hardcoded demo blocks from original code but restyled */}
+                         <div className="border border-gray-100 rounded-lg p-4 bg-gray-50/50">
+                            <div className="flex items-center justify-between mb-2">
+                               <h4 className="text-sm font-semibold text-gray-800">MCP Tools Access</h4>
+                               <span className="text-xs text-gray-500">Development Tools</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 mt-3">
+                               {["metrics.read", "logs.query", "dashboard.view"].map((tool, idx) => (
+                                  <label key={idx} className="flex items-center space-x-2 text-sm text-gray-600">
+                                     <input type="checkbox" checked className="rounded text-blue-600 focus:ring-blue-500" />
+                                     <span>{tool}</span>
+                                  </label>
+                               ))}
+                            </div>
+                         </div>
+                       </div>
+                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-between space-x-4">
-            <a
-              href="/grants-management/Grants"
-              className="flex items-center space-x-2 px-6 py-3 bg-slate-600/20 hover:bg-slate-600/30 text-slate-300 rounded-xl transition-colors border border-slate-600/30"
-            >
-              <span>←</span>
-              <span>Back to Grants</span>
-            </a>
+             </div>
 
-            <div className="flex items-center space-x-3">
-              <form
-                method="POST"
-                action={`/grants-management/Grants/${grant.id}`}
-                hx-swap="innerHTML"
-                className="inline"
-              >
-                <input type="hidden" name="_method" value="PATCH" />
-                <button
-                  type="submit"
-                  className="flex items-center space-x-2 px-6 py-3 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-xl transition-colors border border-blue-500/30"
-                >
-                  <span>💾</span>
-                  <span>Save Changes</span>
-                </button>
-              </form>
+             {/* Sidebar Actions */}
+             <div className="space-y-6">
+                <div className="bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
+                   <div className="bg-gray-50 px-6 py-3 border-b border-gray-100">
+                      <h3 className="text-sm font-bold text-gray-700 uppercase">Actions</h3>
+                   </div>
+                   <div className="p-4 space-y-3">
+                      <form
+                        method="POST"
+                        action={`/grants-management/Grants/${grant.id}`}
+                        hx-swap="innerHTML"
+                        className="block"
+                      >
+                         <input type="hidden" name="_method" value="PATCH" />
+                         <button type="submit" className="w-full flex justify-center items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors shadow-sm text-sm">
+                            <span>Save Changes</span>
+                         </button>
+                      </form>
 
-              {grant.status === "active" && (
-                <form
-                  action={`/grants-management/Grants/${grant.id}`}
-                  method="POST"
-                  // hx-swap="innerHTML"
-                  // hx-delete={`/grants-management/Grants/${grant.id}`}
-                  // hx-target={`#grant-${grant.id}`}
-                  className="inline"
-                >
-                  <input type="hidden" name="_method" value="DELETE" />
-                  <button
-                    type="submit"
-                    className="flex items-center space-x-2 px-6 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-xl transition-colors border border-red-500/30"
-                  >
-                    <span>🚫</span>
-                    <span>Revoke Grant</span>
-                  </button>
-                </form>
-              )}
-            </div>
+                      {grant.status === "active" && (
+                        <form
+                          action={`/grants-management/Grants/${grant.id}`}
+                          method="POST"
+                          className="block"
+                        >
+                           <input type="hidden" name="_method" value="DELETE" />
+                           <button type="submit" className="w-full flex justify-center items-center space-x-2 px-4 py-2 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded font-medium transition-colors text-sm">
+                              <span>Revoke Grant</span>
+                           </button>
+                        </form>
+                      )}
+                   </div>
+                </div>
+
+                {grant.risk_level === 'high' && (
+                   <div className="bg-orange-50 rounded shadow-sm border border-orange-200 p-4">
+                      <div className="flex items-start space-x-3">
+                         <div className="text-orange-500 mt-0.5">⚠️</div>
+                         <div>
+                            <h4 className="text-sm font-bold text-orange-800">High Risk Grant</h4>
+                            <p className="text-xs text-orange-700 mt-1 leading-relaxed">
+                               This grant allows access to sensitive operations. Please verify the necessity of these permissions.
+                            </p>
+                         </div>
+                      </div>
+                   </div>
+                )}
+             </div>
           </div>
         </div>
       </div>
@@ -442,13 +286,13 @@ async function getGrant(srv: GrantsManagementService, { id, ...grant }: Grant) {
 function getRiskColor(level: string) {
   switch (level) {
     case "low":
-      return "text-green-400 bg-green-500/20 border-green-500/30";
+      return "text-green-700 bg-green-100 border-green-200";
     case "medium":
-      return "text-yellow-400 bg-yellow-500/20 border-yellow-500/30";
+      return "text-orange-700 bg-orange-100 border-orange-200";
     case "high":
-      return "text-red-400 bg-red-500/20 border-red-500/30";
+      return "text-red-700 bg-red-100 border-red-200";
   }
-  return "text-gray-400 bg-gray-500/20 border-gray-500/30";
+  return "text-gray-700 bg-gray-100 border-gray-200";
 }
 
 function getScopeIcon(scope: string) {
