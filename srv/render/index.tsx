@@ -17,7 +17,7 @@ export const htmlTemplate = (reactContent: string) => `
 
 
     <style>
-        body { font-family: 'Inter', system-ui, sans-serif; }
+        body { font-family: "72", "72full", Arial, Helvetica, sans-serif; background-color: #f5f7fa; margin: 0; }
     </style>
 
 
