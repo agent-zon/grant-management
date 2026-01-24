@@ -73,20 +73,14 @@ function enableDisabledTools(
   const toolsToDisable = Object.entries(tools)
     .filter(([_, tool]) => tool.enabled)
     .filter(([name, _]) => !authorizationDetails.tools?.[name]);
-
-  console.log(
-    "[MCP] Tools",
-    "\tenable:",
-    toolsToEnable.map(([name]) => name),
-    "\tdisable:",
-    toolsToDisable.map(([name]) => name),
-    "\tauthorizationDetails:",
-    authorizationDetails.tools
-  );
+ 
   toolsToEnable.forEach(([_, t]) => t.enable());
   toolsToDisable.forEach(([_, t]) => t.disable());
   return toolsToEnable.length || toolsToDisable.length;
 }
+
+
+
 function mcpDetails(grant?: Grant, host?: string): AuthorizationDetailMcpTool {
   return (grant?.authorization_details || [])
     ?.filter((detail) => detail.type === "mcp" && detail.server === host)
