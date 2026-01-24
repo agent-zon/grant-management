@@ -46,7 +46,6 @@ async function registerToGrantChanges({
     `UPDATE`,
     AuthorizationDetails,
     async (authorizationDetails) => {
-      console.log("[MCP] Authorization Details:", authorizationDetails);
       if (
         authorizationDetails?.consent_grant_id === grant_id &&
         authorizationDetails?.type === "mcp" &&
