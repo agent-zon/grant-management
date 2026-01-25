@@ -10,8 +10,6 @@ import GrantsManagementService, {
 } from "#cds-models/sap/scai/grants/GrantsManagementService";
 import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
 import { env } from "process";
-import { AuthorizationDetailMcpTool } from "#cds-models/sap/scai/grants";
-import { MCPRequest } from "@types";
 import z from "zod";
 import { ulid } from "ulid";
 
@@ -19,64 +17,7 @@ export default function registerGrantTools(
   server: McpServer,
   tools: Record<string, RegisteredTool>
 ) {
-  server.registerTool(
-    "grant:query",
-    {
-      title: "What granted to me?",
-      description: "Show all registered tools",
-      outputSchema: {
-        id: z.string(),
-        actor: z.string().optional(),
-        subject: z.string().optional(),
-        iat: z.string().optional(),
-        authorization_details: z.array(
-          z.object({
-            type: z.string(),
-            server: z.string(),
-            tools: z.record(z.boolean()).optional(),
-          })
-        ),
-      },
-    },
-    async () => {
-      const grantService = await cds.connect.to(GrantsManagementService);
-      const grant_id =
-        cds.context?.user?.authInfo?.token.payload["sid"] ||
-        cds.context?.user?.authInfo?.token.payload.jti;
-      const grant = (await grantService.read(Grants, grant_id)) as Grant;
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(
-              {
-                grant_id,
-                authorization_details: grant?.authorization_details,
-                actor: grant?.scope,
-                subject: grant?.subject,
-                iat: grant?.createdAt,
-              },
-              (key, value) => (value != null ? value : undefined)
-            ),
-          },
-        ],
-        structuredContent: {
-          id: grant_id,
-          authorization_details: grant?.authorization_details?.map(
-            (detail) => ({
-              type: detail.type,
-              server: detail.server,
-              tools: detail.tools || {},
-            })
-          ),
-          actor: grant?.scope,
-          subject: grant?.subject,
-          iat: grant?.createdAt,
-        },
-      };
-    }
-  );
-
+ 
   server.registerTool(
     "grant:request",
     {
@@ -106,22 +47,14 @@ export default function registerGrantTools(
       }
     },
     async ({ tools }) => {
-      console.log("[MCP] Grant Request:", { tools });
-      const authService = await cds.connect.to(AuthorizationService);
-      const host =
-        cds.context?.http?.req?.headers["x-forwarded-host"] ||
-        cds.context?.http?.req?.headers.host;
-      const protocol =
-        cds.context?.http?.req?.headers["x-forwarded-proto"] ||
-        cds.context?.http?.req?.protocol;
-      const origin = `${protocol}://${host}`;
   
-      const agent = cds.context?.http?.req?.headers["user-agent"] || "agent";
-      const grant_id =
-        cds.context?.user?.authInfo?.token.payload["sid"] ||
-        cds.context?.user?.authInfo?.token.payload.jti;
+      //using sid for session based grants, jti for token based grants.
+      const grant_id = 
+      cds.context?.user?.authInfo?.token?.payload["sid"] ||
+      cds.context?.user?.authInfo?.token?.payload.jti;
 
-      const { request_uri, expires_in, ...response } = (await authService.par({
+      const authService = await cds.connect.to(AuthorizationService);
+      const { request_uri, expires_in } = (await authService.par({
         response_type: "code",
         subject: cds.context?.user?.id || "anonymous",
         subject_token: cds.context?.user?.authInfo?.token.jwt,
@@ -130,35 +63,29 @@ export default function registerGrantTools(
         redirect_uri: "urn:scai:grant:callback",
         grant_management_action: grant_id ? "merge" : "create",
         grant_id: grant_id,
-        requested_actor: agent,
+        requested_actor: cds.context?.http?.req?.headers["user-agent"] || "agent",
         state: ulid(),
         authorization_details: JSON.stringify([
           {
             type: "mcp",
-            server: origin,
+            server: getOrigin(),
             tools: tools.reduce((acc, toolName) => {
               acc[toolName] = null;
               return acc;
             }, {}),
           },
         ]),
-      })) || {
-        request_uri: "not_available",
-        expires_in: undefined,
-      };
+      }))!
 
-      console.log("[MCP] PAR Response:", request_uri, response);
-      const authUrl = `${env.BASE_API_URL || origin}/oauth-server/authorize_dialog?request_uri=${encodeURIComponent(request_uri!)}`;
       return {
         content: [
-          { type: "text", text: authUrl },
           {
             type: "text",
-            text: "show bellow URL to the user so they can approve the tool request",
+            text: "To approve the requested tools send the authorization URL to the user.",
           },
         ],
         structuredContent: {
-          authorization_url: authUrl,
+          authorization_url: `${env.BASE_API_URL || getOrigin()}/oauth-server/authorize_dialog?request_uri=${encodeURIComponent(request_uri!)}`,
           request_uri,
           expires_in,
         },
@@ -200,5 +127,14 @@ export default function registerGrantTools(
   
   
   
+}
+
+ function getOrigin() {
+  const host = cds.context?.http?.req?.headers["x-forwarded-host"] ||
+    cds.context?.http?.req?.headers.host;
+  const protocol = cds.context?.http?.req?.headers["x-forwarded-proto"] ||
+    cds.context?.http?.req?.protocol;
+  const origin = `${protocol}://${host}`;
+  return origin;
 }
     

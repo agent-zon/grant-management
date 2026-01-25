@@ -71,7 +71,7 @@
     "bind:srv": "npx cds bind --to-app-services agents-srv --on k8s",
     "bind:router": "cds bind --to-app-services a2a-approuter --on k8s",
     "bind:auth": "cds bind ias -2 agents-identity --on k8s",
-    "bind:destination": "cds bind -2 a2a-destination --on k8s",
+    "bind:destination": "cds bind -2 agents-destination-auth --on k8s",
     "bind:resolve": "npx cds env requires --resolve-bindings --profile hybrid",
     "bind:list": "npx cds bind --list",
     "bind:remove": "npx cds bind --remove",
@@ -108,8 +108,10 @@
     "test:oauth:basic": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/oauth-basic-flow.test.ts",
     "test:oauth:stepup": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/oauth-stepup-flow.test.ts",
     "test:grant-mgmt": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/grant-management.test.ts",
-    "inspector:muppet": "npx muppet-kit inspector ",
-    "inspector:mcp": "npx @modelcontextprotocol/inspector  --config ./mcps.json --server grant-management"
+    "inspector:muppet": "PORT=9000 npx muppet-kit inspector -p 9000",
+    "inspector:mcp": "npx @modelcontextprotocol/inspector  --config ./mcps.json --server grant-management",
+    "compile:mcp": "npx cds compile srv --service all -2 edmx > grants-management.edmx",
+    "token:destination": "node scripts/get-destination-token.js"
   },
   "workspaces": [
     "app/router"
