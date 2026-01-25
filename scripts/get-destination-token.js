@@ -12,7 +12,7 @@ const credentials = {
   clientid:
     "sb-cloned779da6d57394c96b1a1693755f831ce!b1328962|destination-xsappname!b9",
   clientsecret:
-    "aeede5d2-c5c9-4e4a-a152-cb4697a14e30$P3GoSKI0WPYDzfSLgyinJiO5iuxdZKla27_tjoRlM70=",
+    "**",
   uaadomain: "authentication.eu12.hana.ondemand.com",
   url: "https://experiments-1234.authentication.eu12.hana.ondemand.com",
   identityzone: "experiments-1234",
