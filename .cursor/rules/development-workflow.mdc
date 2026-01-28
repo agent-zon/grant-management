@@ -1,7 +1,8 @@
 # Development Workflow Rules
 
-**Version:** 1.0  
+**Version:** 2.0  
 **Created:** 2025-10-09  
+**Last Updated:** 2026-01-28  
 **Owner:** Development Team  
 
 ## 1) Purpose
@@ -41,7 +42,228 @@ npm run lint
 npm test
 ```
 
-### 3.3 Deployment Commands
+### 3.3 MCP Testing Requirements
+
+**For ALL MCP-related work, you MUST test using the MCP Inspector CLI script:**
+
+```bash
+# Run MCP Inspector test with password grant (uses TEST_USER/TEST_PASSWORD from .env)
+npm run test:mcp
+
+# Or manually with cds bind for hybrid mode
+npx cds bind --profile hybrid --exec -- node scripts/test-mcp-inspector.js
+
+# With manually provided token
+MCP_TOKEN="your-token" node scripts/test-mcp-inspector.js
+
+# With custom URL and method
+MCP_URL="https://your-server.com/mcp/streaming" MCP_METHOD="tools/call" npm run test:mcp
+```
+
+**Alternative: Direct MCP Inspector CLI (for manual testing):**
+
+```bash
+# Start the CDS server first (in one terminal)
+npm run dev
+
+# In another terminal, run MCP Inspector
+npm run inspector:mcp
+
+# Or directly:
+npx @modelcontextprotocol/inspector --config ./mcps.json --server grant-management
+
+# With CLI mode and specific method:
+npx @modelcontextprotocol/inspector --cli --config ./mcps.json --server grant-management --method tools/list
+```
+
+**MCP Testing Checklist:**
+- [ ] MCP server starts without errors
+- [ ] Inspector connects successfully
+- [ ] Authorization configured (if required)
+- [ ] Token acquired successfully (password grant or client credentials)
+- [ ] Token has `sid` or `jti` claim for grant lookup
+- [ ] All MCP tools are discoverable (`tools/list` works)
+- [ ] Tool execution works end-to-end (`tools/call` works)
+- [ ] Streaming responses function correctly (if applicable)
+- [ ] Error handling works as expected
+
+**MCP Test Script Usage:**
+
+The `scripts/test-mcp-inspector.js` script provides automated testing with:
+- Automatic token acquisition (password grant or client credentials)
+- Token claim validation (checks for `sid`/`jti`)
+- Direct MCP Inspector CLI execution with proper headers
+- Support for custom URLs, methods, and tokens
+
+**Environment Variables for MCP Testing:**
+- `TEST_USER` - Test user email/username (for password grant)
+- `TEST_PASSWORD` - Test user password (for password grant)
+- `MCP_TOKEN` - Manually provided token (skips token fetch if set)
+- `MCP_URL` - MCP server URL (defaults to production server)
+- `MCP_TRANSPORT` - Transport type: "http" or "sse" (defaults to "http")
+- `MCP_METHOD` - MCP method to call (defaults to "tools/list")
+- `MCP_RESOURCE` - Resource for token request (e.g., "grant-mcp")
+
+**Mock Tokens for MCP Testing (TBD):**
+
+Mock token support for MCP testing is planned but not yet implemented. When available, it will allow testing MCP functionality without requiring real authentication credentials.
+
+**Current Status:** Mock tokens are not supported for MCP testing. Use password grant with `TEST_USER`/`TEST_PASSWORD` or provide a valid token via `MCP_TOKEN`.
+
+**Future Implementation:** Mock token generation and validation for MCP endpoints will be documented here once implemented.
+
+**Reference:** See `scripts/test-mcp-inspector.js` for complete implementation.
+
+**Future MCP Test Scripts (to be created):**
+
+Following the pattern of `test:oauth:basic` and `test:oauth:stepup`, create additional test scripts for different MCP scenarios:
+
+```json
+{
+  "test:mcp": "npx cds bind --profile hybrid --exec -- node scripts/test-mcp-inspector.js",
+  "test:mcp:list": "npx cds bind --profile hybrid --exec -- MCP_METHOD=tools/list node scripts/test-mcp-inspector.js",
+  "test:mcp:call": "npx cds bind --profile hybrid --exec -- MCP_METHOD=tools/call node scripts/test-mcp-inspector.js",
+  "test:mcp:resources": "npx cds bind --profile hybrid --exec -- MCP_METHOD=resources/list node scripts/test-mcp-inspector.js",
+  "test:mcp:prompts": "npx cds bind --profile hybrid --exec -- MCP_METHOD=prompts/list node scripts/test-mcp-inspector.js"
+}
+```
+
+Each script uses the same `test-mcp-inspector.js` mechanism with different `MCP_METHOD` values. Infrastructure for these will be set up later.
+
+**MCP Inspector Authorization:**
+
+The `test-mcp-inspector.js` script automatically handles authorization by:
+1. Acquiring a token (password grant or client credentials)
+2. Passing it via `--header "Authorization: Bearer <token>"` to MCP Inspector CLI
+
+**Direct MCP Inspector CLI Usage (Manual Testing):**
+
+For manual testing with MCP Inspector CLI, use the `--header` flag:
+
+```bash
+# Test with Bearer token header
+npx @modelcontextprotocol/inspector \
+  --cli \
+  https://agents-srv-grants.c-127c9ef.stage.kyma.ondemand.com/mcp/streaming \
+  --transport http \
+  --method tools/list \
+  --header "Authorization: Bearer <your-token>"
+
+# Test specific tool execution
+npx @modelcontextprotocol/inspector \
+  --cli \
+  https://agents-srv-grants.c-127c9ef.stage.kyma.ondemand.com/mcp/streaming \
+  --transport http \
+  --method tools/call \
+  --name tool-name \
+  --arguments '{"param": "value"}' \
+  --header "Authorization: Bearer <your-token>"
+```
+
+**For Local Development (No Auth):**
+
+If testing locally without authentication:
+```bash
+npx @modelcontextprotocol/inspector \
+  --cli \
+  http://localhost:4004/mcp/streaming \
+  --transport http \
+  --method tools/list
+```
+
+**Reference:** See `mcps.json` for MCP server configuration.
+
+### 3.4 Mock Authentication for Tests
+
+**For testing without real authentication services, use mock auth:**
+
+1. **Ensure no auth credentials are configured** - Mock auth is used when `cds.requires.auth.credentials` is undefined
+2. **Mock tokens are automatically generated** - The system will create mock tokens with format `mk_${ulid()}`
+3. **Test flows work without IAS/XSUAA** - All OAuth flows can be tested in mock mode
+
+**Mock Auth Testing:**
+```bash
+# Run tests with mock auth (no credentials required)
+npm test
+
+# Test specific OAuth flows
+npm run test:oauth
+npm run test:oauth:basic
+npm run test:oauth:stepup
+npm run test:grant-mgmt
+```
+
+**Reference:** See `test-e2e/auth.spec.js` for authentication testing examples.
+
+### 3.5 Hybrid Mode Password Grant Testing
+
+**For hybrid mode testing with real authentication, use password grant type:**
+
+**Setup:**
+
+1. **Install dotenv** (if not already installed):
+   ```bash
+   npm install dotenv
+   ```
+
+2. **Create/update `.env` file** in project root:
+   ```bash
+   # Test user credentials for password grant
+   TEST_USER=your-test-user@example.com
+   TEST_PASSWORD=your-test-password
+   ```
+
+3. **Load environment variables** in your test/script:
+   ```javascript
+   import dotenv from 'dotenv';
+   dotenv.config();
+   
+   const TEST_USER = process.env.TEST_USER;
+   const TEST_PASSWORD = process.env.TEST_PASSWORD;
+   ```
+
+4. **Use IdentityService.fetchPasswordToken** to get user token:
+   ```javascript
+   import { IdentityService } from '@sap/xssec';
+   import cds from '@sap/cds';
+   import dotenv from 'dotenv';
+   
+   dotenv.config();
+   
+   const credentials = cds.env.requires.auth.credentials;
+   const authService = new IdentityService(credentials);
+   
+   // Fetch user token using password grant
+   const tokenResponse = await authService.fetchPasswordToken(
+     process.env.TEST_USER,
+     process.env.TEST_PASSWORD,
+     {
+       grant_type: 'password',
+       // Add any additional options as needed
+     }
+   );
+   
+   console.log('Access Token:', tokenResponse.access_token);
+   console.log('Expires In:', tokenResponse.expires_in);
+   ```
+
+**Hybrid Mode Testing Commands:**
+```bash
+# Run auth tests in hybrid mode
+npm run test:auth
+
+# Or manually with cds bind
+npx cds bind --profile hybrid --exec -- node ./test-e2e/auth.spec.js
+```
+
+**Environment Variables Required:**
+- `TEST_USER` - Test user email/username
+- `TEST_PASSWORD` - Test user password
+- Auth service credentials must be configured in `cds.env.requires.auth.credentials`
+
+**Reference:** See `test-e2e/auth.spec.js` for complete implementation example.
+
+### 3.6 Deployment Commands
 
 **For this project, use:**
 
@@ -80,6 +302,8 @@ mbt build && cf deploy mta_archives/[latest-mtar-file]
 - ✅ No new console errors
 - ✅ User flow complete
 - ✅ Database operations successful (if applicable)
+- ✅ MCP tools tested with `npm run test:mcp` (if MCP-related changes)
+- ✅ Authentication flows tested (mock or hybrid mode as appropriate)
 
 ## 5) Error Prevention
 
@@ -90,6 +314,10 @@ mbt build && cf deploy mta_archives/[latest-mtar-file]
 - **TypeScript/linting errors** - run linters
 - **API endpoint errors** - test with curl/browser
 - **Authentication issues** - verify auth flows
+- **MCP server connection issues** - test with Inspector CLI
+- **MCP authorization failures** - verify Bearer token is passed correctly via --header flag
+- **Missing environment variables** - check `.env` file for TEST_USER/TEST_PASSWORD
+- **IdentityService errors** - verify credentials configuration
 
 ### 5.2 Red Flags (Stop and Fix)
 
@@ -98,6 +326,10 @@ mbt build && cf deploy mta_archives/[latest-mtar-file]
 - ❌ TypeScript compilation errors
 - ❌ Database constraint violations
 - ❌ Missing environment variables
+- ❌ MCP Inspector cannot connect to server
+- ❌ MCP authorization fails (check Bearer token passed via --header flag)
+- ❌ Password grant token fetch fails (check TEST_USER/TEST_PASSWORD)
+- ❌ IdentityService throws errors (verify credentials configuration)
 
 ## 6) Deployment Checklist
 
@@ -110,6 +342,9 @@ mbt build && cf deploy mta_archives/[latest-mtar-file]
 - [ ] All modified endpoints tested
 - [ ] Database operations verified
 - [ ] User flows validated
+- [ ] MCP tools tested with `npm run test:mcp` (if MCP-related)
+- [ ] Authentication tested (mock or hybrid mode)
+- [ ] Environment variables configured (if using hybrid mode)
 
 ## 7) Post-Deployment Verification
 
@@ -146,6 +381,25 @@ npm run deploy
 
 Ensure all required environment variables are set for local development.
 
+**Required for Hybrid Mode Testing:**
+- `TEST_USER` - Test user email/username for password grant
+- `TEST_PASSWORD` - Test user password for password grant
+
+**Optional for MCP Testing:**
+- `MCP_TOKEN` - Bearer token for MCP server authorization (if manually provided)
+
+**Setup `.env` file:**
+```bash
+# Copy example if available, or create new
+cp .env.example .env
+
+# Add test credentials
+echo "TEST_USER=your-test-user@example.com" >> .env
+echo "TEST_PASSWORD=your-test-password" >> .env
+```
+
+**Important:** Never commit `.env` files to git. They are already in `.gitignore`.
+
 ## 10) Enforcement
 
 **This workflow is MANDATORY for all developers.**
@@ -170,6 +424,8 @@ Fix database schema mismatch in authorization handlers
 - Authorization flow complete
 - Token exchange working
 - State machine progression functional
+- MCP Inspector tested with `npm run test:mcp` (if MCP changes)
+- Password grant tested with TEST_USER (if hybrid mode)
 ```
 
 ### 11.2 Bad Commit Example (DON'T DO THIS)
