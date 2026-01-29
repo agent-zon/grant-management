@@ -46,9 +46,6 @@ requires:
             - grant_management_replace
             - grant_management_revoke
             - grant_management_query
-mocks:
-  auth:
-    kind: mocked
 features:
   toggles:
     auth: true

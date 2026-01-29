@@ -46,8 +46,16 @@ npm test
 
 **For ALL MCP-related work, you MUST test using the MCP Inspector CLI script:**
 
+**Quick Test Commands (Recommended):**
+
 ```bash
-# Run MCP Inspector test with password grant (uses TEST_USER/TEST_PASSWORD from .env)
+# Test against LOCAL server (localhost:4004) - Use during development
+npm run test:mcp:list-tools:local
+
+# Test against PRODUCTION/STAGING server - Use for integration testing
+npm run test:mcp:list-tools
+
+# Full MCP Inspector test with password grant (uses TEST_USER/TEST_PASSWORD from .env)
 npm run test:mcp
 
 # Or manually with cds bind for hybrid mode
@@ -60,20 +68,42 @@ MCP_TOKEN="your-token" node scripts/test-mcp-inspector.js
 MCP_URL="https://your-server.com/mcp/streaming" MCP_METHOD="tools/call" npm run test:mcp
 ```
 
+**MCP Test Scripts Explained:**
+
+- **`test:mcp:list-tools:local`** - Tests against local server (`http://localhost:4004/mcp/streaming`)
+  - Uses `mcps.local.json` configuration
+  - Requires local server running (`npm run dev`)
+  - Automatically fetches token via `token:user` script
+  - Best for: Local development and testing
+
+- **`test:mcp:list-tools`** - Tests against production/staging server
+  - Uses `mcps.json` configuration  
+  - Connects to `https://agents-srv-grants.c-127c9ef.stage.kyma.ondemand.com/mcp/streaming`
+  - Automatically fetches token via `token:user` script
+  - Best for: Integration testing against deployed server
+
+- **`test:mcp`** - Full MCP Inspector test script
+  - Uses `scripts/test-mcp-inspector.js`
+  - Supports custom URLs, methods, and tokens via environment variables
+  - More flexible but requires manual configuration
+
 **Alternative: Direct MCP Inspector CLI (for manual testing):**
 
 ```bash
 # Start the CDS server first (in one terminal)
 npm run dev
 
-# In another terminal, run MCP Inspector
+# In another terminal, run MCP Inspector interactively
 npm run inspector:mcp
 
 # Or directly:
 npx @modelcontextprotocol/inspector --config ./mcps.json --server grant-management
 
-# With CLI mode and specific method:
-npx @modelcontextprotocol/inspector --cli --config ./mcps.json --server grant-management --method tools/list
+# With CLI mode and specific method (production):
+npx @modelcontextprotocol/inspector --cli --config ./mcps.json --server grant-management --method tools/list --header "Authorization: Bearer $(npm run token:user --silent)"
+
+# With CLI mode and specific method (local):
+npx @modelcontextprotocol/inspector --cli --config ./mcps.local.json --server grant-management --method tools/list --header "Authorization: Bearer $(npm run token:user --silent)"
 ```
 
 **MCP Testing Checklist:**
@@ -83,6 +113,8 @@ npx @modelcontextprotocol/inspector --cli --config ./mcps.json --server grant-ma
 - [ ] Token acquired successfully (password grant or client credentials)
 - [ ] Token has `sid` or `jti` claim for grant lookup
 - [ ] All MCP tools are discoverable (`tools/list` works)
+  - [ ] Tested locally: `npm run test:mcp:list-tools:local`
+  - [ ] Tested against staging: `npm run test:mcp:list-tools`
 - [ ] Tool execution works end-to-end (`tools/call` works)
 - [ ] Streaming responses function correctly (if applicable)
 - [ ] Error handling works as expected
@@ -114,21 +146,34 @@ Mock token support for MCP testing is planned but not yet implemented. When avai
 
 **Reference:** See `scripts/test-mcp-inspector.js` for complete implementation.
 
+**MCP Test Scripts Available:**
+
+The following test scripts are available for MCP testing:
+
+- **`test:mcp`** - Full MCP Inspector test with custom configuration
+- **`test:mcp:list-tools`** - Quick test: List tools from production/staging server
+- **`test:mcp:list-tools:local`** - Quick test: List tools from local server
+
+**Token Script:**
+
+- **`token:user`** - Fetches access token for MCP authentication
+  - Outputs only the token to stdout (suitable for command substitution)
+  - Usage: `TOKEN=$(npm run token:user --silent)`
+  - Used internally by `test:mcp:list-tools` scripts via `$(npm run token:user --silent)`
+
 **Future MCP Test Scripts (to be created):**
 
 Following the pattern of `test:oauth:basic` and `test:oauth:stepup`, create additional test scripts for different MCP scenarios:
 
 ```json
 {
-  "test:mcp": "npx cds bind --profile hybrid --exec -- node scripts/test-mcp-inspector.js",
-  "test:mcp:list": "npx cds bind --profile hybrid --exec -- MCP_METHOD=tools/list node scripts/test-mcp-inspector.js",
-  "test:mcp:call": "npx cds bind --profile hybrid --exec -- MCP_METHOD=tools/call node scripts/test-mcp-inspector.js",
-  "test:mcp:resources": "npx cds bind --profile hybrid --exec -- MCP_METHOD=resources/list node scripts/test-mcp-inspector.js",
-  "test:mcp:prompts": "npx cds bind --profile hybrid --exec -- MCP_METHOD=prompts/list node scripts/test-mcp-inspector.js"
+  "test:mcp:call": "npx -y @modelcontextprotocol/inspector@latest --cli --config mcps.json --server grant-management --method tools/call --name <tool-name> --arguments '{}' --header \"Authorization: Bearer $(npm run token:user --silent)\"",
+  "test:mcp:resources": "npx -y @modelcontextprotocol/inspector@latest --cli --config mcps.json --server grant-management --method resources/list --header \"Authorization: Bearer $(npm run token:user --silent)\"",
+  "test:mcp:prompts": "npx -y @modelcontextprotocol/inspector@latest --cli --config mcps.json --server grant-management --method prompts/list --header \"Authorization: Bearer $(npm run token:user --silent)\""
 }
 ```
 
-Each script uses the same `test-mcp-inspector.js` mechanism with different `MCP_METHOD` values. Infrastructure for these will be set up later.
+Each script uses the MCP Inspector CLI with token from `token:user` script. Infrastructure for these will be set up later.
 
 **MCP Inspector Authorization:**
 
@@ -138,40 +183,52 @@ The `test-mcp-inspector.js` script automatically handles authorization by:
 
 **Direct MCP Inspector CLI Usage (Manual Testing):**
 
-For manual testing with MCP Inspector CLI, use the `--header` flag:
+For manual testing with MCP Inspector CLI, use the `--header` flag with token from `token:user`:
 
 ```bash
-# Test with Bearer token header
-npx @modelcontextprotocol/inspector \
+# Test with Bearer token header (production/staging)
+npx -y @modelcontextprotocol/inspector@latest \
   --cli \
-  https://agents-srv-grants.c-127c9ef.stage.kyma.ondemand.com/mcp/streaming \
-  --transport http \
+  --config mcps.json \
+  --server grant-management \
   --method tools/list \
-  --header "Authorization: Bearer <your-token>"
+  --header "Authorization: Bearer $(npm run token:user --silent)"
+
+# Test with Bearer token header (local)
+npx -y @modelcontextprotocol/inspector@latest \
+  --cli \
+  --config mcps.local.json \
+  --server grant-management \
+  --method tools/list \
+  --header "Authorization: Bearer $(npm run token:user --silent)"
 
 # Test specific tool execution
-npx @modelcontextprotocol/inspector \
+npx -y @modelcontextprotocol/inspector@latest \
   --cli \
-  https://agents-srv-grants.c-127c9ef.stage.kyma.ondemand.com/mcp/streaming \
-  --transport http \
+  --config mcps.json \
+  --server grant-management \
   --method tools/call \
   --name tool-name \
   --arguments '{"param": "value"}' \
-  --header "Authorization: Bearer <your-token>"
+  --header "Authorization: Bearer $(npm run token:user --silent)"
 ```
 
 **For Local Development (No Auth):**
 
-If testing locally without authentication:
+If testing locally without authentication (mock mode):
 ```bash
-npx @modelcontextprotocol/inspector \
+npx -y @modelcontextprotocol/inspector@latest \
   --cli \
-  http://localhost:4004/mcp/streaming \
-  --transport http \
+  --config mcps.local.json \
+  --server grant-management \
   --method tools/list
 ```
 
-**Reference:** See `mcps.json` for MCP server configuration.
+**Reference:** 
+- See `mcps.json` for production/staging MCP server configuration
+- See `mcps.local.json` for local MCP server configuration
+- See `scripts/get-mcp-token.js` for token acquisition script
+- See `scripts/mcp-inspector.js` for MCP Inspector wrapper script
 
 ### 3.4 Mock Authentication for Tests
 
@@ -302,7 +359,9 @@ mbt build && cf deploy mta_archives/[latest-mtar-file]
 - ✅ No new console errors
 - ✅ User flow complete
 - ✅ Database operations successful (if applicable)
-- ✅ MCP tools tested with `npm run test:mcp` (if MCP-related changes)
+- ✅ MCP tools tested with `npm run test:mcp:list-tools:local` (if MCP-related changes)
+  - ✅ Local testing: `npm run test:mcp:list-tools:local`
+  - ✅ Staging testing: `npm run test:mcp:list-tools` (if applicable)
 - ✅ Authentication flows tested (mock or hybrid mode as appropriate)
 
 ## 5) Error Prevention
@@ -342,7 +401,9 @@ mbt build && cf deploy mta_archives/[latest-mtar-file]
 - [ ] All modified endpoints tested
 - [ ] Database operations verified
 - [ ] User flows validated
-- [ ] MCP tools tested with `npm run test:mcp` (if MCP-related)
+- [ ] MCP tools tested with `npm run test:mcp:list-tools:local` (if MCP-related)
+  - [ ] Local server test: `npm run test:mcp:list-tools:local`
+  - [ ] Staging server test: `npm run test:mcp:list-tools` (if applicable)
 - [ ] Authentication tested (mock or hybrid mode)
 - [ ] Environment variables configured (if using hybrid mode)
 
@@ -424,7 +485,9 @@ Fix database schema mismatch in authorization handlers
 - Authorization flow complete
 - Token exchange working
 - State machine progression functional
-- MCP Inspector tested with `npm run test:mcp` (if MCP changes)
+- MCP Inspector tested with `npm run test:mcp:list-tools:local` (if MCP changes)
+  - Local test: `npm run test:mcp:list-tools:local`
+  - Staging test: `npm run test:mcp:list-tools` (if applicable)
 - Password grant tested with TEST_USER (if hybrid mode)
 ```
 

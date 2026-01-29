@@ -1,10 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert";
 import cds from "@sap/cds";
+import { getAccessToken } from "./token-cli/get-user-token";
 
 // Initialize test context at top level
 const { PUT, GET, POST, DELETE, axios } = cds.test(import.meta.dirname + "/..");
-axios.defaults.auth = { username: "alice", password: "" };
+// axios.defaults.auth = { username: "alice", password: "" };
 
 // Global variables for sharing state across tests
 let initialGrantId: string;
@@ -48,7 +49,7 @@ async function createInitialGrant() {
       client_id: "test-client-basic",
     },
     {
-      headers: { Accept: "text/html" },
+      headers: { Accept: "text/html", Authorization: `Bearer ${await getAccessToken()}` },
     }
   );
   console.log("  ✓ Called authorize endpoint");
@@ -81,7 +82,7 @@ async function createInitialGrant() {
     },
     {
       maxRedirects: 0,
-      headers: { Accept: "text/html" },
+      headers: { Accept: "text/html", Authorization: `Bearer ${await getAccessToken()}` },
       validateStatus: (status) => status === 301 || status === 201,
     }
   );
@@ -105,6 +106,7 @@ async function createInitialGrant() {
 
 // Test 1: Setup - Create initial grant
 test("Setup: Create initial grant", async () => {
+
   initialGrantId = await createInitialGrant();
   assert.ok(initialGrantId, "Initial grant ID should exist");
   console.log("✓ Setup complete - grant ID:", initialGrantId);
@@ -112,6 +114,7 @@ test("Setup: Create initial grant", async () => {
 
 // Test 2: Query the initial grant
 test("should query the initial grant", async () => {
+  
   const { data } = await GET(`/grants-management/Grants('${initialGrantId}')`, {
     headers: { Accept: "application/json" },
   });
@@ -416,3 +419,4 @@ test("Query Grant List: Verify all grants are present", async () => {
   console.log("  - Initial grant:", initialGrantId);
   console.log("  - New grant:", newGrantId);
 });
+ 
