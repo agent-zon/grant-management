@@ -23,7 +23,6 @@ export async function LIST(
   const response = await next(req);
 
   if (isGrants(response)) {
-    console.log("🔧 Grants:", response);
     const grants = await getGrants(this, response);
 
     // For HTML responses, render the UI
@@ -138,18 +137,16 @@ export async function LIST(
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-3">
                       <div
-                        className={`p-2 rounded-lg ${
-                          grant.status === "active"
+                        className={`p-2 rounded-lg ${grant.status === "active"
                             ? "bg-green-500/20"
                             : "bg-red-500/20"
-                        }`}
+                          }`}
                       >
                         <div
-                          className={`w-5 h-5 ${
-                            grant.status === "active"
+                          className={`w-5 h-5 ${grant.status === "active"
                               ? "text-green-400"
                               : "text-red-400"
-                          }`}
+                            }`}
                         >
                           {grant.status === "active" ? "🔓" : "🔒"}
                         </div>
@@ -168,13 +165,12 @@ export async function LIST(
                         )}
                         <div className="flex items-center space-x-2 mt-1">
                           <span
-                            className={`px-2 py-1 text-xs rounded ${
-                              grant.risk_level === "high"
+                            className={`px-2 py-1 text-xs rounded ${grant.risk_level === "high"
                                 ? "bg-red-500/20 text-red-400"
                                 : grant.risk_level === "medium"
                                   ? "bg-yellow-500/20 text-yellow-400"
                                   : "bg-green-500/20 text-green-400"
-                            }`}
+                              }`}
                           >
                             {grant.risk_level || "low"} risk
                           </span>
@@ -184,13 +180,12 @@ export async function LIST(
 
                     <div className="flex items-center space-x-3">
                       <span
-                        className={`px-2 py-1 text-xs rounded ${
-                          grant.status === "active"
+                        className={`px-2 py-1 text-xs rounded ${grant.status === "active"
                             ? "bg-green-500/20 text-green-400"
                             : (grant.status as any) === "expired"
                               ? "bg-yellow-500/20 text-yellow-400"
                               : "bg-red-500/20 text-red-400"
-                        }`}
+                          }`}
                       >
                         {grant.status || "active"}
                       </span>
@@ -362,10 +357,10 @@ async function getGrants(srv: GrantsManagementService, data: Grants) {
         client_ids.length > 0
           ? client_ids
           : [
-              grant?.client_id ||
-                grantToClientMap.get(consent.grant_id!) ||
-                "unknown",
-            ].filter(Boolean);
+            grant?.client_id ||
+            grantToClientMap.get(consent.grant_id!) ||
+            "unknown",
+          ].filter(Boolean);
 
       const actors = consents
         .map((c: any) => c.actor)

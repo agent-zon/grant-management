@@ -162,6 +162,7 @@ identity:
       - name: principal-propagation
         description: Principal Propagation for Grant Management
     oauth2-configuration:
+      public-client: true
       grant-types:
         - authorization_code
         - client_credentials

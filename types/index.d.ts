@@ -114,5 +114,5 @@ export type MCPRequest = {
   grant: Grant;
   authorizationDetails: AuthorizationDetailMcpTool;
   server: McpServer;
-  tools: Record<string, RegisteredTool>;
+  tools: RegisteredTool[];
 };

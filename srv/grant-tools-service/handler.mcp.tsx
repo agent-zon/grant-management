@@ -1,34 +1,42 @@
 import {
   McpServer,
-  ToolCallback,
-  type RegisteredTool,
+  RegisteredTool,
 } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+import grant from "@/mcp-service/tools.grant";
 import cds from "@sap/cds";
-import GrantsManagementService, {
-  Grant,
-  Grants,
-} from "#cds-models/sap/scai/grants/GrantsManagementService";
+import { MCPRequest } from "@types";
 import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
 import { env } from "process";
-import z from "zod";
 import { ulid } from "ulid";
+import { Tool } from "#cds-models/sap/scai/grants/GrantToolsService";
 
-export default function registerGrantTools(
-  server: McpServer,
-  tools: Record<string, RegisteredTool>
-) {
+
+
+export default async function (req: cds.Request<MCPRequest>, next: Function) {
+  
+  const host = req.data.host;
+  const agent = req.data.agent;
+  const toolNames = req.data.tools?.map((tool: Tool) => tool.name);
+
+  const server = (req.data.server = new McpServer({
+    name: "grant-tools-service",
+    title: "Grant Tools Service",
+    description: "Service for managing grant tools with configurable available tools schema",
+    version: "1.0.0",
+  }));
 
   server.registerTool(
-    "grant:request",
+    "push-authorization-request",
     {
       title: "Tool Authorization Request",
       description: `Some tools are disabled until the user gives permission.
                     Use this tool to build an authorization request for one or more tools.
                     It returns an authorization URL that you can show to the user for approval.
-                    Available tools: ${Object.keys(tools).join(", ")}`,
+                    Available tools: ${toolNames.join(", ")}`,
       inputSchema: {
         tools: z
-          .array(z.enum(Object.keys(tools) as [string, ...string[]]))
+          .array(z.enum(toolNames as [string, ...string[]]))
           .describe("The list of tools that need user authorization"),
       },
       outputSchema: {
@@ -63,7 +71,7 @@ export default function registerGrantTools(
         redirect_uri: "urn:scai:grant:callback",
         grant_management_action: grant_id ? "merge" : "create",
         grant_id: grant_id,
-        requested_actor: cds.context?.http?.req?.headers["user-agent"] || "agent",
+        requested_actor: agent,
         state: ulid(),
         authorization_details: JSON.stringify([
           {
@@ -85,49 +93,45 @@ export default function registerGrantTools(
           },
         ],
         structuredContent: {
-          request_uri: request_uri,
           authorization_url: `${env.BASE_API_URL || getOrigin()}/oauth-server/authorize_dialog?request_uri=${encodeURIComponent(request_uri!)}`,
+          request_uri,
           expires_in,
         },
       };
-    }
-  );
+    })
+
 
   //prompts
-  server.registerPrompt("grant", {
-    title: "Tool Grant Prompt",
-    description: `Some tools stay disabled until the user gives permission.
-    To request access, use the grant request tool and prompt the user the authorization URL.`,
+  server.registerPrompt("authorization-url", {
+    title: "Authorization URL Prompt",
+    description: `The user needs to approve the requested tools.
+        Use this prompt to show the authorization URL to the user.`,
     argsSchema: {
-      authorization_uri: z.string().url().describe("The authorization URL returned from grant:request"),
-      tool: z.string().describe("The name of the tool that needs permission"),
-      format: z.enum(["html", "markdown", "plain"])
-        .describe("How the prompt should be formatted")
-        .optional(),
+      authorization_url: z.string().url().describe("The authorization URL to show to the user"),
     },
-  }, async ({ authorization_uri, format, tool }) => {
-
-    return {
-      definition: "prompt user to authorize tool request",
-      messages: [
-        {
-          role: "assistant",
-          content: {
-            type: "text",
-            text: `The tool "${tool}" needs your permission. 
-    Please open the link below to review and approve the access request:
-    ${authorization_uri} 
-    After you approve, the tool will become available.`,
-          },
-          _meta: { format: format || "plain" }
+  }, async ({ authorization_url }) => ({
+    definition: "prompt user to authorize tool request",
+    messages: [
+      {
+        role: "assistant",
+        content: {
+          type: "text",
+          text: `I need you to approve the requested tools. 
+          Please open the link below to review and approve the access request:
+          ${authorization_url} 
+          After you approve, the tool will become available.`,
         },
-      ],
-    };
-  });
+      },
+    ],
+  }));
 
+  req.data.server = server;
 
-
+  return await next();
 }
+
+
+
 
 function getOrigin() {
   const host = cds.context?.http?.req?.headers["x-forwarded-host"] ||
