@@ -11,20 +11,19 @@
  *   or: npx cds bind --profile hybrid --exec -- node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/grant-tools.test.js
  */
 
-import { describe, it, before } from "node:test";
 import assert from "node:assert";
 import { IdentityService } from "@sap/xssec";
 import cds from "@sap/cds";
 import { jwtDecode } from "jwt-decode";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-
+import { Agents } from "#cds-models/sap/scai/grants/GrantToolsService";
+import { inspect } from "node:util";
 const TEST_USER = process.env.TEST_USER || "agently.io@gmail.com";
 const TEST_PASSWORD = process.env.TEST_PASSWORD;
 
 const testInstance = cds.test("serve", "all").in(import.meta.dirname + "/..");
-const { PUT, GET, axios } = testInstance;
-
+const { PUT, GET, UPSERT, axios } = testInstance;
 const tools = [
   {
     name: "test-tool-1",
@@ -40,6 +39,13 @@ const tools = [
       properties: { name: { type: "string" } },
     }),
   },
+  {
+    name: "test-tool-3",
+    schema: JSON.stringify({
+      type: "object",
+      properties: { name: { type: "string" } },
+    }),
+  },
 ];
 
 const state = {
@@ -47,8 +53,10 @@ const state = {
   claims: null,
   agentId: null,
   mcp: null,
+  server: "my-mcp-server",
   requestId: null,
   grantId: null,
+  transport: null,
 };
 
 describe("sap.scai.grants.GrantToolsService", () => {
@@ -57,7 +65,6 @@ describe("sap.scai.grants.GrantToolsService", () => {
     await cds.services["sap.scai.grants.GrantToolsService"].meta();
 
     state.mcp = `${testInstance.url}/grants/mcp`;
-
     const credentials = cds.env.requires?.auth?.credentials;
     assert.ok(credentials, "No auth credentials. Use 'cds bind --profile hybrid'");
     assert.ok(TEST_PASSWORD, "TEST_PASSWORD must be set");
@@ -70,41 +77,43 @@ describe("sap.scai.grants.GrantToolsService", () => {
     );
     state.passwordToken = passwordTokenResponse.access_token;
     state.claims = jwtDecode(state.passwordToken);
+    state.clientToken = await authService.fetchClientCredentialsToken().then(token => token.access_token);
     state.agentId = state.claims.azp || credentials.clientid;
 
-    const db = await cds.connect.to("db");
-    const AgentsEntity = "sap.scai.grants.discovery.Agents";
-    const ToolsEntity = "sap.scai.grants.discovery.Tools";
-    const { INSERT } = cds.ql;
+    const result = await cds.run(cds.ql.UPSERT.into(Agents).entries({
+      id: state.agentId,
+      description: "Test Agent",
+      url: state.mcp,
+      tools: tools.map((t) => ({
+        name: t.name,
+        schema: t.schema,
+        enabled: true,
+        // agent_id: state.agentId,
+      })),
+      enabled: true,
+    }));
 
-    try {
-      await db.run(
-        INSERT.into(AgentsEntity).entries({
-          id: state.agentId,
-          description: "Test Agent",
-          url: state.mcp,
-          enabled: true,
-        })
-      );
-    } catch (e) {
-      if (e.code !== "SQLITE_CONSTRAINT_UNIQUE" && !/UNIQUE|unique/.test(e.message)) throw e;
-    }
+    console.log("[Upsert result]", result, result.statusText, result.status, result.data);
+    assert.ok(result, "agent should be created");
 
-    for (const tool of tools) {
-      try {
-        await db.run(
-          INSERT.into(ToolsEntity).entries({
-            name: tool.name,
-            schema: tool.schema,
-            enabled: true,
-            agent_id: state.agentId,
-          })
-        );
-      } catch (e) {
-        if (e.code !== "SQLITE_CONSTRAINT_UNIQUE" && !/UNIQUE|unique/.test(e.message)) throw e;
-      }
-    }
+
+    const client = new Client({ name: "grant-flow-test", version: "1.0.0" });
+    state.client = client;
+    const transport = new StreamableHTTPClientTransport(new URL(state.mcp), {
+      requestInit: {
+        headers: {
+          Authorization: `Bearer ${state.clientToken}`,
+          "Content-Type": "application/json",
+          Accept: "application/json, text/event-stream",
+        },
+      },
+    });
+    await client.connect(transport);
+    state.transport = transport;
+    state.client = client;
+    console.log("🚀 MCP Client Connected:", state.mcp);
   });
+
 
   it("obtains password token and agent_id", () => {
     assert.ok(state.passwordToken, "password token should be set");
@@ -112,64 +121,40 @@ describe("sap.scai.grants.GrantToolsService", () => {
     assert.ok(state.claims?.sub ?? state.claims?.email, "subject/email should be in claims");
   });
 
+
   it("creates agent and tools in DB", async () => {
-    const db = await cds.connect.to("db");
-    const ToolsEntity = "sap.scai.grants.discovery.Tools";
-    const toolsResult = await db.run(
-      cds.ql.SELECT.from(ToolsEntity).where({ agent_id: state.agentId })
-    );
-    assert.ok(Array.isArray(toolsResult), "tools result should be array");
-    assert.ok(
-      toolsResult.length >= tools.length,
-      `should have at least ${tools.length} tools for agent`
-    );
+    const agentResult = await cds.run(cds.ql.SELECT.one.from(Agents, a => {
+      a.id, a.description, a.url, a.tools(t => {
+        t`*`
+      })
+    }).where({ id: state.agentId }));
+
+
+    console.log("[Agent result]", inspect(agentResult, { colors: true, depth: 2, compact: true }));
+
+    assert.ok(agentResult, "agent should be created");
+    assert.ok(agentResult.tools, "agent should have tools");
+    assert.ok(agentResult.tools.length >= tools.length, "agent should have at least the tools we created");
+    assert.ok(agentResult.tools.every((t) => t.name === tools.find((tool) => tool.name === t.name)?.name), "agent tools should match the tools we created");
+
   });
 
   it("push-authorization-request returns request_uri", async () => {
     const toolNames = tools.map((t) => t.name);
-    const client = new Client({ name: "grant-flow-test", version: "1.0.0" });
-    const transport = new StreamableHTTPClientTransport(new URL(state.mcp), {
-      fetch1: async (url, options) => {
-        const response = await axios(url, {
-          data: options.body,
-          headers: options.headers,
-          method: options.method,
-          url,
-          responseType: "stream",
-          validateStatus: (status) => status === 200 || status === 201 || status === 301,
-          timeout: 10000,
-        });
-        return new Response(response.data, {
-          headers: response.headers,
-          status: response.status,
-        });
-      },
-      requestInit: {
-        headers: {
-          Authorization: `Bearer ${state.passwordToken}`,
-          "Content-Type": "application/json",
-          Accept: "application/json, text/event-stream",
-        },
-      },
-    });
 
-    try {
-      await client.connect(transport);
-      const result = await client.callTool({
-        name: "push-authorization-request",
-        arguments: { tools: toolNames },
-      });
-      if (result.isError) {
-        throw new Error(result.content?.[0]?.text ?? result.message ?? "MCP tool call failed");
-      }
-      const requestUri = result.structuredContent?.request_uri;
-      assert.ok(requestUri, "push-authorization-request should return request_uri");
-      state.requestId = requestUri.split(":").pop();
-      assert.ok(state.requestId, "requestId should be parsed from request_uri");
-    } finally {
-      await client.close();
-      await transport.close();
+
+    const result = await state.client.callTool({
+      name: "push-authorization-request",
+      arguments: { tools: toolNames },
+    });
+    if (result.isError) {
+      throw new Error(result.content?.[0]?.text ?? result.message ?? "MCP tool call failed");
     }
+    const requestUri = result.structuredContent?.request_uri;
+    assert.ok(requestUri, "push-authorization-request should return request_uri");
+    state.requestId = requestUri.split(":").pop();
+    assert.ok(state.requestId, "requestId should be parsed from request_uri");
+
   });
 
   it("AuthorizationRequest has grant_id", async () => {
@@ -182,27 +167,25 @@ describe("sap.scai.grants.GrantToolsService", () => {
   });
 
   it("consent can be submitted", async () => {
-    const consentData = {
-      subject: state.claims.sub || state.claims.email || "alice",
-      scope: "openid profile",
-      request_ID: state.requestId,
-      authorization_details: [
-        {
-          type: "mcp",
-          server: state.mcp,
-          tools: tools.reduce((acc, t) => {
-            acc[t.name] = null;
-            return acc;
-          }, {}),
-        },
-      ],
-      grant_id: state.grantId,
-      client_id: state.claims.azp || "test-client",
-    };
-
     const res = await PUT(
       `/oauth-server/AuthorizationRequests/${state.requestId}/consent`,
-      consentData,
+      {
+        subject: state.claims.sub || state.claims.email || "alice",
+        scope: "openid profile",
+        request_ID: state.requestId,
+        authorization_details: [
+          {
+            type: "mcp",
+            server: state.mcp,
+            tools: tools.reduce((acc, t) => {
+              acc[t.name] = null;
+              return acc;
+            }, {}),
+          },
+        ],
+        grant_id: state.grantId,
+        client_id: state.claims.azp || "test-client",
+      },
       {
         headers: { Authorization: `Bearer ${state.passwordToken}` },
         validateStatus: (status) => status === 200 || status === 201 || status === 301,
@@ -240,16 +223,20 @@ describe("sap.scai.grants.GrantToolsService", () => {
       "grant should have authorization_details array"
     );
 
-    const mcpDetails = authDetails.find((ad) => ad.type === "mcp");
-    assert.ok(mcpDetails, "grant should have mcp authorization_details");
-    const toolsObj = mcpDetails.tools ?? mcpDetails;
-    assert.ok(toolsObj && typeof toolsObj === "object", "mcp details should have tools");
-    const grantedTools = Object.keys(toolsObj);
-    for (const t of tools) {
-      assert.ok(
-        grantedTools.includes(t.name),
-        `granted tools should include ${t.name}, got: ${grantedTools.join(", ")}`
-      );
-    }
+    const grantedTools = authDetails.filter((ad) => ad.type === "mcp")
+      .flatMap((ad) => Object.keys(ad.tools));
+
+
+    assert.ok(isSubset(tools.map((t) => t.name), grantedTools), "grant should have tools");
+
+
+
   });
 });
+
+
+function isSubset(subsetArray, mainArray) {
+  // Use Array.prototype.every() to check if all elements in the subset are present
+  // in the main array using Array.prototype.includes().
+  return subsetArray.every(item => mainArray.includes(item));
+}

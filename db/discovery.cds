@@ -5,7 +5,7 @@ namespace sap.scai.grants.discovery;
   
   schema: String; // JSON schema for the tool
   enabled: Boolean default true;
-  agent: Association to Agents;
+  agent: Association to Agents ;
 }
 
 entity Agents {
@@ -15,6 +15,11 @@ entity Agents {
   enabled: Boolean default true;
   tools: Composition of many Tools on tools.agent = $self;
   virtual links: Links;
+  virtual meta:{
+    agent: String;
+    grant_id: String;
+    host: String;
+  }
 }
 
 type Links {

@@ -22,7 +22,7 @@ using sap.scai.grants.discovery as discovery from '../../db/discovery.cds';
 service GrantToolsService {
   
   entity Agents as projection on discovery.Agents  actions {
-    action mcp(jsonrpc: String, id: Integer, method: String, params: Map) returns Map;
+    action mcp(jsonrpc: String, id: Integer, method: String, params: Map, agent: String, grant_id: String, host: String) returns Map;
 
     function meta() returns Map;
   };

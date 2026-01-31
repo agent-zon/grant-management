@@ -1,6 +1,6 @@
 import cds from "@sap/cds";
 import { MCPRequest } from "@types";
-import { GrantToolsService } from "./grant-tools-service.tsx";
+import { GrantToolsService } from "./grant-tools-service";
 
 export async function logHandler(
   this: GrantToolsService,
@@ -10,35 +10,19 @@ export async function logHandler(
   const start = Date.now();
   try {
     const sessionId = req.headers["mcp-session-id"];
+    const { grant_id, agent, host } = await req.data.meta;
     console.log(
-      `[Grant Tools] - ${req.data?.method} - Grant Id:`,
-      req.data?.grant_id,
-      "sessionId:",
-      sessionId,
-      "user:",
-      req.user?.id,
-      "server:",
-      req.data?.serverId,
-      "\tazp:",
-      req.user?.authInfo?.token.payload.azp,
-      "\client_id:",
-      req.user?.authInfo?.token.clientId,
-      "\tapp_tid:",
-      req.user?.authInfo?.token.appTid,
+      `[Grant Tools] - [${req.data?.method}] -DATA \n`,
+      `\n grant_id: ${grant_id}`,
+      `\n agent: ${agent}`,
+      `\n params: ${req.data?.params}`,
+      `\n tools: ${Object.keys(req.data?.tools || {}).join(", ")}`,
+      `\n mcp-session-id: ${sessionId}`,
+      `\n host: ${host}`,
+      `\n azp: ${req.user?.authInfo?.token?.payload?.azp}`,
+      `\n authorization: ${req.headers.authorization?.slice(0, 5) + "..."}`,
 
-      "origin:",
-      req.data?.origin,
-      "authHeader",
-      req.headers.authorization?.slice(0, 5) + "...",
-      "params:",
-      req.data?.params,
 
-      "tools:",
-      Object.keys(req.data?.tools || {}).join(", "),
-      "authorizationDetails:",
-      req.data?.authorizationDetails?.tools,
-      "grant:",
-      req.data?.grant
     );
     return await next();
   } finally {

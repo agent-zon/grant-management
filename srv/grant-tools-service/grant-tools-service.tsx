@@ -1,10 +1,10 @@
 import cds from "@sap/cds";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import callback from "./handler.callback";
-import grant from "./handler.grant";
-import { errorHandler, logHandler } from "./handler.debug";
 import tools from "./handler.tools";
+import { errorHandler, logHandler } from "./handler.debug";
 import mcp from "./handler.mcp";
+import meta from "./handler.meta";
 import { Agents } from "#cds-models/sap/scai/grants/GrantToolsService";
 
 /**
@@ -13,64 +13,21 @@ import { Agents } from "#cds-models/sap/scai/grants/GrantToolsService";
  */
 export default class Service extends cds.ApplicationService {
   async init() {
-    this.on("meta", Agents, async (req) => {
-      const host = req.headers["x-forwarded-host"] || req.http?.req.headers.host;
-      const protocol = req.headers["x-forwarded-proto"] || req.http?.req.protocol;
-      const origin = `${protocol}://${host}`;
-      const self = `${origin}/${req.path.replace("/meta", "")}`;
-
-      return {
-        host: host,
-        self: self,
-        mcp: `${self}/mcp`,
-        tools: `${self}/tools`
-      };
-    });
+    this.on("meta", meta);
     this.on("meta", async (req) => {
-      const host = req.headers["x-forwarded-host"] || req.http?.req.headers.host || cds.app?._router?.get("host")  ;
-      const protocol = req.headers["x-forwarded-proto"] || req.http?.req.protocol;
-      const origin = host ? `${protocol}://${host}/` : undefined;
-      req.data.origin = origin;
-      req.data.agent = req.data.id;
-
-      return {
-        origin,
-        mcp: `${origin}mcp`,
-        originalUrl: req.http?.req.originalUrl,
-         headers: req.http?.req.headers,
-       };
-    });
-
-    this.on("READ", Agents, async (req, next) => {
-      console.log("READ", req.data);
-      const host = req.headers["x-forwarded-host"] || req.http?.req.headers.host;
-      const protocol = req.headers["x-forwarded-proto"] || req.http?.req.protocol;
-      const origin = `${protocol}://${host}`;
-      const self = `${origin}${req.data.id ? `/${req.data.id}` : ""}`;
-      req.data.links = {
-        host: origin,
-        self: self,
-        mcp: `${self}/mcp`,
-        tools: `${origin}/tools`
+      return req.data;
+    })
+    this.on("mcp", Agents, async (req, next) => {
+      //@ts-ignore: req.data.meta is not typed in CAP context
+      req.data.meta = {
+        agent: req.data.id
       };
-      return await next(req);
+      return await next();
     });
+    this.on("mcp", Agents, meta);
 
-
-
-    this.on("mcp", Agents, (req, next) => {
-      const host = req.headers["x-forwarded-host"] || req.http?.req.headers.host;
-      const protocol = req.headers["x-forwarded-proto"] || req.http?.req.protocol;
-      req.data.host = `${protocol}://${host}`;
-      req.data.agent = req.data.id;
-      req.data["$expand"] = [
-        ...(req.data["$expand"]?.split(",") || []),
-        "tools"
-      ].filter(unique)
-        .join(",");
-      return next(req);
-    });
-    this.on("mcp", Agents, grant);
+    this.on("mcp", Agents, tools);
+    this.on("mcp", Agents, mcp);
     this.on("mcp", Agents, async (req) => {
       try {
         // @ts-ignore: req._.req is not typed in CAP context
@@ -80,8 +37,10 @@ export default class Service extends cds.ApplicationService {
         const transport = new StreamableHTTPServerTransport({
           sessionIdGenerator: undefined,
         });
+        //@ts-ignore: req.data.server is not typed in CAP context
         const server = req.data.server;
         await server.connect(transport);
+        delete request.body.meta;
         await transport.handleRequest(request, response, request.body);
         response.on("close", () => {
           transport.close();
@@ -108,7 +67,8 @@ export default class Service extends cds.ApplicationService {
     // Register CRUD handlers for AvailableTools
     this.on("callback", callback);
     this.on("mcp", errorHandler);
-    this.on("mcp", grant);
+    this.on("mcp", meta);
+    this.on("mcp", tools);
     this.on("mcp", logHandler);
     this.on("mcp", mcp);
     this.on("mcp", async (req) => {
@@ -122,6 +82,8 @@ export default class Service extends cds.ApplicationService {
         });
         const server = req.data.server;
         await server.connect(transport);
+        console.log("🚀 MCP Server Connected:", request.body);
+        delete request.body.meta;
         await transport.handleRequest(request, response, request.body);
         response.on("close", () => {
           transport.close();
@@ -152,7 +114,4 @@ export type GrantToolsHandler = cds.CRUDEventHandler.On<
   "streaming",
   void | { dest: string } | Error
 >;
-function unique(value: any, index: number, array: any[]): value is any {
-  return array.indexOf(value) === index;
-}
 

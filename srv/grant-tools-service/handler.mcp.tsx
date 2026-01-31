@@ -14,10 +14,8 @@ import { Tool } from "#cds-models/sap/scai/grants/GrantToolsService";
 
 
 export default async function (req: cds.Request<MCPRequest>, next: Function) {
-  
-  const host = req.data.host;
-  const agent = req.data.agent;
-  const toolNames = req.data.tools?.map((tool: Tool) => tool.name);
+
+  const { host, agent, grant_id } = await req.data.meta;
 
   const server = (req.data.server = new McpServer({
     name: "grant-tools-service",
@@ -33,10 +31,10 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
       description: `Some tools are disabled until the user gives permission.
                     Use this tool to build an authorization request for one or more tools.
                     It returns an authorization URL that you can show to the user for approval.
-                    Available tools: ${toolNames.join(", ")}`,
+                    Available tools: ${Object.keys(req.data.tools).join(", ")}`,
       inputSchema: {
         tools: z
-          .array(z.enum(toolNames as [string, ...string[]]))
+          .array(z.enum(Object.keys(req.data.tools) as [string, ...string[]]))
           .describe("The list of tools that need user authorization"),
       },
       outputSchema: {
@@ -56,11 +54,6 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
     },
     async ({ tools }) => {
 
-      //using sid for session based grants, jti for token based grants.
-      const grant_id =
-        cds.context?.user?.authInfo?.token?.payload["sid"] ||
-        cds.context?.user?.authInfo?.token?.payload.jti;
-
       const authService = await cds.connect.to(AuthorizationService);
       const { request_uri, expires_in } = (await authService.par({
         response_type: "code",
@@ -76,7 +69,6 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
         authorization_details: JSON.stringify([
           {
             type: "mcp",
-            server: getOrigin(),
             tools: tools.reduce((acc, toolName) => {
               acc[toolName] = null;
               return acc;
@@ -93,7 +85,7 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
           },
         ],
         structuredContent: {
-          authorization_url: `${env.BASE_API_URL || getOrigin()}/oauth-server/authorize_dialog?request_uri=${encodeURIComponent(request_uri!)}`,
+          authorization_url: `${host}/oauth-server/authorize_dialog?request_uri=${encodeURIComponent(request_uri!)}`,
           request_uri,
           expires_in,
         },
@@ -131,13 +123,3 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
 }
 
 
-
-
-function getOrigin() {
-  const host = cds.context?.http?.req?.headers["x-forwarded-host"] ||
-    cds.context?.http?.req?.headers.host;
-  const protocol = cds.context?.http?.req?.headers["x-forwarded-proto"] ||
-    cds.context?.http?.req?.protocol;
-  const origin = `${protocol}://${host}`;
-  return origin;
-}
