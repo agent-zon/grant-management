@@ -111,6 +111,7 @@
   "test:oauth:stepup": "node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/oauth-stepup-flow.test.ts",
   "test:grant-mgmt": "npx cds bind --profile hybrid --exec -- node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/grant-management.test.ts",
   "test:grant-tools": "npx cds bind --profile hybrid --exec -- node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/grant-tools.test.js",
+  "test:mcp-service": "npx cds bind --profile hybrid --exec -- node --import tsx --test --test-concurrency=1 --experimental-vm-modules ./test/mcp-service.test.js",
   "token:user": "npx cds bind --profile hybrid --exec -- node scripts/get-mcp-token.js 2>/dev/null | tail -1",
   "test:mcp:list-tools": "npx -y @modelcontextprotocol/inspector@latest --cli --config mcps.json --server grant-management --method tools/list --header \"Authorization: Bearer $(npm run token:password:access_token --silent)\"",
   "test:mcp:list-tools:local": "npx -y @modelcontextprotocol/inspector@latest --cli --config mcps.local.json --server grant-management --method tools/list --header \"Authorization: Bearer $(npm run token:password:access_token --silent)\"",

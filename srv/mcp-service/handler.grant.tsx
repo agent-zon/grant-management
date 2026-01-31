@@ -2,40 +2,49 @@ import { AuthorizationDetailMcpTool } from "#cds-models/sap/scai/grants";
 import GrantsManagementService, {
   Grant,
   Grants,
+  AuthorizationDetails,
 } from "#cds-models/sap/scai/grants/GrantsManagementService";
 import cds from "@sap/cds";
 import { MCPRequest } from "@types";
 
 export default async function (req: cds.Request<MCPRequest>, next: Function) {
-  const grant_id =
-    req.user?.authInfo?.token?.payload["sid"] ||
-    req.user?.authInfo?.token.payload.jti;
-  const grantService = await cds.connect.to(GrantsManagementService);
-  const host = req.headers["x-forwarded-host"] || req.http?.req.headers.host;
-  const protocol = req.headers["x-forwarded-proto"] || req.http?.req.protocol;
-  const origin = `${protocol}://${host}`;
+  const { grant_id, host } = await req.data.meta;
 
-  const grant = (await grantService.read(Grants, grant_id)) as Grant;
+  let grant: Grant | undefined;
+  let authorizationDetailsList: Array<{ type?: string; server?: string; tools?: Record<string, unknown> }> = [];
+  if (grant_id) {
+    try {
+      const grantService = await cds.connect.to(GrantsManagementService);
+      grant = (await grantService.read(Grants, grant_id)) as Grant;
+      // Load authorization_details by grant_id (same as handler.edit: consent_grant_id on projection)
+      authorizationDetailsList = (await grantService.run(
+        cds.ql.SELECT.from(AuthorizationDetails).where({
+          consent_grant_id: grant_id,
+        })
+      )) as Array<{ type?: string; server?: string; tools?: Record<string, unknown> }>;
+    } catch {
+      grant = undefined;
+    }
+  }
   req.data = {
     ...req.data,
-    grant_id,
     grant,
-    origin,
-    serverId: origin,
-    authorizationDetails: mcpDetails(grant, origin),
+    authorizationDetails: mcpDetailsFromList(authorizationDetailsList, host),
   };
   return await next();
 }
 
-//workaround, should be done in grant server
-function mcpDetails(grant?: Grant, host?: string): AuthorizationDetailMcpTool {
-  return (grant?.authorization_details || [])
-    ?.filter((detail) => detail.type === "mcp" && detail.server === host)
+function mcpDetailsFromList(
+  list: Array<{ type?: string; server?: string; tools?: Record<string, unknown> }>,
+  host?: string
+): AuthorizationDetailMcpTool {
+  return (list || [])
+    .filter((detail) => detail.type === "mcp" && detail.server === host)
     .reduce(
       (acc, detail) => {
         acc.tools = {
           ...acc.tools,
-          ...detail.tools,
+          ...(detail.tools || {}),
         };
         return acc;
       },
