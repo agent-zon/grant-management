@@ -45,16 +45,7 @@ async function createClient(c: Context) {
     {
       requestInit: {
         headers: {
-          ...(c.req.header("Authorization")
-            ? { Authorization: c.req.header("Authorization") }
-            : {}),
-          ...(c.req.header("x-approuter-authorization")
-            ? {
-                "x-approuter-authorization": c.req.header(
-                  "x-approuter-authorization"
-                ),
-              }
-            : {}),
+      
           ...auth,
         },
       },
