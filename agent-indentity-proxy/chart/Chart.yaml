@@ -1,0 +1,8 @@
+apiVersion: v2
+name: agent-identity-proxy
+description: Standalone MCP proxy service for agent agentity and grant management integration
+type: application
+version: 1.0.0
+appVersion: 1.0.0
+annotations:
+  app.kubernetes.io/managed-by: cds-dk/helm
