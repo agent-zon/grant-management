@@ -1,9 +1,7 @@
 import cds from "@sap/cds";
 import { MCPRequest } from "@types";
 import { GrantToolsService } from "./grant-tools-service";
-import { Agents, Mcps, Tools } from "#cds-models/sap/scai/grants/GrantToolsService";
 import { Client } from "@modelcontextprotocol/sdk/client";
-import { inspect } from "node:util";
 import { HttpDestination, isHttpDestination, subscriberFirst, useOrFetchDestination } from "@sap-cloud-sdk/connectivity";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 

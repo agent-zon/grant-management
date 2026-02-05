@@ -5,7 +5,7 @@ import tools from "./handler.tools";
 import { errorHandler, logHandler } from "./handler.debug";
 import mcp from "./handler.mcp";
 import meta from "./handler.meta";
-import { Agents, Mcps } from "#cds-models/sap/scai/grants/GrantToolsService";
+import { Agents } from "#cds-models/sap/scai/grants/GrantToolsService";
 import { registerDestination } from "@sap-cloud-sdk/connectivity";
 
 /**

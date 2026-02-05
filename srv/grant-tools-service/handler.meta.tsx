@@ -1,7 +1,6 @@
 import cds from "@sap/cds";
 import { MCPRequest } from "@types";
 import { GrantToolsService } from "./grant-tools-service";
-import { Tools } from "#cds-models/sap/scai/grants/GrantToolsService";
 
 export default async function (this: GrantToolsService, req: cds.Request<MCPRequest>, next: Function) {
   const host = req.headers["x-forwarded-host"] || req.http?.req.headers.host;

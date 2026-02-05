@@ -1,7 +1,7 @@
 # Changelog: Agent MCP Destinations (Phase 1)
 
 **Created**: 2026-02-04
-**Last Updated**: 2026-02-04
+**Last Updated**: 2026-02-05
 
 All notable changes for this task are documented here. Entries are append-only.
 
@@ -147,3 +147,40 @@ Runtime approach is simpler and avoids upfront connection overhead. Tools are di
 
 - **list-remote-tools**: Returns available tools from remote MCP server
 - **remote-tool-proxy**: Forwards tool calls with `tool_name` and `tool_arguments` parameters
+
+---
+
+## [2026-02-05] - Naming Convention & Direct Tool Exposure
+
+### Changed
+
+- **Destination naming convention**: Now using destination service naming convention instead of storing MCP config in CAP DB
+- **Direct tool exposure**: Remote tools exposed directly with their original names (no proxy layer)
+- **Removed intermediate tools**: `list-remote-tools` and `remote-tool-proxy` no longer needed
+
+### Remote Tools Now Available Directly
+
+Tools from remote MCP server are exposed with their original names:
+- `s4_checkProductAvailability`
+- `s4_getOrdersHistory`
+- `ariba_getSuppliers`
+- `ariba_createPurchaseRequest`
+- `ariba_submitPurchaseRequest`
+- `email_search`
+- `email_readMessage`
+
+### Test Results
+
+```
+✔ calls s4_getOrdersHistory tool directly (1572.636458ms)
+✔ MCP Destination Test (7121.425208ms)
+ℹ tests 4
+ℹ pass 3
+ℹ fail 0
+ℹ skipped 1
+ℹ duration_ms 12268.19975
+```
+
+### Why
+
+Simpler architecture - tools are discovered once at connection time and exposed directly. No need for runtime proxy indirection. Storage in destination service eliminates redundant data in CAP DB.

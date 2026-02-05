@@ -18,9 +18,10 @@ entity Agents {
   virtual meta:{
     agent: String;
     grant_id: String;
-    host: String;
+    host: String; 
   }
 }
+
 
 type Links {
   host: String;
