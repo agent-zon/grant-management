@@ -6,8 +6,7 @@ import cds from "@sap/cds";
 import { MCPRequest } from "@types";
 import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
 import { ulid } from "ulid";
- import { inspect } from "node:util";
-
+import { inspect } from "node:util";
 export default async function (req: cds.Request<MCPRequest>, next: Function) {
 
   const { host, agent, grant_id } = req.data.meta;
