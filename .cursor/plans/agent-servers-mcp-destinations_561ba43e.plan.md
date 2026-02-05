@@ -4,7 +4,7 @@ overview: "Phase 1: per agent, stream/proxy to exactly ONE destination-backed MC
 todos:
   - id: task-setup
     content: Ensure branch `task/agent-servers-mcp-destinations` exists and `.tasks/agent-servers-mcp-destinations/*` docs are present; append-only updates to `STATUS.md` + `CHANGELOG.md` as work progresses.
-    status: pending
+    status: completed
   - id: cds-agent-mcp-config
     content: "Update CDS model so each Agent has a single `mcp` config object: `{ kind: 'destination' (default), name: <destination-name>, strategy: alwaysProvider|alwaysSubscriber|subscriberFirst (default subscriberFirst) }` for Phase 1 (one destination per agent)."
     status: pending

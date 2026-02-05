@@ -133,4 +133,7 @@ export type MCPRequest = {
   authorizationDetails: AuthorizationDetailMcpTool;
   server: McpServer;
   tools: Record<string, RegisteredTool>;
+  transport: Transport;
+  client: McpClient; 
+  server: McpServer;
 };

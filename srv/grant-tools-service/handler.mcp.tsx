@@ -1,29 +1,29 @@
 import {
   McpServer,
-  RegisteredTool,
 } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import grant from "@/mcp-service/tools.grant";
 import cds from "@sap/cds";
 import { MCPRequest } from "@types";
 import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
-import { env } from "process";
 import { ulid } from "ulid";
-import { Tool } from "#cds-models/sap/scai/grants/GrantToolsService";
-
-
+ import { inspect } from "node:util";
 
 export default async function (req: cds.Request<MCPRequest>, next: Function) {
 
-  const { host, agent, grant_id } = await req.data.meta;
+  const { host, agent, grant_id } = req.data.meta;
 
   const server = (req.data.server = new McpServer({
-    name: "grant-tools-service",
+    name: `agent:${agent}`,
     title: "Grant Tools Service",
     description: "Service for managing grant tools with configurable available tools schema",
+
     version: "1.0.0",
   }));
 
+  const toolNames = Object.keys(req.data.tools);
+  console.log("[par] Registering tools for server:", inspect(toolNames, { colors: true, depth: 1, compact: true }));
+
+  // Register push-authorization-request (always available)
   server.registerTool(
     "push-authorization-request",
     {
@@ -31,10 +31,10 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
       description: `Some tools are disabled until the user gives permission.
                     Use this tool to build an authorization request for one or more tools.
                     It returns an authorization URL that you can show to the user for approval.
-                    Available tools: ${Object.keys(req.data.tools).join(", ")}`,
+                    Available tools: ${toolNames.join(", ")}`,
       inputSchema: {
         tools: z
-          .array(z.enum(Object.keys(req.data.tools) as [string, ...string[]]))
+          .array(z.enum(toolNames as [string, ...string[]]))
           .describe("The list of tools that need user authorization"),
       },
       outputSchema: {
@@ -53,7 +53,6 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
       }
     },
     async ({ tools }) => {
-
       const authService = await cds.connect.to(AuthorizationService);
       const { request_uri, expires_in } = (await authService.par({
         response_type: "code",
@@ -72,7 +71,7 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
             tools: tools.reduce((acc, toolName) => {
               acc[toolName] = null;
               return acc;
-            }, {}),
+            }, {} as Record<string, null>),
           },
         ]),
       }))!
@@ -92,8 +91,34 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
       };
     })
 
+  // If agent has MCP destination, register a catch-all proxy tool
+  // that forwards unknown tool calls to the remote server at runtime
 
-  //prompts
+  console.log(`[handler.mcp] Registered runtime proxy tools for destination: ${req.data.client.name}
+      ${Object.keys(req.data.tools).join(", ")}`);
+
+
+
+  Object.entries(req.data.tools).forEach(([toolName, tool]) => {
+    server.registerTool(toolName, {
+      title: tool.description,
+      description: tool.description,
+      inputSchema: tool.inputSchema?.shape,
+      outputSchema: tool.outputSchema?.shape,
+      _meta: tool._meta,
+    }, async (args) => {
+      console.log(`[handler.mcp] Proxying tool call to remote: ${toolName} via ${req.data.client.name}`);
+      return await req.data.client.callTool({
+        name: toolName,
+        arguments: args,
+      });
+    });
+  });
+
+
+
+
+  // Register prompts
   server.registerPrompt("authorization-url", {
     title: "Authorization URL Prompt",
     description: `The user needs to approve the requested tools.

@@ -16,8 +16,9 @@ import { Destination } from "#cds-models/sap/scai/debug";
  */
 export default async function proxy(req: cds.Request<Destination>, next: Function) {
 
-  
-  req.data.server = await createProxyServer(req);
+
+  const { connect, close } = await createProxyServer(req);
+
   return next();
 }
 
@@ -50,9 +51,9 @@ async function createProxyServer(request: cds.Request<Destination>) {
 }
 
 async function createTransportFromDestination(
-  request: cds.Request<Destination> 
+  request: cds.Request<Destination>
 ): Promise<Transport> {
-  
+
   const destination = await useOrFetchDestination({
     destinationName: request.data.name!,
     jwt: request.user?.authInfo?.token?.jwt || undefined,

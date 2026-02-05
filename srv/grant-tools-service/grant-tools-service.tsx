@@ -5,7 +5,8 @@ import tools from "./handler.tools";
 import { errorHandler, logHandler } from "./handler.debug";
 import mcp from "./handler.mcp";
 import meta from "./handler.meta";
-import { Agents } from "#cds-models/sap/scai/grants/GrantToolsService";
+import { Agents, Mcps } from "#cds-models/sap/scai/grants/GrantToolsService";
+import { registerDestination } from "@sap-cloud-sdk/connectivity";
 
 /**
  * Grant Tools Service
@@ -60,6 +61,30 @@ export default class Service extends cds.ApplicationService {
             id: null,
           });
         }
+      }
+    });
+    this.on("register", meta);
+
+    this.on("register", async (req) => {
+      const { meta, destination } = req.data;
+      const { agent, grant_id, host } = meta;
+      console.log("🚀 Registering destination:", `agent:${agent}`);
+      try {
+        await registerDestination({
+          ...destination,
+          name: `agent:${agent}`,
+
+        });
+
+        req.reply(200)
+
+        return {
+          status: 200,
+          message: "Destination registered"
+        }
+      } catch (error) {
+        console.error("Error registering destination:", error);
+        throw error;
       }
     });
 
