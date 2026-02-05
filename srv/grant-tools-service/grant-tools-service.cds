@@ -1,5 +1,4 @@
 namespace sap.scai.grants;
-using sap.scai.grants.discovery as discovery from '../../db/discovery.cds';
 
  
 
@@ -20,14 +19,7 @@ using sap.scai.grants.discovery as discovery from '../../db/discovery.cds';
   BearerFormat: 'JWT'
 }]
 service GrantToolsService {
-  
-  entity Agents as projection on discovery.Agents  actions {
-    action mcp(jsonrpc: String, id: Integer, method: String, params: Map, agent: String, grant_id: String, host: String) returns Map;
-
-    function meta() returns Map;
-  };
    
-  entity Tools as projection on discovery.Tools;
 
   action register(destination: Map) returns Map;
 

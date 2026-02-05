@@ -5,7 +5,6 @@ import tools from "./handler.tools";
 import { errorHandler, logHandler } from "./handler.debug";
 import mcp from "./handler.mcp";
 import meta from "./handler.meta";
-import { Agents } from "#cds-models/sap/scai/grants/GrantToolsService";
 import { registerDestination } from "@sap-cloud-sdk/connectivity";
 
 /**
@@ -18,51 +17,7 @@ export default class Service extends cds.ApplicationService {
     this.on("meta", async (req) => {
       return req.data;
     })
-    this.on("mcp", Agents, async (req, next) => {
-      //@ts-ignore: req.data.meta is not typed in CAP context
-      req.data.meta = {
-        agent: req.data.id
-      };
-      return await next();
-    });
-    this.on("mcp", Agents, meta);
 
-    this.on("mcp", Agents, tools);
-    this.on("mcp", Agents, mcp);
-    this.on("mcp", Agents, async (req) => {
-      try {
-        // @ts-ignore: req._.req is not typed in CAP context
-        const request = req._.req;
-        // @ts-ignore: req._.res is not typed in CAP context
-        const response = req._.res;
-        const transport = new StreamableHTTPServerTransport({
-          sessionIdGenerator: undefined,
-        });
-        //@ts-ignore: req.data.server is not typed in CAP context
-        const server = req.data.server;
-        await server.connect(transport);
-        delete request.body.meta;
-        await transport.handleRequest(request, response, request.body);
-        response.on("close", () => {
-          transport.close();
-          server.close?.();
-        });
-      } catch (error) {
-        console.error("Error handling Grant Tools request:", error);
-        // @ts-ignore: req._.res is not typed in CAP context
-        const response = req._.res;
-        if (!response.headersSent) {
-          response.status(500).json({
-            jsonrpc: "2.0",
-            error: {
-              code: -32603,
-              message: "Internal server error",
-            },
-            id: null,
-          });
-        }
-      }
-    });
     this.on("register", meta);
 
     this.on("register", async (req) => {

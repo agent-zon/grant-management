@@ -18,7 +18,6 @@ import cds from "@sap/cds";
 import { jwtDecode } from "jwt-decode";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { Agents, Mcps } from "#cds-models/sap/scai/grants/GrantToolsService";
 import { inspect } from "node:util";
 
 const TEST_USER = process.env.TEST_USER || "agently.io@gmail.com";
