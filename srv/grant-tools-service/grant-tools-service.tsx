@@ -1,6 +1,7 @@
 import cds from "@sap/cds";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import callback from "./handler.callback";
+import grant from "./handler.grant";
 import tools from "./handler.tools";
 import { errorHandler, logHandler } from "./handler.debug";
 import mcp from "./handler.mcp";
@@ -49,6 +50,7 @@ export default class Service extends cds.ApplicationService {
     this.on("mcp", errorHandler);
     this.on("mcp", meta);
     this.on("mcp", tools);
+    this.on("mcp", grant);
     this.on("mcp", logHandler);
     this.on("mcp", mcp);
     this.on("mcp", async (req) => {

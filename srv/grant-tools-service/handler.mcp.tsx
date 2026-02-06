@@ -99,19 +99,13 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
 
 
   Object.entries(req.data.tools).forEach(([toolName, tool]) => {
-    server.registerTool(toolName, {
+    req.data.tools[toolName] = server.registerTool(toolName, {
       title: tool.description,
       description: tool.description,
       inputSchema: tool.inputSchema?.shape,
       outputSchema: tool.outputSchema?.shape,
       _meta: tool._meta,
-    }, async (args) => {
-      console.log(`[handler.mcp] Proxying tool call to remote: ${toolName} via ${req.data.client.name}`);
-      return await req.data.client.callTool({
-        name: toolName,
-        arguments: args,
-      });
-    });
+    }, tool.callback);
   });
 
 

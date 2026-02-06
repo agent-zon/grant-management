@@ -37,15 +37,16 @@ export default async function (this: GrantToolsService, req: cds.Request<MCPRequ
       transport,
       client,
       tools: tools
-        // .concat(localTools)
         .reduce((acc, t) => {
           acc[t.name] = {
-            description: t.description,
-            inputSchema: t.inputSchema,
-            outputSchema: t.outputSchema,
+            ...t,
             _meta: t._meta,
-            //TODO: enable based on grant
-            enabled: true,
+            callback: async (args) => {
+              return await client.callTool({
+                name: t.name,
+                arguments: args,
+              });
+            }
           };
           return acc;
         }, {})
@@ -53,10 +54,7 @@ export default async function (this: GrantToolsService, req: cds.Request<MCPRequ
 
   }
   return await next();
-
 }
-
-
 
 /**
  * Build merged headers for destination transport.
