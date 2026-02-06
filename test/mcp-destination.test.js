@@ -239,6 +239,25 @@ describe("MCP Destination Test", () => {
     );
   });
 
+  it("list_tools includes remote tools after granted", async () => {
+    const result = await state.client.listTools();
+    assert.ok(result?.tools != null, "list_tools should return tools array");
+
+    state.remoteTools = (result.tools || []).map((t) => t.name);
+    console.log("[tools after grant]", state.remoteTools);
+
+    assert.ok(
+      state.remoteTools.includes("push-authorization-request"),
+      "push-authorization-request should still be in tool list"
+    );
+
+    const included = expectedRemoteTools.filter((t) => state.remoteTools.includes(t));
+    assert.ok(
+      included.length === expectedRemoteTools.length,
+      `remote tools should be included after granted; expected ${expectedRemoteTools.length}, found: ${included.join(", ") || "none"}`
+    );
+  });
+
   // it("should raise tool list changed event after granted", async () => {
   //   await Promise.race([state.waitForToolListChanged, new Promise((resolve) => setTimeout(resolve, 10000))]);
 
@@ -247,14 +266,13 @@ describe("MCP Destination Test", () => {
 
   it("calls s4_getOrdersHistory after granted", async function () {
     assert.ok(state.clientToken, "clientToken must be set ");
- 
+
     const result = await state.client.callTool({
       name: "s4_getOrdersHistory",
       arguments: {},
     });
- 
+
     console.log("[s4_getOrdersHistory result]", inspect(result, { colors: true, depth: 3 }));
-    assert.ok(result, "s4_getOrdersHistory should return a result");
     assert.notEqual(result.isError, true, "s4_getOrdersHistory should succeed after granted");
   });
 
