@@ -64,7 +64,7 @@
   "serve": "npm run serve:approuter & npm run serve:cds",
   "serve:cds": "npx cds serve --profile dev",
   "dev:approuter": "node node_modules/@sap/approuter/approuter.js --workingDir app/router --port 9000",
-  "serve:approuter": "node node_modules/@sap/approuter/approuter.js --workingDir app/router --port 9000",
+  "serve:approuter": "node node_modules/@sap/approuter/approuter.js --workingDir app/router --port 5000",
   "hybrid": "npx cds bind --exec -- npm run serve",
   "hybrid:approuter": "npx cds bind --exec -- npm run serve:approuter",
   "hybrid:portal": "npx cds bind --exec -- npm run dev -w portal",

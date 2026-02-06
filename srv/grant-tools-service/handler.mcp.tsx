@@ -19,7 +19,7 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
     version: "1.0.0",
   }));
 
-  const toolNames = Object.keys(req.data.tools);
+  const toolNames = Object.keys(req.data.tools || {});
   console.log("[par] Registering tools for server:", inspect(toolNames, { colors: true, depth: 1, compact: true }));
 
   // Register push-authorization-request (always available)
@@ -93,12 +93,12 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
   // If agent has MCP destination, register a catch-all proxy tool
   // that forwards unknown tool calls to the remote server at runtime
 
-  console.log(`[handler.mcp] Registered runtime proxy tools for destination: ${req.data.client.name}
-      ${Object.keys(req.data.tools).join(", ")}`);
+  console.log(`[handler.mcp] Registered runtime proxy tools for agent: ${req.data.agent}
+      ${Object.keys(req.data.tools || {}).join(", ")}`);
 
 
 
-  Object.entries(req.data.tools).forEach(([toolName, tool]) => {
+  Object.entries(req.data.tools || {}).forEach(([toolName, tool]) => {
     req.data.tools[toolName] = server.registerTool(toolName, {
       title: tool.description,
       description: tool.description,

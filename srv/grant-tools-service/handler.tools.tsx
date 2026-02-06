@@ -4,10 +4,14 @@ import { GrantToolsService } from "./grant-tools-service";
 import { Client } from "@modelcontextprotocol/sdk/client";
 import { HttpDestination, isHttpDestination, subscriberFirst, useOrFetchDestination } from "@sap-cloud-sdk/connectivity";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
- import { z } from "zod";
- 
+import { z } from "zod";
+
 export default async function (this: GrantToolsService, req: cds.Request<MCPRequest>, next: Function) {
   const { agent } = req.data.meta;
+  req.data = {
+    ...req.data,
+    tools: req.data.tools || {},
+  }
 
   const destination = await useOrFetchDestination({
     destinationName: `agent:${agent}`,
@@ -32,7 +36,7 @@ export default async function (this: GrantToolsService, req: cds.Request<MCPRequ
 
     await client.connect(transport);
     const { tools } = await client.listTools();
-     console.log("🚀 Tools from destination:", tools.length);
+    console.log("🚀 Tools from destination:", tools.length);
     req.data = {
       ...req.data,
       transport,

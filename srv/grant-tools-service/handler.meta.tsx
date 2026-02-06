@@ -12,7 +12,7 @@ export default async function (this: GrantToolsService, req: cds.Request<MCPRequ
     //x-actor-id is the actor id from the request headers or the azp from the user auth info 
     agent:
       req.headers["x-actor-id"] ||
-      // req.user?.authInfo?.token?.payload?.actor ||
+      req.user?.authInfo?.token?.payload?.actor ||
       req.user?.authInfo?.token?.payload.azp ||
       req.user?.authInfo?.token?.clientId || "anonymous",
     grant_id:

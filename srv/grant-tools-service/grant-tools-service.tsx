@@ -36,7 +36,11 @@ export default class Service extends cds.ApplicationService {
 
         return {
           status: 200,
-          message: "Destination registered"
+          message: "Destination registered",
+          name: `agent:${agent}`,
+          agent: agent,
+          url: destination.url,
+          strategy: destination.strategy,
         }
       } catch (error) {
         console.error("Error registering destination:", error);
