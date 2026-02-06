@@ -6,7 +6,7 @@
  "dependencies": {
   "@cap-js/postgres": "^2",
   "@cap-js/sqlite": "^2",
-  "@modelcontextprotocol/sdk": "^1.21.0",
+  "@modelcontextprotocol/sdk": "^1.26.0",
   "@sap-cloud-sdk/connectivity": "^4.1.2",
   "@sap-cloud-sdk/http-client": "^4.1.2",
   "@sap/cds": "^9.3.1",
@@ -20,6 +20,7 @@
   "dotenv": "^17.2.3",
   "express": "^4.21.2",
   "isbot": "^5.1.27",
+  "json-schema-to-zod": "^2.7.0",
   "jwt-decode": "^4.0.0",
   "mcp-proxy": "^6.4.0",
   "method-override": "^3.0.0",
@@ -34,7 +35,7 @@
   "tsx": "^4.20.6",
   "ulid": "^3.0.1",
   "xstate": "^5.22.1",
-  "zod": "^3.23.8"
+  "zod": "^4.0"
  },
  "devDependencies": {
   "@cap-js/cds-test": "^0.4.0",

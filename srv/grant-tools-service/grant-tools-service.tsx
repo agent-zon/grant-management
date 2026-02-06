@@ -50,9 +50,9 @@ export default class Service extends cds.ApplicationService {
     this.on("mcp", errorHandler);
     this.on("mcp", meta);
     this.on("mcp", tools);
-    this.on("mcp", grant);
     this.on("mcp", logHandler);
     this.on("mcp", mcp);
+    this.on("mcp", grant);
     this.on("mcp", async (req) => {
       try {
         // @ts-ignore: req._.req is not typed in CAP context

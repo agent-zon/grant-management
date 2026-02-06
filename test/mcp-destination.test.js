@@ -29,6 +29,16 @@ const TEST_MCP_DESTINATION = process.env.TEST_MCP_DESTINATION || "TEST_MCP_SERVE
 const testInstance = cds.test("serve", "all").in(import.meta.dirname + "/..");
 const { PUT, GET, UPSERT, axios, POST } = testInstance;
 
+const expectedRemoteTools = [
+  's4_checkProductAvailability',
+  's4_getOrdersHistory',
+  'ariba_getSuppliers',
+  'ariba_createPurchaseRequest',
+  'ariba_submitPurchaseRequest',
+  'email_search',
+  'email_readMessage'
+];
+
 
 const state = {
   passwordToken: null,
@@ -38,6 +48,9 @@ const state = {
   clientToken: null,
   toolsFromDestination: null,
   remoteTools: null,
+  requestId: null,
+  grantId: null,
+  waitForToolListChanged: null,
 };
 
 describe("MCP Destination Test", () => {
@@ -101,7 +114,7 @@ describe("MCP Destination Test", () => {
     assert.ok(state.agentId, "agent_id (azp) should be set");
   });
 
-  it("list_tools includes runtime proxy tools for destination", async () => {
+  it("list_tools does not include remote tools for destination before granted", async () => {
     // This test expects the GrantToolsService to:
     // 1. Detect agent has mcp.kind === 'destination'
     // 2. Register runtime proxy tools: list-remote-tools, remote-tool-proxy
@@ -118,80 +131,131 @@ describe("MCP Destination Test", () => {
       "push-authorization-request should be in tool list"
     );
 
-    // Should have tools from remote MCP server
-    const expectedRemoteTools = [
-      's4_checkProductAvailability',
-      's4_getOrdersHistory',
-      'ariba_getSuppliers',
-      'ariba_createPurchaseRequest',
-      'ariba_submitPurchaseRequest',
-      'email_search',
-      'email_readMessage'
-    ];
+    // Remote tools should not be included before grant (enabled only after consent)
+    const included = expectedRemoteTools.filter((t) => state.toolsFromDestination.includes(t));
+    assert.ok(included.length === 0, `remote tools should not be included before granted; found: ${included.join(", ") || "none"}`);
 
-    for (const tool of expectedRemoteTools) {
-      assert.ok(
-        state.toolsFromDestination.includes(tool),
-        `${tool} should be in tool list from remote MCP server`
-      );
-    }
-
-    console.log("[total tools available]", state.toolsFromDestination.length);
   });
 
-  it("list-remote-tools discovers remote tools at runtime", async function () {
-    // This test calls the list-remote-tools tool to discover available tools
-    // on the remote MCP server via the destination
+  it("calls s4_getOrdersHistory before granted", async function () {
 
-    console.log("[list-remote-tools] Calling to discover remote tools...");
+    const result = await state.client.callTool({
+      name: "s4_getOrdersHistory",
+      arguments: {},
+    });
 
-    try {
-      const result = await state.client.callTool({
-        name: "list-remote-tools",
-        arguments: {},
-      });
+    console.log("[s4_getOrdersHistory result]", inspect(result, { colors: true, depth: 3 }));
 
-      console.log("[list-remote-tools result]", inspect(result, { colors: true, depth: 3 }));
+    // The call should return a result (success or proper MCP error)
+    assert.ok(result, "s4_getOrdersHistory should return a result");
+    assert.equal(result.isError, true, "s4_getOrdersHistory should return an error before granted");
 
-      assert.ok(result, "list-remote-tools should return a result");
-
-      if (result.isError) {
-        // May fail if destination is not reachable - that's ok for now
-        console.log("[list-remote-tools] Destination not reachable:", result.content?.[0]?.text);
-        this.skip();
-        return;
-      }
-
-      // Store discovered tools for next test
-      state.remoteTools = result.structuredContent?.tools || [];
-      console.log("[discovered remote tools]", state.remoteTools);
-    } catch (error) {
-      console.error("[list-remote-tools error]", error.message);
-      this.skip();
-    }
+    // state.waitForToolListChanged = new Promise((resolve) => {
+    //   state.client.setNotificationHandler("tools/list_changed", async (notification) => {
+    //     resolve(notification);
+    //   });
+    // });
   });
 
-  it("calls s4_getOrdersHistory tool directly", async function () {
-    console.log("[s4_getOrdersHistory] Calling remote tool directly...");
 
-    try {
-      const result = await state.client.callTool({
-        name: "s4_getOrdersHistory",
-        arguments: {},
-      });
-
-      console.log("[s4_getOrdersHistory result]", inspect(result, { colors: true, depth: 3 }));
-
-      // The call should return a result (success or proper MCP error)
-      assert.ok(result, "s4_getOrdersHistory should return a result");
-
-      if (result.isError) {
-        console.log("[s4_getOrdersHistory returned error]", result.content?.[0]?.text);
-      }
-    } catch (error) {
-      console.error("[s4_getOrdersHistory transport error]", error.message);
-      assert.fail(`s4_getOrdersHistory should not throw transport error: ${error.message}`);
+  it("push-authorization-request returns request_uri", async () => {
+    const result = await state.client.callTool({
+      name: "push-authorization-request",
+      arguments: { tools: expectedRemoteTools },
+    });
+    if (result.isError) {
+      throw new Error(result.content?.[0]?.text ?? result.message ?? "MCP tool call failed");
     }
+    const requestUri = result.structuredContent?.request_uri;
+    assert.ok(requestUri, "push-authorization-request should return request_uri");
+    state.requestId = requestUri.split(":").pop();
+    assert.ok(state.requestId, "requestId should be parsed from request_uri");
+  });
+
+  it("AuthorizationRequest has grant_id", async () => {
+    const authReqResponse = await axios.get(
+      `/oauth-server/AuthorizationRequests(${state.requestId})`,
+      { headers: { Authorization: `Bearer ${state.passwordToken}` } }
+    );
+    state.grantId = authReqResponse.data.grant_id;
+    assert.ok(state.grantId, "AuthorizationRequest should have grant_id");
+  });
+
+  it("consent can be submitted", async () => {
+    const res = await PUT(
+      `/oauth-server/AuthorizationRequests/${state.requestId}/consent`,
+      {
+        subject: state.claims.sub || state.claims.email || "alice",
+        scope: "openid profile",
+        request_ID: state.requestId,
+        authorization_details: [
+          {
+            type: "mcp",
+            server: state.mcp,
+            tools: expectedRemoteTools.reduce((acc, t) => {
+              acc[t] = true;
+              return acc;
+            }, {}),
+          },
+        ],
+        grant_id: state.grantId,
+        client_id: state.claims.azp || "test-client",
+      },
+      {
+        headers: { Authorization: `Bearer ${state.passwordToken}` },
+        validateStatus: (status) => status === 200 || status === 201 || status === 301,
+      }
+    );
+    assert.ok(res, "consent PUT should succeed");
+  });
+
+  it("grant query returns grant with authorization_details", async () => {
+    const res = await GET(
+      `/grants-management/Grants('${state.grantId}')?$expand=authorization_details`,
+      {
+        headers: {
+          Authorization: `Bearer ${state.passwordToken}`,
+          Accept: "application/json",
+        },
+      }
+    );
+    const grant = res?.data ?? res?.body ?? res;
+    assert.ok(grant != null && typeof grant === "object", "grant should be returned as object");
+    const grantIdFromResponse = grant.id ?? grant.ID ?? grant.grant_id;
+    if (grantIdFromResponse) {
+      assert.strictEqual(String(grantIdFromResponse), String(state.grantId), "grant id should match");
+    }
+    assert.ok(
+      grant.status ?? grant.authorization_details ?? grant.authorizationDetails,
+      "grant should have status or authorization_details"
+    );
+    const authDetails = grant.authorization_details ?? grant.authorizationDetails;
+    assert.ok(Array.isArray(authDetails), "grant should have authorization_details array");
+    const grantedTools = authDetails.filter((ad) => ad.type === "mcp").flatMap((ad) => Object.entries(ad.tools || {}));
+    console.log("grant-id", state.grantId, "[grantedTools] ", grantedTools);
+    assert.ok(
+      expectedRemoteTools.every((t) => grantedTools.map(([name, _]) => name).includes(t)),
+      `grant should include expected remote tools; granted: ${grantedTools.map(([name, _]) => name).join(", ")}`
+    );
+  });
+
+  // it("should raise tool list changed event after granted", async () => {
+  //   await Promise.race([state.waitForToolListChanged, new Promise((resolve) => setTimeout(resolve, 10000))]);
+
+  //   assert.equal(state.waitForToolListChanged.isError, false, "tool list changed event should be raised after granted");
+  // });
+
+  it("calls s4_getOrdersHistory after granted", async function () {
+    assert.ok(state.clientToken, "clientToken must be set ");
+ 
+    const result = await state.client.callTool({
+      name: "s4_getOrdersHistory",
+      arguments: {},
+    });
+ 
+    console.log("[s4_getOrdersHistory result]", inspect(result, { colors: true, depth: 3 }));
+    assert.ok(result, "s4_getOrdersHistory should return a result");
+    assert.notEqual(result.isError, true, "s4_getOrdersHistory should succeed after granted");
   });
 
   after(async () => {
@@ -205,4 +269,6 @@ describe("MCP Destination Test", () => {
       }
     }
   });
+
+
 });

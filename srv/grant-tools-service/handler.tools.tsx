@@ -4,7 +4,8 @@ import { GrantToolsService } from "./grant-tools-service";
 import { Client } from "@modelcontextprotocol/sdk/client";
 import { HttpDestination, isHttpDestination, subscriberFirst, useOrFetchDestination } from "@sap-cloud-sdk/connectivity";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-
+ import { z } from "zod";
+ 
 export default async function (this: GrantToolsService, req: cds.Request<MCPRequest>, next: Function) {
   const { agent } = req.data.meta;
 
@@ -31,7 +32,7 @@ export default async function (this: GrantToolsService, req: cds.Request<MCPRequ
 
     await client.connect(transport);
     const { tools } = await client.listTools();
-    console.log("🚀 Tools from destination:", tools.length);
+     console.log("🚀 Tools from destination:", tools.length);
     req.data = {
       ...req.data,
       transport,
@@ -39,8 +40,14 @@ export default async function (this: GrantToolsService, req: cds.Request<MCPRequ
       tools: tools
         .reduce((acc, t) => {
           acc[t.name] = {
-            ...t,
+            inputSchema: t.inputSchema ? z.fromJSONSchema(t.inputSchema as unknown as any) : undefined,
+            outputSchema: t.outputSchema ? z.fromJSONSchema(t.outputSchema as unknown as any) : undefined,
+            annotations: t.annotations,
+            description: t.description,
+            icons: t.icons,
+            title: t.title,
             _meta: t._meta,
+
             callback: async (args) => {
               return await client.callTool({
                 name: t.name,
