@@ -39,6 +39,13 @@ const expectedRemoteTools = [
   'email_readMessage'
 ];
 
+// Subset consented in the test: only these are granted; others must not appear in list_tools and must fail at runtime
+const grantedToolsOnly = [
+  's4_checkProductAvailability',
+  's4_getOrdersHistory',
+  'ariba_getSuppliers',
+];
+const notGrantedTools = expectedRemoteTools.filter((t) => !grantedToolsOnly.includes(t));
 
 const state = {
   passwordToken: null,
@@ -181,7 +188,7 @@ describe("MCP Destination Test", () => {
     assert.ok(state.grantId, "AuthorizationRequest should have grant_id");
   });
 
-  it("consent can be submitted", async () => {
+  it("consent can be submitted (only some tools enabled)", async () => {
     const res = await PUT(
       `/oauth-server/AuthorizationRequests/${state.requestId}/consent`,
       {
@@ -192,7 +199,7 @@ describe("MCP Destination Test", () => {
           {
             type: "mcp",
             server: state.mcp,
-            tools: expectedRemoteTools.reduce((acc, t) => {
+            tools: grantedToolsOnly.reduce((acc, t) => {
               acc[t] = true;
               return acc;
             }, {}),
@@ -232,14 +239,17 @@ describe("MCP Destination Test", () => {
     const authDetails = grant.authorization_details ?? grant.authorizationDetails;
     assert.ok(Array.isArray(authDetails), "grant should have authorization_details array");
     const grantedTools = authDetails.filter((ad) => ad.type === "mcp").flatMap((ad) => Object.entries(ad.tools || {}));
-    console.log("grant-id", state.grantId, "[grantedTools] ", grantedTools);
+    const grantedNames = grantedTools.map(([name, _]) => name);
+    console.log("grant-id", state.grantId, "[grantedTools] ", grantedNames);
     assert.ok(
-      expectedRemoteTools.every((t) => grantedTools.map(([name, _]) => name).includes(t)),
-      `grant should include expected remote tools; granted: ${grantedTools.map(([name, _]) => name).join(", ")}`
+      grantedToolsOnly.every((t) => grantedNames.includes(t)),
+      `grant should include only consented tools; granted: ${grantedNames.join(", ")}`
     );
+    const notInGrant = notGrantedTools.filter((t) => grantedNames.includes(t));
+    assert.ok(notInGrant.length === 0, `grant must not include non-consented tools; found: ${notInGrant.join(", ") || "none"}`);
   });
 
-  it("list_tools includes remote tools after granted", async () => {
+  it("list_tools includes only granted tools after consent", async () => {
     const result = await state.client.listTools();
     assert.ok(result?.tools != null, "list_tools should return tools array");
 
@@ -251,10 +261,16 @@ describe("MCP Destination Test", () => {
       "push-authorization-request should still be in tool list"
     );
 
-    const included = expectedRemoteTools.filter((t) => state.remoteTools.includes(t));
+    const includedGranted = grantedToolsOnly.filter((t) => state.remoteTools.includes(t));
     assert.ok(
-      included.length === expectedRemoteTools.length,
-      `remote tools should be included after granted; expected ${expectedRemoteTools.length}, found: ${included.join(", ") || "none"}`
+      includedGranted.length === grantedToolsOnly.length,
+      `list_tools should include all consented tools; expected ${grantedToolsOnly.join(", ")}, found: ${includedGranted.join(", ") || "none"}`
+    );
+
+    const includedNotGranted = notGrantedTools.filter((t) => state.remoteTools.includes(t));
+    assert.ok(
+      includedNotGranted.length === 0,
+      `list_tools must not return non-consented tools; found: ${includedNotGranted.join(", ") || "none"}`
     );
   });
 
@@ -274,6 +290,19 @@ describe("MCP Destination Test", () => {
 
     console.log("[s4_getOrdersHistory result]", inspect(result, { colors: true, depth: 3 }));
     assert.notEqual(result.isError, true, "s4_getOrdersHistory should succeed after granted");
+  });
+
+  it("calls non-granted tool returns error and is not accessible at runtime", async function () {
+    const toolNotGranted = notGrantedTools[0];
+    assert.ok(toolNotGranted, "at least one tool must be non-granted for this test");
+
+    const result = await state.client.callTool({
+      name: toolNotGranted,
+      arguments: {},
+    });
+
+    console.log(`[${toolNotGranted} result (expect error)]`, inspect(result, { colors: true, depth: 3 }));
+    assert.equal(result.isError, true, `${toolNotGranted} should return error when not consented`);
   });
 
   after(async () => {
