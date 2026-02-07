@@ -102,12 +102,15 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
     req.data.tools[toolName] = server.registerTool(toolName, {
       title: tool.description,
       description: tool.description,
+      // @ts-ignore - shape exists at runtime on Zod object schemas
       inputSchema: tool.inputSchema?.shape,
+      // @ts-ignore - shape exists at runtime on Zod object schemas
       outputSchema: tool.outputSchema?.shape,
       _meta: tool._meta,
-    }, tool.callback);
-  });
-
+    }, 
+    // @ts-ignore - callback passed as second arg to registerTool
+    tool.callback
+  )});
 
 
 

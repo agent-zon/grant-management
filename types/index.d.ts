@@ -131,9 +131,12 @@ export type MCPRequest = {
   // grant_id: string;
   grant: Grant;
   authorizationDetails: AuthorizationDetailMcpTool;
-  server: McpServer;
   tools: Record<string, RegisteredTool>;
+  
   transport: Transport;
   client: McpClient; 
   server: McpServer;
+  
+  
+ 
 };
