@@ -6,7 +6,7 @@ import callback from "./handler.callback";
 import grant from "./handler.grant";
 import { errorHandler, logHandler } from "@/mcp-service/handelr.debug";
 import mcp from "./handler.mcp";
-
+import meta from "./handler.meta";
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
 
 /**
@@ -18,6 +18,7 @@ export default class Service extends cds.ApplicationService {
   async init() {
     this.on("callback", callback);
     this.on("streaming", errorHandler);
+    this.on("streaming", meta);
     this.on("streaming", grant);
     this.on("streaming", logHandler);
     this.on("streaming", mcp);
@@ -28,12 +29,14 @@ export default class Service extends cds.ApplicationService {
         const request = req._.req;
         // @ts-ignore: req._.res is not typed in CAP context
         const response = req._.res;
+
         const transport = new StreamableHTTPServerTransport({
           // sessionIdGenerator: ()=> grant_id || randomUUID(),
           sessionIdGenerator: undefined,
         });
         const server = req.data.server;
         await server.connect(transport);
+        delete request.body.meta;
         await transport.handleRequest(request, response, request.body);
         response.on("close", () => {
           transport.close();

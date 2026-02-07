@@ -40,7 +40,6 @@ export async function GET(
     ...req.data,
     ...(await next(req)),
   });
-  console.log("🔧 Grant:", grant);
 
   if (req?.http?.req.accepts("html")) {
     return render(
@@ -400,7 +399,6 @@ async function getGrant(srv: GrantsManagementService, { id, ...grant }: Grant) {
     })
   );
 
-  console.log("🔧 Authorization Details:", authorization_details);
   // Collect unique client_ids, actors, and subjects from all consents
   const client_ids = consentRecords
     .map((c: any) => c.client_id)

@@ -1,7 +1,9 @@
 import cds from "@sap/cds";
 import { MCPRequest } from "@types";
+import { GrantToolsService } from "./grant-tools-service";
 
 export async function logHandler(
+  this: GrantToolsService,
   req: cds.Request<MCPRequest>,
   next: Function
 ) {
@@ -33,6 +35,7 @@ export async function logHandler(
 }
 
 export async function errorHandler(
+  this: GrantToolsService,
   req: cds.Request<MCPRequest>,
   next: Function
 ) {

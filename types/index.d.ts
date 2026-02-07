@@ -97,22 +97,46 @@ declare module "#cds-models/GrantsManagementService" {
 
 declare module "@sap/cds" {
   interface User {
-    authInfo?: SecurityContext<IdentityService, IdentityServiceToken>;
+    authInfo?: SecurityContext<IdentityService, IdentityServiceTokenWithPayload>;
+  }
+}
+
+declare module "@sap/xssec" {
+  interface IdentityServiceJwtPayload {
+    actor?: string;
+  }
+  interface SecurityContext<T extends IdentityService, U extends IdentityServiceToken> {
+    token?: U;
+  }
+  interface IdentityServiceTokenWithPayload extends IdentityServiceToken {
+    payload?: {
+      actor?: string;
+      
+    };
   }
 }
 
 export type MCPRequest = {
+  host: string;
+  agent: string;
   jsonrpc?: string;
   id?: number;
   method?: string;
   params?: Record<string, any>;
-
-  //extra -virtual
-  origin: string;
-  serverId: string;
-  grant_id: string;
+  meta: { host?: string; agent?: string; grant_id?: string };
+  server: McpServer;
+  // //extra -virtual
+  // origin: string;
+  // serverId: string;
+  // grant_id: string;
   grant: Grant;
   authorizationDetails: AuthorizationDetailMcpTool;
-  server: McpServer;
   tools: Record<string, RegisteredTool>;
+  
+  transport: Transport;
+  client: McpClient; 
+  server: McpServer;
+  
+  
+ 
 };

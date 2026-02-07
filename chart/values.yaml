@@ -162,12 +162,14 @@ identity:
       - name: principal-propagation
         description: Principal Propagation for Grant Management
     oauth2-configuration:
+      public-client: true
       grant-types:
         - authorization_code
         - client_credentials
         - refresh_token
         - urn:ietf:params:oauth:grant-type:jwt-bearer
         - urn:ietf:params:oauth:grant-type:token-exchange
+        - password
       token-policy:
         access-token-format: "jwt"
       redirect-uris:
@@ -200,17 +202,19 @@ backendDestinations:
     service: srv
     forwardAuthToken: true
     preserveHostHeader: true
-    authentication: OAuth2UserTokenExchange
+    authentication: OAuth2TokenExchange
     IASDependencyName: grant-management
 
   grant-api:
     service: srv
     forwardAuthToken: true
+    preserveHostHeader: true
     authentication: OAuth2UserTokenExchange
     IASDependencyName: grant-api
 
   grant-mcp:
     service: srv
+    preserveHostHeader: true
     forwardAuthToken: true
 
   # user-portal:

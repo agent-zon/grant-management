@@ -13,7 +13,6 @@ import {
   type ListPromptsResult,
   type ListResourceTemplatesResult,
 } from "@modelcontextprotocol/sdk/types.js";
-import { TransportProvider } from "./transport";
 import {
   alwaysProvider,
   useOrFetchDestination,

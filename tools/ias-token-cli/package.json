@@ -1,0 +1,39 @@
+{
+  "name": "ias-token",
+  "version": "1.0.0",
+  "description": "CLI tool to fetch access tokens from SAP IAS using various OAuth 2.0 grant types",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "ias-token": "./bin/ias-token.js"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/",
+    "tag": "beta"
+  },
+  "scripts": {
+    "token": "node index.js",
+    "bind:client-credentials": "npx cds bind --profile hybrid --exec -- ias-token client-credentials",
+    "client-credentials": "node index.js client-credentials",
+    "password": "node index.js password",
+    "exchange": "node index.js exchange"
+  },
+  "keywords": [
+    "sap",
+    "ias",
+    "oauth",
+    "token",
+    "cli"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@sap/xssec": "^4",
+    "@sap/cds": "^9.3.1",
+    "commander": "^12.1.0",
+    "dotenv": "^17.2.3",
+    "jwt-decode": "^4.0.0",
+    "node-fetch": "^3.3.2"
+  }
+}

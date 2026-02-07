@@ -1,0 +1,103 @@
+import cds from "@sap/cds";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import callback from "./handler.callback";
+import grant from "./handler.destination.proxy";
+import tools from "./handler.destination";
+import { errorHandler, logHandler } from "./handler.debug";
+import mcp from "./handler.mcp";
+import meta from "./handler.meta";
+import { registerDestination } from "@sap-cloud-sdk/connectivity";
+
+/**
+ * Grant Tools Service
+ * Service that provides grant:request tool and allows configuration of available tools schema
+ */
+export default class Service extends cds.ApplicationService {
+  async init() {
+    this.on("meta", meta);
+    this.on("meta", async (req) => {
+      return req.data;
+    })
+
+    this.on("register", meta);
+
+    this.on("register", async (req) => {
+      const { meta, destination } = req.data;
+      const { agent, grant_id, host } = meta;
+      console.log("🚀 Registering destination:", `agent:${agent}`);
+      try {
+        await registerDestination({
+          ...destination,
+          name: `agent:${agent}`,
+
+        });
+
+        req.reply(200)
+
+        return {
+          status: 200,
+          message: "Destination registered",
+          name: `agent:${agent}`,
+          agent: agent,
+          url: destination.url,
+          strategy: destination.strategy,
+        }
+      } catch (error) {
+        console.error("Error registering destination:", error);
+        throw error;
+      }
+    });
+
+
+    // Register CRUD handlers for AvailableTools
+    this.on("callback", callback);
+    this.on("mcp", errorHandler);
+    this.on("mcp", meta);
+    this.on("mcp", tools);
+    this.on("mcp", logHandler);
+    this.on("mcp", mcp);
+    this.on("mcp", grant);
+    this.on("mcp", async (req) => {
+      try {
+        // @ts-ignore: req._.req is not typed in CAP context
+        const request = req._.req;
+        // @ts-ignore: req._.res is not typed in CAP context
+        const response = req._.res;
+        const transport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: undefined,
+        });
+        const server = req.data.server;
+        await server.connect(transport);
+        console.log("🚀 MCP Server Connected:", request.body);
+        delete request.body.meta;
+        await transport.handleRequest(request, response, request.body);
+        response.on("close", () => {
+          transport.close();
+          server.close?.();
+        });
+      } catch (error) {
+        console.error("Error handling Grant Tools request:", error);
+        // @ts-ignore: req._.res is not typed in CAP context
+        const response = req._.res;
+        if (!response.headersSent) {
+          response.status(500).json({
+            jsonrpc: "2.0",
+            error: {
+              code: -32603,
+              message: "Internal server error",
+            },
+            id: null,
+          });
+        }
+      }
+    });
+  }
+}
+
+export type GrantToolsService = Service & typeof cds.ApplicationService;
+
+export type GrantToolsHandler = cds.CRUDEventHandler.On<
+  "streaming",
+  void | { dest: string } | Error
+>;
+
