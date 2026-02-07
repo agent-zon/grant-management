@@ -7,6 +7,8 @@ import { MCPRequest } from "@types";
 import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
 import { ulid } from "ulid";
 import { inspect } from "node:util";
+
+
 export default async function (req: cds.Request<MCPRequest>, next: Function) {
 
   const { host, agent, grant_id } = req.data.meta;
@@ -89,28 +91,6 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
         },
       };
     })
-
-  // If agent has MCP destination, register a catch-all proxy tool
-  // that forwards unknown tool calls to the remote server at runtime
-
-  console.log(`[handler.mcp] Registered runtime proxy tools for agent: ${req.data.agent}
-      ${Object.keys(req.data.tools || {}).join(", ")}`);
-
-
-
-  Object.entries(req.data.tools || {}).forEach(([toolName, tool]) => {
-    req.data.tools[toolName] = server.registerTool(toolName, {
-      title: tool.description,
-      description: tool.description,
-      // @ts-ignore - shape exists at runtime on Zod object schemas
-      inputSchema: tool.inputSchema?.shape,
-      // @ts-ignore - shape exists at runtime on Zod object schemas
-      outputSchema: tool.outputSchema?.shape,
-      _meta: tool._meta,
-    }, 
-    // @ts-ignore - callback passed as second arg to registerTool
-    tool.callback
-  )});
 
 
 

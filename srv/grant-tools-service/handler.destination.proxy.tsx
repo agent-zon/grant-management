@@ -9,8 +9,31 @@ import cds from "@sap/cds";
 import { MCPRequest } from "@types";
 import { inspect } from "util";
 
+
+//A proxy tool that forwards each tool in the agent's MCP destination to the remote server, With grant management filtering.
 export default async function (req: cds.Request<MCPRequest>, next: Function) {
   const { grant_id, host } = await req.data.meta;
+
+  console.log(`[handler.mcp] Registered runtime proxy tools for agent: ${req.data.agent}
+    ${Object.keys(req.data.tools || {}).join(", ")}`);
+
+  const tools = {} as Record<string, RegisteredTool>;
+
+  Object.entries(req.data.tools || {}).forEach(([toolName, tool]) => {
+    tools[toolName] = req.data.server.registerTool(toolName, {
+      title: tool.description,
+      description: tool.description,
+      // @ts-ignore - shape exists at runtime on Zod object schemas
+      inputSchema: tool.inputSchema?.shape,
+      // @ts-ignore - shape exists at runtime on Zod object schemas
+      outputSchema: tool.outputSchema?.shape,
+      _meta: tool._meta,
+    },
+      // @ts-ignore - callback passed as second arg to registerTool
+      tool.callback
+    )
+  });
+ 
 
   console.log(`[handler.grant] grant_id: ${grant_id}, host: ${host}`);
   const grantService = await cds.connect.to(GrantsManagementService);

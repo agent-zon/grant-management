@@ -1,8 +1,8 @@
 import cds from "@sap/cds";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import callback from "./handler.callback";
-import grant from "./handler.grant";
-import tools from "./handler.tools";
+import grant from "./handler.destination.proxy";
+import tools from "./handler.destination";
 import { errorHandler, logHandler } from "./handler.debug";
 import mcp from "./handler.mcp";
 import meta from "./handler.meta";
