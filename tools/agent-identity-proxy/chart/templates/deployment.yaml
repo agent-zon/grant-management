@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "agent-indentity-proxy.fullname" . }}
+  labels:
+    {{- include "agent-indentity-proxy.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "agent-indentity-proxy.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "agent-indentity-proxy.labels" . | nindent 8 }}
+    spec:
+      {{- if .Values.global.imagePullSecret.name }}
+      imagePullSecrets:
+        - name: {{ .Values.global.imagePullSecret.name }}
+      {{- end }}
+      containers:
+        - name: {{ include "agent-indentity-proxy.name" . }}
+          image: {{ printf "%s/%s:%s" .Values.global.image.registry .Values.proxy.image.repository .Values.global.image.tag | quote }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | default "Always" }}
+          ports:
+            - name: http
+              containerPort: 4004
+          env:
+            {{- range $idx, $env := .Values.proxy.env }}
+            - name: {{ $env.name }}
+              value: {{ $env.value | quote }}
+            {{- end }}
+          {{- if .Values.proxy.resources }}
+          resources:
+            {{- toYaml .Values.proxy.resources | nindent 12 }}
+          {{- end }}
+          {{- if .Values.proxy.health.liveness.path }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.proxy.health.liveness.path }}
+              port: 4004
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          {{- end }}
+          {{- if .Values.proxy.health.readiness.path }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.proxy.health.readiness.path }}
+              port: 4004
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          {{- end }}
+          {{- if .Values.proxy.runAsUser }}
+          securityContext:
+            runAsUser: {{ .Values.proxy.runAsUser }}
+          {{- end }}
