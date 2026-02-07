@@ -17,7 +17,7 @@ export default function registerGrantTools(
   server: McpServer,
   tools: Record<string, RegisteredTool>
 ) {
- 
+
   server.registerTool(
     "grant:request",
     {
@@ -28,30 +28,30 @@ export default function registerGrantTools(
                     Available tools: ${Object.keys(tools).join(", ")}`,
       inputSchema: {
         tools: z
-            .array(z.enum(Object.keys(tools) as [string, ...string[]]))
-            .describe("The list of tools that need user authorization"),
+          .array(z.enum(Object.keys(tools) as [string, ...string[]]))
+          .describe("The list of tools that need user authorization"),
       },
       outputSchema: {
         authorization_url: z
-            .string()
-            .optional()
-            .describe("The URL that should be shown to the user to approve the requested tools"),
+          .string()
+          .optional()
+          .describe("The URL that should be shown to the user to approve the requested tools"),
         request_uri: z
-            .string()
-            .optional()
-            .describe("The internal request URI, if provided by the authorization server"),
+          .string()
+          .optional()
+          .describe("The internal request URI, if provided by the authorization server"),
         expires_in: z
-            .number()
-            .optional()
-            .describe("Time in seconds until the authorization request expires")
+          .number()
+          .optional()
+          .describe("Time in seconds until the authorization request expires")
       }
     },
     async ({ tools }) => {
-  
+
       //using sid for session based grants, jti for token based grants.
-      const grant_id = 
-      cds.context?.user?.authInfo?.token?.payload["sid"] ||
-      cds.context?.user?.authInfo?.token?.payload.jti;
+      const grant_id =
+        cds.context?.user?.authInfo?.token?.payload["sid"] ||
+        cds.context?.user?.authInfo?.token?.payload.jti;
 
       const authService = await cds.connect.to(AuthorizationService);
       const { request_uri, expires_in } = (await authService.par({
@@ -85,14 +85,14 @@ export default function registerGrantTools(
           },
         ],
         structuredContent: {
+          request_uri: request_uri,
           authorization_url: `${env.BASE_API_URL || getOrigin()}/oauth-server/authorize_dialog?request_uri=${encodeURIComponent(request_uri!)}`,
-          request_uri,
           expires_in,
         },
       };
     }
   );
-  
+
   //prompts
   server.registerPrompt("grant", {
     title: "Tool Grant Prompt",
@@ -102,8 +102,8 @@ export default function registerGrantTools(
       authorization_uri: z.string().url().describe("The authorization URL returned from grant:request"),
       tool: z.string().describe("The name of the tool that needs permission"),
       format: z.enum(["html", "markdown", "plain"])
-          .describe("How the prompt should be formatted")
-          .optional(),
+        .describe("How the prompt should be formatted")
+        .optional(),
     },
   }, async ({ authorization_uri, format, tool }) => {
 
@@ -119,17 +119,17 @@ export default function registerGrantTools(
     ${authorization_uri} 
     After you approve, the tool will become available.`,
           },
-          _meta: { format: format || "plain"  }
+          _meta: { format: format || "plain" }
         },
       ],
     };
   });
-  
-  
-  
+
+
+
 }
 
- function getOrigin() {
+function getOrigin() {
   const host = cds.context?.http?.req?.headers["x-forwarded-host"] ||
     cds.context?.http?.req?.headers.host;
   const protocol = cds.context?.http?.req?.headers["x-forwarded-proto"] ||
@@ -137,4 +137,3 @@ export default function registerGrantTools(
   const origin = `${protocol}://${host}`;
   return origin;
 }
-    

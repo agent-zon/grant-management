@@ -37,7 +37,7 @@ entity McpDestination {
 service McpService {
         
   @method: [POST]
-  action streaming(jsonrpc: String, id: Integer, method: String, params: Map) returns Map;
+  action streaming(jsonrpc: String, id: Integer, method: String, params: Map, meta: Map) returns Map;
  
   @requires: 'authenticated-user'
   function dest (name : McpDestination:name) returns Map;

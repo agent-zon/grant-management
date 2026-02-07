@@ -1,0 +1,115 @@
+import cds from "@sap/cds";
+import { MCPRequest } from "@types";
+import { GrantToolsService } from "./grant-tools-service";
+import { Client } from "@modelcontextprotocol/sdk/client";
+import { HttpDestination, isHttpDestination, subscriberFirst, useOrFetchDestination } from "@sap-cloud-sdk/connectivity";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { z } from "zod";
+
+export default async function (this: GrantToolsService, req: cds.Request<MCPRequest>, next: Function) {
+  const { agent } = req.data.meta;
+  req.data = {
+    ...req.data,
+    tools: req.data.tools || {},
+  }
+
+  const destination = await useOrFetchDestination({
+    destinationName: `agent:${agent}`,
+    jwt: req.user?.authInfo?.token?.jwt,
+    selectionStrategy: subscriberFirst,
+  });
+
+  if (isHttpDestination(destination)) {
+
+    console.log("🚀 Creating destination transport for agent:", `agent:${agent}`);
+    const transport = new StreamableHTTPClientTransport(new URL(destination.url), {
+      requestInit: {
+        headers: buildMergedHeaders(req.headers, destination),
+      }
+    });
+
+    const client = new Client({
+      name: `agent:${agent}`,
+      version: "1.0.0",
+      description: `MCP client for ${`agent:${agent}`} destination`,
+    });
+
+    await client.connect(transport);
+    const { tools } = await client.listTools();
+    console.log("🚀 Tools from destination:", tools.length);
+    req.data = {
+      ...req.data,
+      transport,
+      client,
+      tools: tools
+        .reduce((acc, t) => {
+          acc[t.name] = {
+            inputSchema: t.inputSchema ? z.fromJSONSchema(t.inputSchema as unknown as any) : undefined,
+            outputSchema: t.outputSchema ? z.fromJSONSchema(t.outputSchema as unknown as any) : undefined,
+            annotations: t.annotations,
+            description: t.description,
+            icons: t.icons,
+            title: t.title,
+            _meta: t._meta,
+
+            callback: async (args) => {
+              return await client.callTool({
+                name: t.name,
+                arguments: args,
+              });
+            }
+          };
+          return acc;
+        }, {})
+    }
+
+  }
+  return await next();
+}
+
+/**
+ * Build merged headers for destination transport.
+ * Order (destination wins):
+ * 1. Forward inbound headers (exclude content-length)
+ * 2. Destination headers
+ * 3. Destination authTokens http_header
+ */
+export function buildMergedHeaders(
+  inboundHeaders: Record<string, string | string[] | undefined>,
+  destination: HttpDestination
+): Record<string, string> {
+  // Forward inbound headers (exclude content-length)
+  const forwardedHeaders: Record<string, string> = {};
+  for (const [key, value] of Object.entries(inboundHeaders)) {
+    if (!key) continue;
+    if (key.toLowerCase() === "content-length") continue;
+    if (typeof value === "undefined") continue;
+    forwardedHeaders[key] = Array.isArray(value) ? value.join(", ") : String(value);
+  }
+
+  // Destination headers
+  const destinationHeaders: Record<string, string> = destination.headers
+    ? Object.fromEntries(
+      Object.entries(destination.headers).map(([k, v]) => [k, String(v)])
+    )
+    : {};
+
+  // Auth tokens http_header
+  const authFromTokens: Record<string, string> =
+    destination.authTokens
+      ?.filter((t) => t.http_header)
+      .reduce((headers, token) => {
+        if (token.http_header) {
+          headers[token.http_header.key] = token.http_header.value;
+        }
+        return headers;
+      }, {} as Record<string, string>) || {};
+
+  // Merge: destination wins
+  return {
+    ...forwardedHeaders,
+    ...destinationHeaders,
+    ...authFromTokens,
+  };
+}
+

@@ -36,11 +36,11 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
 }
 
 async function registerToGrantChanges({
-  grant_id,
+  meta,
   tools,
   server,
-  serverId,
 }: MCPRequest) {
+  const { grant_id, host } = meta;
   const grantService = await cds.connect.to(GrantsManagementService);
   grantService.after(
     `UPDATE`,
@@ -49,11 +49,11 @@ async function registerToGrantChanges({
       if (
         authorizationDetails?.consent_grant_id === grant_id &&
         authorizationDetails?.type === "mcp" &&
-        authorizationDetails?.server === serverId
+        authorizationDetails?.server === host
       ) {
         const grant = await grantService.read(Grants, grant_id);
 
-        if (enableDisabledTools(tools, mcpDetails(grant as Grant, serverId))) {
+        if (enableDisabledTools(tools, mcpDetails(grant as Grant, host))) {
           server.sendToolListChanged();
         }
       }
@@ -70,9 +70,10 @@ function enableDisabledTools(
     .filter(([name, _]) => authorizationDetails.tools?.[name]);
 
   const toolsToDisable = Object.entries(tools)
+    .filter(([name]) => name !== "grant:request") // grant:request always callable so user can request auth
     .filter(([_, tool]) => tool.enabled)
     .filter(([name, _]) => !authorizationDetails.tools?.[name]);
- 
+
   toolsToEnable.forEach(([_, t]) => t.enable());
   toolsToDisable.forEach(([_, t]) => t.disable());
   return toolsToEnable.length || toolsToDisable.length;
