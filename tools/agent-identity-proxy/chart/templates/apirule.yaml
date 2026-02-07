@@ -1,0 +1,22 @@
+{{- if .Values.proxy.expose.enabled }}
+apiVersion: gateway.kyma-project.io/v2alpha1
+kind: APIRule
+metadata:
+  name: {{ include "agent-indentity-proxy.fullname" . }}
+  labels:
+    {{- include "agent-indentity-proxy.labels" . | nindent 4 }}
+spec:
+  hosts:
+    - {{ printf "%s.%s" .Values.global.host .Values.global.domain }}
+  gateway: kyma-system/kyma-gateway
+  service:
+    name: {{ include "agent-indentity-proxy.fullname" . }}
+    port: 80
+  rules:
+    - path: /*
+      methods:
+        {{- range .Values.proxy.expose.corsPolicy.allowMethods }}
+        - {{ . | quote }}
+        {{- end }}
+      noAuth: true
+{{- end }}
