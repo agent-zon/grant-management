@@ -1,4 +1,4 @@
-import { AuthorizationDetailMcpTool, AuthorizationDetailMcpTools, MCPToolAuthorizationDetailRequest } from "#cds-models/sap/scai/grants";
+import { Consents } from "#cds-models/sap/scai/grants/AuthorizationService";
 import GrantsManagementService, {
   Grants,
   Grant,
@@ -17,22 +17,6 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
   console.log(`[handler.mcp] Registered runtime proxy tools for agent: ${req.data.agent}
     ${Object.keys(req.data.tools || {}).join(", ")}`);
 
-  const tools = {} as Record<string, RegisteredTool>;
-
-  Object.entries(req.data.tools || {}).forEach(([toolName, tool]) => {
-    tools[toolName] = req.data.server.registerTool(toolName, {
-      title: tool.description,
-      description: tool.description,
-      // @ts-ignore - shape exists at runtime on Zod object schemas
-      inputSchema: tool.inputSchema?.shape,
-      // @ts-ignore - shape exists at runtime on Zod object schemas
-      outputSchema: tool.outputSchema?.shape,
-      _meta: tool._meta,
-    },
-      // @ts-ignore - callback passed as second arg to registerTool
-      tool.callback
-    )
-  });
 
 
   console.log(`[handler.grant] grant_id: ${grant_id}, host: ${host}`);
@@ -43,8 +27,8 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
     })))
 
 
-  await registerToGrantChanges({ ...req.data, tools: tools });
-  enableDisabledTools(tools, authorizationDetails);
+  await registerToGrantChanges({ ...req.data, tools: req.data.tools });
+  enableDisabledTools(req.data.tools, authorizationDetails);
 
   return await next();
 }
@@ -56,25 +40,28 @@ async function registerToGrantChanges({
 }: MCPRequest) {
   const { grant_id } = meta;
   const grantService = await cds.connect.to(GrantsManagementService);
-  grantService.after(
-    `UPDATE`,
-    AuthorizationDetails,
-    async (authorizationDetails) => {
-      console.log(`[registerToGrantChanges] AuthorizationDetails updated: ${authorizationDetails?.ID}`);
 
-      if (
-        authorizationDetails?.consent_grant_id === grant_id &&
-        authorizationDetails?.type === "mcp"
-      ) {
-        console.log(`[registerToGrantChanges] Updating tools for grant ${grant_id}`);
-        const authorizationDetails = mcpDetails(await grantService.run(
-          cds.ql.SELECT.from(AuthorizationDetails).where({
-            consent_grant_id: grant_id,
-          })
-        ));
+  // Listen on the AuthorizationService — that's the service actually creating Consents.
+  // DB-level listeners don't fire because CDS deep inserts only emit events at the service layer.
+  const authService = await cds.connect.to("sap.scai.grants.AuthorizationService");
 
-        if (enableDisabledTools(tools, authorizationDetails)) {
-          server.sendToolListChanged();
+  authService.after(
+    [`CREATE`, `UPDATE`],
+    Consents,
+    async (data: any) => {
+      const records = Array.isArray(data) ? data : [data];
+      for (const record of records) {
+        if (record?.grant_id === grant_id) {
+          console.log(`[registerToGrantChanges] Consent changed for grant ${grant_id}, re-checking tools`);
+          const details = mcpDetails(await grantService.run(
+            cds.ql.SELECT.from(AuthorizationDetails).where({
+              consent_grant_id: grant_id,
+            })
+          ));
+
+          if (enableDisabledTools(tools, details)) {
+            server.sendToolListChanged();
+          }
         }
       }
     }
@@ -94,11 +81,14 @@ function enableDisabledTools(
     .filter(([_, tool]) => tool.enabled)
     .filter(([name, _]) => !authorizationDetails[name]);
 
-  console.log(`[enableDisabledTools]
-    \nauthorizationDetails: ${inspect(authorizationDetails, { colors: true, depth: 2 })}
-    \ntoolsToEnable: ${toolsToEnable.length}, toolsToDisable: ${toolsToDisable.length}`);
   toolsToEnable.forEach(([_, t]) => t.enable());
   toolsToDisable.forEach(([_, t]) => t.disable());
+
+  console.log(`[Enable/Disable Tools]
+    \nauthorizationDetails: ${inspect(authorizationDetails, { colors: true, depth: 2 })}
+    \ntoolsToEnable: ${toolsToEnable.length}, 
+    \ntoolsToDisable: ${toolsToDisable.length}`);
+
   return toolsToEnable.length || toolsToDisable.length;
 }
 
@@ -109,7 +99,7 @@ function mcpDetails(authorization_details: AuthorizationDetails): Record<string,
     .reduce(
       (acc, detail) => {
         return {
-          ...acc.tools || {},
+          ...acc,
           ...detail.tools || {},
         }
       },

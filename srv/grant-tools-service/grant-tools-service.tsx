@@ -1,12 +1,12 @@
 import cds from "@sap/cds";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import callback from "./handler.callback";
-import grant from "./handler.destination.proxy";
-import tools from "./handler.destination";
+import filter from "./handler.filter";
+import destination from "./handler.destination";
 import { errorHandler, logHandler } from "./handler.debug";
 import mcp from "./handler.mcp";
 import meta from "./handler.meta";
 import { registerDestination } from "@sap-cloud-sdk/connectivity";
+import tools from "./handler.tools";
 
 /**
  * Grant Tools Service
@@ -29,7 +29,6 @@ export default class Service extends cds.ApplicationService {
         await registerDestination({
           ...destination,
           name: `agent:${agent}`,
-
         });
 
         req.reply(200)
@@ -48,49 +47,20 @@ export default class Service extends cds.ApplicationService {
       }
     });
 
-
-    // Register CRUD handlers for AvailableTools
+    // Register handlers
     this.on("callback", callback);
+
+    // MCP handler chain: errorHandler → meta → logHandler → mcp → destination → tools → filter
+    // mcp creates the McpServer + transport (stateful sessions)
+    // destination/tools/filter register tools BEFORE connect (only on initialize)
+    // Existing sessions skip the chain entirely and forward to the stored transport
     this.on("mcp", errorHandler);
     this.on("mcp", meta);
-    this.on("mcp", tools);
     this.on("mcp", logHandler);
     this.on("mcp", mcp);
-    this.on("mcp", grant);
-    this.on("mcp", async (req) => {
-      try {
-        // @ts-ignore: req._.req is not typed in CAP context
-        const request = req._.req;
-        // @ts-ignore: req._.res is not typed in CAP context
-        const response = req._.res;
-        const transport = new StreamableHTTPServerTransport({
-          sessionIdGenerator: undefined,
-        });
-        const server = req.data.server;
-        await server.connect(transport);
-        console.log("🚀 MCP Server Connected:", request.body);
-        delete request.body.meta;
-        await transport.handleRequest(request, response, request.body);
-        response.on("close", () => {
-          transport.close();
-          server.close?.();
-        });
-      } catch (error) {
-        console.error("Error handling Grant Tools request:", error);
-        // @ts-ignore: req._.res is not typed in CAP context
-        const response = req._.res;
-        if (!response.headersSent) {
-          response.status(500).json({
-            jsonrpc: "2.0",
-            error: {
-              code: -32603,
-              message: "Internal server error",
-            },
-            id: null,
-          });
-        }
-      }
-    });
+    this.on("mcp", destination);
+    this.on("mcp", tools);
+    this.on("mcp", filter);
   }
 }
 
