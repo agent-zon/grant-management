@@ -37,7 +37,7 @@ process.on("unhandledRejection", (reason, promise) => {
   // Don't exit the process - keep the service running
 });
 
- 
+
 
 cds.on("bootstrap", (app) => {
   // add your own middleware before any by cds are added
@@ -47,7 +47,23 @@ cds.on("bootstrap", (app) => {
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json({ extended: true }));
 
-  async function errorHandler(req,res,next) {
+  // MCP action is POST-only; GET hits CDS parse and returns 400, causing client retry loop.
+  // Answer GET /grants/mcp with 405 so clients don't retry and CDS never sees the GET.
+  app.use((req, res, next) => {
+    const path = (req.path || req.url?.split("?")[0] || "").replace(/\/$/, "");
+    if (req.method === "GET" && path?.endsWith("/mcp")) {
+      console.log("🚀 MCP Endpoint GET detected - returning 405");
+      res.set("Allow", "POST");
+      res.status(405).json({
+        error: "Method Not Allowed",
+        message: "MCP endpoint accepts POST only. Use POST with JSON-RPC body.",
+      });
+      return;
+    }
+    next();
+  });
+
+  async function errorHandler(req, res, next) {
     try {
       await next();
     } catch (err) {
@@ -63,8 +79,8 @@ cds.on("bootstrap", (app) => {
 
       // Don't crash the service - send appropriate error response
       const statusCode = err.statusCode || err.status || 500;
-   
-      if(!res.headersSent && req.accepts("html")) {
+
+      if (!res.headersSent && req.accepts("html")) {
         return res.status(statusCode).send(`
         <!DOCTYPE html>
         <html>
@@ -111,10 +127,10 @@ cds.on("bootstrap", (app) => {
   // Convert to JSON format that CDS REST protocol expects
   app.use((req, _res, next) => {
     const contentType = req.get("content-type") || "";
-    if(req.path !== '/health')
-    console.log(
-      `[${new Date(Date.now()).toUTCString()}] [MIDDLEWARE] ${req.method} ${req.path} - Content-Type: ${contentType}`
-    );
+    if (req.path !== '/health')
+      console.log(
+        `[${new Date(Date.now()).toUTCString()}] [MIDDLEWARE] ${req.method} ${req.path} - Content-Type: ${contentType}`
+      );
 
     if (contentType.includes("application/x-www-form-urlencoded")) {
       console.log(
