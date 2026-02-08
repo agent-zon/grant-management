@@ -7,6 +7,7 @@ import { MCPRequest } from "@types";
 import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
 import { ulid } from "ulid";
 import { inspect } from "node:util";
+import { env } from "node:process";
 
 
 export default async function (req: cds.Request<MCPRequest>, next: Function) {
@@ -57,8 +58,8 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
       const authService = await cds.connect.to(AuthorizationService);
       const { request_uri, expires_in } = (await authService.par({
         response_type: "code",
-        subject: cds.context?.user?.id || "anonymous",
-        subject_token: cds.context?.user?.authInfo?.token.jwt,
+        // subject: cds.context?.user?.id || "anonymous",
+        // subject_token: cds.context?.user?.authInfo?.token.jwt,
         client_id: cds.context?.user?.authInfo?.token.payload.azp,
         scope: "openid profile email",
         redirect_uri: "urn:scai:grant:callback",
@@ -76,7 +77,6 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
           },
         ]),
       }))!
-
       return {
         content: [
           {
@@ -85,7 +85,7 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
           },
         ],
         structuredContent: {
-          authorization_url: `${host}/oauth-server/authorize_dialog?request_uri=${encodeURIComponent(request_uri!)}`,
+          authorization_url: `${env.BASE_API_URL || host}/oauth-server/authorize_dialog?request_uri=${encodeURIComponent(request_uri!)}`,
           request_uri,
           expires_in,
         },
