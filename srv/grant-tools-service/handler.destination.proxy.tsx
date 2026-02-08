@@ -33,7 +33,7 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
       tool.callback
     )
   });
- 
+
 
   console.log(`[handler.grant] grant_id: ${grant_id}, host: ${host}`);
   const grantService = await cds.connect.to(GrantsManagementService);
@@ -43,8 +43,8 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
     })))
 
 
-  await registerToGrantChanges(req.data);
-  enableDisabledTools(req.data.tools, authorizationDetails);
+  await registerToGrantChanges({ ...req.data, tools: tools });
+  enableDisabledTools(tools, authorizationDetails);
 
   return await next();
 }
