@@ -74,17 +74,17 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
         ]),
       }))!
       return {
-        content: [
-          {
-            type: "text",
-            text: "To approve the requested tools send the authorization URL to the user.",
-          },
-        ],
         structuredContent: {
           authorization_url: `${env.BASE_API_URL || host}/oauth-server/authorize_dialog?request_uri=${encodeURIComponent(request_uri!)}`,
           request_uri,
           expires_in,
         },
+        content: [
+          {
+            type: "text",
+            text: `To approve the requested tools send the authorization URL to the user ${env.BASE_API_URL || host}/oauth-server/authorize_dialog?request_uri=${encodeURIComponent(request_uri!)} .`,
+          },
+        ],
       };
     })
 

@@ -7,7 +7,6 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { z, ZodRawShape } from "zod";
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
-const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
 
 export default async function (this: GrantToolsService, req: cds.Request<MCPRequest>, next: Function) {
   const { agent } = req.data.meta;
@@ -39,13 +38,13 @@ export default async function (this: GrantToolsService, req: cds.Request<MCPRequ
       });
 
       await client.connect(transport);
-     
+
       // req.data.server.on("close", () => {
       //   client.close();
       //   transport.close();
       // });
 
-      const { tools } = await client.listTools(); 
+      const { tools } = await client.listTools();
 
       for (const tool of tools) {
         console.log("🚀 Registering tool:", tool.name);
@@ -65,7 +64,7 @@ export default async function (this: GrantToolsService, req: cds.Request<MCPRequ
         console.log("🚀 Tool registered:", tool.name, req.data.tools[tool.name].inputSchema);
       }
       console.debug("🚀 Registered:", tools.length, "tools from destination");
-      
+
     } catch (error) {
       console.error("Error creating destination transport:", error);
     }

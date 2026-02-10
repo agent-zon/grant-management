@@ -6,10 +6,6 @@ import cds from "@sap/cds";
 import { MCPRequest } from "@types";
 import { randomUUID } from "node:crypto";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
-import GrantsManagementService, {
-  AuthorizationDetails,
-} from "#cds-models/sap/scai/grants/GrantsManagementService";
 
 /** Session state: transport + tools + grant metadata */
 interface Session {
