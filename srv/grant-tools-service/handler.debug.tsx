@@ -1,6 +1,7 @@
 import cds from "@sap/cds";
 import { MCPRequest } from "@types";
 import { GrantToolsService } from "./grant-tools-service";
+import { inspect } from "util";
 
 export async function logHandler(
   this: GrantToolsService,
@@ -25,15 +26,15 @@ export async function logHandler(
 
     );
     return await next();
+
   } finally {
     console.log(
       `[Grant Tools Service] - [${req.data?.method}] handled in ${Date.now() - start} ms  
       \n\tuser: ${req.user?.id} 
       \n\tagent: ${req.data.meta?.agent}
-      \n\ttools: ${Object.keys(req.data?.tools || {}).join(", ")}
-      sid: ${req.user?.authInfo?.token.payload["sid"]} jti: ${req.user?.authInfo?.token.payload.jti}
-
-      `,
+      \n\ttools: ${inspect(req.data?.tools || {}, { colors: true, depth: 1, compact: true })}
+      \n\tgrant_id: ${req.user?.authInfo?.token.grant_id}
+      \n\tclient_id: ${req.user?.authInfo?.token.clientId}`,
       "response",
       req.http?.res?.statusCode
     );

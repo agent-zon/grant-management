@@ -4,36 +4,45 @@ import {
 import { z } from "zod";
 import cds from "@sap/cds";
 import { MCPRequest } from "@types";
-import AuthorizationService from "#cds-models/sap/scai/grants/AuthorizationService";
+import AuthorizationService, { Consents } from "#cds-models/sap/scai/grants/AuthorizationService";
 import { ulid } from "ulid";
 import { inspect } from "node:util";
 import { env } from "node:process";
+import GrantsManagementService, {
+  AuthorizationDetails,
+} from "#cds-models/sap/scai/grants/GrantsManagementService";
 
 
 export default async function (req: cds.Request<MCPRequest>, next: Function) {
 
   const { host, agent, grant_id } = req.data.meta;
 
-  const toolNames = Object.keys(req.data.tools || {});
-  console.log("[par] Registering tools for server:", inspect(toolNames, { colors: true, depth: 1, compact: true }));
+  console.log(`[handler.grant] grant_id: ${grant_id}`);
+  const grantService = await cds.connect.to(GrantsManagementService);
+  const authorizationDetails = mcpDetails(await grantService.run(
+    cds.ql.SELECT.from(AuthorizationDetails).where({
+      consent_grant_id: grant_id,
+    })))
 
-  // Schema for tools array: enum when we have tool names, else string[] (avoids z.enum([]) which throws)
+  const toolNames = Object.keys(req.data.tools || {}).filter((toolName) => !authorizationDetails[toolName]);
+
+  console.log("[handler.tools] Registering tools for server:", ` grant_id: ${grant_id}, host: ${host}\n\ttoolNames: ${inspect(toolNames, { colors: true, depth: 1, compact: true })}`);
+
+
+
   const toolsArraySchema =
     toolNames.length > 0
       ? z.array(z.enum(toolNames as [string, ...string[]]))
       : z.array(z.string());
 
-  // Register push-authorization-request (always available)
-  req.data.server.registerTool(
+  const pushAuthorizationRequestTool = req.data.server.registerTool(
     "push-authorization-request",
     {
       title: "Tool Authorization Request",
-      description: `Some tools are disabled until the user gives permission.
-                    Use this tool to build an authorization request for one or more tools.
-                    It returns an authorization URL that you can show to the user for approval.
-                    Available tools: ${toolNames.join(", ")}`,
+      description: `Some tools are disabled until the user gives permission. Use this tool to build an authorization request for one or more tools. It returns an authorization URL that you can show to the user for approval. Available tools: ${toolNames.join(", ")}`,
       inputSchema: {
         tools: toolsArraySchema.describe("The list of tools that need user authorization"),
+        redirect_uri: z.string().default("urn:scai:grant:callback").describe("The redirect URI to use for the authorization request"),
       },
       outputSchema: {
         authorization_url: z
@@ -50,7 +59,7 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
           .describe("Time in seconds until the authorization request expires")
       }
     },
-    async ({ tools }) => {
+    async ({ tools, redirect_uri }) => {
       const authService = await cds.connect.to(AuthorizationService);
       const { request_uri, expires_in } = (await authService.par({
         response_type: "code",
@@ -58,7 +67,7 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
         // subject_token: cds.context?.user?.authInfo?.token.jwt,
         client_id: cds.context?.user?.authInfo?.token.payload.azp,
         scope: "openid profile email",
-        redirect_uri: "urn:scai:grant:callback",
+        redirect_uri: redirect_uri || "urn:scai:grant:callback",
         grant_management_action: grant_id ? "merge" : "create",
         grant_id: grant_id,
         requested_actor: agent,
@@ -89,6 +98,7 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
     })
 
 
+  registerGrantElevateTool(req.data.server);
 
   // Register prompts
   req.data.server.registerPrompt("authorization-url", {
@@ -116,6 +126,55 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
   }));
 
   return await next();
+
+  async function registerGrantElevateTool(server: McpServer) {
+    const authService = await cds.connect.to(AuthorizationService);
+
+    authService.after(
+      [`CREATE`, `UPDATE`],
+      Consents,
+      async (data: any) => {
+        try {
+          const records = Array.isArray(data) ? data : [data];
+          for (const record of records) {
+            if (record?.grant_id === grant_id) {
+              console.log(`[registerToGrantChanges] Consent changed for grant ${grant_id}, re-checking tools`);
+              const details = mcpDetails(await grantService.run(
+                cds.ql.SELECT.from(AuthorizationDetails).where({
+                  consent_grant_id: grant_id,
+                })
+              ));
+
+              const toolNames = Object.keys(req.data.tools || {}).filter((toolName) => !details[toolName]);
+
+              pushAuthorizationRequestTool.update({
+                paramsSchema: {
+                  tools: z.array(z.enum(toolNames as [string, ...string[]])),
+                  redirect_uri: z.string().default("https://n8n.cfapps.sap.hana.ondemand.com/webhook/grant-updated"),
+                }
+              });
+
+            }
+            server.sendToolListChanged();
+          }
+        } catch (error) {
+          console.error(`[registerGrantElevateTool] Error updating pushAuthorizationRequestTool: ${error}`);
+        }
+      }
+    );
+  }
+}
+
+
+
+function mcpDetails(authorization_details: AuthorizationDetails) {
+  return authorization_details.filter((detail) => detail.type === "mcp").reduce((acc, detail) => {
+    return {
+      ...acc,
+      ...detail.tools,
+    }
+  }, {})
+
 }
 
 
