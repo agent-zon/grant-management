@@ -16,6 +16,8 @@ srv:
       parameters:
         credential-type: X509_GENERATED
         app-identifier: grant-api
+        validity: 365
+        validity-type: DAYS
     destination:
       serviceInstanceName: destination
   image:
@@ -83,6 +85,9 @@ approuter:
       parameters:
         credential-type: X509_GENERATED
         app-identifier: approuter
+        validity: 365
+        validity-type: DAYS
+
     destination:
       serviceInstanceName: destination
   image:
@@ -120,6 +125,9 @@ portal:
       parameters:
         credential-type: X509_GENERATED
         app-identifier: grant-portal
+        validity: 365
+        validity-type: DAYS
+
     destination:
       serviceInstanceName: destination
   image:
@@ -172,6 +180,7 @@ identity:
         - password
       token-policy:
         access-token-format: "jwt"
+        
       redirect-uris:
         - https://{{ tpl .Values.global.domain . }}/login/callback
         - https://*.{{ tpl .Values.global.domain . }}/login/callback
