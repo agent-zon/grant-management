@@ -67,7 +67,7 @@ export async function GET(
   ...[req, next]: Parameters<DestinationsHandler>
 ) {
   // Handle the discover action
-  if (req.path?.endsWith("/discover") || req.query?.SELECT?.from?.ref?.some?.((r: any) => r === "discover")) {
+  if (req.query?.SELECT?.one) {
     const name = (req.data as any)?.name as string;
     if (!name) return req.error?.(400, "Missing destination name");
 
@@ -177,7 +177,7 @@ function DestinationDetailView({
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <a
-              href="/dest/Destinations"
+              href="/mcps/destinations"
               className="w-10 h-10 bg-white hover:bg-gray-100 rounded-xl flex items-center justify-center transition-colors border border-gray-200 shadow-sm"
             >
               <span className="text-lg text-gray-600">←</span>
@@ -310,8 +310,8 @@ function DestinationDetailView({
                 {tools.length} tool{tools.length !== 1 ? "s" : ""} discovered
               </span>
               <a
-                href={`/dest/discover?name=${encodeURIComponent(name)}`}
-                hx-get={`/dest/discover?name=${encodeURIComponent(name)}`}
+                href={`destinations/discover?name=${encodeURIComponent(name)}`}
+                hx-get={`destinations/discover?name=${encodeURIComponent(name)}`}
                 hx-target="#tools-container"
                 hx-swap="innerHTML"
                 className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-medium rounded-lg transition-colors border border-purple-200"
@@ -382,7 +382,7 @@ function DestinationDetailView({
         {/* Actions */}
         <div className="flex items-center justify-between">
           <a
-            href="/dest/Destinations"
+            href="/mcps/destinations"
             className="flex items-center space-x-2 px-5 py-2.5 bg-white hover:bg-gray-100 text-gray-600 rounded-xl transition-colors border border-gray-200 text-sm shadow-sm"
           >
             <span>←</span>
@@ -401,7 +401,7 @@ function DiscoverResultView({ result }: { result: any }) {
         {/* Header */}
         <div className="flex items-center space-x-3">
           <a
-            href="/dest/Destinations"
+            href="/mcps/destinations"
             className="w-10 h-10 bg-white hover:bg-gray-100 rounded-xl flex items-center justify-center transition-colors border border-gray-200 shadow-sm"
           >
             <span className="text-lg text-gray-600">←</span>

@@ -2,7 +2,7 @@ using sap.scai.debug as debug from '../../db/destination.cds';
 
 namespace sap.scai.destinations;
 
-@path: '/dest'
+@path: '/mcps'
 @protocol: 'rest'
 @impl: './destination-service.tsx'
 @Core.title: 'MCP Destination Service'
@@ -11,14 +11,10 @@ namespace sap.scai.destinations;
 service DestinationManagementService {
 
     @cds.persistence.skip
-    entity Destinations as projection on debug.Destinations;
+    entity destinations as projection on debug.Destinations actions {
+        function draft(in: many $self) returns String;
+        function authParams(in: many $self,authentication : String) returns String;
 
-    action register(
-        name        : String,
-        url         : String,
-        authentication : String,
-        description : String
-    ) returns Map;
-
-    function discover(name : String) returns Map;
+        function tools() returns String;
+    }
 }
