@@ -1,20 +1,22 @@
 import cds from "@sap/cds";
 import {
-  Destinations,
+  destinations,
 } from "#cds-models/sap/scai/destinations/DestinationManagementService";
 import { LIST } from "./handler.list";
 import { GET } from "./handler.detail";
 import { REGISTER } from "./handler.register";
+import { DRAFT, AUTH_PARAMS } from "./handler.draft";
 
 export default class Service extends cds.ApplicationService {
   init() {
-    this.on("READ", Destinations, GET);
-    this.on("READ", Destinations, LIST);
+    this.on("READ", destinations, GET);
+    this.on("READ", destinations, LIST);
+    // Draft: register form UI (GET /dest/draft()) for HTMX hx-get
+    this.on("draft", destinations, DRAFT);
+    this.on("authParams", AUTH_PARAMS);
     // Register a new MCP server destination (dedicated route for HTMX)
-    this.on("register", REGISTER);
+    this.on("POST", REGISTER);
 
-    // Discover tools from an MCP server destination
-    this.on("discover", GET);
 
     return super.init();
   }
@@ -25,6 +27,6 @@ export default class Service extends cds.ApplicationService {
 export type DestinationManagementService = Service & typeof cds.ApplicationService;
 
 export type DestinationsHandler = cds.CRUDEventHandler.On<
-  Destinations,
-  void | Destinations | Error
+  destinations,
+  void | destinations | Error
 >;
