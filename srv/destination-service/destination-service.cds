@@ -13,8 +13,12 @@ service DestinationManagementService {
     @cds.persistence.skip
     entity destinations as projection on debug.Destinations actions {
         function draft(in: many $self) returns String;
-        function authParams(in: many $self,authentication : String) returns String;
+        function authentication(in: many $self, type : String) returns String;
+        function discovery(destination: $self) returns String;
 
-        function tools(destination: $self) returns String;
+        function bind(destination: $self,agent: String) returns String;
     }
+
+
+
 }

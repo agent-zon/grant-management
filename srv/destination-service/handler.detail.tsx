@@ -297,6 +297,15 @@ function DestinationDetailView({
             </div>
           )}
         </div>
+        {/* Bind Agent — loaded via hx-get from bind handler */}
+        <div
+          id="bind-agent-container"
+          hx-get={`destinations/${encodeURIComponent(name)}/bind`}
+          hx-trigger="load"
+          hx-swap="innerHTML"
+        >
+          <p className="text-sm text-gray-500">Loading bind agent form…</p>
+        </div>
 
         {/* Discovered MCP Tools */}
         <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
@@ -402,6 +411,8 @@ function DestinationDetailView({
             </p>
           </div>
         </div>
+
+
 
         {/* Actions */}
         <div className="flex items-center justify-between">

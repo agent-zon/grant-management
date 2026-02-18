@@ -20,14 +20,23 @@ export default async function (this: GrantToolsService, req: cds.Request<MCPRequ
     jwt: req.user?.authInfo?.token?.jwt,
     selectionStrategy: subscriberFirst,
   });
+  console.log("🚀 Destination:", "authTokens:", destination?.authTokens, "name:", destination?.name, "url:", destination?.url);
 
   if (isHttpDestination(destination)) {
     try {
+      const headers = buildMergedHeaders(req.headers, destination);
 
-      console.log("🚀 Creating destination transport for agent:", `agent:${agent}`);
+      console.log("🚀 Creating destination transport for agent:",
+        `agent:${agent}`, destination.authTokens?.length, "headers:", headers, "url:", destination.url, "authTokens:", destination.authTokens, "name:", destination.name);
+      console.log("🚀 Authorization token:", {
+        "Authorization": `Bearer ${destination?.authTokens?.[0]?.value}`,
+      });
+
       const transport = new StreamableHTTPClientTransport(new URL(destination.url), {
         requestInit: {
-          headers: buildMergedHeaders(req.headers, destination),
+          headers: {
+            "Authorization": `Bearer ${destination?.authTokens?.[0]?.value}`,
+          }
         }
       });
 

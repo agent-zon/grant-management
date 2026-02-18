@@ -6,7 +6,8 @@ import { LIST } from "./handler.list";
 import { GET } from "./handler.detail";
 import { REGISTER } from "./handler.register";
 import { DRAFT, AUTH_PARAMS } from "./handler.draft";
-import GRANT_TOOLS from "./handler.grant-tools";
+import Discovery from "./handler.discovery";
+import BIND from "./handler.bind";
 
 export default class Service extends cds.ApplicationService {
   init() {
@@ -17,7 +18,8 @@ export default class Service extends cds.ApplicationService {
     this.on("authParams", AUTH_PARAMS);
     // Register a new MCP server destination (dedicated route for HTMX)
     this.on("POST", REGISTER);
-    this.on("tools", destinations, GRANT_TOOLS);
+    this.on("discovery", destinations, Discovery);
+    this.on("bind", destinations, BIND);
 
 
     return super.init();
