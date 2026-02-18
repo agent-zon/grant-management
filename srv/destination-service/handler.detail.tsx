@@ -379,6 +379,30 @@ function DestinationDetailView({
           </div>
         </div>
 
+        {/* Tools via proxy (Grant Tools Service API) */}
+        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+              <span>🔌</span>
+              <span>Tools via proxy</span>
+            </h3>
+            <a
+              href={`destinations/${encodeURIComponent(name)}/tools`}
+              hx-target="#tools-via-proxy-container"
+              hx-swap="innerHTML"
+              hx-headers='{"Accept": "text/html"}'
+              className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-medium rounded-lg transition-colors border border-slate-200"
+            >
+              Load via proxy
+            </a>
+          </div>
+          <div id="tools-via-proxy-container" className="min-h-[80px]">
+            <p className="text-sm text-gray-500">
+              Click &quot;Load via proxy&quot; to fetch tools from the Grant Tools Service (same destination, via proxy).
+            </p>
+          </div>
+        </div>
+
         {/* Actions */}
         <div className="flex items-center justify-between">
           <a
@@ -491,7 +515,7 @@ function DiscoverResultView({ result }: { result: any }) {
         </div>
 
         <a
-          href="/dest/Destinations"
+          href="destinations"
           className="inline-flex items-center space-x-2 px-5 py-2.5 bg-white hover:bg-gray-100 text-gray-600 rounded-xl transition-colors border border-gray-200 text-sm shadow-sm"
         >
           <span>←</span>
