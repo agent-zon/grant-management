@@ -156,7 +156,7 @@ export async function LIST(
                             Details & Tools
                           </a>
                           <a
-                            href={`destinations/${encodeURIComponent(dest.name || "")}/tools`}
+                            href={`destinations/${encodeURIComponent(dest.name || "")}/discovery`}
                             className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-medium rounded-lg transition-colors border border-purple-200"
                           >
                             Discover
