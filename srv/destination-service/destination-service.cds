@@ -15,6 +15,6 @@ service DestinationManagementService {
         function draft(in: many $self) returns String;
         function authParams(in: many $self,authentication : String) returns String;
 
-        function tools() returns String;
+        function tools(destination: $self) returns String;
     }
 }
