@@ -6,58 +6,59 @@ import type { AuthorizationDetailProps } from './types.tsx';
 export default function DatabaseAuthorizationDetail({ index, description, riskLevel, category, ...detail }: DatabaseAuthorizationDetailRequest & AuthorizationDetailProps) {
   return (
     <div
-      className={`bg-gray-700/30 rounded-lg p-6 border-l-4 ${
-        riskLevel === 'high' ? 'border-red-500' :
-        riskLevel === 'medium' ? 'border-yellow-500' :
-        'border-green-500'
-      }`}
+      className={`bg-white rounded-xl p-6 border-2 ${
+        riskLevel === 'high' ? 'border-red-300 bg-red-50/30' :
+        riskLevel === 'medium' ? 'border-amber-300 bg-amber-50/30' :
+        'border-green-300 bg-green-50/30'
+      } shadow-sm`}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <div className={`px-3 py-1 rounded text-sm font-medium ${
-            riskLevel === 'high' ? 'bg-red-500/20 text-red-300' :
-            riskLevel === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
-            'bg-green-500/20 text-green-300'
+          <div className={`px-4 py-2 rounded-lg text-sm font-semibold ${
+            riskLevel === 'high' ? 'bg-red-100 text-red-700' :
+            riskLevel === 'medium' ? 'bg-amber-100 text-amber-700' :
+            'bg-green-100 text-green-700'
           }`}>
-            {detail.type_code}
+            Database Access
           </div>
-          <span className="text-sm text-gray-400">
-            {category}
-          </span>
+          {category && (
+            <span className="text-sm text-gray-600 font-medium">
+              {category}
+            </span>
+          )}
         </div>
-        <div className={`px-2 py-1 rounded text-xs font-bold ${
-          riskLevel === 'high' ? 'bg-red-500/20 text-red-300' :
-          riskLevel === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
-          'bg-green-500/20 text-green-300'
+        <div className={`px-3 py-1 rounded-lg text-xs font-bold ${
+          riskLevel === 'high' ? 'bg-red-100 text-red-700' :
+          riskLevel === 'medium' ? 'bg-amber-100 text-amber-700' :
+          'bg-green-100 text-green-700'
         }`}>
-          {riskLevel?.toUpperCase()} RISK
+          {riskLevel === 'high' ? 'High Risk' : riskLevel === 'medium' ? 'Medium Risk' : 'Low Risk'}
         </div>
       </div>
 
-      <p className="text-sm text-gray-300 mb-4">
+      <p className="text-base text-gray-700 mb-5 leading-relaxed">
         {description}
       </p>
 
-
-      {/* Database Configuration */}
+      {/* Database Access Details */}
       <div className="mb-4">
-        <h5 className="text-sm font-medium text-gray-400 mb-2">
-          Database Configuration (fixed scope):
+        <h5 className="text-sm font-semibold text-gray-900 mb-3">
+          Database Access Details:
         </h5>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {detail.databases && (
-            <div className="bg-gray-600/50 rounded p-2">
-              <div className="text-xs text-gray-400 uppercase">Databases</div>
-              <div className="text-sm text-white">
+            <div className="bg-red-50 rounded-lg p-3 border border-red-100">
+              <div className="text-xs text-gray-600 uppercase font-semibold mb-2">Databases</div>
+              <div className="space-y-1">
                 {detail.databases.map((db, dbIndex) => (
                   <input 
                     key={db} 
                     title='Database'
                     name={`authorization_details[${index}].databases[${dbIndex}]`} 
                     type='text' 
-                    className="inline-block bg-red-500/20 text-red-300 px-2 py-1 rounded text-xs mr-1 mb-1" 
-                    value={`🗄️ ${db}`} 
+                    className="w-full bg-white text-gray-700 px-3 py-1.5 rounded-md text-xs border border-red-200 font-medium" 
+                    value={`${db}`} 
                     readOnly 
                   />
                 ))}
@@ -65,17 +66,17 @@ export default function DatabaseAuthorizationDetail({ index, description, riskLe
             </div>
           )}
           {detail.schemas && (
-            <div className="bg-gray-600/50 rounded p-2">
-              <div className="text-xs text-gray-400 uppercase">Schemas</div>
-              <div className="text-sm text-white">
+            <div className="bg-purple-50 rounded-lg p-3 border border-purple-100">
+              <div className="text-xs text-gray-600 uppercase font-semibold mb-2">Schemas</div>
+              <div className="space-y-1">
                 {detail.schemas.map((schema, schemaIndex) => (
                   <input 
                     key={schema} 
                     title='Schema'
                     name={`authorization_details[${index}].schemas[${schemaIndex}]`} 
                     type='text' 
-                    className="inline-block bg-purple-500/20 text-purple-300 px-2 py-1 rounded text-xs mr-1 mb-1" 
-                    value={`📋 ${schema}`} 
+                    className="w-full bg-white text-gray-700 px-3 py-1.5 rounded-md text-xs border border-purple-200 font-medium" 
+                    value={`${schema}`} 
                     readOnly 
                   />
                 ))}
@@ -83,17 +84,17 @@ export default function DatabaseAuthorizationDetail({ index, description, riskLe
             </div>
           )}
           {detail.tables && (
-            <div className="bg-gray-600/50 rounded p-2">
-              <div className="text-xs text-gray-400 uppercase">Tables</div>
-              <div className="text-sm text-white">
+            <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+              <div className="text-xs text-gray-600 uppercase font-semibold mb-2">Data Tables</div>
+              <div className="space-y-1">
                 {detail.tables.map((table, tableIndex) => (
                   <input 
                     key={table} 
                     title='Table'
                     name={`authorization_details[${index}].tables[${tableIndex}]`} 
                     type='text' 
-                    className="inline-block bg-blue-500/20 text-blue-300 px-2 py-1 rounded text-xs mr-1 mb-1" 
-                    value={`📊 ${table}`} 
+                    className="w-full bg-white text-gray-700 px-3 py-1.5 rounded-md text-xs border border-blue-200 font-medium" 
+                    value={`${table}`} 
                     readOnly 
                   />
                 ))}
@@ -105,17 +106,17 @@ export default function DatabaseAuthorizationDetail({ index, description, riskLe
 
       {detail.actions && (
         <div className="mb-4">
-          <div className="bg-gray-600/50 rounded p-2">
-            <div className="text-xs text-gray-400 uppercase">Allowed Actions</div>
-            <div className="text-sm text-white">
+          <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+            <div className="text-xs text-gray-600 uppercase font-semibold mb-2">Allowed Operations</div>
+            <div className="space-y-1">
               {detail.actions.map((action, actionIndex) => (
                 <input 
                   key={action} 
                   title='Action'
                   name={`authorization_details[${index}].actions[${actionIndex}]`} 
                   type='text' 
-                  className="inline-block bg-green-500/20 text-green-300 px-2 py-1 rounded text-xs mr-1 mb-1" 
-                  value={`⚡ ${action}`} 
+                  className="w-full bg-white text-gray-700 px-3 py-1.5 rounded-md text-xs border border-green-200 font-medium" 
+                  value={`${action}`} 
                   readOnly 
                 />
               ))}
@@ -124,9 +125,10 @@ export default function DatabaseAuthorizationDetail({ index, description, riskLe
         </div>
       )}
 
-      <div className="bg-red-500/10 border border-red-500/20 rounded p-3">
-        <div className="text-xs text-red-300">
-          ⚠️ Database access scope is fixed and defined by the configuration above. No additional user permissions required.
+      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+        <div className="text-xs text-red-800 flex items-start space-x-2">
+          <span className="text-base">ℹ️</span>
+          <span>Database access is limited to the databases, schemas, and tables listed above. No additional configuration is required.</span>
         </div>
       </div>
     </div>
