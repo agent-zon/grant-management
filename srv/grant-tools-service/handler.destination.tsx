@@ -16,7 +16,7 @@ export default async function (this: GrantToolsService, req: cds.Request<MCPRequ
   }
 
   const destination = await useOrFetchDestination({
-    destinationName: req.headers["x-destination"] || `agent:${agent}`,
+    destinationName: "MCP_HUB", //req.headers["x-destination"] || `agent:${agent}`,
     jwt: req.user?.authInfo?.token?.jwt,
     selectionStrategy: subscriberFirst,
   });
@@ -112,8 +112,8 @@ export function buildMergedHeaders(
 
   // Merge: destination wins
   return {
-    ...forwardedHeaders,
-    ...destinationHeaders,
+    // ...forwardedHeaders,
+    // ...destinationHeaders,
     ...authFromTokens,
   };
 }
