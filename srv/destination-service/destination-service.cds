@@ -2,6 +2,7 @@ using sap.scai.debug as debug from '../../db/destination.cds';
 
 namespace sap.scai.destinations;
 
+
 @path: '/mcps'
 @protocol: 'rest'
 @impl: './destination-service.tsx'
@@ -13,12 +14,27 @@ service DestinationManagementService {
     @cds.persistence.skip
     entity destinations as projection on debug.Destinations actions {
         function draft(in: many $self) returns String;
-        function authentication(in: many $self, type : String) returns String;
-        function discovery(destination: $self) returns String;
 
-        function bind(destination: $self,agent: String) returns String;
-    }
+function authentication(in: many $self, type : String) returns String;
 
+function discovery(destination: $self) returns String;
+
+function bind(destination: $self,agent: String) returns String;
 
 
 }
+
+@cds.persistence.skip
+entity authentication {} actions  {
+     
+function  BasicAuthentication(in: many $self) returns String;
+
+function OAuth2ClientCredentials(in: many $self) returns String;
+
+function OAuth2SAMLBearerAssertion(in: many $self) returns String;
+
+function OAuth2Password(in: many $self) returns String;
+
+function ClientCertificateAuthentication(in: many $self) returns String;
+
+} }

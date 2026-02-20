@@ -16,7 +16,7 @@ export default async function (this: GrantToolsService, req: cds.Request<MCPRequ
   }
 
   const destination = await useOrFetchDestination({
-    destinationName: "MCP_HUB", //req.headers["x-destination"] || `agent:${agent}`,
+    destinationName: req.http?.req.header("x-destination") || `agent:${agent}`,
     jwt: req.user?.authInfo?.token?.jwt,
     selectionStrategy: subscriberFirst,
   });
