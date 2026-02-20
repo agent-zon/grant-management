@@ -7,9 +7,10 @@ global:
     name: docker-registry
   image:
     registry: scai-dev.common.repositories.cloud.sap
-    tag: v32
+    tag: v35
   imagePullPolicy: Always
 srv:
+  replicaCount: 1
   bindings:
     auth:
       serviceInstanceName: identity
@@ -46,6 +47,7 @@ srv:
       value: "https://{{ tpl .Values.global.host . }}"
 
 approuter:
+  replicaCount: 1
   networkSecurity:
     allowNamespaceInternal: true
   expose:

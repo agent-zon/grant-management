@@ -63,17 +63,17 @@ export default async function authorize(
   req.http?.res.send(
     htmlTemplate(
       renderToString(
-        <div className="min-h-screen bg-gray-950 text-white">
-          <div className="container mx-auto px-4 py-8">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+          <div className="container mx-auto px-4 py-12">
             <div className="max-w-4xl mx-auto space-y-6">
               {/* Header */}
-              <div className="flex items-center space-x-4 mb-6">
+              <div className="flex items-center space-x-4 mb-8">
                 <a
                   href="/grants-management/Grants"
-                  className="flex items-center space-x-2 text-blue-400 hover:text-blue-300 transition-colors"
+                  className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 transition-colors font-medium"
                 >
                   <span>←</span>
-                  <span>Go to Grant Management</span>
+                  <span>Back to Permissions</span>
                 </a>
               </div>
 
@@ -93,79 +93,77 @@ export default async function authorize(
                 />
                 <input type="hidden" name="scope" value={grant.scope} />
 
-                <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6">
-                  <div className="flex items-center space-x-4 mb-6">
-                    <div className="p-3 rounded-lg bg-blue-500/20">
-                      <div className="text-2xl">🛡️</div>
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
+                  <div className="flex items-center space-x-4 mb-8">
+                    <div className="p-4 rounded-xl bg-blue-50">
+                      <div className="text-3xl">🔐</div>
                     </div>
                     <div>
-                      <h1 className="text-2xl font-bold text-white">
-                        Rich Authorization Request
+                      <h1 className="text-3xl font-bold text-gray-900">
+                        Permission Request
                       </h1>
-                      <p className="text-gray-400">
-                        Review and grant permissions for requested tools
+                      <p className="text-gray-600 mt-1">
+                        Review what access is being requested
                       </p>
                     </div>
                   </div>
 
-                  {/* Client Info */}
-                  <div className="bg-gray-700/50 rounded-lg p-4 mb-6">
+                  {/* Application Info */}
+                  <div className="bg-blue-50 rounded-xl p-5 mb-6 border border-blue-100">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-lg font-medium text-white">
-                          Client: {request.client_id}
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                          Agent Requesting Access
                         </h3>
-                        <p className="text-sm text-gray-400">
-                          Scope: {request.scope}
+                        <p className="text-base text-gray-700 font-medium">
+                          {request.client_id}
                         </p>
                         {request.requested_actor && (
-                          <p className="text-xs text-purple-400 mt-1">
-                            👤 {request.requested_actor} Acting on behalf of: "
-                            {request.subject}"
+                          <p className="text-sm text-gray-600 mt-2">
+                            <span className="font-medium">Acting on behalf of:</span> {request.subject}
                           </p>
                         )}
                         {request.grant_management_action === "merge" && (
-                          <div className="mt-2 p-2 bg-blue-500/10 border border-blue-500/20 rounded">
-                            <p className="text-xs text-blue-400 font-medium">
-                              🔄 Merging with existing grant: {grant.ID}
+                          <div className="mt-3 p-3 bg-white border border-blue-200 rounded-lg">
+                            <p className="text-sm text-blue-700 font-medium mb-2">
+                              🔄 Adding to Existing Permissions
                             </p>
-                            <p className="text-xs text-blue-300">
-                              Current permissions: {grant.scope}
+                            <p className="text-xs text-gray-600">
+                              Your current permissions will remain active. This request adds new capabilities.
                             </p>
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center space-x-2 px-3 py-1 rounded bg-yellow-500/20 text-yellow-400">
-                        <div className="text-sm">⏳</div>
-                        <span className="text-sm">
+                      <div className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-amber-50 border border-amber-200">
+                        <div className="text-base">⏳</div>
+                        <span className="text-sm font-medium text-amber-700">
                           {request.grant_management_action === "merge"
-                            ? "Merge Approval"
-                            : "Pending Approval"}{" "}
-                          ({request.status})
+                            ? "Pending Review"
+                            : "Awaiting Approval"}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Authorization Details - Loaded via HTMX */}
+                  {/* What's Being Requested */}
                   <div className="mb-6">
-                    <h4 className="text-lg font-medium text-gray-300 mb-4">
+                    <h4 className="text-xl font-semibold text-gray-900 mb-4">
                       {request.grant_management_action === "merge"
-                        ? "Additional Permissions to Add"
-                        : "Authorization Details"}
+                        ? "Additional Capabilities Requested"
+                        : "What You're Granting Access To"}
                     </h4>
                     {request.grant_management_action === "merge" && (
-                      <div className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                        <p className="text-sm text-green-400 font-medium mb-2">
-                          ✅ Current Permissions (will be preserved):
+                      <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+                        <p className="text-sm text-green-800 font-semibold mb-2">
+                          ✅ Your Current Permissions (will remain active):
                         </p>
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-2">
                           {grant.scope
                             ?.split(" ")
                             .map((scope: string, idx: number) => (
                               <span
                                 key={idx}
-                                className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded"
+                                className="px-3 py-1 bg-white text-green-700 text-sm rounded-lg border border-green-200 font-medium"
                               >
                                 {scope}
                               </span>
@@ -182,54 +180,52 @@ export default async function authorize(
                       );
                     })}
                   </div>
-                  {/* Security Warning */}
-                  <div className="border rounded-lg p-4 bg-yellow-500/10 border-yellow-500/20">
+                  {/* Important Notice */}
+                  <div className="border rounded-xl p-5 bg-amber-50 border-amber-200">
                     <div className="flex items-start space-x-3">
-                      <div className="w-5 h-5 mt-0.5 text-yellow-400">⚠️</div>
+                      <div className="w-6 h-6 mt-0.5 text-amber-600 text-xl">ℹ️</div>
                       <div>
-                        <h4 className="text-sm font-medium text-yellow-400">
-                          Security Notice
+                        <h4 className="text-sm font-semibold text-amber-900 mb-1">
+                          Important Information
                         </h4>
-                        <p className="text-xs mt-1 text-yellow-300">
-                          By granting this consent, you're allowing the agent to
-                          access the tools and data specified above. This
-                          permission can be revoked at any time.
+                        <p className="text-sm text-amber-800">
+                          By approving this request, you're granting the application access to the capabilities listed above.
+                          You can revoke these permissions at any time from your permissions dashboard.
                         </p>
                       </div>
                     </div>
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex justify-end space-x-4">
+                  <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
                     <a
                       href="/grants/Grants"
-                      className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                      className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"
                     >
                       Cancel
                     </a>
                     <button
                       type="submit"
-                      className="flex items-center space-x-2 px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                      className="flex items-center space-x-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-semibold shadow-md hover:shadow-lg"
                     >
-                      <div className="w-4 h-4">🔓</div>
-                      <span>Grant Consent</span>
+                      <div className="w-5 h-5">✓</div>
+                      <span>Approve Request</span>
                     </button>
                   </div>
                 </div>
               </form>
               {/* Risk Information */}
               {request.risk_level === "high" && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                <div className="bg-red-50 border border-red-200 rounded-xl p-5">
                   <div className="flex items-start space-x-3">
-                    <div className="text-red-400 mt-0.5">⚠️</div>
+                    <div className="text-red-600 mt-0.5 text-xl">⚠️</div>
                     <div>
-                      <h4 className="text-sm font-medium text-red-400">
-                        High Risk Permission
+                      <h4 className="text-sm font-semibold text-red-900 mb-1">
+                        High-Risk Access Request
                       </h4>
-                      <p className="text-xs text-red-300 mt-1">
-                        This permission grants access to sensitive system
-                        functions. Please review carefully before granting
-                        access.
+                      <p className="text-sm text-red-800">
+                        This request includes access to sensitive functions or data.
+                        Please review carefully and ensure you trust the requesting application before approving.
                       </p>
                     </div>
                   </div>
