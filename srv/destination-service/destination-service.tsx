@@ -5,9 +5,10 @@ import {
 import { LIST } from "./handler.list";
 import { GET } from "./handler.detail";
 import { REGISTER } from "./handler.register";
-import { DRAFT, AUTH_PARAMS } from "./handler.draft";
+import { DRAFT } from "./handler.draft";
 import Discovery from "./handler.discovery";
 import BIND from "./handler.bind";
+import AUTH from "./handler.authentication";
 
 export default class Service extends cds.ApplicationService {
   init() {
@@ -15,7 +16,7 @@ export default class Service extends cds.ApplicationService {
     this.on("READ", destinations, LIST);
     // Draft: register form UI (GET /dest/draft()) for HTMX hx-get
     this.on("draft", destinations, DRAFT);
-    this.on("authParams", AUTH_PARAMS);
+    this.on("authentication", AUTH);
     // Register a new MCP server destination (dedicated route for HTMX)
     this.on("POST", REGISTER);
     this.on("discovery", destinations, Discovery);
