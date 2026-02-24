@@ -222,6 +222,26 @@ const resources = [
     ),
   },
   {
+    href: "/agents",
+    text: "Agent Permissions",
+    description: "Visualize agent access and authorization graph",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        className="stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300"
+      >
+        <circle cx="12" cy="5" r="3" />
+        <circle cx="5" cy="19" r="3" />
+        <circle cx="19" cy="19" r="3" />
+        <path d="M12 8v4m-4.5 2.5L10 12m7 2.5L14.5 12" />
+      </svg>
+    ),
+  },
+  {
     href: "/api-docs",
     text: "API Documentation",
     description: "Interactive OpenAPI documentation",

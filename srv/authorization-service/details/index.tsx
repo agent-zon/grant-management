@@ -2,6 +2,7 @@ import mcp from "./mcp.tsx";
 import api from "./api.tsx";
 import fs from "./fs.tsx";
 import database from "./database.tsx";
+import agent_invocation from "./agent-invocation.tsx";
 import type { AuthorizationDetailRequest } from "#cds-models/sap/scai/grants";
 import type { AuthorizationDetailProps } from "./types.tsx";
 
@@ -10,6 +11,7 @@ const templates = {
   api,
   fs,
   database,
+  agent_invocation,
 };
 
 export function AuthorizationDetailComponent({

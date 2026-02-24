@@ -105,7 +105,8 @@ entity AuthorizationDetails:cuid,managed, AuthorizationDetailMcpTools, Authoriza
 
   identifier: String;
   privileges: array of String;
-  resources: array of String; 
+  resources: array of String;
+  request_scope: array of String;  // skills this consent serves, enables chaining
 }
 
 
@@ -163,11 +164,12 @@ type AuthorizationDetailRequest: MCPToolAuthorizationDetailRequest, FileSystemAu
 }
  
 entity AuthorizationDetailType: sap.common.CodeList {
-    key code : String(60) enum { 
+    key code : String(60) enum {
       mcp;
       fs;
       database;
       api;
+      agent_invocation;
       grant_management;
       file_access;
       data_access;
@@ -218,4 +220,27 @@ aspect ApiAuthorizationDetailRequest {
 
 type RARClaim {
   essential: Boolean;
+}
+
+
+// ── Finding rules (evaluated on backend) ────────────────────────────────────
+
+entity FindingRules: cuid, managed {
+  code:        String(100);
+  label:       String;
+  description: String(5000);
+  category:    String enum { sod; excessive_privilege; };
+  severity:    String enum { low; medium; high; critical; } default 'medium';
+  active:      Boolean default true;
+  conditions:  Composition of many FindingConditions on conditions.rule = $self;
+}
+
+entity FindingConditions: cuid {
+  rule:              Association to FindingRules;
+  side:              String enum { A; B; };
+  leafType:          String;
+  labelPattern:      String;
+  sublabelPattern:   String;
+  requireDelegated:  Boolean default false;
+  sourceDetailType:  String;
 }

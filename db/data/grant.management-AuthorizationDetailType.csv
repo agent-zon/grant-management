@@ -6,4 +6,5 @@ database,Database,Database Access,Direct database access and operations,high,dat
 grant_management,Grant Management,Grant Management,Access to grant management system,medium,system-admin,""
 file_access,File Access,File Access,Access to file system resources,high,file-system,""
 data_access,Data Access,Data Access,Access to data resources and analytics capabilities,medium,data-access,""
+agent_invocation,Agent Invocation,Agent-to-Agent Invocation,Delegated invocation of another agent with restricted permissions (RFC 9396 agent_invocation type),high,agent-invocation,""
 network_access,Network Access,Network Access,Network connectivity and external service integration,high,network,""
