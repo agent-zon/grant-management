@@ -38,12 +38,23 @@ export default async function push(
 }
 
 function parseAuthorizationDetails(authorization_details: string) {
-  return JSON.parse(authorization_details)
-    .filter(Boolean)
-    .map(({ type, ...detail }: { type: string; [key: string]: unknown }) => {
-      return {
-        type_code: type,
-        ...detail,
-      };
-    });
+  const details = JSON.parse(authorization_details).filter(Boolean);
+
+  for (const detail of details) {
+    if (!detail.type) {
+      throw new Error(`Authorization detail missing required field 'type'`);
+    }
+    if (!detail.request_scope || !Array.isArray(detail.request_scope) || detail.request_scope.length === 0) {
+      throw new Error(
+        `Authorization detail of type '${detail.type}' missing required field 'request_scope'`
+      );
+    }
+  }
+
+  return details.map(
+    ({ type, ...detail }: { type: string; [key: string]: unknown }) => ({
+      type_code: type,
+      ...detail,
+    })
+  );
 }
