@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -45,12 +46,23 @@ const pill: React.CSSProperties = {
 // ── Panel component ──────────────────────────────────────────────────────────
 
 interface DetailPanelProps {
-  leaf: LeafResource;
+  leaves: LeafResource[];
   collapsed: boolean;
   onToggle: () => void;
 }
 
-export function DetailPanel({ leaf, collapsed, onToggle }: DetailPanelProps) {
+export function DetailPanel({ leaves, collapsed, onToggle }: DetailPanelProps) {
+  const [pageIndex, setPageIndex] = useState(0);
+
+  // Reset to last page when leaves change (new selection always appended last)
+  useEffect(() => {
+    setPageIndex(leaves.length - 1);
+  }, [leaves.length]);
+
+  const leaf = leaves[Math.min(pageIndex, leaves.length - 1)];
+  if (!leaf) return null;
+
+  const total = leaves.length;
   const color = getTypeColor(leaf.sourceDetailType);
   const Icon = leafIcons[leaf.leafType];
   const isDenied = leaf.status === "denied";
@@ -125,6 +137,66 @@ export function DetailPanel({ leaf, collapsed, onToggle }: DetailPanelProps) {
           transition: "opacity 0.2s ease",
         }}
       >
+        {/* Pagination bar (only when multiple leaves selected) */}
+        {total > 1 && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "8px 20px",
+              borderBottom: "1px solid #f0f0f0",
+              background: "#fafafa",
+            }}
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setPageIndex((i) => Math.max(0, i - 1));
+              }}
+              disabled={pageIndex === 0}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 6,
+                border: "1px solid #e5e7eb",
+                background: pageIndex === 0 ? "#f5f6f7" : "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: pageIndex === 0 ? "default" : "pointer",
+                opacity: pageIndex === 0 ? 0.4 : 1,
+              }}
+            >
+              <ChevronLeft size={14} color="#6b7280" />
+            </button>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280" }}>
+              {pageIndex + 1} / {total}
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setPageIndex((i) => Math.min(total - 1, i + 1));
+              }}
+              disabled={pageIndex === total - 1}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 6,
+                border: "1px solid #e5e7eb",
+                background: pageIndex === total - 1 ? "#f5f6f7" : "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: pageIndex === total - 1 ? "default" : "pointer",
+                opacity: pageIndex === total - 1 ? 0.4 : 1,
+              }}
+            >
+              <ChevronRight size={14} color="#6b7280" />
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div
           style={{

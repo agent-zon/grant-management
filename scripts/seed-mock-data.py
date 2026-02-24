@@ -15,6 +15,15 @@ import os
 import subprocess
 import sys
 
+
+class CdsBoolWriter(csv.DictWriter):
+    """csv.DictWriter that writes Python bools as lowercase true/false (CDS convention)."""
+    def _dict_to_list(self, rowdict):
+        return [
+            "true" if v is True else "false" if v is False else v
+            for v in super()._dict_to_list(rowdict)
+        ]
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(ROOT, "db", "data")
 
@@ -28,7 +37,7 @@ def ja(*items):
 def write_csv(filename, fieldnames, rows):
     path = os.path.join(DATA_DIR, filename)
     with open(path, "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=fieldnames)
+        w = CdsBoolWriter(f, fieldnames=fieldnames)
         w.writeheader()
         w.writerows(rows)
     print(f"  wrote {path} ({len(rows)} rows)")

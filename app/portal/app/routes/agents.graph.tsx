@@ -105,7 +105,7 @@ export default function AgentsGraphPage() {
   const [searchParams] = useSearchParams();
 
   const selectionsRef = useRef<Map<string, TraceSelection>>(new Map());
-  const [panelLeaf, setPanelLeaf] = useState<LeafResource | null>(null);
+  const [panelLeaves, setPanelLeaves] = useState<LeafResource[]>([]);
   const [panelCollapsed, setPanelCollapsed] = useState(false);
   const flowRef = useRef<HTMLDivElement>(null);
   const rfInstance = useRef<ReactFlowInstance | null>(null);
@@ -133,7 +133,7 @@ export default function AgentsGraphPage() {
       setNodes(graphData.nodes);
       setEdges(graphData.edges);
       selectionsRef.current = new Map();
-      setPanelLeaf(null);
+      setPanelLeaves([]);
     }
   }, [graphData, setNodes, setEdges]);
 
@@ -305,14 +305,8 @@ export default function AgentsGraphPage() {
         );
 
         if (next.size > 0) {
-          // Show the clicked leaf in the panel (or last remaining on deselect)
-          if (next.has(node.id)) {
-            setPanelLeaf(leaf);
-            setPanelCollapsed(false);
-          } else {
-            const remaining = Array.from(next.values());
-            setPanelLeaf(remaining[remaining.length - 1].leaf);
-          }
+          setPanelLeaves(Array.from(next.values()).map((s) => s.leaf));
+          setPanelCollapsed(false);
 
           const selectionsArray = Array.from(next.values());
           const { nodes: targetNodes, edges: targetEdges } = buildTraceLayout(
@@ -327,7 +321,7 @@ export default function AgentsGraphPage() {
           });
         } else {
           // All deselected — restore original layout
-          setPanelLeaf(null);
+          setPanelLeaves([]);
           setPanelCollapsed(false);
 
           setEdges(graphData.edges);
@@ -344,7 +338,7 @@ export default function AgentsGraphPage() {
 
   const closePanel = useCallback(() => {
     selectionsRef.current = new Map();
-    setPanelLeaf(null);
+    setPanelLeaves([]);
     setPanelCollapsed(false);
 
     flowRef.current?.classList.add("trace-animating");
@@ -380,7 +374,7 @@ export default function AgentsGraphPage() {
       next.set(targetNodeId, { leaf: tgtLeaf, nodeId: targetNodeId });
       selectionsRef.current = next;
 
-      setPanelLeaf(tgtLeaf);
+      setPanelLeaves([srcLeaf, tgtLeaf]);
       setPanelCollapsed(false);
 
       flowRef.current?.classList.add("trace-animating");
@@ -629,13 +623,13 @@ export default function AgentsGraphPage() {
             {graphData && graphData.findings.length > 0 && (
               <FindingsBubble
                 findings={graphData.findings}
-                rightOffset={panelLeaf ? (panelCollapsed ? 36 : 400) : 0}
+                rightOffset={panelLeaves.length > 0 ? (panelCollapsed ? 36 : 400) : 0}
               />
             )}
 
-            {panelLeaf && (
+            {panelLeaves.length > 0 && (
               <DetailPanel
-                leaf={panelLeaf}
+                leaves={panelLeaves}
                 collapsed={panelCollapsed}
                 onToggle={() => setPanelCollapsed((c) => !c)}
               />

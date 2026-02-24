@@ -127,7 +127,6 @@ function transformDetail(dbDetail: Record<string, unknown>): FrontendDetail {
     case "fs": {
       detail.roots = dbDetail.roots as string[] | undefined;
       // CDS structured types may come as nested object or flat columns
-      console.log("[graph] FS dbDetail keys:", Object.keys(dbDetail), "permissions:", dbDetail.permissions, "permissions_read:", dbDetail.permissions_read);
       const perms = dbDetail.permissions as Record<string, boolean> | undefined;
       if (perms && typeof perms === "object") {
         detail.permissions = {
@@ -298,7 +297,7 @@ function matchCondition(
     if (!leaf.sublabel.includes(pattern)) return false;
   }
 
-  if (requireDelegated && !leaf.viaAgent) return false;
+  if (requireDelegated === true && !leaf.viaAgent) return false;
 
   if (sourceDetailType && leaf.sourceDetailType !== sourceDetailType) return false;
 
@@ -312,7 +311,7 @@ function evaluateFindings(
   const findings: FindingInfo[] = [];
 
   for (const rule of rules) {
-    if (!rule.active) continue;
+    if (rule.active === false) continue;
 
     const conditions = (rule.conditions as Array<Record<string, unknown>>) ?? [];
     const sideA = conditions.filter((c) => c.side === "A");

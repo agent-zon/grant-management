@@ -1,7 +1,7 @@
 ID,consent_ID,consent_grant_id,type,server,transport,tools,databases,schemas,tables,actions,roots,permissions_read,permissions_write,permissions_execute,permissions_delete,permissions_list,permissions_create,urls,protocols,identifier,request_scope
 d0000001-0001-0001-0001-000000000001,c0000001-0001-0001-0001-000000000001,g-100,mcp,expense-mcp,stdio,"{""register_receipt"": {""essential"": true}, ""scan_receipt"": {""essential"": true}}",,,,,,,,,,,,,,,"[""register-receipt"", ""scan-receipt""]"
 d0000002-0002-0002-0002-000000000002,c0000002-0002-0002-0002-000000000002,g-101,database,,,,"[""expense_db""]","[""transactions""]","[""receipts"", ""cost_centers""]","[""SELECT""]",,,,,,,,,,,"[""register-receipt"", ""list-expenses""]"
-d0000003-0003-0003-0003-000000000003,c0000003-0003-0003-0003-000000000003,g-103,fs,,,,,,,,"[""/data/receipts/uploads""]",True,True,False,False,True,True,,,,"[""register-receipt""]"
+d0000003-0003-0003-0003-000000000003,c0000003-0003-0003-0003-000000000003,g-103,fs,,,,,,,,"[""/data/receipts/uploads""]",true,true,false,false,true,true,,,,"[""register-receipt""]"
 d0000004-0004-0004-0004-000000000004,c0000004-0004-0004-0004-000000000004,g-104,agent_invocation,,,,,,,"[""approve-expense""]",,,,,,,,,,urn:agent:payment-service,"[""process-expense""]"
 d0000005-0005-0005-0005-000000000005,c0000005-0005-0005-0005-000000000005,g-105,api,,,,,,,"[""GET"", ""POST""]",,,,,,,,"[""https://expense-api.internal.sap/v2""]","[""HTTPS""]",,"[""list-expenses"", ""submit-expense""]"
 d0000006-0006-0006-0006-000000000006,c0000006-0006-0006-0006-000000000006,g-106,agent_invocation,,,,,,,"[""verify-compliance""]",,,,,,,,,,urn:agent:audit-service,"[""approve-expense""]"
