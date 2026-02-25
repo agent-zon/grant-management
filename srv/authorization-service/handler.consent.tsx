@@ -31,6 +31,41 @@ export async function POST(
     // @ts-ignore - allow setting generated foreign key field
     req.data.request = { ID: req.data.request_ID } as any;
   }
+
+  // Merge form-submitted authorization_details with original PAR request details.
+  // The consent form only submits tool checkboxes and type; fields like server,
+  // transport, etc. are missing. We restore them from the original request.
+  if (req.data.request_ID && req.data.authorization_details) {
+    const authRequest = (await this.read(
+      AuthorizationRequests,
+      req.data.request_ID
+    )) as AuthorizationRequest;
+
+    if (authRequest?.access) {
+      const formDetails = req.data.authorization_details as any[];
+      req.data.authorization_details = authRequest.access.map(
+        (original: any, index: number) => {
+          const formDetail = formDetails[index] || {};
+          // Start with all fields from the original PAR request detail.
+          // PAR stores type as `type_code` (association FK), but AuthorizationDetails
+          // entity uses plain `type: String` — remap accordingly.
+          const { type_code, ...rest } = original;
+          const merged: Record<string, unknown> = { ...rest };
+          if (type_code) merged.type = type_code;
+          // Apply tool selections from the form — normalize "on"/truthy to true
+          if (formDetail.tools && typeof formDetail.tools === "object") {
+            const normalizedTools: Record<string, boolean> = {};
+            for (const [name, value] of Object.entries(formDetail.tools)) {
+              normalizedTools[name] = Boolean(value);
+            }
+            merged.tools = normalizedTools;
+          }
+          return merged;
+        }
+      );
+    }
+  }
+
   req.data.previous_consent = await getPreviousConsent(
     this,
     req.data.grant_id || ""

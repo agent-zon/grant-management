@@ -50,20 +50,12 @@ export default function MCPAuthorizationDetail({
 
       <p className="text-base text-gray-700 mb-5 leading-relaxed">{description}</p>
 
-      {/* Persist server and transport for consent record */}
+      {/* Hidden inputs for fields not rendered as form controls */}
       {detail.server && (
-        <input
-          type="hidden"
-          name={`authorization_details[${index}].server`}
-          value={detail.server}
-        />
+        <input type="hidden" name={`authorization_details[${index}].server`} value={detail.server} />
       )}
       {detail.transport && (
-        <input
-          type="hidden"
-          name={`authorization_details[${index}].transport`}
-          value={detail.transport}
-        />
+        <input type="hidden" name={`authorization_details[${index}].transport`} value={detail.transport} />
       )}
 
       {/* Available Tools */}
@@ -86,6 +78,7 @@ export default function MCPAuthorizationDetail({
                     type="checkbox"
                     name={`authorization_details[${index}].tools.${toolName.replace(/\./g, "_")}`}
                     id={`tool_${toolName}_${index}`}
+                    value="true"
                     defaultChecked={Boolean(
                       permission instanceof Object
                         ? permission.essential
