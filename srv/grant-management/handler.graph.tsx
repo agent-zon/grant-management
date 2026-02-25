@@ -8,12 +8,11 @@
  * 2. Group by actor — each actor is an agent node
  * 3. For the selected actor, transform DB → frontend shape
  * 4. Resolve delegations — for each agent_invocation detail:
- *    a. Read identifier (target agent URN) and actions (skills)
+ *    a. Read identifier (target agent URN)
  *    b. Find the target agent's grants (already loaded in step 1)
- *    c. Filter target agent's details where request_scope overlaps with requested skills
- *    d. Transform matched details into delegated_details[]
- *    e. Mark with viaAgent for graph display
- *    f. Recurse if a matched detail is itself agent_invocation (chaining)
+ *    c. Include all of the target agent's details as delegated_details[]
+ *    d. Mark with viaAgent for graph display
+ *    e. Recurse if a matched detail is itself agent_invocation (chaining)
  * 5. Evaluate findings — flatten into leaves, match against FindingRules
  * 6. Return grants + findings
  */
@@ -429,10 +428,10 @@ export async function GRAPH(req: cds.Request) {
   }
 
   // 3. Build per-actor detail index (for delegation resolution)
-  //    Map<actor, Map<request_scope_skill, detail[]>>
+  //    Map<actor, detail[]>
   const actorDetailIndex = new Map<
     string,
-    Array<{ detail: Record<string, unknown>; requestScope: string[] }>
+    Array<Record<string, unknown>>
   >();
 
   for (const fg of flatGrants) {
@@ -440,11 +439,7 @@ export async function GRAPH(req: cds.Request) {
       actorDetailIndex.set(fg.actor, []);
     }
     for (const detail of fg.details) {
-      const requestScope = (detail as any).request_scope as string[] | undefined;
-      actorDetailIndex.get(fg.actor)!.push({
-        detail,
-        requestScope: requestScope ?? [],
-      });
+      actorDetailIndex.get(fg.actor)!.push(detail);
     }
   }
 
@@ -463,8 +458,7 @@ export async function GRAPH(req: cds.Request) {
     if (detail.type !== "agent_invocation" || depth > 10) return;
 
     const targetAgent = dbDetail.identifier as string | undefined;
-    const requestedSkills = dbDetail.actions as string[] | undefined;
-    if (!targetAgent || !requestedSkills?.length) return;
+    if (!targetAgent) return;
 
     // Prevent cycles
     if (visited.has(targetAgent)) return;
@@ -473,11 +467,7 @@ export async function GRAPH(req: cds.Request) {
     const targetDetails = actorDetailIndex.get(targetAgent) ?? [];
     const delegated: FrontendDetail[] = [];
 
-    for (const { detail: tgtDetail, requestScope } of targetDetails) {
-      // Filter: target detail's request_scope must overlap with requested skills
-      const overlap = requestScope.some((s) => requestedSkills.includes(s));
-      if (!overlap) continue;
-
+    for (const tgtDetail of targetDetails) {
       const transformed = transformDetail(tgtDetail);
 
       // Recurse if the matched detail is itself an agent_invocation

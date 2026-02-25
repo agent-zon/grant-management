@@ -107,7 +107,7 @@ export default async function (req: cds.Request<MCPRequest>, next: Function) {
         Use this prompt to show the authorization URL to the user.`,
     argsSchema: {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- MCP SDK expects Zod v3 types; we use Zod v4
-      authorization_url: z.url().describe("The authorization URL to show to the user") as any,
+      authorization_url: z.string().url().describe("The authorization URL to show to the user") as any,
     },
   }, async ({ authorization_url }) => ({
     definition: "prompt user to authorize tool request",

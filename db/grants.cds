@@ -106,8 +106,6 @@ entity AuthorizationDetails:cuid,managed, AuthorizationDetailMcpTools, Authoriza
   identifier: String;
   privileges: array of String;
   resources: array of String;
-  @mandatory
-  request_scope: array of String;  // skills this consent serves, enables chaining
 }
 
 
@@ -161,7 +159,6 @@ type AuthorizationDetailRequest: MCPToolAuthorizationDetailRequest, FileSystemAu
   type: Association to AuthorizationDetailType;
   locations: array of String;
   actions: array of String;
-
 }
  
 entity AuthorizationDetailType: sap.common.CodeList {

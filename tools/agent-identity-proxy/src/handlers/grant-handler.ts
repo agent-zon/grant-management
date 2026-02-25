@@ -68,7 +68,7 @@ async function handleGrantQuery(req: Request): Promise<any> {
  */
 async function handleGrantRequest(params: any, req: Request): Promise<any> {
   const { tools } = params || {};
-  
+
   if (!tools) {
     throw new Error('tools parameter is required for grant:request');
   }

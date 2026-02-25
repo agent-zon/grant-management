@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Seed Grants</title>
+  <style>
+    body { font-family: system-ui; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin: 8px 4px; border-radius: 6px; border: 1px solid #ccc; }
+    button:disabled { opacity: 0.5; }
+    .primary { background: #0070f2; color: white; border: none; }
+    .step { margin: 16px 0; padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; }
+    .step.done { background: #f0fdf4; border-color: #bbf7d0; }
+    .step.active { background: #eff6ff; border-color: #93c5fd; }
+    .step.error { background: #fef2f2; border-color: #fca5a5; }
+    pre { background: #f5f6f7; padding: 8px; border-radius: 4px; font-size: 12px; overflow-x: auto; }
+    a { color: #0070f2; }
+  </style>
+</head>
+<body>
+  <h1>Seed Grants for Agent Graph</h1>
+  <p>This page creates 11 grants across 4 agents via the PAR/consent flow. Each step calls POST /oauth-server/par, then opens the consent form for approval.</p>
+
+  <div id="steps"></div>
+  <hr>
+  <button class="primary" onclick="runAll()">Create All Grants</button>
+  <button onclick="location.reload()">Reset</button>
+
+<script>
+const GRANTS = [
+  {
+    label: "expense-assistant: MCP tools (register_receipt, scan_receipt)",
+    grant_id: "g-100",
+    scope: "mcp:expense",
+    actor: "urn:agent:expense-assistant",
+    client_id: "expense-app",
+    details: [{
+      type: "mcp", server: "expense-mcp", transport: "stdio",
+      tools: { register_receipt: { essential: true }, scan_receipt: { essential: true } },
+
+    }]
+  },
+  {
+    label: "expense-assistant: DB read (receipts, cost_centers)",
+    grant_id: "g-101",
+    scope: "db:expense-read",
+    actor: "urn:agent:expense-assistant",
+    client_id: "expense-app",
+    details: [{
+      type: "database", databases: ["expense_db"], schemas: ["transactions"],
+      tables: ["receipts", "cost_centers"], actions: ["SELECT"],
+    }]
+  },
+  {
+    label: "expense-assistant: FS receipts uploads",
+    grant_id: "g-103",
+    scope: "fs:receipts",
+    actor: "urn:agent:expense-assistant",
+    client_id: "expense-app",
+    details: [{
+      type: "fs", roots: ["/data/receipts/uploads"],
+      permissions: { read: { essential: true }, write: { essential: true }, list: { essential: true }, create: { essential: true } },
+    }]
+  },
+  {
+    label: "expense-assistant: Agent invocation -> payment-service",
+    grant_id: "g-104",
+    scope: "agent:payment-service",
+    actor: "urn:agent:expense-assistant",
+    client_id: "expense-app",
+    details: [{
+      type: "agent_invocation", identifier: "urn:agent:payment-service",
+      actions: ["approve-expense"],
+    }]
+  },
+  {
+    label: "expense-assistant: API expense-api.internal.sap",
+    grant_id: "g-105",
+    scope: "api:expense",
+    actor: "urn:agent:expense-assistant",
+    client_id: "expense-app",
+    details: [{
+      type: "api", urls: ["https://expense-api.internal.sap/v2"],
+      protocols: ["HTTPS"], actions: ["GET", "POST"],
+    }]
+  },
+  {
+    label: "expense-assistant: Agent invocation -> audit-service",
+    grant_id: "g-106",
+    scope: "agent:audit-service",
+    actor: "urn:agent:expense-assistant",
+    client_id: "expense-app",
+    details: [{
+      type: "agent_invocation", identifier: "urn:agent:audit-service",
+      actions: ["verify-compliance"],
+    }]
+  },
+  {
+    label: "expense-assistant: DB write (receipts, approvals)",
+    grant_id: "g-107",
+    scope: "db:expense-write",
+    actor: "urn:agent:expense-assistant",
+    client_id: "expense-app",
+    details: [{
+      type: "database", databases: ["expense_db"], schemas: ["transactions"],
+      tables: ["receipts", "approvals"], actions: ["INSERT", "UPDATE"],
+    }]
+  },
+  {
+    label: "payment-service: API reimburse-approve.payments.sap",
+    grant_id: "g-200",
+    scope: "api:payment",
+    actor: "urn:agent:payment-service",
+    client_id: "payment-app",
+    details: [{
+      type: "api", urls: ["https://reimburse-approve.payments.sap/v1"],
+      protocols: ["HTTPS"], actions: ["approve", "disburse"],
+    }]
+  },
+  {
+    label: "audit-service: Agent invocation -> compliance-bot",
+    grant_id: "g-300",
+    scope: "agent:compliance-bot",
+    actor: "urn:agent:audit-service",
+    client_id: "audit-app",
+    details: [{
+      type: "agent_invocation", identifier: "urn:agent:compliance-bot",
+      actions: ["check-policy"],
+    }]
+  },
+  {
+    label: "audit-service: DB audit_log, violations",
+    grant_id: "g-301",
+    scope: "db:audit",
+    actor: "urn:agent:audit-service",
+    client_id: "audit-app",
+    details: [{
+      type: "database", databases: ["audit_db"], schemas: ["compliance"],
+      tables: ["audit_log", "violations"], actions: ["SELECT", "INSERT"],
+    }]
+  },
+  {
+    label: "compliance-bot: API compliance.governance.sap",
+    grant_id: "g-400",
+    scope: "api:compliance",
+    actor: "urn:agent:compliance-bot",
+    client_id: "compliance-app",
+    details: [{
+      type: "api", urls: ["https://compliance.governance.sap/v1"],
+      protocols: ["HTTPS"], actions: ["GET", "POST"],
+    }]
+  }
+];
+
+// Render step cards
+const stepsDiv = document.getElementById('steps');
+GRANTS.forEach((g, i) => {
+  const div = document.createElement('div');
+  div.className = 'step';
+  div.id = `step-${i}`;
+  div.innerHTML = `<strong>${i + 1}. ${g.label}</strong><div class="status" id="status-${i}">Pending</div>`;
+  stepsDiv.appendChild(div);
+});
+
+async function createGrant(index) {
+  const g = GRANTS[index];
+  const stepEl = document.getElementById(`step-${index}`);
+  const statusEl = document.getElementById(`status-${index}`);
+  stepEl.className = 'step active';
+  statusEl.textContent = 'Calling PAR...';
+
+  try {
+    const body = new URLSearchParams();
+    body.set('response_type', 'code');
+    body.set('client_id', g.client_id);
+    body.set('scope', g.scope);
+    body.set('redirect_uri', 'urn:scai:grant:callback');
+    body.set('grant_management_action', 'create');
+    body.set('grant_id', g.grant_id);
+    body.set('requested_actor', g.actor);
+    body.set('state', crypto.randomUUID());
+    body.set('authorization_details', JSON.stringify(g.details));
+
+    const res = await fetch('/oauth-server/par', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString()
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`PAR failed: ${res.status} ${text}`);
+    }
+
+    const data = await res.json();
+    const requestUri = data.request_uri || data.value?.request_uri;
+    if (!requestUri) throw new Error('No request_uri in response: ' + JSON.stringify(data));
+
+    statusEl.innerHTML = `PAR OK. <a href="/oauth-server/authorize_dialog?request_uri=${encodeURIComponent(requestUri)}" target="_blank">Open consent form</a>`;
+    stepEl.className = 'step done';
+
+    // Auto-open consent in new tab
+    window.open(`/oauth-server/authorize_dialog?request_uri=${encodeURIComponent(requestUri)}`, `_consent_${index}`);
+
+    return true;
+  } catch (err) {
+    statusEl.textContent = `Error: ${err.message}`;
+    stepEl.className = 'step error';
+    return false;
+  }
+}
+
+async function runAll() {
+  for (let i = 0; i < GRANTS.length; i++) {
+    await createGrant(i);
+    // Small delay between PAR calls
+    await new Promise(r => setTimeout(r, 500));
+  }
+}
+</script>
+</body>
+</html>

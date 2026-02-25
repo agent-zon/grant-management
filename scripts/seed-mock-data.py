@@ -110,7 +110,7 @@ DETAIL_COLS = [
     "databases", "schemas", "tables", "actions", "roots",
     "permissions_read", "permissions_write", "permissions_execute",
     "permissions_delete", "permissions_list", "permissions_create",
-    "urls", "protocols", "identifier", "request_scope",
+    "urls", "protocols", "identifier",
 ]
 
 _detail_counter = 0
@@ -135,15 +135,13 @@ def build_details(consents):
          "tools": json.dumps({
              "register_receipt": {"essential": True},
              "scan_receipt": {"essential": True},
-         }),
-         "request_scope": ja("register-receipt", "scan-receipt")},
+         })},
 
         # g-101: DB expense_db (read)
         {"ID": detail_id(), "consent_ID": cmap["g-101"], "consent_grant_id": "g-101",
          "type": "database",
          "databases": ja("expense_db"), "schemas": ja("transactions"),
-         "tables": ja("receipts", "cost_centers"), "actions": ja("SELECT"),
-         "request_scope": ja("register-receipt", "list-expenses")},
+         "tables": ja("receipts", "cost_centers"), "actions": ja("SELECT")},
 
         # g-103: FS receipts
         {"ID": detail_id(), "consent_ID": cmap["g-103"], "consent_grant_id": "g-103",
@@ -151,36 +149,31 @@ def build_details(consents):
          "roots": ja("/data/receipts/uploads"),
          "permissions_read": True, "permissions_write": True,
          "permissions_execute": False, "permissions_delete": False,
-         "permissions_list": True, "permissions_create": True,
-         "request_scope": ja("register-receipt")},
+         "permissions_list": True, "permissions_create": True},
 
         # g-104: agent_invocation → payment-service (2-layer)
         {"ID": detail_id(), "consent_ID": cmap["g-104"], "consent_grant_id": "g-104",
          "type": "agent_invocation",
          "actions": ja("approve-expense"),
-         "identifier": "urn:agent:payment-service",
-         "request_scope": ja("process-expense")},
+         "identifier": "urn:agent:payment-service"},
 
         # g-105: API expense internal
         {"ID": detail_id(), "consent_ID": cmap["g-105"], "consent_grant_id": "g-105",
          "type": "api",
          "urls": ja("https://expense-api.internal.sap/v2"),
-         "protocols": ja("HTTPS"), "actions": ja("GET", "POST"),
-         "request_scope": ja("list-expenses", "submit-expense")},
+         "protocols": ja("HTTPS"), "actions": ja("GET", "POST")},
 
         # g-106: agent_invocation → audit-service (3-layer)
         {"ID": detail_id(), "consent_ID": cmap["g-106"], "consent_grant_id": "g-106",
          "type": "agent_invocation",
          "actions": ja("verify-compliance"),
-         "identifier": "urn:agent:audit-service",
-         "request_scope": ja("approve-expense")},
+         "identifier": "urn:agent:audit-service"},
 
         # g-107: DB expense_db (write)
         {"ID": detail_id(), "consent_ID": cmap["g-107"], "consent_grant_id": "g-107",
          "type": "database",
          "databases": ja("expense_db"), "schemas": ja("transactions"),
-         "tables": ja("receipts", "approvals"), "actions": ja("INSERT", "UPDATE"),
-         "request_scope": ja("register-receipt", "approve-expense")},
+         "tables": ja("receipts", "approvals"), "actions": ja("INSERT", "UPDATE")},
 
         # ── payment-service ──
 
@@ -188,8 +181,7 @@ def build_details(consents):
         {"ID": detail_id(), "consent_ID": cmap["g-200"], "consent_grant_id": "g-200",
          "type": "api",
          "urls": ja("https://reimburse-approve.payments.sap/v1"),
-         "protocols": ja("HTTPS"), "actions": ja("approve", "disburse"),
-         "request_scope": ja("approve-expense", "disburse-payment")},
+         "protocols": ja("HTTPS"), "actions": ja("approve", "disburse")},
 
         # ── audit-service ──
 
@@ -197,15 +189,13 @@ def build_details(consents):
         {"ID": detail_id(), "consent_ID": cmap["g-300"], "consent_grant_id": "g-300",
          "type": "agent_invocation",
          "actions": ja("check-policy"),
-         "identifier": "urn:agent:compliance-bot",
-         "request_scope": ja("verify-compliance")},
+         "identifier": "urn:agent:compliance-bot"},
 
         # g-301: DB audit
         {"ID": detail_id(), "consent_ID": cmap["g-301"], "consent_grant_id": "g-301",
          "type": "database",
          "databases": ja("audit_db"), "schemas": ja("compliance"),
-         "tables": ja("audit_log", "violations"), "actions": ja("SELECT", "INSERT"),
-         "request_scope": ja("verify-compliance")},
+         "tables": ja("audit_log", "violations"), "actions": ja("SELECT", "INSERT")},
 
         # ── compliance-bot ──
 
@@ -213,8 +203,7 @@ def build_details(consents):
         {"ID": detail_id(), "consent_ID": cmap["g-400"], "consent_grant_id": "g-400",
          "type": "api",
          "urls": ja("https://compliance.governance.sap/v1"),
-         "protocols": ja("HTTPS"), "actions": ja("GET", "POST"),
-         "request_scope": ja("check-policy")},
+         "protocols": ja("HTTPS"), "actions": ja("GET", "POST")},
     ]
 
 

@@ -44,11 +44,6 @@ function parseAuthorizationDetails(authorization_details: string) {
     if (!detail.type) {
       throw new Error(`Authorization detail missing required field 'type'`);
     }
-    if (!detail.request_scope || !Array.isArray(detail.request_scope) || detail.request_scope.length === 0) {
-      throw new Error(
-        `Authorization detail of type '${detail.type}' missing required field 'request_scope'`
-      );
-    }
   }
 
   return details.map(

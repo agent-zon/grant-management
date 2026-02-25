@@ -4,7 +4,6 @@ import type { AuthorizationDetailProps } from "./types.tsx";
 interface AgentInvocationProps extends AuthorizationDetailProps {
   identifier?: string;
   actions?: string[];
-  request_scope?: string[];
 }
 
 export default function AgentInvocationAuthorizationDetail({
@@ -14,7 +13,6 @@ export default function AgentInvocationAuthorizationDetail({
   category,
   identifier,
   actions,
-  request_scope,
 }: AgentInvocationProps) {
   const agentName = identifier?.replace(/^urn:agent:/, "") ?? "Unknown Agent";
 
