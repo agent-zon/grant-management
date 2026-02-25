@@ -51,8 +51,8 @@ export default async function (this: GrantToolsService, req: cds.Request<MCPRequ
         req.data.tools[tool.name] = req.data.server.registerTool(tool.name, {
           title: tool.description,
           description: tool.description,
-          inputSchema: toZod(tool.inputSchema),
-          outputSchema: toZod(tool.outputSchema),
+          inputSchema: toZod(tool.inputSchema as Parameters<typeof toZod>[0]),
+          outputSchema: toZod(tool.outputSchema as Parameters<typeof toZod>[0]),
           annotations: tool.annotations,
           _meta: tool._meta,
         }, async (args) => {
