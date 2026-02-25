@@ -13,9 +13,9 @@ dependencies:
   - name: web-application
     alias: approuter
     version: ">0.0.0"
-  # - name: web-application
-  #   alias: portal
-  #   version: ">0.0.0"
+  - name: web-application
+    alias: portal
+    version: ">0.0.0"
   - name: web-application
     alias: sidecar
     version: ">0.0.0"

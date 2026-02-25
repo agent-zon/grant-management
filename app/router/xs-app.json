@@ -54,7 +54,13 @@
       "csrfProtection": false,
       "authenticationType": "none"
     },
-
+    {
+      "source": "^/portal(.*)$",
+      "target": "/portal$1",
+      "destination": "portal",
+      "csrfProtection": false,
+      "authenticationType": "ias"
+    },
     {
       "source": "^/(.*)$",
       "target": "$1",

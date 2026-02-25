@@ -7,7 +7,7 @@ global:
     name: docker-registry
   image:
     registry: scai-dev.common.repositories.cloud.sap
-    tag: v35
+    tag: v40
   imagePullPolicy: Always
 srv:
   replicaCount: 1
@@ -126,18 +126,7 @@ approuter:
     OTEL_PROPAGATORS: tracecontext,baggage
 
 portal:
-  runAsUser: 1993
-  bindings:
-    auth:
-      serviceInstanceName: identity
-      parameters:
-        credential-type: X509_GENERATED
-        app-identifier: grant-portal
-        validity: 365
-        validity-type: DAYS
-
-    destination:
-      serviceInstanceName: destination
+  runAsUser: 1000
   image:
     repository: grant-management/portal
   resources:
@@ -150,11 +139,16 @@ portal:
       memory: 500M
   health:
     liveness:
-      path: /
+      path: /health
     readiness:
-      path: /
+      path: /health
   networkSecurity:
     allowNamespaceInternal: true
+  expose:
+    enabled: true
+  env:
+    - name: CDS_URL
+      value: "http://agents-srv:8080"
 
 identity:
   serviceOfferingName: identity
@@ -238,13 +232,10 @@ backendDestinations:
     service: sidecar
     forwardAuthToken: true
 
-  # user-portal:
-  #   service: portal
-  #   forwardAuthToken: true
-  #    sap-client: true
-  #    forwardAuthCertificates: true
-  #    HTML5.IASDependencyName: grant-api
-  #    HTML5.ForwardAuthCertificates: true
+  portal:
+    service: portal
+    forwardAuthToken: true
+    preserveHostHeader: true
 
 destination:
   serviceOfferingName: destination
