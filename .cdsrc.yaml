@@ -18,55 +18,6 @@ requires:
       destination: grant-mcp
   
   destinations: true
-  "[production]":
-    multitenancy: true
-    db:
-      kind: hana
-  "[local-multitenancy]":
-    multitenancy: true
-    auth:
-      kind: mocked
-      users:
-        alice:
-          tenant: t1
-          roles:
-            - grant_management_create
-            - grant_management_update
-            - grant_management_replace
-            - grant_management_revoke
-            - grant_management_query
-        bob:
-          tenant: t2
-          roles:
-            - grant_management_create
-            - grant_management_update
-            - grant_management_replace
-            - grant_management_revoke
-            - grant_management_query
-  "[development]":
-    db:
-      kind: sqlite
-      credentials:
-        url: db.sqlite
-    auth:
-      kind: mocked
-      users:
-        alice:
-          tenant: t1
-          roles:
-            - grant_management_create
-            - grant_management_update
-            - grant_management_replace
-            - grant_management_revoke
-            - grant_management_query
-        bob:
-          tenant: t2
-          roles:
-            - grant_management_create
-            - grant_management_update
-            - grant_management_replace
-            - grant_management_revoke
-            - grant_management_query
 features:
   toggles:
     auth: true

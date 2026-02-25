@@ -57,13 +57,13 @@ export async function loader({ request }: Route.LoaderArgs) {
     : `${cdsBase}/grants-management/agentGraph()`;
 
   try {
-    const res = await fetch(apiUrl, {
-      headers: {
-        Accept: "application/json",
-        // CDS mocked auth uses basic auth — forward from cookie or default to alice
-        Authorization: `Basic ${btoa("alice:")}`,
-      },
-    });
+    // Forward the Authorization header from the incoming request (set by approuter/IAS).
+    const incomingAuth = request.headers.get("Authorization");
+    const headers: Record<string, string> = { Accept: "application/json" };
+    if (incomingAuth) {
+      headers.Authorization = incomingAuth;
+    }
+    const res = await fetch(apiUrl, { headers });
 
     if (!res.ok) {
       console.error("agentGraph fetch failed:", res.status, res.statusText);

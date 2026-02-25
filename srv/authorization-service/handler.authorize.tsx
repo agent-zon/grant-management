@@ -41,9 +41,12 @@ export default async function authorize(
       );
   }
   if (!request.subject_token || !request.subject) {
+    const subject = cds.context?.user?.id;
     await this.update(AuthorizationRequests, id)
       .set`subject_token = ${cds.context?.user?.authInfo?.token.jwt}`
-      .set`subject = ${cds.context?.user?.id}`;
+      .set`subject = ${subject}`;
+    // Keep local variable in sync with DB update
+    request.subject = subject;
   }
 
   // Resolve grant: subject is now known from authentication.

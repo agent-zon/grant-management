@@ -8,8 +8,7 @@ import {
   AuthorizationRequests,
 } from "#cds-models/sap/scai/grants/AuthorizationService";
 import { Agent } from "https";
-import { InvalidTokenError, jwtDecode } from "jwt-decode";
-import { ulid } from "ulid";
+import { jwtDecode } from "jwt-decode";
 
 export default async function token(
   this: AuthorizationService,
@@ -72,21 +71,8 @@ export default async function token(
       req.user?.authInfo?.token?.payload["jti"]
     );
 
-    //no ias service -return mock data
     if (!cds.requires.auth.credentials) {
-      const request =
-        code && (cds.read(AuthorizationRequests, code) as AuthorizationRequest);
-      if (!request) {
-        console.log("missing request for code", grant_type, code);
-        throw Error("invalid_grant");
-      }
-      return {
-        expires_in: 3600,
-        refresh_token: ulid(),
-        access_token: req.user?.authInfo?.token?.jwt || `mk_${ulid()}`,
-        token_type: "urn:ietf:params:oauth:token-type:jwt",
-        grant_id: request.grant_id!,
-      };
+      throw new Error("IAS credentials not configured — bind an Identity service instance");
     }
 
     const authService = new IdentityService(cds.requires.auth.credentials);
@@ -115,10 +101,7 @@ export default async function token(
       };
     }
     //"urn:ietf:params:oauth:grant-type:token-exchange"
-    if (
-      grant_type === "urn:ietf:params:oauth:grant-type:token-exchange" &&
-      cds.requires.auth.credentials
-    ) {
+    if (grant_type === "urn:ietf:params:oauth:grant-type:token-exchange") {
       const tokenUr = await authService.getTokenUrl(
         "urn:ietf:params:oauth:grant-type:token-exchange"
       );
@@ -161,23 +144,19 @@ export default async function token(
       );
 
       //grant type: jwt bearer
-      if (req.user?.authInfo?.token.jwt && cds.requires.auth.credentials) {
-        const authService = new IdentityService(cds.requires.auth.credentials);
-        // const tokenUrl = await authService.getTokenUrl("urn:ietf:params:oauth:grant-type:token-exchange")
-        const { access_token, ...tokens } =
-          await authService.fetchJwtBearerToken(
-            req.user.authInfo?.getAppToken()
-          );
+      const { access_token, ...tokens } =
+        await authService.fetchJwtBearerToken(
+          req.user.authInfo?.getAppToken()
+        );
 
-        const { sid: grant_id } =
-          (access_token && jwtDecode<{ sid: string }>(access_token)) || {};
+      const { sid: grant_id } =
+        (access_token && jwtDecode<{ sid: string }>(access_token)) || {};
 
-        return {
-          ...tokens,
-          access_token,
-          grant_id,
-        };
-      }
+      return {
+        ...tokens,
+        access_token,
+        grant_id,
+      };
     }
     //todo: use ias code
     if (grant_type == "authorization_code") {
@@ -214,7 +193,7 @@ export default async function token(
         };
       }
       return {
-        access_token: req.user?.authInfo?.token?.jwt || `mk_${ulid()}`,
+        access_token: req.user?.authInfo?.token?.jwt,
         expires_in:
           (req.user?.authInfo?.token.expirationDate?.getUTCDate() ||
             new Date(Date.now() + 36000).getUTCDate()) -
@@ -225,7 +204,7 @@ export default async function token(
 
     console.log("no grant type return current session");
     return {
-      access_token: req.user?.authInfo?.token?.jwt || `mk_${ulid()}`,
+      access_token: req.user?.authInfo?.token?.jwt,
       expires_in:
         (req.user?.authInfo?.token.expirationDate?.getUTCDate() ||
           new Date(Date.now() + 36000).getUTCDate()) -
