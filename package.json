@@ -74,7 +74,7 @@
   "build:containers": "ctz containerize.yaml --log",
   "build:push": "ctz containerize.yaml --log --push",
   "bind:srv": "npx cds bind --to-app-services agents-srv --on k8s",
-  "bind:router": "cds bind --to-app-services a2a-approuter --on k8s",
+  "bind:router": "cds bind --to-app-services agents-approuter --on k8s",
   "bind:auth": "cds bind ias -2 agents-identity --on k8s",
   "bind:destination": "cds bind -2 agents-destination-auth --on k8s",
   "bind:resolve": "npx cds env requires --resolve-bindings --profile hybrid",
