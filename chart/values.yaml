@@ -2,12 +2,12 @@
 
 global:
   domain: c-127c9ef.stage.kyma.ondemand.com
-  host: agents-approuter-grants.c-127c9ef.stage.kyma.ondemand.com
+  host: "{{ .Release.Name }}-approuter-{{ .Release.Namespace }}.{{ .Values.global.domain }}"
   imagePullSecret:
     name: docker-registry
   image:
     registry: scai-dev.common.repositories.cloud.sap
-    tag: v41
+    tag: v44
   imagePullPolicy: Always
 srv:
   replicaCount: 1
@@ -148,7 +148,7 @@ portal:
     enabled: true
   env:
     - name: CDS_URL
-      value: "http://agents-srv:8080"
+      value: "http://{{ .Release.Name }}-srv:8080"
 
 identity:
   serviceOfferingName: identity
@@ -161,7 +161,7 @@ identity:
     xsuaa-cross-consumption: true
     home-url: "https://{{ tpl .Values.global.host . }}/"
     consumed-services:
-      - service-instance-name: agents-destination
+      - service-instance-name: "{{ .Release.Name }}-destination"
     provided-apis:
       - name: grant-management
         description: Grant Management API
