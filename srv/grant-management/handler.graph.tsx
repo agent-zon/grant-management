@@ -169,7 +169,12 @@ function transformDetail(dbDetail: Record<string, unknown>): FrontendDetail {
       break;
     }
     case "agent_invocation": {
-      detail.agent = dbDetail.identifier as string | undefined;
+      // identifier is the canonical field; fall back to locations[0] for
+      // older records where the consent handler didn't persist identifier
+      detail.agent =
+        (dbDetail.identifier as string | undefined) ??
+        (dbDetail.locations as string[] | undefined)?.[0] ??
+        undefined;
       // delegated_details will be resolved later
       detail.delegated_details = [];
       break;
@@ -393,7 +398,9 @@ export async function GRAPH(req: cds.Request) {
               r.requested_actor;
             }),
             c.authorization_details((d: any) => {
-              d("*");
+              d("*"), d.locations, d.actions, d.tools,
+              d.roots, d.databases, d.schemas, d.tables,
+              d.urls, d.protocols, d.privileges, d.resources;
             });
         });
     })
@@ -457,7 +464,9 @@ export async function GRAPH(req: cds.Request) {
   ): void {
     if (detail.type !== "agent_invocation" || depth > 10) return;
 
-    const targetAgent = dbDetail.identifier as string | undefined;
+    const targetAgent =
+      (dbDetail.identifier as string | undefined) ??
+      (dbDetail.locations as string[] | undefined)?.[0];
     if (!targetAgent) return;
 
     // Prevent cycles
