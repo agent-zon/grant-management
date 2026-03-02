@@ -396,12 +396,80 @@ async function createGrant(def: GrantDef): Promise<string> {
   return grantId;
 }
 
+// ── Finding rules ─────────────────────────────────────────────────────────────
+
+interface FindingRuleDef {
+  code: string;
+  label: string;
+  description: string;
+  category: string;
+  severity: string;
+  active: boolean;
+  conditions: Array<{
+    side: string;
+    leafType: string;
+    labelPattern?: string;
+    sublabelPattern?: string;
+    requireDelegated?: boolean;
+    sourceDetailType?: string;
+  }>;
+}
+
+const FINDING_RULES: FindingRuleDef[] = [
+  {
+    code: "sod-expense-approve",
+    label: "Segregation of Duties",
+    description:
+      "This agent can register expense receipts (via direct MCP access) and approve reimbursements (via delegated access to payment-service). These capabilities were granted separately — the agent could register fraudulent expenses and immediately approve them for payment.",
+    category: "sod",
+    severity: "high",
+    active: true,
+    conditions: [
+      { side: "A", leafType: "mcp_tool", labelPattern: "register_receipt" },
+      { side: "B", leafType: "api_endpoint", labelPattern: "reimburse-approve.payments.sap", requireDelegated: true },
+    ],
+  },
+  {
+    code: "excessive-db-write",
+    label: "Excessive Database Privilege",
+    description:
+      "Agent has DELETE permission on database tables. Consider restricting to SELECT/INSERT/UPDATE only unless DELETE is explicitly required by the workflow.",
+    category: "excessive_privilege",
+    severity: "medium",
+    active: true,
+    conditions: [
+      { side: "A", leafType: "db_table", sublabelPattern: "DELETE" },
+    ],
+  },
+];
+
+async function seedFindingRules(): Promise<number> {
+  let created = 0;
+  for (const rule of FINDING_RULES) {
+    const res = await post("/grants-management/FindingRules", rule as any);
+    if (res.status === 201 || res.status === 200) {
+      created++;
+      console.log(`  [ok] Finding rule: ${rule.code}`);
+    } else {
+      console.error(`  [FAIL] Finding rule ${rule.code}: ${res.status} ${JSON.stringify(res.data)}`);
+    }
+  }
+  return created;
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
   console.log(`Seeding agent grants against ${BASE_URL}`);
   console.log(`Auth: Bearer token\n`);
 
+  // Seed finding rules
+  console.log("Seeding finding rules...");
+  const rulesCreated = await seedFindingRules();
+  console.log(`Created ${rulesCreated}/${FINDING_RULES.length} finding rules.\n`);
+
+  // Seed grants
+  console.log("Seeding grants...");
   const grantIds: string[] = [];
   for (const def of GRANTS) {
     try {
@@ -427,7 +495,10 @@ async function main() {
       // Fetch graph for first actor
       const detail = await get(`/grants-management/agentGraph(actor='${encodeURIComponent(actors[0])}')`);
       const grants = detail.data?.grants || [];
+      const findings = detail.data?.findings || [];
       console.log(`  Grants for ${actors[0]}: ${grants.length}`);
+      console.log(`  Findings for ${actors[0]}: ${findings.length}`);
+      findings.forEach((f: any) => console.log(`    - [${f.severity}] ${f.label}`));
     }
   } else {
     console.error(`  agentGraph returned ${graph.status}: ${JSON.stringify(graph.data)}`);
