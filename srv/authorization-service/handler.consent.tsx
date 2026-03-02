@@ -60,6 +60,11 @@ export async function POST(
             }
             merged.tools = normalizedTools;
           }
+          // Merge form-only fields not present in the original PAR request
+          // (e.g., identifier for agent_invocation, which the PAR stores in locations)
+          if (formDetail.identifier) {
+            merged.identifier = formDetail.identifier;
+          }
           return merged;
         }
       );
