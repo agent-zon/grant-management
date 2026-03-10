@@ -152,7 +152,7 @@ From the **agent-grants repo root**, after committing any changes under `app/mcp
 ./app/mcp-oauth/push-subtree.sh
 ```
 
-Adds remote `aiam-functions` → `https://github.tools.sap/AIAM/functions.git` if missing, and pushes the whole **app/mcp-oauth** tree so the remote has mcp-oauth contents at root (including **microsoft-entra-c4c-mcp/**). Optional: `./app/mcp-oauth/push-subtree.sh <remote-name> <branch>`.
+Adds remote `aiam-functions` → `https://github.tools.sap/AIAM/functions.git` if missing, and pushes the subtree. Optional: `./app/mcp-oauth/push-subtree.sh <remote-name> <branch>`.
 
 ## Layout
 

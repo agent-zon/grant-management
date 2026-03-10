@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Push app/mcp-oauth to https://github.tools.sap/AIAM/functions.git via git subtree.
 # Run from the agent-grants repo root. Commit changes under app/mcp-oauth first.
+#
+# Usage: ./push-subtree.sh [remote] [branch]
 set -e
 
 REMOTE_NAME="${1:-aiam-functions}"
