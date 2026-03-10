@@ -1,0 +1,76 @@
+# Kyma serverless Function: Microsoft Entra C4C MCP.
+# Source: this repo (https://github.tools.sap/AIAM/functions), folder microsoft-entra-c4c-mcp.
+# Deploy: kubectl apply -f deploy/function.yaml -n <namespace>
+# Git auth: Secret github-tools-sap-auth must exist in the same namespace (see README).
+apiVersion: serverless.kyma-project.io/v1alpha2
+kind: Function
+metadata:
+  name: microsoft-entra-c4c-mcp
+  namespace: default
+  labels:
+    app: microsoft-entra-c4c-mcp
+spec:
+  runtime: python312
+  source:
+    gitRepository:
+      url: https://github.tools.sap/AIAM/functions
+      baseDir: microsoft-entra-c4c-mcp
+      reference: main
+      auth:
+        type: basic
+        secretName: github-tools-sap-auth
+  resourceConfiguration:
+    function:
+      resources:
+        limits:
+          cpu: "1"
+          memory: 512Mi
+        requests:
+          cpu: 100m
+          memory: 256Mi
+  env:
+    - name: OAUTH_CLIENT_ID
+      valueFrom:
+        secretKeyRef:
+          name: microsoft-entra-c4c-mcp-env
+          key: OAUTH_CLIENT_ID
+    - name: OAUTH_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: microsoft-entra-c4c-mcp-env
+          key: OAUTH_CLIENT_SECRET
+    - name: OAUTH_AUTHORIZE_ENDPOINT
+      valueFrom:
+        secretKeyRef:
+          name: microsoft-entra-c4c-mcp-env
+          key: OAUTH_AUTHORIZE_ENDPOINT
+    - name: OAUTH_TOKEN_ENDPOINT
+      valueFrom:
+        secretKeyRef:
+          name: microsoft-entra-c4c-mcp-env
+          key: OAUTH_TOKEN_ENDPOINT
+    - name: OAUTH_JWKS_ENDPOINT
+      valueFrom:
+        secretKeyRef:
+          name: microsoft-entra-c4c-mcp-env
+          key: OAUTH_JWKS_ENDPOINT
+    - name: OAUTH_ISSUER
+      valueFrom:
+        secretKeyRef:
+          name: microsoft-entra-c4c-mcp-env
+          key: OAUTH_ISSUER
+    - name: OAUTH_SCOPES
+      valueFrom:
+        secretKeyRef:
+          name: microsoft-entra-c4c-mcp-env
+          key: OAUTH_SCOPES
+    - name: MCP_URL
+      valueFrom:
+        secretKeyRef:
+          name: microsoft-entra-c4c-mcp-env
+          key: MCP_URL
+    - name: BASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: microsoft-entra-c4c-mcp-env
+          key: BASE_URL

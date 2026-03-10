@@ -1,0 +1,4 @@
+# Kyma serverless Python runtime (pip format)
+fastmcp>=3.1.0
+starlette
+uvicorn
