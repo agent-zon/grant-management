@@ -42,6 +42,9 @@ auth = OAuthProxy(
 
 mcp = FastMCP("Microsoft OAuth Proxy", auth=auth)
 
+# ASGI app for Kyma serverless (handler calls this, not mcp)
+app = mcp.http_app()
+
 # Health endpoints for Kyma / Kubernetes probes
 @mcp.custom_route(path="/health", methods=["GET"])
 @mcp.custom_route(path="/healthz", methods=["GET"])
