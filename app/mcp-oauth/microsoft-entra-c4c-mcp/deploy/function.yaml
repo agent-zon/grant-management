@@ -1,14 +1,14 @@
 # Kyma serverless Function: Microsoft Entra C4C MCP.
 # Source: this repo (https://github.tools.sap/AIAM/functions), folder microsoft-entra-c4c-mcp.
 # Deploy: kubectl apply -f deploy/function.yaml -n <namespace>
-# Git auth: Secret github-tools-sap-auth must exist in the same namespace (see README).
+# Git auth: Secret git-credentials (username, password) in same namespace; or github-tools-sap-auth if you create it.
 apiVersion: serverless.kyma-project.io/v1alpha2
 kind: Function
 metadata:
-  name: microsoft-entra-c4c-mcp
+  name: mcp-oauth-entra
   namespace: default
   labels:
-    app: microsoft-entra-c4c-mcp
+    app: mcp-oauth-entra
 spec:
   runtime: python312
   source:
@@ -18,7 +18,7 @@ spec:
       reference: main
       auth:
         type: basic
-        secretName: github-tools-sap-auth
+        secretName: git-credentials
   resourceConfiguration:
     function:
       resources:

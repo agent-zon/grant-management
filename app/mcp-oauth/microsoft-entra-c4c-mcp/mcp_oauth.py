@@ -18,19 +18,26 @@ import os
 PORT = int(os.environ.get("PORT", "8000"))
 BASE_URL = os.environ.get("BASE_URL", f"http://localhost:{PORT}")
 
+# Scopes list for JWTVerifier and OAuthProxy (required_scopes)
+_oauth_scopes = os.environ.get("OAUTH_SCOPES", "").strip().split()
 token_verifier = JWTVerifier(
     jwks_uri=os.environ["OAUTH_JWKS_ENDPOINT"],
+    issuer=os.environ.get("OAUTH_ISSUER") or None,
+    required_scopes=_oauth_scopes if _oauth_scopes else None,
 )
 
+# Use the param name the installed fastmcp expects (token_verifier or verifier)
+import inspect
+_sig = inspect.signature(OAuthProxy.__init__)
+_verifier_param = "verifier" if "verifier" in _sig.parameters else "token_verifier"
 auth = OAuthProxy(
     upstream_authorization_endpoint=os.environ["OAUTH_AUTHORIZE_ENDPOINT"],
     upstream_token_endpoint=os.environ["OAUTH_TOKEN_ENDPOINT"],
     upstream_client_id=os.environ["OAUTH_CLIENT_ID"],
     upstream_client_secret=os.environ["OAUTH_CLIENT_SECRET"],
-    # token_verifier=token_verifier,
-    extra_authorize_params={"scope": os.environ["OAUTH_SCOPES"]},
     base_url=BASE_URL,
-    # redirect_path stays default: "/auth/callback"
+    extra_authorize_params={"scope": os.environ["OAUTH_SCOPES"]} if os.environ.get("OAUTH_SCOPES") else None,
+    **{_verifier_param: token_verifier},
 )
 
 mcp = FastMCP("Microsoft OAuth Proxy", auth=auth)
