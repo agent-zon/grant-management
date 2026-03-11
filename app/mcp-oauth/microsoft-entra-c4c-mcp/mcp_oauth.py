@@ -19,7 +19,11 @@ PORT = int(os.environ.get("PORT", "8000"))
 BASE_URL = os.environ.get("BASE_URL", f"http://localhost:{PORT}")
 
 # Scopes list for JWTVerifier and OAuthProxy (required_scopes)
-_oauth_scopes = os.environ.get("OAUTH_SCOPES", "").strip().split()
+_scopes_raw = os.environ.get("OAUTH_SCOPES", "").strip()
+if _scopes_raw.startswith(("'", '"')) and _scopes_raw.endswith(("'", '"')) and len(_scopes_raw) >= 2:
+    _scopes_raw = _scopes_raw[1:-1]
+_oauth_scopes = [s.strip('"\';') for s in _scopes_raw.split()] if _scopes_raw else []
+
 token_verifier = JWTVerifier(
     jwks_uri=os.environ["OAUTH_JWKS_ENDPOINT"],
     issuer=os.environ.get("OAUTH_ISSUER") or None,
@@ -36,7 +40,7 @@ auth = OAuthProxy(
     upstream_client_id=os.environ["OAUTH_CLIENT_ID"],
     upstream_client_secret=os.environ["OAUTH_CLIENT_SECRET"],
     base_url=BASE_URL,
-    extra_authorize_params={"scope": os.environ["OAUTH_SCOPES"]} if os.environ.get("OAUTH_SCOPES") else None,
+    extra_authorize_params={"scope": " ".join(_oauth_scopes)} if _oauth_scopes else None,
     **{_verifier_param: token_verifier},
 )
 
