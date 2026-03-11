@@ -44,9 +44,9 @@ def main(event, context):
         elif message["type"] == "http.response.body":
             response_body.append(message.get("body", b""))
 
-    from mcp_oauth import mcp
+    from mcp_oauth import app
 
-    asyncio.run(mcp(scope, receive, send))
+    asyncio.run(app(scope, receive, send))
 
     out_body = b"".join(response_body)
     out_headers = {k.decode(): v.decode() for k, v in response_headers}
