@@ -1,6 +1,6 @@
 const yaml = require('js-yaml');
 const path = require('path');
-const McpHubHandler = require('../mcp-hub/mcp-hub-handler');
+const McpHubHandler = require('./mcp-hub-handler');
 const GitHandler = require('../git-handler/git-handler');
 
 /**
@@ -40,7 +40,7 @@ class McpHubCardsHandler {
   async generateAndSaveMcpCards(agentId) {
     try {
       console.log(`Generating MCP cards from MCP Hub for agent: ${agentId}`);
-      
+
       // Get MCP Hub data
       const mcpHubData = await this.mcpHubHandler.getMcpRegistry();
       if (!mcpHubData || mcpHubData.length === 0) {
@@ -57,7 +57,7 @@ class McpHubCardsHandler {
           const mcpCard = this.convertMcpHubToCard(mcp);
           const fileName = `${mcpCard.serverInfo.name}-hub.yaml`;
           const filePath = `${mcpHubFolder}/${fileName}`;
-          
+
           // Convert to YAML
           const yamlContent = yaml.dump(mcpCard, {
             indent: 2,
@@ -71,8 +71,8 @@ class McpHubCardsHandler {
 
           // Save to Git repository
           await this.gitHandler.createOrUpdateFile(
-            'AIAM', 
-            'policies', 
+            'AIAM',
+            'policies',
             `${agentId}/mcps/${filePath}`,
             finalYamlContent,
             `Add/update MCP card for ${mcpCard.serverInfo.name} from MCP Hub`
@@ -93,7 +93,7 @@ class McpHubCardsHandler {
       }
 
       console.log(`Generated ${createdCards.length} MCP cards from MCP Hub`);
-      return { 
+      return {
         message: `Successfully generated ${createdCards.length} MCP cards from MCP Hub`,
         cards: createdCards
       };
@@ -111,7 +111,7 @@ class McpHubCardsHandler {
    */
   convertMcpHubToCard(mcpData) {
     const card = JSON.parse(JSON.stringify(this.baseCardTemplate));
-    
+
     // Basic server info
     card.serverInfo = {
       name: this.sanitizeName(mcpData.name || mcpData.id || 'unknown-mcp'),
@@ -161,10 +161,10 @@ class McpHubCardsHandler {
    */
   convertToolsFromHub(mcpData) {
     const tools = [];
-    
+
     // Try to get tools from different possible locations
     let toolsArray = mcpData.tools;
-    
+
     // Check for toolsList as JSON string (MCP Hub format)
     if (!toolsArray && mcpData.toolsList) {
       try {
@@ -247,7 +247,7 @@ class McpHubCardsHandler {
   sanitizeInputSchema(schema) {
     // Deep clone to avoid modifying original
     const sanitized = JSON.parse(JSON.stringify(schema));
-    
+
     // Ensure type is set
     if (!sanitized.type) {
       sanitized.type = 'object';
@@ -270,9 +270,9 @@ class McpHubCardsHandler {
     const name = (mcpData.name || '').toLowerCase();
     const title = (mcpData.title || '').toLowerCase();
     const description = (mcpData.description || '').toLowerCase();
-    
+
     const text = `${name} ${title} ${description}`;
-    
+
     // Category inference rules
     if (text.includes('commerce') || text.includes('ecommerce') || text.includes('shop')) {
       return 'commerce';
@@ -301,7 +301,7 @@ class McpHubCardsHandler {
     if (text.includes('confluence') || text.includes('jira') || text.includes('collaboration')) {
       return 'collaboration';
     }
-    
+
     return 'general';
   }
 
@@ -314,7 +314,7 @@ class McpHubCardsHandler {
     const name = (tool.name || '').toLowerCase();
     const description = (tool.description || '').toLowerCase();
     const text = `${name} ${description}`;
-    
+
     // High risk operations
     if (text.includes('delete') || text.includes('remove') || text.includes('destroy')) {
       return 'high';
@@ -328,7 +328,7 @@ class McpHubCardsHandler {
     if (text.includes('read') || text.includes('get') || text.includes('list') || text.includes('search')) {
       return 'low';
     }
-    
+
     return 'medium';
   }
 
@@ -341,7 +341,7 @@ class McpHubCardsHandler {
     const name = (tool.name || '').toLowerCase();
     const description = (tool.description || '').toLowerCase();
     const text = `${name} ${description}`;
-    
+
     // Admin level operations
     if (text.includes('admin') || text.includes('system') || text.includes('config')) {
       return 'admin';
@@ -349,17 +349,17 @@ class McpHubCardsHandler {
     if (text.includes('delete') || text.includes('destroy') || text.includes('remove')) {
       return 'admin';
     }
-    
+
     // Privileged operations
     if (text.includes('create') || text.includes('update') || text.includes('modify')) {
       return 'privileged';
     }
-    
+
     // Standard operations
     if (text.includes('read') || text.includes('get') || text.includes('list') || text.includes('search')) {
       return 'authenticated-user';
     }
-    
+
     return 'authenticated-user';
   }
 
@@ -372,32 +372,32 @@ class McpHubCardsHandler {
   async commitAndPushMcpCards(commitMessage = 'Update MCP Hub cards', agentId = null) {
     try {
       console.log(`Starting Git commit and push for MCP Hub cards...`);
-      
+
       // Get list of files in the mcp-hub directory that need to be committed
       const mcpHubPath = agentId ? `${agentId}/mcps/mcp-hub` : 'mcp-hub';
-      
+
       // Since we're using GitHandler's createOrUpdateFile method which should handle commits,
       // we'll perform a general commit of any pending changes in the mcp-hub directory
-      
+
       const result = await this.gitHandler.commitAndPush(
-        'AIAM', 
-        'policies', 
+        'AIAM',
+        'policies',
         commitMessage,
         [`${mcpHubPath}/**/*.yaml`, `${mcpHubPath}/**/*.yml`]  // Pattern to match MCP Hub YAML files
       );
 
       const filesCommitted = result.files || [];
-      
+
       console.log(`Git commit completed: ${result.success ? 'SUCCESS' : 'FAILED'}`);
       console.log(`Files committed: ${filesCommitted.length}`);
-      
+
       if (filesCommitted.length > 0) {
         console.log('Committed files:', filesCommitted);
       }
 
       return {
-        message: result.success ? 
-          `Successfully committed ${filesCommitted.length} MCP Hub card files` : 
+        message: result.success ?
+          `Successfully committed ${filesCommitted.length} MCP Hub card files` :
           'Failed to commit MCP Hub cards',
         committed: result.success || false,
         filesCommitted: filesCommitted

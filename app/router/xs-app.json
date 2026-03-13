@@ -16,6 +16,13 @@
       "authenticationType": "ias"
     },
     {
+      "source": "^/policies$",
+      "target": "/index.html",
+      "localDir": "./policies",
+      "csrfProtection": false,
+      "authenticationType": "ias"
+    },
+    {
       "source": "^/auth/debug(.*)$",
       "target": "/$1",
       "localDir": "./auth",
@@ -41,8 +48,7 @@
       "source": "^/destination/([^/]+)/(.*)$",
       "target": "$2",
       "destination": "$1",
-      "authenticationType": "xsuaa",
-      "identityProvider": "entra-oidc",
+      "authenticationType": "ias",
       "dynamicIdentityProvider": true
     },
     {
