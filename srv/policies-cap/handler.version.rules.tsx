@@ -2,20 +2,14 @@ import cds from "@sap/cds";
 import { sendHtml } from "#cds-ssr";
 import { renderToString } from "react-dom/server";
 import getOctokit from "./git-handler/git-handler";
+import { MAIN, branchFromRequest } from "./git-version";
 
 const GIT = { owner: "AIAM", repo: "policies" };
-const BASE = "/policies/AgentPolicies";
-
-export const rulesUrl = (agentId: string) => `${BASE}/${agentId}/rules`;
-const resourcesUrl = (agentId: string) => `${BASE}/${agentId}/resources`;
-export const addRuleUrl = (agentId: string) => `${BASE}/${agentId}/addRule`;
-export const removeRuleUrl = (agentId: string) => `${BASE}/${agentId}/removeRule`;
 
 // ─── Shared types ─────────────────────────────────────────────────────────────
 
 export type PolicyRule = {
   actionType: "allow" | "deny" | "ask";
-  /** Encoded: "mcp|serverId|Display Name" or "tool|serverId|toolId|Display Name" */
   target: string;
   targetType: "mcp" | "tool";
   targetName: string;
@@ -35,7 +29,6 @@ export function safeJson<T>(s: string | undefined | null, fallback: T): T {
   try { return s ? JSON.parse(s) : fallback; } catch { return fallback; }
 }
 
-/** Encode target option value: type + parts separated by | */
 export function encodeTarget(type: "mcp" | "tool", id: string, name: string) {
   return `${type}|${id}|${name}`;
 }
@@ -45,9 +38,9 @@ function decodeTarget(value: string): { type: "mcp" | "tool"; id: string; name: 
   return { type: type as "mcp" | "tool", id, name: nameParts.join("|") };
 }
 
-export async function fetchGitFile(octokit: any, path: string): Promise<string | null> {
+export async function fetchGitFile(octokit: any, path: string, ref: string = MAIN): Promise<string | null> {
   try {
-    const { data } = await octokit.rest.repos.getContent({ ...GIT, path, ref: "main" });
+    const { data } = await octokit.rest.repos.getContent({ ...GIT, path, ref });
     return Buffer.from((data as any).content, "base64").toString("utf-8");
   } catch {
     return null;
@@ -85,7 +78,7 @@ export function odrlToRules(odrlJson: string | null): PolicyRule[] {
   return rules;
 }
 
-// ─── Shared RulesSection component ────────────────────────────────────────────
+// ─── RulesSection component ───────────────────────────────────────────────────
 
 const ACTION_CFG = {
   allow: { label: "Allow", badge: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
@@ -93,20 +86,11 @@ const ACTION_CFG = {
   ask: { label: "Ask Consent", badge: "bg-amber-50   text-amber-700   border-amber-200", dot: "bg-amber-500" },
 } as const;
 
-export function RulesSection({
-  rules,
-  agentId,
-  resourcesUrl,
-}: {
-  rules: PolicyRule[];
-  agentId: string;
-  resourcesUrl: string;
-}) {
+export function RulesSection({ rules, version }: { rules: PolicyRule[]; version: string }) {
   return (
     <div id="rules-section" className="space-y-4">
-      {/* State carried through every HTMX swap */}
-
-      {/* ── Rule cards ─────────────────────────────────────────────────────── */}
+      <input type="hidden" name="version" value={version} />
+      <input type="hidden" name="rules" value={JSON.stringify(rules)} />
       <div className="space-y-2 min-h-[4rem]">
         {rules.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 border border-dashed border-gray-300 rounded-xl text-gray-500 bg-gray-50/50">
@@ -133,8 +117,9 @@ export function RulesSection({
                 )}
               </div>
               <button
-                hx-post={"removeRule"}
+                hx-post="removeRule"
                 hx-ext="json-enc"
+                hx-include="[name=rules],[name=version]"
                 hx-vals={`{"index":${i}}`}
                 hx-target="#rules-section"
                 hx-swap="outerHTML"
@@ -148,13 +133,11 @@ export function RulesSection({
         })}
       </div>
 
-      {/* ── Add-rule form ──────────────────────────────────────────────────── */}
       <div className="pt-3 border-t border-gray-200">
         <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-widest mb-2.5">
           New Rule
         </p>
         <div className="space-y-2">
-          {/* Action + Target row */}
           <div className="grid grid-cols-4 gap-2">
             <div className="relative">
               <input
@@ -190,10 +173,8 @@ export function RulesSection({
               />
 
             </div>
-
           </div>
 
-          {/* Constraint row */}
           <div className="grid grid-cols-2 gap-2">
             <select name="constraint" title="Constraint attribute" aria-label="Constraint attribute" className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
               <option value="">No constraint</option>
@@ -212,7 +193,7 @@ export function RulesSection({
           </div>
 
           <button
-            hx-post={"addRule"}
+            hx-post="addRule"
             hx-ext="json-enc"
             hx-include="#rules-section"
             hx-target="#rules-section"
@@ -223,16 +204,33 @@ export function RulesSection({
           </button>
         </div>
       </div>
+
+      <datalist
+        id="resources-datalist"
+        hx-get="resources"
+        hx-trigger="load"
+        hx-swap="innerHTML"
+      />
     </div>
   );
 }
 
-// ─── CDS action handlers ───────────────────────────────────────────────────────
+// ─── CDS action handlers (AgentPolicyVersions) ─────────────────────────────────
+
+function extractAgentIdVersion(req: any): { agentId: string; version: string } {
+  const params = req?.params || [];
+  const p0 = params[0] || {};
+  const p1 = params[1] || {};
+  const agentId = p0.agentId ?? p1.agentId ?? "";
+  const version = p1.version ?? p0.version ?? MAIN;
+  return { agentId, version };
+}
 
 export async function ADD_RULE(this: any, req: cds.Request) {
-  const { agentId } = req.params[0] || {};
+  const { agentId, version } = extractAgentIdVersion(req);
   const d = req.data as any;
   const rules: PolicyRule[] = safeJson(d.rules, []);
+  const v = d.version || version || MAIN;
 
   if (d.target) {
     const { type, name } = decodeTarget(d.target);
@@ -249,13 +247,14 @@ export async function ADD_RULE(this: any, req: cds.Request) {
 
   return sendHtml(
     req,
-    renderToString(<RulesSection rules={rules} agentId={agentId || ""} resourcesUrl={resourcesUrl(agentId || "")} />)
+    renderToString(<RulesSection rules={rules} version={v} />)
   );
 }
 
 export async function REMOVE_RULE(this: any, req: cds.Request) {
-  const { agentId } = req.params[0] || {};
+  const { agentId, version } = extractAgentIdVersion(req);
   const d = req.data as any;
+  const v = d.version || version || MAIN;
   const rules: PolicyRule[] = safeJson(d.rules, []);
   const idx = Number(d.index);
 
@@ -263,21 +262,22 @@ export async function REMOVE_RULE(this: any, req: cds.Request) {
 
   return sendHtml(
     req,
-    renderToString(<RulesSection rules={rules} agentId={agentId || ""} resourcesUrl={resourcesUrl(agentId || "")} />)
+    renderToString(<RulesSection rules={rules} version={v} />)
   );
 }
 
-/** GET /policies/AgentPolicies/{agentId}/rules → RulesSection HTML (fetched from Git) */
+/** GET AgentPolicyVersions/.rules → RulesSection HTML */
 export async function RULES(this: any, req: cds.Request) {
-  const { agentId } = req.params[0];
+  const { agentId, version } = extractAgentIdVersion(req);
   if (!agentId) return sendHtml(req, "");
 
+  const branch = branchFromRequest(req, agentId);
   const octokit = await getOctokit();
-  const savedRaw = await fetchGitFile(octokit, `${agentId}/policies.json`);
+  const savedRaw = await fetchGitFile(octokit, `${agentId}/policies.json`, branch);
   const rules = odrlToRules(savedRaw);
 
   return sendHtml(
     req,
-    renderToString(<RulesSection rules={rules} agentId={agentId} resourcesUrl={resourcesUrl(agentId)} />)
+    renderToString(<RulesSection rules={rules} version={version || MAIN} />)
   );
 }

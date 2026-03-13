@@ -1,26 +1,29 @@
 import cds from "@sap/cds";
-import { LIST } from "./handler.list";
-import { GET, POST } from "./handler.edit";
-import { RESOURCES } from "./handler.resources";
-import { ADD_RULE, REMOVE_RULE, RULES } from "./handler.rules";
-import LIST_DATA from "./handler.list.data";
+import { LIST } from "./handler.agents.view";
+import { GET_REDIRECT } from "./handler.agents.edit";
+import { GET_EDIT, POST_SAVE } from "./handler.version.edit";
+import { RESOURCES } from "./handler.version.resources";
+import { ADD_RULE, REMOVE_RULE, RULES } from "./handler.version.rules";
+import LIST_DATA from "./handler.agents";
+import GET_VERSION from "./handler.version";
+
 export default class PoliciesService extends cds.ApplicationService {
   init() {
-    // Single GET → policy editor; falls through to LIST for collection
-    this.on("edit", "AgentPolicies", GET);
-    // Collection GET → agents dashboard
+    this.on("edit", "AgentPolicies", GET_REDIRECT);
     this.on("view", "AgentPolicies", LIST);
-    // POST/PUT → commit policies to Git
-    this.on("CREATE", "AgentPolicies", POST);
-    this.on("UPDATE", "AgentPolicies", POST);
     this.on("READ", "AgentPolicies", LIST_DATA);
-    // Bound function: GET /policies/AgentPolicies/{id}/resources → <option> datalist
-    this.on("resources", "AgentPolicies", RESOURCES);
-    // Bound function: GET /policies/AgentPolicies/{id}/rules → RulesSection HTML
-    this.on("rules", "AgentPolicies", RULES);
-    // Bound actions: POST /policies/AgentPolicies/{id}/addRule, removeRule
-    this.on("addRule", "AgentPolicies", ADD_RULE);
-    this.on("removeRule", "AgentPolicies", REMOVE_RULE);
+    this.on("CREATE", "AgentPolicies", POST_SAVE);
+    this.on("UPDATE", "AgentPolicies", POST_SAVE);
+
+    this.on("READ", "AgentPolicyVersions", GET_VERSION);
+
+    this.on("edit", "AgentPolicyVersions", GET_EDIT);
+    this.on("save", "AgentPolicyVersions", POST_SAVE);
+    this.on("resources", "AgentPolicyVersions", RESOURCES);
+    this.on("rules", "AgentPolicyVersions", RULES);
+    this.on("addRule", "AgentPolicyVersions", ADD_RULE);
+    this.on("removeRule", "AgentPolicyVersions", REMOVE_RULE);
+
     return super.init();
   }
 }

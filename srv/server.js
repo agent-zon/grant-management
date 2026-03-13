@@ -47,6 +47,7 @@ cds.on("bootstrap", (app) => {
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json({ extended: true }));
 
+
   // MCP action is POST-only; GET hits CDS parse and returns 400, causing client retry loop.
   // Answer GET /grants/mcp with 405 so clients don't retry and CDS never sees the GET.
   app.use((req, res, next) => {
