@@ -2,18 +2,14 @@ const cds = require('@sap/cds');
 const fs = require('fs');
 const path = require('path');
 const McpHubHandler = require('./mcp-hub/mcp-hub-handler');
-const GitHandler = require('./git-handler/git-handler');
+const getOctokit = require('./git-handler/git-handler');
 const McpHubCardsHandler = require('./mcp-hub/mcp-hub-cards-handler');
+
+const GIT = { owner: 'AIAM', repo: 'policies' };
 
 module.exports = cds.service.impl(async function() {
 
-  // Initialize MCP Hub handler
   const mcpHubHandler = new McpHubHandler();
-  
-  // Initialize Git handler
-  const gitHandler = new GitHandler();
-  
-  // Initialize MCP Hub Cards handler
   const mcpHubCardsHandler = new McpHubCardsHandler();
 
   // READ operation - get policies for an agent
@@ -31,9 +27,11 @@ module.exports = cds.service.impl(async function() {
       const policiesPath = `${agentId}/policies.json`;
       console.log(`Loading policies from Git path: ${policiesPath}`);
       
-      const gitResponse = await gitHandler.getFileContent('AIAM', 'policies', policiesPath);
-      
-      if (!gitResponse || !gitResponse.decodedContent) {
+      const octokit = await getOctokit();
+      const { data: gitFile } = await octokit.rest.repos.getContent({ ...GIT, path: policiesPath });
+      const decodedContent = Buffer.from(gitFile.content, 'base64').toString('utf-8');
+
+      if (!decodedContent) {
         console.log(`No policies found in Git for agent ${agentId}, returning default structure`);
         // Return default empty structure if no policies found
         return {
@@ -61,8 +59,7 @@ module.exports = cds.service.impl(async function() {
         };
       }
       
-      // Parse the policies JSON from Git
-      const policiesData = JSON.parse(gitResponse.decodedContent);
+      const policiesData = JSON.parse(decodedContent);
       console.log(`Successfully loaded policies from Git for agent ${agentId}`);
       
       return {
@@ -130,21 +127,20 @@ module.exports = cds.service.impl(async function() {
       
       console.log(`Committing policies to Git path: ${policiesPath}`);
       
-      // Commit and push to Git repository
-      const commitResult = await gitHandler.commitFile(
-        'AIAM',
-        'policies',
-        policiesPath,
-        fileContent,
-        `Update policies for agent ${agentId}`,
-        'application/json'
-      );
-      
-      if (!commitResult) {
-        console.error('Failed to commit policies to Git');
-        req.error(500, 'Failed to save policies to Git repository');
-        return;
-      }
+      const octokit = await getOctokit();
+      let sha;
+      try {
+        const { data: existing } = await octokit.rest.repos.getContent({ ...GIT, path: policiesPath });
+        sha = existing.sha;
+      } catch { /* new file */ }
+
+      await octokit.rest.repos.createOrUpdateFileContents({
+        ...GIT,
+        path: policiesPath,
+        message: `Update policies for agent ${agentId}`,
+        content: Buffer.from(fileContent, 'utf8').toString('base64'),
+        ...(sha ? { sha } : {}),
+      });
       
       console.log('Policies saved successfully to Git repository');
       return { agentId, policies, yaml, modifiedAt: timestamp };
@@ -295,15 +291,12 @@ module.exports = cds.service.impl(async function() {
       // Path: {agentId}/agent_manifest.yaml in the policies repo
       const manifestPath = `${agentId}/agent_manifest.yaml`;
       
-      const gitResponse = await gitHandler.getFileContent('AIAM', 'policies', manifestPath);
-      
-      if (!gitResponse || !gitResponse.decodedContent) {
-        req.error(404, `Agent manifest not found for agent: ${agentId}`);
-        return;
-      }
-      
+      const octokit = await getOctokit();
+      const { data: gitFile } = await octokit.rest.repos.getContent({ ...GIT, path: manifestPath });
+      const content = Buffer.from(gitFile.content, 'base64').toString('utf-8');
+
       console.log(`Agent manifest loaded successfully for agent: ${agentId}`);
-      return { value: gitResponse.decodedContent };
+      return { value: content };
       
     } catch (error) {
       console.error('Error loading agent manifest from Git:', error);
@@ -323,15 +316,12 @@ module.exports = cds.service.impl(async function() {
 
       console.log(`Loading file from Git: ${filePath}`);
       
-      const gitResponse = await gitHandler.getFileContent('AIAM', 'policies', filePath);
-      
-      if (!gitResponse || !gitResponse.decodedContent) {
-        req.error(404, `File not found: ${filePath}`);
-        return;
-      }
-      
+      const octokit = await getOctokit();
+      const { data: gitFile } = await octokit.rest.repos.getContent({ ...GIT, path: filePath });
+      const content = Buffer.from(gitFile.content, 'base64').toString('utf-8');
+
       console.log(`File loaded successfully: ${filePath}`);
-      return { value: gitResponse.decodedContent };
+      return { value: content };
       
     } catch (error) {
       console.error('Error loading file from Git:', error);
@@ -390,16 +380,16 @@ module.exports = cds.service.impl(async function() {
     try {
       console.log('Listing all agents from Git repository...');
 
-      // Fetch the root directory listing from Git repository
-      const response = await gitHandler.listDirectory('AIAM', 'policies', '');
+      const octokit = await getOctokit();
+      const { data } = await octokit.rest.repos.getContent({ ...GIT, path: '' });
+      const items = Array.isArray(data) ? data : [data];
 
-      if (!response || !response.length) {
+      if (!items.length) {
         console.log('No agents found in Git repository');
         return [];
       }
 
-      // Filter for directories only (agents are stored as directories)
-      const agents = response
+      const agents = items
         .filter(item => item.type === 'dir')
         .map(item => ({
           agentId: item.name,
