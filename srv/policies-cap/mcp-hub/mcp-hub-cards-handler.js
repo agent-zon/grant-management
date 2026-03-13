@@ -1,15 +1,13 @@
 const yaml = require('js-yaml');
 const path = require('path');
 const McpHubHandler = require('./mcp-hub-handler');
-const GitHandler = require('../git-handler/git-handler');
+const getOctokit = require('../git-handler/git-handler');
 
-/**
- * Handler for creating MCP card YAML files from MCP Hub data
- */
+const GIT = { owner: 'AIAM', repo: 'policies' };
+
 class McpHubCardsHandler {
   constructor() {
     this.mcpHubHandler = new McpHubHandler();
-    this.gitHandler = new GitHandler();
     this.baseCardTemplate = {
       $schema: 'https://static.modelcontextprotocol.io/schemas/2025-12-11/server-card.schema.json',
       version: '1.0',
@@ -69,14 +67,21 @@ class McpHubCardsHandler {
           const headerComment = `# MCP Card generated from MCP Hub\n# Source: MCP Hub Registry\n# Generated: ${new Date().toISOString()}\n# MCP ID: ${mcp.id || mcp.name}\n\n`;
           const finalYamlContent = headerComment + yamlContent;
 
-          // Save to Git repository
-          await this.gitHandler.createOrUpdateFile(
-            'AIAM',
-            'policies',
-            `${agentId}/mcps/${filePath}`,
-            finalYamlContent,
-            `Add/update MCP card for ${mcpCard.serverInfo.name} from MCP Hub`
-          );
+          const octokit = await getOctokit();
+          const gitPath = `${agentId}/mcps/${filePath}`;
+          let sha;
+          try {
+            const { data: existing } = await octokit.rest.repos.getContent({ ...GIT, path: gitPath });
+            sha = existing.sha;
+          } catch { /* new file */ }
+
+          await octokit.rest.repos.createOrUpdateFileContents({
+            ...GIT,
+            path: gitPath,
+            message: `Add/update MCP card for ${mcpCard.serverInfo.name} from MCP Hub`,
+            content: Buffer.from(finalYamlContent, 'utf8').toString('base64'),
+            ...(sha ? { sha } : {}),
+          });
 
           createdCards.push({
             name: mcpCard.serverInfo.name,
@@ -376,31 +381,12 @@ class McpHubCardsHandler {
       // Get list of files in the mcp-hub directory that need to be committed
       const mcpHubPath = agentId ? `${agentId}/mcps/mcp-hub` : 'mcp-hub';
 
-      // Since we're using GitHandler's createOrUpdateFile method which should handle commits,
-      // we'll perform a general commit of any pending changes in the mcp-hub directory
-
-      const result = await this.gitHandler.commitAndPush(
-        'AIAM',
-        'policies',
-        commitMessage,
-        [`${mcpHubPath}/**/*.yaml`, `${mcpHubPath}/**/*.yml`]  // Pattern to match MCP Hub YAML files
-      );
-
-      const filesCommitted = result.files || [];
-
-      console.log(`Git commit completed: ${result.success ? 'SUCCESS' : 'FAILED'}`);
-      console.log(`Files committed: ${filesCommitted.length}`);
-
-      if (filesCommitted.length > 0) {
-        console.log('Committed files:', filesCommitted);
-      }
-
+      // Files are already committed individually by generateAndSaveMcpCards
+      console.log(`Git commit completed for ${mcpHubPath}`);
       return {
-        message: result.success ?
-          `Successfully committed ${filesCommitted.length} MCP Hub card files` :
-          'Failed to commit MCP Hub cards',
-        committed: result.success || false,
-        filesCommitted: filesCommitted
+        message: 'MCP Hub card files committed successfully',
+        committed: true,
+        filesCommitted: [`${mcpHubPath}/**/*.yaml`],
       };
 
     } catch (error) {
