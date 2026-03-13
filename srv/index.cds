@@ -11,3 +11,5 @@ using from './debug-service/destination-service.cds';
 using from './mcp-service/mcp-service.cds';
 
 using from './grant-tools-service/grant-tools-service.cds';
+
+using from './destination-service/destination-service.cds';

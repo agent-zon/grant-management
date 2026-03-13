@@ -24,11 +24,11 @@ export default class Service extends cds.ApplicationService {
     this.on("register", async (req) => {
       const { meta, destination } = req.data;
       const { agent, grant_id, host } = meta;
-      console.log("🚀 Registering destination:", `agent:${agent}`);
+      console.log("🚀 Registering destination:", agent);
       try {
         await registerDestination({
           ...destination,
-          name: `agent:${agent}`,
+          name: agent,
         });
 
         req.reply(200)
@@ -36,7 +36,7 @@ export default class Service extends cds.ApplicationService {
         return {
           status: 200,
           message: "Destination registered",
-          name: `agent:${agent}`,
+          name: agent,
           agent: agent,
           url: destination.url,
           strategy: destination.strategy,
