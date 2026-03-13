@@ -16,7 +16,7 @@ async function testGitHandler() {
     console.log('✅ Root directory listing successful\n');
 
     console.log('3. Fetching repository content (main branch)...');
-    const mainContent = await gitHandler.getRepositoryContent('AIAM', 'policies', 'main');
+    const mainContent = await gitHandler.getRepositoryContent('AIAM', 'policies', '', 'main');
     console.log('✅ Main branch content fetched successfully\n');
 
     // Example: Get a specific file if it exists
