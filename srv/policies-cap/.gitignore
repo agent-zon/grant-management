@@ -1,0 +1,39 @@
+# Environment variables
+.env
+.env.local
+
+# Node modules
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database files
+*.db
+*.sqlite
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Certificate files (sensitive)
+srv/mcp-hub/*.pem
+srv/mcp-hub/*.p12
+srv/mcp-hub/*.pfx
+
+# Generated files
+gen/
+dist/
