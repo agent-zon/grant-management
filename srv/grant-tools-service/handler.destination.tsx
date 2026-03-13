@@ -16,7 +16,7 @@ export default async function (this: GrantToolsService, req: cds.Request<MCPRequ
   }
 
   const destination = await useOrFetchDestination({
-    destinationName: "MCP_HUB", //req.headers["x-destination"] || `agent:${agent}`,
+    destinationName: req.headers["x-destination"] || agent,
     jwt: req.user?.authInfo?.token?.jwt,
     selectionStrategy: subscriberFirst,
   });
@@ -24,7 +24,7 @@ export default async function (this: GrantToolsService, req: cds.Request<MCPRequ
   if (isHttpDestination(destination)) {
     try {
 
-      console.log("🚀 Creating destination transport for agent:", `agent:${agent}`);
+      console.log("🚀 Creating destination transport for agent:", agent, destination, destination?.name, destination?.url);
       const transport = new StreamableHTTPClientTransport(new URL(destination.url), {
         requestInit: {
           headers: buildMergedHeaders(req.headers, destination),
@@ -32,9 +32,9 @@ export default async function (this: GrantToolsService, req: cds.Request<MCPRequ
       });
 
       const client = new Client({
-        name: `agent:${agent}`,
+        name: agent || "grant-tools",
         version: "1.0.0",
-        description: `MCP client for ${`agent:${agent}`} destination`,
+        description: `MCP client for ${destination?.name} destination`,
       });
 
       await client.connect(transport);
