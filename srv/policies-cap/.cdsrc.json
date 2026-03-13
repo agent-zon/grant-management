@@ -1,0 +1,22 @@
+{
+  "build": {
+    "target": "gen"
+  },
+  "requires": {
+    "[production]": {
+      "db": {
+        "kind": "sqlite",
+        "credentials": {
+          "url": "policies.db"
+        }
+      }
+    }
+  },
+  "helm": {
+    "domain": "c-127c9ef.stage.kyma.ondemand.com",
+    "image": {
+      "registry": "scai-dev.common.repositories.cloud.sap",
+      "repository": "policies-cap/policies-cap"
+    }
+  }
+}

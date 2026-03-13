@@ -1,0 +1,39 @@
+apiVersion: solution.sap/v1
+kind: Solution
+metadata:
+  name: procurement-po-helper-agent
+  namespace: procurement
+  version: 1.0.0
+  labels:
+    team: sourcing
+    tier: business-agent
+
+type:
+  base: composite
+  traits: []
+
+requires:
+  # Platform auth
+  - name: xsuaa
+    kind: platform-service
+    plan: application
+
+  # MCP servers (reference only)
+  - name: ariba-mcp
+    kind: mcp
+    ref:
+      file: ./mcps/ariba-mcp.yaml
+
+  - name: concur-mcp
+    kind: mcp
+    ref:
+      file: ./mcps/concur-mcp.yml
+
+  - name: commerce-mcp
+    kind: mcp
+    ref:
+      file: ./mcps/commerce-mcp.yml
+
+# Intentionally empty.
+# Tools, access-levels and risk-levels are derived from MCP YAMLs at build time.
+resources: []

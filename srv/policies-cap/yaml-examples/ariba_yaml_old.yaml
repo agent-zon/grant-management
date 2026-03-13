@@ -1,0 +1,74 @@
+apiVersion: solution.sap/v1
+kind: Solution
+metadata:
+  name: procurement-po-helper-agent
+  namespace: procurement
+  version: 1.0.0
+  labels:
+    team: sourcing
+    tier: business-agent
+
+type:
+  base: composite
+  traits: []
+
+requires:
+  - name: xsuaa
+    kind: platform-service
+    plan: application
+
+  - name: ariba-mcp
+    kind: mcp
+    annotations:
+      access-level: authenticated-user
+      risk-level: sensitive
+
+  - name: email-inbox-mcp
+    kind: mcp
+    annotations:
+      access-level: authenticated-user
+      risk-level: sensitive
+
+resources:
+  # Procurement reads (POs, invoices, vendor master data)
+  - name: ariba-mcp:po.search
+    kind: mcp-tool
+    access-level: authenticated-user
+    risk-level: sensitive
+
+  - name: ariba-mcp:po.read
+    kind: mcp-tool
+    access-level: authenticated-user
+    risk-level: sensitive
+
+  - name: ariba-mcp:vendor.read
+    kind: mcp-tool
+    access-level: authenticated-user
+    risk-level: sensitive
+
+  # Procurement write actions (PO change, escalation workflow)
+  - name: ariba-mcp:po.changeRequest.create
+    kind: mcp-tool
+    access-level: any
+    risk-level: critical
+
+  - name: ariba-mcp:po.comment.add
+    kind: mcp-tool
+    access-level: system-user
+    risk-level: sensitive
+
+  # Email reads/writes
+  - name: email-inbox-mcp:messages.search
+    kind: mcp-tool
+    access-level: internal-user
+    risk-level: public
+
+  - name: ariba-mcp:messages.read
+    kind: mcp-tool
+    access-level: authenticated-user
+    risk-level: internal
+
+  - name: email-inbox-mcp:messages.send
+    kind: mcp-tool
+    access-level: authenticated-user
+    risk-level: critical
