@@ -1,62 +1,40 @@
 using policies from './db/schema';
 
-
 @path: '/policies'
+@protocol: 'rest'
+@impl: './policies-service.tsx'
 service PoliciesService {
-  
-  
-  @odata.draft.enabled: false
-  entity AgentPolicies as projection on policies.AgentPolicies;
 
-@odata.draft.enabled: false  
-  entity YamlTemplates as projection on policies.YamlTemplates;
+/** No DB table — Git is the source of truth. @cds.persistence.skip lets the
+handler receive the raw POST body without property validation. */
+@cds.persistence.skip
+  entity AgentPolicies as projection on policies.AgentPolicies actions {
+    /** Returns <option> HTML for the resource datalist — GET /policies/AgentPolicies/{id}/resources */
+   function resources(agent: $self) returns String;
+    /** Returns RulesSection HTML — GET /policies/AgentPolicies/{id}/rules */
+   function rules(agent: $self) returns String;
 
-action getYamlTemplates () returns array of String;
+function edit(agent: $self) returns String;
 
-action getYamlTemplate(filename: String) returns { value: String;
-
-};
-
-action getMcpTemplate(filename: String) returns { value: String;
+function view (in: many $self) returns String;
 
 };
 
-action getMcpHubData() returns { value: String;
+/** HTMX fragment: append one rule and re-render #rules-section */
+action addRule(
+    rules          : String,
+    agentIdRules   : String,
+    ruleAction     : String,
+    target         : String,
+    constraint     : String,
+    constraintValue: String
+  ) returns String;
 
-};
-
-action getAgentManifest(agentId: String) returns { value: String;
-
-};
-
-action getGitFile(filePath: String) returns { value: String;
-
-};
-
-action generateMcpHubCards(agentId: String) returns {
-    message: String;
-
-cards: array of { name: String;
-
-fileName: String;
-
-filePath: String;
-
-toolsCount: Integer;
-
-source: String;
-
-};
-
-};
-
-action commitMcpHubCards(commitMessage: String, agentId: String) returns {
-    message: String;
-
-committed: Boolean;
-
-filesCommitted: array of String;
-
-};
+/** HTMX fragment: remove rule at index and re-render #rules-section */
+action removeRule(
+    rules       : String,
+    agentIdRules: String,
+    index       : Integer
+  ) returns String;
 
 }
