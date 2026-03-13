@@ -1,0 +1,2357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Agent Policies Management</title>
+  <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+  <style>
+    /* SAP Fiori Design System */
+    :root {
+      --sapBrandColor: #0854A0;
+      --sapHighlightColor: #0854A0;
+      --sapBaseColor: #FFFFFF;
+      --sapShellColor: #354A5F;
+      --sapBackgroundColor: #F7F7F7;
+      --sapTileBackground: #FFFFFF;
+      --sapTextColor: #32363A;
+      --sapLinkColor: #0854A0;
+      --sapSuccessColor: #107E3E;
+      --sapErrorColor: #B00;
+      --sapWarningColor: #E9730C;
+      --sapNeutralColor: #6A6D70;
+      --sapButtonBackground: #FFFFFF;
+      --sapButtonBorderColor: #0854A0;
+      --sapFieldBorderColor: #89919A;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      height: 100%;
+    }
+
+    body {
+      font-family: '72', '72full', Arial, Helvetica, sans-serif;
+      background: var(--sapBackgroundColor);
+      color: var(--sapTextColor);
+      line-height: 1.4;
+      min-height: 100vh;
+      height: auto;
+      font-size: 14px;
+    }
+
+    .container {
+      background: var(--sapTileBackground);
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.1), 0 1px 3px 0 rgba(0,0,0,0.08);
+      overflow: visible;
+      height: 100%;
+    }
+
+    .header {
+      background: var(--sapShellColor);
+      color: white;
+      padding: 0;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      box-shadow: 0 0.0625rem 0.125rem 0 rgba(0,0,0,0.15);
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .header h1 {
+      font-size: 16px;
+      font-weight: 400;
+      margin: 0;
+    }
+
+    .header-logo {
+      width: 28px;
+      height: 28px;
+      background: var(--sapBrandColor);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .header p {
+      display: none;
+    }
+
+    .policies-content {
+      padding: 1rem;
+      min-height: calc(100vh - 44px);
+      background: var(--sapBackgroundColor);
+    }
+
+    .panel {
+      background: var(--sapTileBackground);
+      border-radius: 0.25rem;
+      border: none;
+      margin-bottom: 1rem;
+      overflow: visible;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.1), 0 2px 4px 0 rgba(0,0,0,0.08);
+    }
+
+    .panel-header {
+      background: var(--sapTileBackground);
+      border-bottom: 1px solid #E5E5E5;
+      padding: 0.75rem 1rem;
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--sapTextColor);
+      display: flex;
+      align-items: center;
+    }
+
+    .panel-content {
+      padding: 1rem;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-select, .form-input {
+      padding: 0.375rem 0.5rem;
+      border: 1px solid var(--sapFieldBorderColor);
+      border-radius: 0.25rem;
+      font-size: 14px;
+      flex: 1;
+      background: var(--sapBaseColor);
+      font-family: '72', '72full', Arial, Helvetica, sans-serif;
+      height: 2.25rem;
+    }
+
+    .form-select:hover, .form-input:hover {
+      border-color: var(--sapBrandColor);
+    }
+
+    .form-select:focus, .form-input:focus {
+      outline: 1px solid var(--sapBrandColor);
+      outline-offset: -1px;
+      border-color: var(--sapBrandColor);
+      box-shadow: none;
+    }
+
+    .btn-add, .btn-save {
+      background: var(--sapBrandColor);
+      color: white;
+      border: none;
+      padding: 0 0.75rem;
+      height: 2.25rem;
+      border-radius: 0.25rem;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 400;
+      flex: 0 0 auto;
+      font-family: '72', '72full', Arial, Helvetica, sans-serif;
+      transition: background 0.1s;
+    }
+
+    .btn-add:hover, .btn-save:hover {
+      background: #073f7f;
+    }
+
+    .btn-add:active, .btn-save:active {
+      background: #063870;
+    }
+
+    .btn-save {
+      background: var(--sapSuccessColor);
+    }
+
+    .btn-save:hover {
+      background: #0d6733;
+    }
+
+    .rule-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      background: var(--sapTileBackground);
+      border: 1px solid #E5E5E5;
+      border-radius: 0.25rem;
+      margin-bottom: 0.5rem;
+      transition: all 0.1s;
+    }
+
+    .rule-item:hover {
+      box-shadow: 0 0 0 1px rgba(8, 84, 160, 0.3);
+    }
+
+    .rule-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.125rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 12px;
+      font-weight: 400;
+      white-space: nowrap;
+      height: 1.5rem;
+    }
+
+    .rule-badge.mcp {
+      background: #E3F2FD;
+      color: var(--sapBrandColor);
+      border: 1px solid #BBDEFB;
+    }
+
+    .rule-badge.agent {
+      background: #F3E5F5;
+      color: #7B1FA2;
+      border: 1px solid #E1BEE7;
+    }
+
+    .rule-badge.tag {
+      background: #FFF8E1;
+      color: var(--sapWarningColor);
+      border: 1px solid #FFE082;
+    }
+
+    .rule-badge.location {
+      background: #E8F5E9;
+      color: var(--sapSuccessColor);
+      border: 1px solid #C8E6C9;
+    }
+
+    .rule-badge.yaml {
+      background: #FFF8E1;
+      color: var(--sapWarningColor);
+      border: 1px solid #FFE082;
+    }
+
+    .rule-badge.hub {
+      background: #EDE7F6;
+      color: #5E35B1;
+      border: 1px solid #D1C4E9;
+    }
+
+    /* Fiori dropdown styles */
+    .custom-dropdown {
+      position: relative;
+      width: 100%;
+    }
+
+    .custom-dropdown-button {
+      width: 100%;
+      padding: 0.375rem 0.5rem;
+      border: 1px solid var(--sapFieldBorderColor);
+      border-radius: 0.25rem;
+      font-size: 14px;
+      background: var(--sapBaseColor);
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 2.25rem;
+      font-family: '72', '72full', Arial, Helvetica, sans-serif;
+    }
+
+    .custom-dropdown-button:focus {
+      outline: 1px solid var(--sapBrandColor);
+      outline-offset: -1px;
+      border-color: var(--sapBrandColor);
+    }
+
+    .custom-dropdown-button:hover {
+      border-color: var(--sapBrandColor);
+    }
+
+    .custom-dropdown-content {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--sapBaseColor);
+      border: 1px solid #D9D9D9;
+      border-radius: 0.25rem;
+      box-shadow: 0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.15);
+      max-height: 300px;
+      overflow-y: auto;
+      z-index: 9999;
+      display: none;
+      margin-top: 0.125rem;
+    }
+
+    .custom-dropdown-item {
+      padding: 0.5rem 0.75rem;
+      cursor: pointer;
+      border-bottom: 1px solid #F2F2F2;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 14px;
+    }
+
+    .custom-dropdown-item:hover {
+      background: #F7F7F7;
+    }
+
+    .custom-dropdown-item:last-child {
+      border-bottom: none;
+    }
+
+    .dropdown-arrow {
+      width: 12px;
+      height: 12px;
+      transition: transform 0.2s;
+    }
+
+    .dropdown-arrow.open {
+      transform: rotate(180deg);
+    }
+
+    .rule-text {
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    .rule-icon {
+      width: 14px;
+      height: 14px;
+    }
+
+    .btn-remove {
+      background: transparent;
+      color: var(--sapErrorColor);
+      border: 1px solid var(--sapErrorColor);
+      width: 2rem;
+      height: 2rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: auto;
+      transition: all 0.1s;
+    }
+
+    .btn-remove:hover {
+      background: var(--sapErrorColor);
+      color: white;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--sapNeutralColor);
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 1rem;
+      opacity: 0.5;
+    }
+
+    label {
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--sapTextColor);
+      margin-bottom: 0.25rem;
+      display: block;
+    }
+
+    .notification {
+      position: fixed;
+      top: 3.5rem;
+      right: 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 0.25rem;
+      font-size: 14px;
+      font-weight: 400;
+      z-index: 10000;
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: all 0.2s;
+      box-shadow: 0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.15);
+    }
+
+    .notification.success {
+      background: #F1FAF4;
+      color: var(--sapSuccessColor);
+      border-left: 3px solid var(--sapSuccessColor);
+    }
+
+    .notification.error {
+      background: #FFEBEB;
+      color: var(--sapErrorColor);
+      border-left: 3px solid var(--sapErrorColor);
+    }
+
+    .notification.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .agent-info {
+      background: #EBF5FA;
+      border: none;
+      border-left: 3px solid var(--sapBrandColor);
+      border-radius: 0.25rem;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 14px;
+      color: var(--sapTextColor);
+    }
+
+    .autocomplete-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--sapBaseColor);
+      border: 1px solid #D9D9D9;
+      border-radius: 0.25rem;
+      box-shadow: 0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.15);
+      max-height: 300px;
+      overflow-y: auto;
+      z-index: 9999;
+      display: none;
+      margin-top: 0.125rem;
+    }
+
+    .autocomplete-item {
+      padding: 0.5rem 0.75rem;
+      cursor: pointer;
+      border-bottom: 1px solid #F2F2F2;
+      font-size: 14px;
+    }
+
+    .autocomplete-item:hover {
+      background: #F7F7F7;
+    }
+
+    .autocomplete-item:last-child {
+      border-bottom: none;
+    }
+
+    /* Fiori Sidebar Styles */
+    .app-layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 20rem;
+      background: #F7F7F7;
+      border-right: 1px solid #D9D9D9;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 100;
+    }
+
+    .sidebar-header {
+      background: var(--sapShellColor);
+      color: white;
+      padding: 0 1rem;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 0.0625rem 0.125rem 0 rgba(0,0,0,0.15);
+    }
+
+    .sidebar-header h2 {
+      font-size: 16px;
+      font-weight: 400;
+    }
+
+    .sidebar-search {
+      padding: 0.75rem;
+      background: var(--sapTileBackground);
+      border-bottom: 1px solid #E5E5E5;
+    }
+
+    .sidebar-search input {
+      width: 100%;
+      padding: 0.375rem 0.5rem;
+      border: 1px solid var(--sapFieldBorderColor);
+      border-radius: 0.25rem;
+      font-size: 14px;
+      font-family: '72', '72full', Arial, Helvetica, sans-serif;
+      height: 2.25rem;
+    }
+
+    .sidebar-search input:focus {
+      outline: 1px solid var(--sapBrandColor);
+      outline-offset: -1px;
+      border-color: var(--sapBrandColor);
+    }
+
+    .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem;
+      background: #F7F7F7;
+    }
+
+    .agent-list-item {
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 0.125rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: all 0.1s;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-left: 2px solid transparent;
+      background: var(--sapTileBackground);
+    }
+
+    .agent-list-item:hover {
+      background: #EBF5FA;
+    }
+
+    .agent-list-item.active {
+      background: #EBF5FA;
+      border-left-color: var(--sapBrandColor);
+      box-shadow: 0 0 0 1px rgba(8, 84, 160, 0.2);
+    }
+
+    .agent-list-item.active .agent-name {
+      color: var(--sapBrandColor);
+      font-weight: 700;
+    }
+
+    .agent-icon {
+      width: 2rem;
+      height: 2rem;
+      background: #E5E5E5;
+      border-radius: 0.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .agent-list-item.active .agent-icon {
+      background: var(--sapBrandColor);
+      color: white;
+    }
+
+    .agent-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .agent-name {
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--sapTextColor);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .agent-meta {
+      font-size: 12px;
+      color: var(--sapNeutralColor);
+      margin-top: 0.125rem;
+    }
+
+    .sidebar-footer {
+      padding: 0.75rem;
+      border-top: 1px solid #E5E5E5;
+      font-size: 12px;
+      color: var(--sapNeutralColor);
+      text-align: center;
+      background: var(--sapTileBackground);
+    }
+
+    .main-content {
+      flex: 1;
+      margin-left: 20rem;
+    }
+
+    .sidebar-empty {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: var(--sapNeutralColor);
+    }
+
+    .sidebar-empty svg {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 0.75rem;
+      opacity: 0.5;
+    }
+
+    .sidebar-loading {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: var(--sapNeutralColor);
+    }
+
+    .spinner {
+      border: 2px solid #E5E5E5;
+      border-top: 2px solid var(--sapBrandColor);
+      border-radius: 50%;
+      width: 2.5rem;
+      height: 2.5rem;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 0.75rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+      }
+      .main-content {
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <div class="sidebar" id="agentsSidebar">
+      <div class="sidebar-header">
+        <h2>Agents</h2>
+      </div>
+
+      <div class="sidebar-search">
+        <input type="text" id="agentSearch" placeholder="Search agents..." oninput="filterAgents(this.value)">
+      </div>
+
+      <div class="sidebar-content" id="agentsList">
+        <div class="sidebar-loading">
+          <div class="spinner"></div>
+          <p>Loading agents...</p>
+        </div>
+      </div>
+
+      <div class="sidebar-footer" id="agentsCount">
+        0 agents
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+      <div class="container">
+        <div class="header">
+          <div class="header-title">
+            <div class="header-logo">AI</div>
+            <h1>AI Agent Policies Management</h1>
+          </div>
+        </div>
+
+        <div class="policies-content">
+          <div class="agent-info">
+            <strong>Current Agent:</strong> A532408 (Demo Agent)
+          </div>
+
+      <!-- Policy Management Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          <svg style="width: 14px; height: 14px; display: inline-block; margin-right: 6px; vertical-align: -2px;" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clip-rule="evenodd"/>
+            <path fill-rule="evenodd" d="M4 5a2 2 0 012-2v1a1 1 0 001 1h6a1 1 0 001-1V3a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+          </svg>
+          Policy Rules (0):
+        </div>
+        <div class="panel-content">
+          <div id="policyRulesList">
+            <div class="empty-state">
+              <svg fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clip-rule="evenodd"/>
+                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2v1a1 1 0 001 1h6a1 1 0 001-1V3a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+              </svg>
+              <p>No policy rules defined yet for this agent. Add rules below to control what this agent can access.</p>
+            </div>
+          </div>
+
+          <div class="add-rule-form">
+            <div style="margin: 16px 0; border-top: 1px solid #e5e7eb; padding-top: 16px;">
+              <label>Add New Policy Rule</label>
+            </div>
+            <div class="form-row">
+              <label style="flex: 0 0 100px; margin: 0;">Action Type:</label>
+              <select class="form-select" id="policyActionType" style="flex: 1;">
+                <option value="allow">Allow</option>
+                <option value="deny">Deny</option>
+                <option value="ask">Ask For Consent</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label style="flex: 0 0 100px; margin: 0;">Target:</label>
+              <div class="custom-dropdown" style="flex: 1;">
+                <div class="custom-dropdown-button" id="policyTargetDropdown" onclick="toggleTargetDropdown()">
+                  <span id="selectedTargetText">-- Select from loaded template --</span>
+                  <svg class="dropdown-arrow" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                  </svg>
+                </div>
+                <div class="custom-dropdown-content" id="targetDropdownContent">
+                  <!-- Dynamic options will be populated here -->
+                </div>
+              </div>
+              <input type="hidden" id="policyTargetType" value="" onchange="updateAttributeTypeOptions(this.value)">
+            </div>
+
+            <div class="form-row" id="policyConstraintRow">
+              <label style="flex: 0 0 100px; margin: 0;">Where:</label>
+              <select class="form-select" id="policyAttributeType" onchange="onAttributeTypeChange()">
+                <option value="">-- No constraint --</option>
+              </select>
+              <span style="font-size: 14px; color: #6b7280;">:</span>
+              <div style="position: relative; flex: 1;">
+                <input type="text" class="form-select" id="policyAttributeValue" 
+                       placeholder="Select attribute type first" 
+                       autocomplete="off" 
+                       oninput="handleAutocomplete(this)"
+                       onfocus="handleAutocomplete(this)" />
+                <div id="attributeValueAutocomplete" class="autocomplete-dropdown"></div>
+              </div>
+            </div>
+            <button class="btn-add" onclick="addPolicyRule()">+ Add Policy Rule</button>
+            <button class="btn-save" onclick="saveAllToDatabase()" style="margin-left: 10px;">💾 Save All</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let policyRules = [];
+    let loadedYamlData = null;
+    let loadedMcpHubData = null;
+    let combinedData = null;
+    let CURRENT_AGENT = 'A532408'; // Default agent
+
+    // Get agent ID from URL parameters or use default
+    function getCurrentAgentId() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const agentId = urlParams.get('agentId');
+      return agentId && agentId.trim() ? agentId.trim() : 'A532408';
+    }
+
+    // Initialize the page
+    document.addEventListener('DOMContentLoaded', function() {
+      CURRENT_AGENT = getCurrentAgentId();
+      console.log('Policies page loaded for agent:', CURRENT_AGENT);
+      updateAgentInfoDisplay();
+      loadPoliciesFromDatabase();
+      loadAllTemplateData();
+      loadAllAgents(); // Load agents for sidebar
+    });
+
+    // Update the agent info display
+    function updateAgentInfoDisplay() {
+      const agentInfo = document.querySelector('.agent-info');
+      if (agentInfo) {
+        const isDefault = CURRENT_AGENT === 'A532408';
+        agentInfo.innerHTML = `<strong>Current Agent:</strong> ${CURRENT_AGENT}${isDefault ? ' (Demo Agent)' : ''}`;
+      }
+    }
+
+    // Load both YAML and MCP Hub data
+    async function loadAllTemplateData() {
+      await Promise.all([
+        autoLoadAgentManifest(),
+        loadMcpHubData()
+      ]);
+      
+      // Combine both data sources
+      combinePolicyData();
+    }
+
+    // Load MCP Hub data and automatically generate MCP Hub cards
+    async function loadMcpHubData() {
+      try {
+        console.log('Loading MCP Hub data...');
+        
+        const response = await fetch('/policies/getMcpHubData', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          loadedMcpHubData = JSON.parse(result.value);
+          
+          console.log('MCP Hub data loaded:', {
+            mcps: loadedMcpHubData.requires?.length || 0,
+            tools: loadedMcpHubData.tools?.length || 0,
+            attributes: Object.keys(loadedMcpHubData.attributes || {}).length
+          });
+          
+          if (loadedMcpHubData.error) {
+            console.warn('MCP Hub data contains error:', loadedMcpHubData.error);
+            showNotification('MCP Hub data unavailable: ' + loadedMcpHubData.error, 'error');
+          } else {
+            showNotification('MCP Hub data loaded successfully', 'success');
+            
+            // Automatically generate MCP Hub cards
+            try {
+              console.log('Auto-generating MCP Hub cards...');
+              await generateMcpHubCards();
+            } catch (cardError) {
+              console.warn('MCP Hub cards generation failed:', cardError);
+              // Don't show error notification as it's an optional feature
+            }
+          }
+          
+        } else {
+          console.error('Failed to load MCP Hub data');
+          showNotification('Failed to load MCP Hub data', 'error');
+        }
+      } catch (error) {
+        console.error('Error loading MCP Hub data:', error);
+        showNotification('Error loading MCP Hub data', 'error');
+      }
+    }
+
+    // Generate MCP Hub cards and store in Git
+    async function generateMcpHubCards() {
+      try {
+        const response = await fetch('/policies/generateMcpHubCards', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agentId: CURRENT_AGENT })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('MCP Hub cards generated:', {
+            created: result.cards?.length || 0,
+            gitCommitted: true
+          });
+        } else {
+          const errorData = await response.json();
+          console.error('Failed to generate MCP Hub cards:', errorData);
+        }
+      } catch (error) {
+        console.error('Error generating MCP Hub cards:', error);
+      }
+    }
+
+    // Combine YAML and MCP Hub data
+    function combinePolicyData() {
+      combinedData = {
+        requires: [],
+        resources: [],
+        tools: [],
+        attributes: {},
+        attributesBySource: {
+          yaml: {},
+          mcpHub: {}
+        }
+      };
+
+      // Add Agent Manifest data
+      if (loadedYamlData) {
+        console.log('Adding Agent Manifest data to combined data');
+        combinedData.requires.push(...(loadedYamlData.requires || []));
+        combinedData.resources.push(...(loadedYamlData.resources || []));
+        combinedData.tools.push(...(loadedYamlData.tools || []));
+        
+        // Copy YAML attributes with source tracking
+        if (loadedYamlData.attributes) {
+          Object.keys(loadedYamlData.attributes).forEach(key => {
+            // Track in combined
+            if (!combinedData.attributes[key]) {
+              combinedData.attributes[key] = new Set();
+            }
+            // Track by source
+            if (!combinedData.attributesBySource.yaml[key]) {
+              combinedData.attributesBySource.yaml[key] = new Set();
+            }
+            
+            loadedYamlData.attributes[key].forEach(value => {
+              combinedData.attributes[key].add(value);
+              combinedData.attributesBySource.yaml[key].add(value);
+            });
+          });
+        }
+      }
+
+      // Add MCP Hub data
+      if (loadedMcpHubData && !loadedMcpHubData.error) {
+        console.log('Adding MCP Hub data to combined data');
+        combinedData.requires.push(...(loadedMcpHubData.requires || []));
+        combinedData.resources.push(...(loadedMcpHubData.resources || []));
+        combinedData.tools.push(...(loadedMcpHubData.tools || []));
+        
+        // Copy MCP Hub attributes with source tracking
+        if (loadedMcpHubData.attributes) {
+          Object.keys(loadedMcpHubData.attributes).forEach(key => {
+            // Track in combined
+            if (!combinedData.attributes[key]) {
+              combinedData.attributes[key] = new Set();
+            }
+            // Track by source
+            if (!combinedData.attributesBySource.mcpHub[key]) {
+              combinedData.attributesBySource.mcpHub[key] = new Set();
+            }
+            
+            loadedMcpHubData.attributes[key].forEach(value => {
+              combinedData.attributes[key].add(value);
+              combinedData.attributesBySource.mcpHub[key].add(value);
+            });
+          });
+        }
+      }
+
+      // Convert Sets back to Arrays for combined data
+      Object.keys(combinedData.attributes).forEach(key => {
+        combinedData.attributes[key] = Array.from(combinedData.attributes[key]);
+      });
+      
+      // Convert Sets back to Arrays for source-specific data
+      Object.keys(combinedData.attributesBySource.yaml).forEach(key => {
+        combinedData.attributesBySource.yaml[key] = Array.from(combinedData.attributesBySource.yaml[key]);
+      });
+      Object.keys(combinedData.attributesBySource.mcpHub).forEach(key => {
+        combinedData.attributesBySource.mcpHub[key] = Array.from(combinedData.attributesBySource.mcpHub[key]);
+      });
+
+      console.log('Combined data summary:', {
+        totalMcps: combinedData.requires.length,
+        totalTools: combinedData.tools.length,
+        totalAttributes: Object.keys(combinedData.attributes).length,
+        yamlSources: loadedYamlData ? 1 : 0,
+        mcpHubSources: (loadedMcpHubData && !loadedMcpHubData.error) ? 1 : 0
+      });
+
+      // Update UI with combined data
+      populateCombinedTargetSelection();
+      populateCombinedAutocompleteValues();
+    }
+
+    // Auto-load the agent manifest from Git repository
+    async function autoLoadAgentManifest() {
+      try {
+        console.log(`Loading agent manifest from Git for agent: ${CURRENT_AGENT}`);
+        
+        const response = await fetch('/policies/getAgentManifest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agentId: CURRENT_AGENT })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          const yamlContent = result.value;
+          
+          console.log(`Agent manifest loaded from Git for agent: ${CURRENT_AGENT}`);
+          console.log('Raw YAML result:', result);
+          console.log('Raw YAML content type:', typeof yamlContent);
+          console.log('Raw YAML content length:', yamlContent ? yamlContent.length : 'undefined/null');
+          
+          if (!yamlContent) {
+            console.error('No YAML content received from Git');
+            showNotification(`No agent manifest content found for ${CURRENT_AGENT}`, 'error');
+            return;
+          }
+          
+          console.log('Raw YAML content preview:', yamlContent.substring(0, 200));
+          
+          // Parse YAML to JSON (now async)
+          loadedYamlData = await yamlToJson(yamlContent);
+          console.log('Parsed agent manifest result:', loadedYamlData);
+          
+          showNotification(`Agent manifest loaded successfully for ${CURRENT_AGENT}`, 'success');
+          
+        } else {
+          console.error(`Failed to load agent manifest for agent: ${CURRENT_AGENT}`);
+          showNotification(`Failed to load agent manifest for ${CURRENT_AGENT}`, 'error');
+        }
+      } catch (error) {
+        console.error(`Error loading agent manifest for agent: ${CURRENT_AGENT}`, error);
+        showNotification(`Error loading agent manifest for ${CURRENT_AGENT}`, 'error');
+      }
+    }
+
+    // Populate target selection with combined data (YAML + MCP Hub)
+    function populateCombinedTargetSelection() {
+      const targetDropdownContent = document.getElementById('targetDropdownContent');
+      
+      // Clear all existing options
+      targetDropdownContent.innerHTML = '';
+      
+      if (!combinedData) return;
+      
+      // Add MCP servers from requires section
+      const requires = combinedData.requires || [];
+      requires.forEach(item => {
+        if (item.type === 'mcp-server') {
+          const dropdownItem = document.createElement('div');
+          dropdownItem.className = 'custom-dropdown-item';
+          dropdownItem.onclick = () => selectTargetOption(JSON.stringify(item), 'mcp', item.name);
+          
+          const sourceBadge = document.createElement('span');
+          sourceBadge.className = `rule-badge ${item.source === 'mcp-hub' ? 'hub' : 'yaml'}`;
+          sourceBadge.textContent = item.source === 'mcp-hub' ? 'Hub' : 'YAML';
+          
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = `${item.name}: MCP Server`;
+          
+          dropdownItem.appendChild(sourceBadge);
+          dropdownItem.appendChild(nameSpan);
+          targetDropdownContent.appendChild(dropdownItem);
+        }
+      });
+      
+      // Add MCP tools from tools section
+      const tools = combinedData.tools || [];
+      tools.forEach(item => {
+        if (item.type === 'mcp-tool') {
+          const dropdownItem = document.createElement('div');
+          dropdownItem.className = 'custom-dropdown-item';
+          dropdownItem.onclick = () => selectTargetOption(JSON.stringify(item), 'mcp', item.name);
+          
+          const sourceBadge = document.createElement('span');
+          sourceBadge.className = `rule-badge ${item.source === 'mcp-hub' ? 'hub' : 'yaml'}`;
+          sourceBadge.textContent = item.source === 'mcp-hub' ? 'Hub' : 'YAML';
+          
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = `${item.name}: MCP Tool (${item.title || item.toolName})`;
+          nameSpan.style.fontSize = '13px';
+          
+          dropdownItem.appendChild(sourceBadge);
+          dropdownItem.appendChild(nameSpan);
+          targetDropdownContent.appendChild(dropdownItem);
+        }
+      });
+    }
+
+    // Toggle target dropdown visibility
+    function toggleTargetDropdown() {
+      const content = document.getElementById('targetDropdownContent');
+      const arrow = document.querySelector('.dropdown-arrow');
+      
+      if (content.style.display === 'none' || !content.style.display) {
+        content.style.display = 'block';
+        arrow.classList.add('open');
+      } else {
+        content.style.display = 'none';
+        arrow.classList.remove('open');
+      }
+    }
+
+    // Select target option and update UI
+    function selectTargetOption(value, targetType, displayText) {
+      const hiddenInput = document.getElementById('policyTargetType');
+      const selectedText = document.getElementById('selectedTargetText');
+      const content = document.getElementById('targetDropdownContent');
+      const arrow = document.querySelector('.dropdown-arrow');
+      
+      hiddenInput.value = value;
+      selectedText.textContent = displayText;
+      content.style.display = 'none';
+      arrow.classList.remove('open');
+      
+      // Trigger the change event for attribute type updates
+      updateAttributeTypeOptions(value);
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+      const dropdown = document.querySelector('.custom-dropdown');
+      if (dropdown && !dropdown.contains(event.target)) {
+        const content = document.getElementById('targetDropdownContent');
+        const arrow = document.querySelector('.dropdown-arrow');
+        if (content) {
+          content.style.display = 'none';
+          arrow?.classList.remove('open');
+        }
+      }
+      
+      // Existing autocomplete hide logic
+      const valueInput = document.getElementById('policyAttributeValue');
+      const autocompleteDropdown = document.getElementById('attributeValueAutocomplete');
+      
+      if (valueInput && autocompleteDropdown && 
+          !valueInput.contains(event.target) && 
+          !autocompleteDropdown.contains(event.target)) {
+        hideAutocomplete();
+      }
+    });
+
+    // Populate autocomplete values from combined data
+    function populateCombinedAutocompleteValues() {
+      if (!combinedData || !combinedData.attributes) return;
+
+      console.log('Debug: combinedData attributes:', combinedData.attributes);
+
+      // Store globally for autocomplete
+      window.autocompleteValues = {};
+      
+      // Convert arrays back to sets for processing
+      Object.keys(combinedData.attributes).forEach(key => {
+        window.autocompleteValues[key] = new Set(combinedData.attributes[key]);
+      });
+
+      console.log('Debug: final autocompleteValues:', window.autocompleteValues);
+
+      // Populate attribute type dropdown with only available attributes
+      populateAttributeTypeDropdown(window.autocompleteValues);
+    }
+
+    // Simple YAML to JSON parser
+    async function yamlToJson(yamlText) {
+      try {
+        // Parse the main YAML content
+        const mainYaml = parseSimpleYaml(yamlText);
+        console.log('Debug: Parsed main YAML type:', typeof mainYaml);
+        console.log('Debug: Parsed main YAML:', mainYaml);
+        console.log('Debug: Parsed main YAML keys:', mainYaml ? Object.keys(mainYaml) : 'null/undefined');
+        const result = { requires: [], resources: [], tools: [] };
+        
+        // Process requires section
+        const requires = mainYaml.requires || [];
+        for (const item of requires) {
+          console.log('Debug: Processing requires item:', JSON.stringify(item, null, 2));
+          
+          if (item.kind === 'mcp') {
+            // Add MCP server info (detailed tools will come from MCP Hub)
+            result.requires.push({
+              name: item.name,
+              type: 'mcp-server',
+              source: 'agent-manifest'
+            });
+            console.log(`Debug: Added MCP server from agent manifest: ${item.name}`);
+            
+            // If there's a ref.file, try to load the MCP tools from Git
+            if (item.ref && item.ref.file) {
+              try {
+                console.log(`Debug: Loading MCP file ${item.ref.file} for ${item.name}`);
+                const mcpTools = await loadMcpFileFromGit(item.ref.file, item.name);
+                result.tools.push(...mcpTools);
+                console.log(`Debug: Added ${mcpTools.length} tools from ${item.name}`);
+              } catch (error) {
+                console.warn(`Failed to load MCP file ${item.ref.file} for ${item.name}:`, error);
+              }
+            }
+          } else if (item.kind === 'platform-service') {
+            result.requires.push({
+              name: item.name,
+              type: 'platform-service',
+              plan: item.plan,
+              source: 'agent-manifest'
+            });
+            console.log(`Debug: Added platform service: ${item.name}`);
+          } else {
+            result.requires.push({
+              name: item.name,
+              type: item.kind,
+              source: 'agent-manifest'
+            });
+            console.log(`Debug: Added other service: ${item.name} (${item.kind})`);
+          }
+        }
+        
+        // Process resources (if any)
+        const resources = mainYaml.resources || [];
+        result.resources = resources.map(resource => ({
+          ...resource,
+          source: 'agent-manifest'
+        }));
+        
+        // Initialize attributes structure for consistency with MCP Hub data
+        result.attributes = {};
+        
+        // Extract MCP-level attributes from loaded tools
+        const mcpServers = new Set();
+        result.tools.forEach(tool => {
+          if (tool.mcpServer) {
+            mcpServers.add(tool.mcpServer);
+          }
+        });
+        
+        // For each unique MCP server, load its metadata and extract attributes
+        for (const mcpServerName of mcpServers) {
+          try {
+            // Find the first tool from this server to get the MCP file path
+            const sampleTool = result.tools.find(t => t.mcpServer === mcpServerName);
+            if (!sampleTool) continue;
+            
+            // Load the MCP file again to get server-level metadata
+            const mcpServerRequire = requires.find(req => req.name === mcpServerName && req.ref?.file);
+            if (mcpServerRequire) {
+              const gitPath = `${CURRENT_AGENT}/${mcpServerRequire.ref.file.replace('./', '')}`;
+              const response = await fetch('/policies/getGitFile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filePath: gitPath })
+              });
+              
+              if (response.ok) {
+                const result2 = await response.json();
+                const mcpYamlContent = result2.value;
+                const mcpData = parseSimpleYaml(mcpYamlContent);
+                
+                // Extract MCP-level attributes
+                if (mcpData.serverInfo) {
+                  if (mcpData.serverInfo.title) {
+                    if (!result.attributes.mcpTitle) result.attributes.mcpTitle = [];
+                    if (!result.attributes.mcpTitle.includes(mcpData.serverInfo.title)) {
+                      result.attributes.mcpTitle.push(mcpData.serverInfo.title);
+                    }
+                  }
+                  
+                  if (mcpData.serverInfo.version) {
+                    if (!result.attributes.version) result.attributes.version = [];
+                    if (!result.attributes.version.includes(mcpData.serverInfo.version)) {
+                      result.attributes.version.push(mcpData.serverInfo.version);
+                    }
+                  }
+                  
+                  if (mcpData.serverInfo.description) {
+                    if (!result.attributes.description) result.attributes.description = [];
+                    if (!result.attributes.description.includes(mcpData.serverInfo.description)) {
+                      result.attributes.description.push(mcpData.serverInfo.description);
+                    }
+                  }
+                }
+                
+                // Extract MCP-level _meta attributes
+                if (mcpData._meta) {
+                  Object.keys(mcpData._meta).forEach(metaKey => {
+                    if (metaKey.startsWith('sap/')) {
+                      const attrName = metaKey.replace('sap/', '');
+                      if (!result.attributes[attrName]) result.attributes[attrName] = [];
+                      const value = mcpData._meta[metaKey];
+                      if (!result.attributes[attrName].includes(value)) {
+                        result.attributes[attrName].push(value);
+                      }
+                    }
+                  });
+                }
+                
+                // Extract tool input schema attributes
+                if (mcpData.tools && Array.isArray(mcpData.tools)) {
+                  mcpData.tools.forEach(tool => {
+                    if (tool.inputSchema && tool.inputSchema.properties) {
+                      extractAttributesFromInputSchema(tool.inputSchema.properties, result.attributes);
+                    }
+                    
+                    // Extract tool-level annotations
+                    if (tool.annotations) {
+                      Object.keys(tool.annotations).forEach(annotationKey => {
+                        const attrName = `annotation_${annotationKey}`;
+                        if (!result.attributes[attrName]) result.attributes[attrName] = [];
+                        const value = String(tool.annotations[annotationKey]);
+                        if (!result.attributes[attrName].includes(value)) {
+                          result.attributes[attrName].push(value);
+                        }
+                      });
+                    }
+                  });
+                }
+              }
+            }
+          } catch (error) {
+            console.warn(`Failed to extract MCP-level attributes for ${mcpServerName}:`, error);
+          }
+        }
+        
+        // Extract attributes from loaded tools (existing logic)
+        result.tools.forEach(tool => {
+          // Extract attributes from tool properties
+          if (tool.accessLevel) {
+            if (!result.attributes.accessLevel) result.attributes.accessLevel = [];
+            if (!result.attributes.accessLevel.includes(tool.accessLevel)) {
+              result.attributes.accessLevel.push(tool.accessLevel);
+            }
+          }
+          
+          if (tool.riskLevel) {
+            if (!result.attributes.riskLevel) result.attributes.riskLevel = [];
+            if (!result.attributes.riskLevel.includes(tool.riskLevel)) {
+              result.attributes.riskLevel.push(tool.riskLevel);
+            }
+          }
+          
+          // Extract attributes from _meta object
+          if (tool._meta) {
+            Object.keys(tool._meta).forEach(metaKey => {
+              if (metaKey.startsWith('sap/')) {
+                const attrName = metaKey.replace('sap/', '');
+                if (!result.attributes[attrName]) result.attributes[attrName] = [];
+                const value = tool._meta[metaKey];
+                if (!result.attributes[attrName].includes(value)) {
+                  result.attributes[attrName].push(value);
+                }
+              } else {
+                // Also extract non-sap meta attributes
+                if (!result.attributes[metaKey]) result.attributes[metaKey] = [];
+                const value = tool._meta[metaKey];
+                if (!result.attributes[metaKey].includes(value)) {
+                  result.attributes[metaKey].push(value);
+                }
+              }
+            });
+          }
+          
+          // Extract attributes from tool server name
+          if (tool.mcpServer) {
+            if (!result.attributes.mcpServer) result.attributes.mcpServer = [];
+            if (!result.attributes.mcpServer.includes(tool.mcpServer)) {
+              result.attributes.mcpServer.push(tool.mcpServer);
+            }
+          }
+        });
+        
+        // Helper function to extract attributes from input schema
+        function extractAttributesFromInputSchema(properties, attributesMap) {
+          Object.keys(properties).forEach(propName => {
+            const prop = properties[propName];
+            
+            // Add property name as an attribute type
+            if (!attributesMap[propName]) attributesMap[propName] = [];
+            
+            // Extract enum values as possible attribute values
+            if (prop.enum && Array.isArray(prop.enum)) {
+              prop.enum.forEach(enumValue => {
+                if (!attributesMap[propName].includes(String(enumValue))) {
+                  attributesMap[propName].push(String(enumValue));
+                }
+              });
+            }
+            
+            // Extract example values
+            if (prop.example) {
+              if (Array.isArray(prop.example)) {
+                prop.example.forEach(exampleValue => {
+                  if (!attributesMap[propName].includes(String(exampleValue))) {
+                    attributesMap[propName].push(String(exampleValue));
+                  }
+                });
+              } else {
+                if (!attributesMap[propName].includes(String(prop.example))) {
+                  attributesMap[propName].push(String(prop.example));
+                }
+              }
+            }
+            
+            // Extract type-based common values
+            if (prop.type === 'boolean') {
+              if (!attributesMap[propName].includes('true')) attributesMap[propName].push('true');
+              if (!attributesMap[propName].includes('false')) attributesMap[propName].push('false');
+            }
+            
+            // Handle nested objects
+            if (prop.type === 'object' && prop.properties) {
+              extractAttributesFromInputSchema(prop.properties, attributesMap);
+            }
+            
+            // Handle array items
+            if (prop.type === 'array' && prop.items && prop.items.properties) {
+              extractAttributesFromInputSchema(prop.items.properties, attributesMap);
+            }
+          });
+        }
+        
+        console.log(`Debug: Extracted attributes from agent manifest:`, Object.keys(result.attributes));
+        console.log(`Debug: Attribute details:`, result.attributes);
+        
+        console.log(`Debug: Final agent manifest result: ${result.requires.length} requires, ${result.resources.length} resources, ${result.tools.length} tools`);
+        
+        return result;
+      } catch (error) {
+        console.error('Error parsing agent manifest YAML:', error);
+        return { requires: [], resources: [], tools: [], attributes: {} };
+      }
+    }
+
+    // Parse YAML using js-yaml library
+    function parseSimpleYaml(yamlText) {
+      try {
+        return jsyaml.load(yamlText) || {};
+      } catch (error) {
+        console.error('YAML parsing error:', error);
+        return { requires: [], resources: [] };
+      }
+    }
+
+    // Load MCP file from Git repository
+    async function loadMcpFileFromGit(filePath, mcpServerName) {
+      try {
+        console.log(`Loading MCP file from Git: ${filePath} for ${mcpServerName}`);
+        
+        // Convert relative path to absolute path in Git repo
+        // ./mcps/ariba-mcp.yaml -> A532408/mcps/ariba-mcp.yaml
+        const gitPath = `${CURRENT_AGENT}/${filePath.replace('./', '')}`;
+        
+        const response = await fetch('/policies/getGitFile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filePath: gitPath })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to load MCP file: ${response.status}`);
+        }
+
+        const result = await response.json();
+        const mcpYamlContent = result.value;
+        
+        if (!mcpYamlContent) {
+          throw new Error('No MCP file content received');
+        }
+        
+        console.log(`MCP file loaded for ${mcpServerName}:`, mcpYamlContent.substring(0, 200));
+        
+        // Parse the MCP YAML and extract tools
+        const mcpData = parseSimpleYaml(mcpYamlContent);
+        const tools = [];
+        
+        if (mcpData && mcpData.tools && Array.isArray(mcpData.tools)) {
+          console.log(`Found ${mcpData.tools.length} tools in ${mcpServerName}`);
+          
+          mcpData.tools.forEach(tool => {
+            if (tool.name) {
+              const toolItem = {
+                name: `${mcpServerName}:${tool.name}`,
+                type: 'mcp-tool',
+                mcpServer: mcpServerName,
+                toolName: tool.name,
+                title: tool.title || tool.name,
+                description: tool.description || '',
+                source: 'agent-manifest',
+                _meta: tool._meta || {}
+              };
+              
+              // Extract access and risk levels from _meta
+              if (tool._meta) {
+                if (tool._meta['sap/accessLevel']) {
+                  toolItem.accessLevel = tool._meta['sap/accessLevel'];
+                }
+                if (tool._meta['sap/riskLevel']) {
+                  toolItem.riskLevel = tool._meta['sap/riskLevel'];
+                }
+              }
+              
+              tools.push(toolItem);
+              console.log(`Added tool: ${tool.name} with access level: ${toolItem.accessLevel}, risk level: ${toolItem.riskLevel}`);
+            }
+          });
+        } else {
+          console.log(`No tools found in MCP file for ${mcpServerName}`);
+        }
+        
+        return tools;
+        
+      } catch (error) {
+        console.error(`Error loading MCP file ${filePath}:`, error);
+        return [];
+      }
+    }
+
+    // Extract tools from MCP YAML content using js-yaml
+    function extractToolsFromMcp(yamlContent, mcpServerName) {
+      const tools = [];
+      
+      try {
+        // Parse YAML using js-yaml library
+        const mcpData = jsyaml.load(yamlContent);
+        console.log(`Debug: Parsed MCP data for ${mcpServerName}:`, mcpData);
+        
+        if (!mcpData || !mcpData.tools || !Array.isArray(mcpData.tools)) {
+          console.log(`Debug: No tools array found in ${mcpServerName}`);
+          return tools;
+        }
+        
+        console.log(`Debug: Found ${mcpData.tools.length} tools in ${mcpServerName}`);
+        
+        mcpData.tools.forEach((tool, idx) => {
+          try {
+            if (!tool.name) {
+              console.warn(`Tool ${idx} in ${mcpServerName} has no name`);
+              return;
+            }
+            
+            const toolName = tool.name;
+            const toolTitle = tool.title || toolName;
+            const toolDesc = tool.description || '';
+            const _meta = tool._meta || {};
+            
+            console.log(`Debug: Processing tool ${toolName} with meta:`, _meta);
+            
+            tools.push({
+              name: `${mcpServerName}:${toolName}`,  // Fully qualified name as per conventions
+              type: 'mcp-tool',
+              mcpServer: mcpServerName,
+              toolName: toolName,                    // Simple tool name
+              title: toolTitle,
+              description: toolDesc,
+              source: 'agent-manifest',
+              accessLevel: _meta['sap/accessLevel'],
+              riskLevel: _meta['sap/riskLevel'],
+              mcpCategory: mcpData._meta ? mcpData._meta['sap/category'] : null,
+              _meta: _meta
+            });
+          } catch (err) {
+            console.warn('Error parsing tool:', err);
+          }
+        });
+      } catch (error) {
+        console.warn('Error parsing MCP YAML:', error);
+        console.log('YAML content preview:', yamlContent.substring(0, 500));
+      }
+      
+      return tools;
+    }
+
+    // Load MCP file content
+    async function loadMcpFile(filePath) {
+      try {
+        // Convert relative path to filename for the API
+        const filename = filePath.replace('./mcps/', '');
+        const response = await fetch('/policies/getMcpTemplate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data.value;
+      } catch (error) {
+        console.error('Error loading MCP file:', error);
+        throw error;
+      }
+    }
+
+    // Populate target selection with YAML items (legacy function - now calls combined function)
+    function populateYamlTargetSelection() {
+      console.log('populateYamlTargetSelection called - delegating to combined function');
+      if (combinedData) {
+        populateCombinedTargetSelection();
+        populateCombinedAutocompleteValues();
+      }
+    }
+
+    // Populate autocomplete values from loaded YAML (legacy function - now calls combined function)
+    function populateAutocompleteValues() {
+      console.log('populateAutocompleteValues called - delegating to combined function');
+      if (combinedData) {
+        populateCombinedAutocompleteValues();
+      }
+    }
+
+    // Populate the attribute type dropdown with only available attributes
+    function populateAttributeTypeDropdown(attributeValues) {
+      const attributeSelect = document.getElementById('policyAttributeType');
+      
+      // Clear existing options except the first one
+      while (attributeSelect.children.length > 1) {
+        attributeSelect.removeChild(attributeSelect.lastChild);
+      }
+
+      // Add options only for attributes that have values
+      Object.keys(attributeValues).forEach(attributeType => {
+        const values = attributeValues[attributeType];
+        const hasValues = (values && ((values.size && values.size > 0) || (Array.isArray(values) && values.length > 0)));
+        
+        if (hasValues) {
+          const option = document.createElement('option');
+          option.value = attributeType;
+          option.textContent = attributeType;
+          attributeSelect.appendChild(option);
+        }
+      });
+
+      // Update placeholder based on available attributes
+      const valueInput = document.getElementById('policyAttributeValue');
+      if (Object.keys(attributeValues).some(key => attributeValues[key].size > 0)) {
+        valueInput.placeholder = 'Select attribute type first';
+      } else {
+        valueInput.placeholder = 'No attributes available in template';
+      }
+    }
+
+    function updateAttributeTypeOptions(value) {
+      if (!combinedData || !combinedData.attributesBySource) {
+        return;
+      }
+
+      let sourceAttributes = {};
+      
+      try {
+        // Parse the target value to determine source
+        const targetData = JSON.parse(value);
+        const source = targetData.source;
+        
+        if (source === 'agent-manifest') {
+          sourceAttributes = combinedData.attributesBySource.yaml || {};
+        } else if (source === 'mcp-hub') {
+          sourceAttributes = combinedData.attributesBySource.mcpHub || {};
+        } else {
+          // If source is unknown, show all attributes
+          sourceAttributes = combinedData.attributes || {};
+        }
+      } catch (e) {
+        // If value is not JSON (legacy format), show all attributes
+        sourceAttributes = combinedData.attributes || {};
+      }
+
+      // Update the attribute dropdown with source-specific attributes
+      populateAttributeTypeDropdown(sourceAttributes);
+      
+      // Also update the global autocompleteValues for the attribute value autocomplete
+      window.autocompleteValues = sourceAttributes;
+      
+      // Clear current selections since available options changed
+      document.getElementById('policyAttributeType').selectedIndex = 0;
+      document.getElementById('policyAttributeValue').value = '';
+      hideAutocomplete();
+    }
+
+    function onAttributeTypeChange() {
+      // Clear the value input when attribute type changes
+      const valueInput = document.getElementById('policyAttributeValue');
+      valueInput.value = '';
+      hideAutocomplete();
+    }
+
+    // Handle autocomplete for attribute values
+    function handleAutocomplete(input) {
+      const attributeType = document.getElementById('policyAttributeType').value;
+      const inputValue = input.value.toLowerCase();
+      
+      if (!attributeType || !window.autocompleteValues) {
+        hideAutocomplete();
+        return;
+      }
+
+      const attributeValues = window.autocompleteValues[attributeType];
+      let possibleValues = [];
+      
+      if (attributeValues) {
+        // Handle both Sets and Arrays
+        if (attributeValues.size !== undefined) {
+          // It's a Set
+          possibleValues = Array.from(attributeValues);
+        } else if (Array.isArray(attributeValues)) {
+          // It's an Array
+          possibleValues = attributeValues;
+        }
+      }
+      
+      const filteredValues = possibleValues.filter(value => 
+        value.toLowerCase().includes(inputValue)
+      );
+
+      if (filteredValues.length === 0) {
+        hideAutocomplete();
+        return;
+      }
+
+      showAutocomplete(filteredValues, input);
+    }
+
+    function showAutocomplete(values, input) {
+      const dropdown = document.getElementById('attributeValueAutocomplete');
+      dropdown.innerHTML = '';
+      
+      values.forEach(value => {
+        const item = document.createElement('div');
+        item.className = 'autocomplete-item';
+        item.textContent = value;
+        item.onclick = () => selectAutocompleteValue(value);
+        dropdown.appendChild(item);
+      });
+      
+      // Check if dropdown would be cut off at bottom of viewport
+      const inputRect = input.getBoundingClientRect();
+      const dropdownHeight = Math.min(300, values.length * 40); // estimate dropdown height
+      const spaceBelow = window.innerHeight - inputRect.bottom;
+      const spaceAbove = inputRect.top;
+      
+      // Position dropdown above input if not enough space below
+      if (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) {
+        dropdown.style.top = 'auto';
+        dropdown.style.bottom = '100%';
+        dropdown.style.marginBottom = '2px';
+      } else {
+        dropdown.style.top = '100%';
+        dropdown.style.bottom = 'auto';
+        dropdown.style.marginBottom = '0px';
+      }
+      
+      dropdown.style.display = 'block';
+    }
+
+    function selectAutocompleteValue(value) {
+      document.getElementById('policyAttributeValue').value = value;
+      hideAutocomplete();
+    }
+
+    function hideAutocomplete() {
+      document.getElementById('attributeValueAutocomplete').style.display = 'none';
+    }
+
+    function addPolicyRule() {
+      const actionType = document.getElementById('policyActionType').value;
+      const targetTypeValue = document.getElementById('policyTargetType').value;
+      const attributeType = document.getElementById('policyAttributeType').value;
+      const attributeValue = document.getElementById('policyAttributeValue').value;
+
+      if (!actionType) {
+        showNotification('Please select an action type', 'error');
+        return;
+      }
+
+      if (!targetTypeValue) {
+        showNotification('Please select a target type', 'error');
+        return;
+      }
+
+      let targetType, constraint, yamlItem = null;
+      
+      try {
+        yamlItem = JSON.parse(targetTypeValue);
+        targetType = 'mcp';
+        
+        if (attributeType && attributeValue) {
+          // Ensure attribute has sap: prefix if not already prefixed
+          const attrName = attributeType.startsWith('sap:') ? attributeType.substring(4) : attributeType;
+          constraint = { attr: attrName, value: attributeValue };
+        } else {
+          // Default constraint should use the MCP server's actual category
+          if (yamlItem.mcpCategory) {
+            constraint = { attr: 'category', value: yamlItem.mcpCategory };
+          } else if (yamlItem.accessLevel) {
+            constraint = { attr: 'accessLevel', value: yamlItem.accessLevel };
+          } else if (yamlItem.riskLevel) {
+            constraint = { attr: 'riskLevel', value: yamlItem.riskLevel };
+          } else {
+            constraint = null;
+          }
+        }
+      } catch (e) {
+        targetType = targetTypeValue;
+        yamlItem = null;
+        
+        if (attributeType && attributeValue) {
+          constraint = { attr: attributeType, value: attributeValue };
+        } else {
+          constraint = null;
+        }
+      }
+
+      const exists = policyRules.some(rule => {
+        const ruleTargetName = rule.yamlItem ? rule.yamlItem.name : rule.targetType;
+        const newTargetName = yamlItem ? yamlItem.name : targetType;
+        
+        return rule.targetType === targetType && 
+               rule.actionType === actionType &&
+               ruleTargetName === newTargetName &&
+               JSON.stringify(rule.constraint) === JSON.stringify(constraint);
+      });
+
+      if (exists) {
+        showNotification('This policy rule already exists', 'error');
+        return;
+      }
+
+      const newRule = {
+        actionType: actionType,
+        targetType: targetType,
+        constraint: constraint,
+        source: targetTypeValue.startsWith('{') ? 'yaml-selection' : 'manual',
+        yamlItem: targetTypeValue.startsWith('{') ? yamlItem : null
+      };
+
+      policyRules.push(newRule);
+      addPolicyRuleToUI(newRule, policyRules.length - 1);
+      updatePolicyRuleCount();
+      
+      // Reset form
+      document.getElementById('policyActionType').value = 'allow';
+      document.getElementById('policyTargetType').value = '';
+      document.getElementById('selectedTargetText').textContent = '-- Select from loaded template --';
+      document.getElementById('policyAttributeType').value = '';
+      document.getElementById('policyAttributeValue').value = '';
+      
+      showNotification('Policy rule added successfully', 'success');
+    }
+
+    function addPolicyRuleToUI(rule, index = policyRules.length - 1) {
+      const rulesList = document.getElementById('policyRulesList');
+      
+      // Remove empty state if it exists
+      const emptyState = rulesList.querySelector('.empty-state');
+      if (emptyState) {
+        emptyState.remove();
+      }
+      
+      const newRuleElement = document.createElement('div');
+      newRuleElement.className = 'rule-item';
+      
+      const icons = {
+        mcp: '<svg class="rule-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z"/></svg>',
+        agent: '<svg class="rule-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>'
+      };
+      
+      let ruleHTML = '';
+      const badgeClass = rule.targetType === 'mcp' ? 'mcp' : 'agent';
+      
+      // Add action type at the beginning
+      const actionTypeColors = {
+        allow: 'background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;',
+        deny: 'background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;',
+        ask: 'background: #fef3c7; color: #92400e; border: 1px solid #fde68a;'
+      };
+      const actionTypeLabels = {
+        allow: 'Allow',
+        deny: 'Deny', 
+        ask: 'Ask For Consent'
+      };
+      
+      ruleHTML += `<span class="rule-badge" style="${actionTypeColors[rule.actionType] || actionTypeColors.allow}">
+        ${actionTypeLabels[rule.actionType] || 'Allow'}
+      </span>`;
+      
+      let displayText = 'MCP';
+      if (rule.yamlItem && rule.yamlItem.name) {
+        // Use stored display text if available (from ODRL reconstruction)
+        if (rule.yamlItem.displayText) {
+          displayText = rule.yamlItem.displayText;
+        } else if (rule.yamlItem.type === 'mcp-server') {
+          displayText = `${rule.yamlItem.name}: MCP Server`;
+        } else if (rule.yamlItem.type === 'mcp-tool') {
+          displayText = `${rule.yamlItem.name}: MCP Tool`;
+        }
+      } else if (rule.targetType === 'agent') {
+        displayText = 'Agent';
+      } else if (rule.targetType === 'mcp') {
+        displayText = 'MCP Server';
+      }
+      
+      ruleHTML += `<span class="rule-badge ${badgeClass}">
+        ${icons[rule.targetType]}
+        ${displayText}
+      </span>`;
+      
+      if (rule.constraint) {
+        const constraintBadgeClass = rule.constraint.attr === 'tag' ? 'tag' : 'location';
+        ruleHTML += '<span class="rule-text">Where</span>';
+        ruleHTML += `<span class="rule-badge ${constraintBadgeClass}">${rule.constraint.attr}:${rule.constraint.value}</span>`;
+      }
+      
+      ruleHTML += `<button class="btn-remove" onclick="removePolicyRule(${index})">×</button>`;
+      
+      newRuleElement.innerHTML = ruleHTML;
+      rulesList.appendChild(newRuleElement);
+    }
+
+    function updatePolicyRuleCount() {
+      const header = document.querySelector('.panel-header');
+      if (header && header.textContent.includes('Policy Rules')) {
+        header.textContent = `Policy Rules (${policyRules.length}):`;
+      }
+    }
+
+    function removePolicyRule(index) {
+      if (typeof index === 'number') {
+        policyRules.splice(index, 1);
+      }
+      renderPolicyRules();
+      updatePolicyRuleCount();
+    }
+
+    function renderPolicyRules() {
+      const rulesList = document.getElementById('policyRulesList');
+      rulesList.innerHTML = '';
+      
+      if (policyRules.length === 0) {
+        rulesList.innerHTML = `
+          <div class="empty-state">
+            <svg fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clip-rule="evenodd"/>
+              <path fill-rule="evenodd" d="M4 5a2 2 0 012-2v1a1 1 0 001 1h6a1 1 0 001-1V3a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+            </svg>
+            <p>No policy rules defined yet for this agent. Add rules below to control what this agent can access.</p>
+          </div>
+        `;
+        return;
+      }
+      
+      policyRules.forEach((rule, index) => {
+        const newRule = Object.assign({}, rule); // Copy rule to avoid modifying original
+        addPolicyRuleToUI(newRule, index);
+      });
+    }
+
+    async function saveAllToDatabase() {
+      try {
+        const odrlPolicies = convertPolicyRulesToODRL();
+        
+        // Use combined data for saving, fallback to individual data sources
+        const dataToSave = combinedData || loadedYamlData || {};
+        
+        const agentData = {
+          agentId: CURRENT_AGENT,
+          policies: JSON.stringify(odrlPolicies),
+          yaml: JSON.stringify(dataToSave)
+        };
+
+        // Try to update existing record first
+        let response = await fetch(`/policies/AgentPolicies('${CURRENT_AGENT}')`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            policies: JSON.stringify(odrlPolicies),
+            yaml: JSON.stringify(dataToSave)
+          })
+        });
+
+        if (response.ok) {
+          // Policies saved successfully, now commit and push MCP Hub cards to Git
+          try {
+            console.log('Committing and pushing MCP Hub cards to Git...');
+            const gitResponse = await fetch('/policies/commitMcpHubCards', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                commitMessage: `Update MCP Hub cards for agent ${CURRENT_AGENT}`,
+                agentId: CURRENT_AGENT
+              })
+            });
+            
+            if (gitResponse.ok) {
+              const gitResult = await gitResponse.json();
+              console.log('MCP Hub cards committed to Git:', gitResult);
+              showNotification('Policies updated and MCP Hub cards committed to Git', 'success');
+            } else {
+              console.warn('Failed to commit MCP Hub cards to Git');
+              showNotification('Policies updated successfully (Git commit failed)', 'success');
+            }
+          } catch (gitError) {
+            console.warn('Error committing MCP Hub cards to Git:', gitError);
+            showNotification('Policies updated successfully (Git commit failed)', 'success');
+          }
+        } else if (response.status === 404) {
+          // Record doesn't exist, try to create
+          response = await fetch('/policies/AgentPolicies', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(agentData)
+          });
+          
+          if (response.ok) {
+            // Policies saved successfully, now commit and push MCP Hub cards to Git
+            try {
+              console.log('Committing and pushing MCP Hub cards to Git...');
+              const gitResponse = await fetch('/policies/commitMcpHubCards', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  commitMessage: `Create MCP Hub cards for agent ${CURRENT_AGENT}`,
+                  agentId: CURRENT_AGENT
+                })
+              });
+              
+              if (gitResponse.ok) {
+                const gitResult = await gitResponse.json();
+                console.log('MCP Hub cards committed to Git:', gitResult);
+                showNotification('Policies saved and MCP Hub cards committed to Git', 'success');
+              } else {
+                console.warn('Failed to commit MCP Hub cards to Git');
+                showNotification('Policies saved successfully (Git commit failed)', 'success');
+              }
+            } catch (gitError) {
+              console.warn('Error committing MCP Hub cards to Git:', gitError);
+              showNotification('Policies saved successfully (Git commit failed)', 'success');
+            }
+          } else {
+            const errorData = await response.json();
+            console.error('Error saving policies:', errorData);
+            showNotification('Failed to save policies', 'error');
+          }
+        } else {
+          const errorData = await response.json();
+          console.error('Error updating policies:', errorData);
+          showNotification('Failed to save policies', 'error');
+        }
+      } catch (error) {
+        console.error('Error saving policies:', error);
+        showNotification('Error saving policies', 'error');
+      }
+    }
+
+    async function loadPoliciesFromDatabase() {
+      try {
+        console.log('Loading policies from Git repository for agent:', CURRENT_AGENT);
+        
+        const response = await fetch(`/policies/AgentPolicies('${CURRENT_AGENT}')`);
+        
+        if (response.ok) {
+          const agentData = await response.json();
+          console.log('Agent data loaded:', agentData);
+          
+          if (agentData.policies) {
+            try {
+              const odrlPolicies = JSON.parse(agentData.policies);
+              convertODRLToPolicyRules(odrlPolicies);
+              renderPolicyRules();
+              updatePolicyRuleCount();
+            } catch (parseError) {
+              console.error('Error parsing policies JSON:', parseError);
+              policyRules = [];
+              renderPolicyRules();
+              updatePolicyRuleCount();
+            }
+          } else {
+            // No policies for this agent - show empty state
+            policyRules = [];
+            renderPolicyRules();
+            updatePolicyRuleCount();
+          }
+        } else if (response.status === 404) {
+          console.log('No existing policies found for agent:', CURRENT_AGENT);
+          // Show empty state - no error notification for missing agent
+          policyRules = [];
+          renderPolicyRules();
+          updatePolicyRuleCount();
+        } else {
+          console.log('Error response from server, showing empty state');
+          // Show empty state for any other server errors
+          policyRules = [];
+          renderPolicyRules();
+          updatePolicyRuleCount();
+        }
+      } catch (error) {
+        console.log('Error connecting to database, showing empty state for agent:', CURRENT_AGENT);
+        // Show empty state for connection errors - no error notification
+        policyRules = [];
+        renderPolicyRules();
+        updatePolicyRuleCount();
+      }
+    }
+
+    function convertPolicyRulesToODRL() {
+      const odrlPolicies = {
+        "@context": [
+          "http://www.w3.org/ns/odrl.jsonld",
+          {
+            "sap": "http://sap.com/odrl/agent-identity/"
+          }
+        ],
+        "@type": "odrl:Set",
+        "uid": `sap:agent-policies-${CURRENT_AGENT}`,
+        "profile": "sap:agent-identity-governance",
+        "permission": [],
+        "prohibition": []
+      };
+
+      policyRules.forEach((rule, index) => {
+        const ruleBase = {
+          "comment": generateRuleComment(rule),
+          "uid": `sap:${rule.actionType}-${CURRENT_AGENT}-${index}`,
+          "assignee": "*",
+          "target": "sap:target:McpServerAsset",
+          "action": "sap:executeTools"
+        };
+
+        // Add constraints if present
+        if (rule.constraint || rule.yamlItem) {
+          ruleBase.constraint = [];
+          
+          if (rule.constraint) {
+            ruleBase.constraint.push({
+              "leftOperand": `sap:${rule.constraint.attr}`,
+              "operator": "isPartOf",
+              "rightOperand": [rule.constraint.value]
+            });
+          }
+          
+          // Add tool-specific constraints for MCP tools
+          if (rule.yamlItem && rule.yamlItem.type === 'mcp-tool') {
+            const toolName = rule.yamlItem.name; // Use fully qualified name: {mcpName}:{toolName}
+            ruleBase.constraint.push({
+              "leftOperand": "sap:toolName",
+              "operator": "isPartOf",
+              "rightOperand": [toolName]
+            });
+          }
+        }
+
+        // Add metadata to preserve original rule information
+        if (rule.yamlItem || rule.source) {
+          ruleBase.metadata = {
+            yamlItemType: rule.yamlItem?.type,
+            yamlItemName: rule.yamlItem?.name,
+            yamlItemTitle: rule.yamlItem?.title,
+            yamlItemDisplayText: rule.yamlItem ? (rule.yamlItem.type === 'mcp-server' ? `${rule.yamlItem.name}: MCP Server` : `${rule.yamlItem.name}: MCP Tool`) : null,
+            source: rule.source
+          };
+        }
+
+        // Handle consent (ask) rules as permissions with duty
+        if (rule.actionType === 'ask') {
+          ruleBase.priority = 160;
+          ruleBase.duty = [{ "action": "sap:obtainConsent" }];
+          odrlPolicies.permission.push(ruleBase);
+        } else if (rule.actionType === 'allow') {
+          odrlPolicies.permission.push(ruleBase);
+        } else if (rule.actionType === 'deny') {
+          odrlPolicies.prohibition.push(ruleBase);
+        }
+      });
+
+      return odrlPolicies;
+    }
+
+    function generateRuleComment(rule) {
+      const actionMap = {
+        'allow': 'Enable',
+        'deny': 'Explicitly deny',
+        'ask': 'Require consent for'
+      };
+      
+      const action = actionMap[rule.actionType] || 'Manage';
+      
+      if (rule.yamlItem && rule.yamlItem.type === 'mcp-tool') {
+        const toolName = rule.yamlItem.toolName || rule.yamlItem.name.split(':').pop();
+        return `${action} ${toolName} tool`;
+      } else if (rule.yamlItem && rule.yamlItem.type === 'mcp-server') {
+        return `${action} ${rule.yamlItem.name} MCP server`;
+      } else if (rule.constraint) {
+        return `${action} tools with ${rule.constraint.attr}:${rule.constraint.value}`;
+      } else {
+        return `${action} MCP tools`;
+      }
+    }
+
+    function convertODRLToPolicyRules(odrlPolicies) {
+      policyRules = [];
+      
+      // Process permissions (allow and ask rules)
+      if (odrlPolicies.permission) {
+        odrlPolicies.permission.forEach(permission => {
+          const rule = { 
+            actionType: permission.duty && permission.duty.some(d => d.action === 'sap:obtainConsent') ? 'ask' : 'allow',
+            targetType: 'mcp'
+          };
+          processNewODRLRule(permission, rule);
+          if (rule.targetType) policyRules.push(rule);
+        });
+      }
+      
+      // Process prohibitions (deny rules)
+      if (odrlPolicies.prohibition) {
+        odrlPolicies.prohibition.forEach(prohibition => {
+          const rule = { actionType: 'deny', targetType: 'mcp' };
+          processNewODRLRule(prohibition, rule);
+          if (rule.targetType) policyRules.push(rule);
+        });
+      }
+    }
+    
+    function processNewODRLRule(odrlRule, rule) {
+      // First check if we have metadata to reconstruct the original rule
+      if (odrlRule.metadata) {
+        if (odrlRule.metadata.yamlItemType && odrlRule.metadata.yamlItemName) {
+          rule.yamlItem = {
+            type: odrlRule.metadata.yamlItemType,
+            name: odrlRule.metadata.yamlItemName,
+            title: odrlRule.metadata.yamlItemTitle,
+            displayText: odrlRule.metadata.yamlItemDisplayText
+          };
+          rule.source = odrlRule.metadata.source || 'odrl-import';
+        }
+      }
+      
+      // Extract constraints
+      if (odrlRule.constraint && odrlRule.constraint.length > 0) {
+        // Find the first non-toolName constraint for general attribute constraints
+        const generalConstraint = odrlRule.constraint.find(c => c.leftOperand !== 'sap:toolName');
+        if (generalConstraint) {
+          const attrName = generalConstraint.leftOperand.replace('sap:', '');
+          const value = Array.isArray(generalConstraint.rightOperand) 
+            ? generalConstraint.rightOperand[0] 
+            : generalConstraint.rightOperand;
+          rule.constraint = { attr: attrName, value: value };
+        }
+        
+        // Look for tool-specific constraints to reconstruct yamlItem (fallback if no metadata)
+        const toolConstraint = odrlRule.constraint.find(c => c.leftOperand === 'sap:toolName');
+        if (toolConstraint && !rule.yamlItem) {
+          const toolName = Array.isArray(toolConstraint.rightOperand) 
+            ? toolConstraint.rightOperand[0] 
+            : toolConstraint.rightOperand;
+          rule.yamlItem = {
+            type: 'mcp-tool',
+            name: `unknown:${toolName}`,
+            toolName: toolName
+          };
+          rule.source = 'odrl-import';
+        }
+      }
+    }
+
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+
+      setTimeout(() => notification.classList.add('show'), 100);
+      setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
+
+    // ============= SIDEBAR FUNCTIONALITY =============
+    let allAgents = [];
+    let filteredAgents = [];
+
+    // Fetch all agents from the API
+    async function loadAllAgents() {
+      console.log('Loading agents from API...');
+      try {
+        const response = await fetch('/policies/listAllAgents', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        console.log('Agents API response status:', response.status);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch agents: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('Agents API response data:', data);
+
+        allAgents = data.value || [];
+        console.log('Total agents loaded:', allAgents.length);
+
+        filteredAgents = allAgents;
+        renderAgentsList();
+        updateAgentsCount();
+      } catch (error) {
+        console.error('Error loading agents:', error);
+        document.getElementById('agentsList').innerHTML = `
+          <div class="sidebar-empty">
+            <svg fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+            <p>Failed to load agents</p>
+            <p style="font-size: 11px; color: #ef4444; margin-top: 8px;">${error.message}</p>
+            <button onclick="loadAllAgents()" style="margin-top: 8px; padding: 6px 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Retry</button>
+          </div>
+        `;
+      }
+    }
+
+    // Render the agents list in the sidebar
+    function renderAgentsList() {
+      const agentsList = document.getElementById('agentsList');
+
+      if (filteredAgents.length === 0) {
+        agentsList.innerHTML = `
+          <div class="sidebar-empty">
+            <svg fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/>
+              <path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+            </svg>
+            <p>${allAgents.length === 0 ? 'No agents found' : 'No matching agents'}</p>
+          </div>
+        `;
+        return;
+      }
+
+      agentsList.innerHTML = filteredAgents.map(agent => {
+        const isActive = agent.agentId === CURRENT_AGENT;
+        const modifiedDate = agent.modifiedAt ? new Date(agent.modifiedAt).toLocaleDateString() : '';
+        return `
+          <div class="agent-list-item ${isActive ? 'active' : ''}" onclick="selectAgent('${agent.agentId}')">
+            <div class="agent-icon">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/>
+                <path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+              </svg>
+            </div>
+            <div class="agent-details">
+              <div class="agent-name">${agent.agentId}</div>
+              ${modifiedDate ? `<div class="agent-meta">Modified: ${modifiedDate}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Select an agent and load its policies
+    function selectAgent(agentId) {
+      if (agentId === CURRENT_AGENT) {
+        return; // Already selected
+      }
+
+      CURRENT_AGENT = agentId;
+      updateAgentInfoDisplay();
+      renderAgentsList(); // Re-render to update active state
+      loadPoliciesFromDatabase();
+    }
+
+    // Filter agents based on search term
+    function filterAgents(searchTerm) {
+      const term = searchTerm.toLowerCase().trim();
+      if (term === '') {
+        filteredAgents = allAgents;
+      } else {
+        filteredAgents = allAgents.filter(agent =>
+          agent.agentId.toLowerCase().includes(term)
+        );
+      }
+      renderAgentsList();
+      updateAgentsCount();
+    }
+
+    // Update the agents count in the footer
+    function updateAgentsCount() {
+      const count = filteredAgents.length;
+      document.getElementById('agentsCount').textContent = `${count} agent${count !== 1 ? 's' : ''}`;
+    }
+
+  </script>
+    </div> <!-- Close policies-content -->
+    </div> <!-- Close container -->
+    </div> <!-- Close main-content -->
+  </div> <!-- Close app-layout -->
+</body>
+</html>

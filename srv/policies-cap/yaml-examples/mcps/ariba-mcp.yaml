@@ -1,0 +1,206 @@
+$schema: >-
+  https://static.modelcontextprotocol.io/schemas/2025-12-11/server-card.schema.json
+version: '1.0'
+protocolVersions:
+  - '2025-11-25'
+serverInfo:
+  name: ariba-mcp
+  title: SAP Ariba Procurement MCP Server
+  version: 1.0.0
+  description: >-
+    MCP server for SAP Ariba procurement operations including purchase orders,
+    vendors, and workflows
+  websiteUrl: 'https://www.ariba.com'
+transport:
+  type: streamable-http
+  endpoint: /mcp/ariba
+capabilities:
+  tools: {}
+  resources: {}
+authentication:
+  required: true
+  schemas:
+    - oauth2
+    - bearer
+_meta:
+  sap/category: procurement
+  sap/description: Native MCP server for SAP Ariba procurement operations
+tools:
+  - name: po.search
+    title: Search Purchase Orders
+    description: Search for purchase orders in Ariba
+    inputSchema:
+      type: object
+      properties:
+        query:
+          type: string
+          description: Search query string
+        poNumber:
+          type: string
+          description: Filter by specific PO number
+        status:
+          type: string
+          enum:
+            - draft
+            - pending
+            - approved
+            - rejected
+            - cancelled
+          description: Filter by PO status
+        vendorId:
+          type: string
+          description: Filter by vendor ID
+        dateFrom:
+          type: string
+          format: date
+          description: Filter POs from this date
+        dateTo:
+          type: string
+          format: date
+          description: Filter POs up to this date
+        limit:
+          type: integer
+          description: Maximum number of results
+          default: 50
+          minimum: 1
+          maximum: 500
+    annotations:
+      readOnlyHint: true
+    _meta:
+      createdBy: 'sap:ariba'
+      sap/accessLevel: authenticated-user
+      sap/riskLevel: sensitive
+  - name: po.read
+    title: Read Purchase Order
+    description: Retrieve detailed information about a specific purchase order
+    inputSchema:
+      type: object
+      required:
+        - poId
+      properties:
+        poId:
+          type: string
+          description: Purchase order ID
+        includeItems:
+          type: boolean
+          description: Whether to include line items
+          default: true
+        includeHistory:
+          type: boolean
+          description: Whether to include approval history
+          default: false
+    annotations:
+      readOnlyHint: true
+    _meta:
+      createdBy: 'sap:ariba'
+      sap/accessLevel: authenticated-user
+      sap/riskLevel: sensitive
+  - name: vendor.read
+    title: Read Vendor Information
+    description: Retrieve vendor master data from Ariba
+    inputSchema:
+      type: object
+      required:
+        - vendorId
+      properties:
+        vendorId:
+          type: string
+          description: Vendor ID
+        includeContracts:
+          type: boolean
+          description: Whether to include active contracts
+          default: false
+        includePerformance:
+          type: boolean
+          description: Whether to include performance metrics
+          default: false
+    annotations:
+      readOnlyHint: true
+    _meta:
+      createdBy: 'sap:ariba'
+      sap/accessLevel: authenticated-user
+      sap/riskLevel: sensitive
+  - name: po.changeRequest.create
+    title: Create PO Change Request
+    description: Create a change request for a purchase order
+    inputSchema:
+      type: object
+      required:
+        - poId
+        - changes
+      properties:
+        poId:
+          type: string
+          description: Purchase order ID to modify
+        changes:
+          type: object
+          description: Changes to apply to the PO
+          properties:
+            items:
+              type: array
+              description: Modified or new line items
+              items:
+                type: object
+                properties:
+                  itemId:
+                    type: string
+                    description: 'Item ID for updates, omit for new items'
+                  productId:
+                    type: string
+                  quantity:
+                    type: number
+                  unitPrice:
+                    type: number
+                  action:
+                    type: string
+                    enum:
+                      - add
+                      - update
+                      - delete
+            deliveryDate:
+              type: string
+              format: date
+              description: New delivery date
+            shippingAddress:
+              type: object
+              description: New shipping address
+        reason:
+          type: string
+          description: Reason for the change request
+    annotations:
+      destructiveHint: true
+    _meta:
+      createdBy: 'sap:ariba'
+      sap/accessLevel: authenticated-user
+      sap/riskLevel: critical
+  - name: po.comment.add
+    title: Add PO Comment
+    description: Add a comment to a purchase order
+    inputSchema:
+      type: object
+      required:
+        - poId
+        - comment
+      properties:
+        poId:
+          type: string
+          description: Purchase order ID
+        comment:
+          type: string
+          description: Comment text
+        visibility:
+          type: string
+          enum:
+            - internal
+            - vendor
+            - both
+          description: Comment visibility
+          default: internal
+    annotations:
+      destructiveHint: true
+    _meta:
+      createdBy: 'sap:ariba'
+      sap/accessLevel: authenticated-user
+      sap/riskLevel: sensitive
+resources: []
+prompts: []
