@@ -15,7 +15,6 @@
       "csrfProtection": false,
       "authenticationType": "ias"
     },
-
     {
       "source": "^/auth/debug(.*)$",
       "target": "/$1",
@@ -31,7 +30,6 @@
       "csrfProtection": false,
       "authenticationType": "ias"
     },
-
     {
       "source": "^/user-api(.*)",
       "target": "$1",
@@ -39,7 +37,14 @@
       "authenticationType": "ias",
       "service": "sap-approuter-userapi"
     },
-
+    {
+      "source": "^/destination/([^/]+)/(.*)$",
+      "target": "$2",
+      "destination": "$1",
+      "authenticationType": "xsuaa",
+      "identityProvider": "entra-oidc",
+      "dynamicIdentityProvider": true
+    },
     {
       "source": "^/(.*)$",
       "target": "$1",
