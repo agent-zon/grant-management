@@ -13,28 +13,14 @@ handler receive the raw POST body without property validation. */
    function resources(agent: $self) returns String;
     /** Returns RulesSection HTML — GET /policies/AgentPolicies/{id}/rules */
    function rules(agent: $self) returns String;
+    /** HTMX fragment: append one rule and re-render #rules-section */
+   action addRule(agent: $self, rules: String, ruleAction: String, target: String, constraint: String, constraintValue: String) returns String;
+    /** HTMX fragment: remove rule at index and re-render #rules-section */
+   action removeRule(agent: $self, rules: String, index: Integer) returns String;
 
 function edit(agent: $self) returns String;
 
 function view (in: many $self) returns String;
 
 };
-
-/** HTMX fragment: append one rule and re-render #rules-section */
-action addRule(
-    rules          : String,
-    agentIdRules   : String,
-    ruleAction     : String,
-    target         : String,
-    constraint     : String,
-    constraintValue: String
-  ) returns String;
-
-/** HTMX fragment: remove rule at index and re-render #rules-section */
-action removeRule(
-    rules       : String,
-    agentIdRules: String,
-    index       : Integer
-  ) returns String;
-
 }

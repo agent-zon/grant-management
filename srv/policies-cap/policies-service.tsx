@@ -18,9 +18,9 @@ export default class PoliciesService extends cds.ApplicationService {
     this.on("resources", "AgentPolicies", RESOURCES);
     // Bound function: GET /policies/AgentPolicies/{id}/rules → RulesSection HTML
     this.on("rules", "AgentPolicies", RULES);
-    // HTMX rule fragments
-    this.on("addRule", ADD_RULE);
-    this.on("removeRule", REMOVE_RULE);
+    // Bound actions: POST /policies/AgentPolicies/{id}/addRule, removeRule
+    this.on("addRule", "AgentPolicies", ADD_RULE);
+    this.on("removeRule", "AgentPolicies", REMOVE_RULE);
     return super.init();
   }
 }

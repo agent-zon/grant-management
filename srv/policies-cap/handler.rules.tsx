@@ -8,6 +8,8 @@ const BASE = "/policies/AgentPolicies";
 
 export const rulesUrl = (agentId: string) => `${BASE}/${agentId}/rules`;
 const resourcesUrl = (agentId: string) => `${BASE}/${agentId}/resources`;
+export const addRuleUrl = (agentId: string) => `${BASE}/${agentId}/addRule`;
+export const removeRuleUrl = (agentId: string) => `${BASE}/${agentId}/removeRule`;
 
 // ─── Shared types ─────────────────────────────────────────────────────────────
 
@@ -103,9 +105,6 @@ export function RulesSection({
   return (
     <div id="rules-section" className="space-y-4">
       {/* State carried through every HTMX swap */}
-      <input type="hidden" name="rules" value={JSON.stringify(rules)} />
-      <input type="hidden" name="agentIdRules" value={agentId} />
-      <input type="hidden" name="resourcesUrl" value={resourcesUrl} />
 
       {/* ── Rule cards ─────────────────────────────────────────────────────── */}
       <div className="space-y-2 min-h-[4rem]">
@@ -134,9 +133,8 @@ export function RulesSection({
                 )}
               </div>
               <button
-                hx-post="/policies/removeRule"
+                hx-post={"removeRule"}
                 hx-ext="json-enc"
-                hx-include="[name=rules],[name=agentIdRules],[name=resourcesUrl]"
                 hx-vals={`{"index":${i}}`}
                 hx-target="#rules-section"
                 hx-swap="outerHTML"
@@ -192,6 +190,7 @@ export function RulesSection({
               />
 
             </div>
+
           </div>
 
           {/* Constraint row */}
@@ -213,7 +212,7 @@ export function RulesSection({
           </div>
 
           <button
-            hx-post="/policies/addRule"
+            hx-post={"addRule"}
             hx-ext="json-enc"
             hx-include="#rules-section"
             hx-target="#rules-section"
@@ -230,7 +229,8 @@ export function RulesSection({
 
 // ─── CDS action handlers ───────────────────────────────────────────────────────
 
-export async function ADD_RULE(req: cds.Request) {
+export async function ADD_RULE(this: any, req: cds.Request) {
+  const { agentId } = req.params[0] || {};
   const d = req.data as any;
   const rules: PolicyRule[] = safeJson(d.rules, []);
 
@@ -249,11 +249,12 @@ export async function ADD_RULE(req: cds.Request) {
 
   return sendHtml(
     req,
-    renderToString(<RulesSection rules={rules} agentId={d.agentIdRules || ""} resourcesUrl={d.resourcesUrl || ""} />)
+    renderToString(<RulesSection rules={rules} agentId={agentId || ""} resourcesUrl={resourcesUrl(agentId || "")} />)
   );
 }
 
-export async function REMOVE_RULE(req: cds.Request) {
+export async function REMOVE_RULE(this: any, req: cds.Request) {
+  const { agentId } = req.params[0] || {};
   const d = req.data as any;
   const rules: PolicyRule[] = safeJson(d.rules, []);
   const idx = Number(d.index);
@@ -262,7 +263,7 @@ export async function REMOVE_RULE(req: cds.Request) {
 
   return sendHtml(
     req,
-    renderToString(<RulesSection rules={rules} agentId={d.agentIdRules || ""} resourcesUrl={d.resourcesUrl || ""} />)
+    renderToString(<RulesSection rules={rules} agentId={agentId || ""} resourcesUrl={resourcesUrl(agentId || "")} />)
   );
 }
 
