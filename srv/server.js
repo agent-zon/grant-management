@@ -48,6 +48,20 @@ cds.on("bootstrap", (app) => {
   app.use(bodyParser.json({ extended: true }));
 
 
+  // Rewrite versions/key → versions('key') for CAP REST (treats versions.main as key otherwise)
+  app.use((req, _res, next) => {
+    const raw = (req.originalUrl || req.url || "").split("?")[0];
+    const match = raw.match(/^(\/policies\/AgentPolicies\/[^/]+)\/versions\/([^/'()]+)(\/.*)?$/);
+    if (match) {
+      const [, prefix, key, rest = ""] = match;
+      const qs = (req.originalUrl || req.url || "").includes("?") ? (req.originalUrl || req.url).slice((req.originalUrl || req.url).indexOf("?")) : "";
+      const newPath = prefix + "/versions('" + key + "')" + rest;
+      req.url = newPath + qs;
+      req.path = newPath;
+    }
+    next();
+  });
+
   // MCP action is POST-only; GET hits CDS parse and returns 400, causing client retry loop.
   // Answer GET /grants/mcp with 405 so clients don't retry and CDS never sees the GET.
   app.use((req, res, next) => {

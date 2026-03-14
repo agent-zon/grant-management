@@ -3,7 +3,6 @@ import { render } from "#cds-ssr";
 import getOctokit from "./git-handler/git-handler";
 
 const GIT = { owner: "AIAM", repo: "policies" };
-const BASE = "/policies/AgentPolicies";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -25,7 +24,7 @@ export async function fetchAgents(): Promise<string[]> {
 function AgentListItem({ id, active }: { id: string; active?: boolean; key?: string }) {
   return (
     <button
-      hx-get={`${id}/edit`}
+      hx-get={`../${id}/edit`}
       hx-target="#policy-panel"
       hx-swap="innerHTML"
       hx-push-url="true"
@@ -118,11 +117,11 @@ export function FullPage({ agents, activeId, panelContent }: { agents: string[];
 // ─── CDS handler ──────────────────────────────────────────────────────────────
 
 export async function LIST(this: any, req: cds.Request) {
-  const agents = await fetchAgents();
+  const agents = req.data?.agents ?? await fetchAgents();
 
   if (!req?.http?.req.accepts("html")) {
-    return agents.map(id => ({ agentId: id }));
+    return (Array.isArray(agents) ? agents : []).map((id: string) => ({ agentId: id }));
   }
 
-  return render(req, <FullPage agents={agents} panelContent={<EmptyState />} />);
+  return render(req, <FullPage agents={Array.isArray(agents) ? agents : []} panelContent={<EmptyState />} />);
 }

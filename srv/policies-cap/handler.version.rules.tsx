@@ -217,17 +217,8 @@ export function RulesSection({ rules, version }: { rules: PolicyRule[]; version:
 
 // ─── CDS action handlers (AgentPolicyVersions) ─────────────────────────────────
 
-function extractAgentIdVersion(req: any): { agentId: string; version: string } {
-  const params = req?.params || [];
-  const p0 = params[0] || {};
-  const p1 = params[1] || {};
-  const agentId = p0.agentId ?? p1.agentId ?? "";
-  const version = p1.version ?? p0.version ?? MAIN;
-  return { agentId, version };
-}
-
 export async function ADD_RULE(this: any, req: cds.Request) {
-  const { agentId, version } = extractAgentIdVersion(req);
+  const { version } = req.params[1] || {};
   const d = req.data as any;
   const rules: PolicyRule[] = safeJson(d.rules, []);
   const v = d.version || version || MAIN;
@@ -252,7 +243,7 @@ export async function ADD_RULE(this: any, req: cds.Request) {
 }
 
 export async function REMOVE_RULE(this: any, req: cds.Request) {
-  const { agentId, version } = extractAgentIdVersion(req);
+  const { version } = req.params[1] || {};
   const d = req.data as any;
   const v = d.version || version || MAIN;
   const rules: PolicyRule[] = safeJson(d.rules, []);
@@ -268,13 +259,10 @@ export async function REMOVE_RULE(this: any, req: cds.Request) {
 
 /** GET AgentPolicyVersions/.rules → RulesSection HTML */
 export async function RULES(this: any, req: cds.Request) {
-  const { agentId, version } = extractAgentIdVersion(req);
+    const { agentId, version, policy } = req.data
   if (!agentId) return sendHtml(req, "");
 
-  const branch = branchFromRequest(req, agentId);
-  const octokit = await getOctokit();
-  const savedRaw = await fetchGitFile(octokit, `${agentId}/policies.json`, branch);
-  const rules = odrlToRules(savedRaw);
+  const rules = odrlToRules(policy);
 
   return sendHtml(
     req,

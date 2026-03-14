@@ -49,25 +49,9 @@ async function fetchResources(agentId: string, ref: string = "main"): Promise<Ta
   return resources;
 }
 
-function extractAgentIdVersion(req: any): { agentId: string; version: string } {
-  const params = req?.params || [];
-  const p0 = params[0] || {};
-  const p1 = params[1] || {};
-  const agentId = p0.agentId ?? p1.agentId ?? "";
-  const version = p1.version ?? p0.version ?? "main";
-  return { agentId, version };
-}
-
 /** GET AgentPolicyVersions/.../resources → <option> elements for the datalist */
 export async function RESOURCES(this: any, req: cds.Request) {
-  const { agentId } = extractAgentIdVersion(req);
-  const branch = branchFromRequest(req, agentId);
-
-  const resources = agentId ? await fetchResources(agentId, branch).catch(() => [] as TargetOption[]) : [];
-
-  const options = resources.map(r =>
-    `<option value="${r.value}" label="${r.label}">${r.label}</option>`
-  ).join("\n");
-
-  return sendHtml(req, options);
+  const { agentId, version } = req.data
+  const resources = await fetchResources(agentId, version).catch(() => [] as TargetOption[]);
+  return sendHtml(req, resources.map(r => `<option value="${r.value}" label="${r.label}">${r.label}</option>`).join("\n"));
 }
