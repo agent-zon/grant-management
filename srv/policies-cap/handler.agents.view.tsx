@@ -24,7 +24,7 @@ export async function fetchAgents(): Promise<string[]> {
 function AgentListItem({ id, active }: { id: string; active?: boolean; key?: string }) {
   return (
     <button
-      hx-get={`../${id}/edit`}
+      hx-get={`${id}/edit`}
       hx-target="#policy-panel"
       hx-swap="innerHTML"
       hx-push-url="true"

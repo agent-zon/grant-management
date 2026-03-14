@@ -64,6 +64,67 @@ test.describe('Policies Service', () => {
     await page.waitForSelector('#policy-panel', { timeout: 5000 });
     await expect(page.locator('button:has-text("Save Policies")')).toBeVisible();
   });
+
+  test('add rule shows new rule in list', async ({ page }) => {
+    const agentBtn = page.locator('#agents-nav button').first();
+    if ((await agentBtn.count()) === 0) {
+      test.skip();
+      return;
+    }
+    await agentBtn.click();
+    await expect(page.locator('#policy-panel').getByText('Policy Editor')).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('#rules-section')).toBeVisible({ timeout: 5000 });
+
+    const targetInput = page.locator('input[name="target"]');
+    await targetInput.fill('mcp|e2e-test-server|E2E Test Server');
+
+    await page.locator('button:has-text("+ Add Rule")').click();
+    await expect(page.locator('#rules-section').getByText('E2E Test Server')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#rules-section').getByText('Allow')).toBeVisible();
+  });
+
+  test('save rule shows success toast', async ({ page }) => {
+    const agentBtn = page.locator('#agents-nav button').first();
+    if ((await agentBtn.count()) === 0) {
+      test.skip();
+      return;
+    }
+    await agentBtn.click();
+    await expect(page.locator('#policy-panel').getByText('Policy Editor')).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('#rules-section')).toBeVisible({ timeout: 5000 });
+
+    const targetInput = page.locator('input[name="target"]');
+    await targetInput.fill('mcp|e2e-save-test|E2E Save Test');
+
+    await page.locator('button:has-text("+ Add Rule")').click();
+    await expect(page.locator('#rules-section').getByText('E2E Save Test')).toBeVisible({ timeout: 5000 });
+
+    await page.locator('button:has-text("Save Policies")').click();
+    await expect(page.locator('#save-toast')).toContainText('Committed to Git', { timeout: 10000 });
+  });
+
+  test('remove rule removes from list', async ({ page }) => {
+    const agentBtn = page.locator('#agents-nav button').first();
+    if ((await agentBtn.count()) === 0) {
+      test.skip();
+      return;
+    }
+    await agentBtn.click();
+    await expect(page.locator('#policy-panel').getByText('Policy Editor')).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('#rules-section')).toBeVisible({ timeout: 5000 });
+
+    const targetInput = page.locator('input[name="target"]');
+    await targetInput.fill('mcp|e2e-remove-test|E2E Remove Test');
+
+    await page.locator('button:has-text("+ Add Rule")').click();
+    await expect(page.locator('#rules-section').getByText('E2E Remove Test')).toBeVisible({ timeout: 5000 });
+
+    const ruleRow = page.locator('#rules-section div.group:has-text("E2E Remove Test")');
+    await ruleRow.hover();
+    await ruleRow.locator('button[title="Remove rule"]').click();
+
+    await expect(page.locator('#rules-section').getByText('E2E Remove Test')).not.toBeVisible({ timeout: 3000 });
+  });
 });
 
 test.describe('Policies direct URL', () => {
