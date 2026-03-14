@@ -127,8 +127,7 @@ async function ensureBranchExists(octokit: any, branch: string): Promise<void> {
 
 /** POST AgentPolicyVersions/agent-123/versions/<version>/save → commit to Git */
 export async function POST_SAVE(this: any, req: cds.Request) {
-  const { agentId } = req.params[0] || {};
-  const { version, rules: rulesJson } = req.data || {};
+  const { version, rules: rulesJson, agentId } = req.data || {};
   const ref = version || "main";
 
   try {

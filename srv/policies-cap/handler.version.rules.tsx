@@ -6,33 +6,6 @@ import { MAIN, branchFromRequest } from "./git-version";
 
 const GIT = { owner: "AIAM", repo: "policies" };
 
-// ─── Shared types ─────────────────────────────────────────────────────────────
-
-export type PolicyRule = {
-  actionType: "allow" | "deny" | "ask";
-  target: string;
-  targetType: "mcp" | "tool";
-  targetName: string;
-  constraint: string;
-  constraintValue: string;
-};
-
-export type TargetOption = {
-  value: string;
-  label: string;
-  type: "mcp" | "tool";
-};
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-export function safeJson<T>(s: string | undefined | null, fallback: T): T {
-  try { return s ? JSON.parse(s) : fallback; } catch { return fallback; }
-}
-
-export function encodeTarget(type: "mcp" | "tool", id: string, name: string) {
-  return `${type}|${id}|${name}`;
-}
-
 function decodeTarget(value: string): { type: "mcp" | "tool"; id: string; name: string } {
   const [type, id, ...nameParts] = value.split("|");
   return { type: type as "mcp" | "tool", id, name: nameParts.join("|") };
@@ -51,30 +24,23 @@ export function odrlToRules(odrlJson: string | null): PolicyRule[] {
   if (!odrlJson) return [];
   const odrl = safeJson(odrlJson, null) as any;
   if (!odrl) return [];
-  const rules: PolicyRule[] = [];
-  for (const perm of odrl.permission || []) {
-    const isAsk = perm.duty?.some((d: any) => d.action === "sap:obtainConsent");
-    const c = perm.constraint?.[0];
-    rules.push({
-      actionType: isAsk ? "ask" : "allow",
-      target: encodeTarget(perm._metadata?.targetType || "mcp", perm.target, perm._metadata?.targetName || perm.target),
-      targetType: perm._metadata?.targetType || "mcp",
-      targetName: perm._metadata?.targetName || perm.target,
-      constraint: c?.leftOperand?.replace("sap:", "") || "",
-      constraintValue: c?.rightOperand?.[0] || "",
-    });
-  }
-  for (const prohib of odrl.prohibition || []) {
-    const c = prohib.constraint?.[0];
-    rules.push({
-      actionType: "deny",
-      target: encodeTarget(prohib._metadata?.targetType || "mcp", prohib.target, prohib._metadata?.targetName || prohib.target),
-      targetType: prohib._metadata?.targetType || "mcp",
-      targetName: prohib._metadata?.targetName || prohib.target,
-      constraint: c?.leftOperand?.replace("sap:", "") || "",
-      constraintValue: c?.rightOperand?.[0] || "",
-    });
-  }
+  const rules = [...odrl.permission.map((perm: any) => ({
+    actionType: perm.duty?.some((d: any) => d.action === "sap:obtainConsent") ? "ask" : "allow",
+    target: encodeTarget(perm._metadata?.targetType || "mcp", perm.target, perm._metadata?.targetName || perm.target),
+    targetType: perm._metadata?.targetType || "mcp",
+    targetName: perm._metadata?.targetName || perm.target,
+    constraint: perm.constraint?.[0]?.leftOperand?.replace("sap:", "") || "",
+    constraintValue: perm.constraint?.[0]?.rightOperand?.[0] || "",
+  })), ...odrl.prohibition.map((prohib: any) => ({
+    actionType: "deny",
+    target: encodeTarget(prohib._metadata?.targetType || "mcp", prohib.target, prohib._metadata?.targetName || prohib.target),
+    targetType: prohib._metadata?.targetType || "mcp",
+    targetName: prohib._metadata?.targetName || prohib.target,
+    constraint: prohib.constraint?.[0]?.leftOperand?.replace("sap:", "") || "",
+    constraintValue: prohib.constraint?.[0]?.rightOperand?.[0] || "",
+  }))];
+
+
   return rules;
 }
 
@@ -218,28 +184,25 @@ export function RulesSection({ rules, version }: { rules: PolicyRule[]; version:
 // ─── CDS action handlers (AgentPolicyVersions) ─────────────────────────────────
 
 export async function ADD_RULE(this: any, req: cds.Request) {
-  const { version } = req.params[1] || {};
-  const d = req.data as any;
-  const rules: PolicyRule[] = safeJson(d.rules, []);
-  const v = d.version || version || MAIN;
+  const { version, rules, ruleAction, target, constraint, constraintValue } = req.data;
 
-  if (d.target) {
-    const { type, name } = decodeTarget(d.target);
-    const action = ["allow", "deny", "ask"].includes(d.ruleAction) ? d.ruleAction : "allow";
-    rules.push({
+  if (target) {
+    const { type, name } = decodeTarget(target);
+    const action = ["allow", "deny", "ask"].includes(ruleAction) ? ruleAction : "allow";
+    const newRules = [...rules, {
       actionType: action,
-      target: d.target,
+      target: target,
       targetType: type,
       targetName: name,
-      constraint: d.constraint || "",
-      constraintValue: d.constraintValue || "",
-    });
-  }
+      constraint: constraint || "",
+      constraintValue: constraintValue || "",
+    }];
 
-  return sendHtml(
-    req,
-    renderToString(<RulesSection rules={rules} version={v} />)
-  );
+    return sendHtml(
+      req,
+      renderToString(<RulesSection rules={newRules} version={version} />)
+    );
+  }
 }
 
 export async function REMOVE_RULE(this: any, req: cds.Request) {
@@ -259,10 +222,9 @@ export async function REMOVE_RULE(this: any, req: cds.Request) {
 
 /** GET AgentPolicyVersions/.rules → RulesSection HTML */
 export async function RULES(this: any, req: cds.Request) {
-    const { agentId, version, policy } = req.data
+  const { agentId, version, rules } = req.data
   if (!agentId) return sendHtml(req, "");
 
-  const rules = odrlToRules(policy);
 
   return sendHtml(
     req,
