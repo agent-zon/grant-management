@@ -4,19 +4,21 @@ import { GET_REDIRECT } from "./handler.agents.edit";
 import { GET_EDIT, POST_SAVE } from "./handler.version.edit";
 import { RESOURCES } from "./handler.version.resources";
 import { ADD_RULE, REMOVE_RULE, RULES } from "./handler.version.rules";
-import LIST_DATA from "./handler.agents";
-import GET_VERSION from "./handler.version";
+import { agentsDataMiddleware, default as LIST_DATA } from "./handler.agents";
+import { versionDataMiddleware, default as GET_VERSION } from "./handler.version";
 
 export default class PoliciesService extends cds.ApplicationService {
   init() {
+    this.before(["READ", "view", "edit"], "AgentPolicies", agentsDataMiddleware);
     this.on("edit", "AgentPolicies", GET_REDIRECT);
     this.on("view", "AgentPolicies", LIST);
     this.on("READ", "AgentPolicies", LIST_DATA);
+
+    this.before(["READ", "edit", "save", "resources", "rules", "addRule", "removeRule"], "AgentPolicyVersions", versionDataMiddleware);
     this.on("CREATE", "AgentPolicies", POST_SAVE);
     this.on("UPDATE", "AgentPolicies", POST_SAVE);
 
     this.on("READ", "AgentPolicyVersions", GET_VERSION);
-
     this.on("edit", "AgentPolicyVersions", GET_EDIT);
     this.on("save", "AgentPolicyVersions", POST_SAVE);
     this.on("resources", "AgentPolicyVersions", RESOURCES);

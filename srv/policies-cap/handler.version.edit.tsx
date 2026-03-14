@@ -2,7 +2,6 @@ import cds from "@sap/cds";
 import { render, sendHtml } from "#cds-ssr";
 import { renderToString } from "react-dom/server";
 import getOctokit from "./git-handler/git-handler";
-import { branchFromRequest, branchToVersion, draftBranchName } from "./git-version";
 import { encodeTarget, fetchGitFile, safeJson, type PolicyRule } from "./handler.version.rules";
 import { FullPage, fetchAgents } from "./handler.agents.view";
 const GIT = { owner: "AIAM", repo: "policies" };
@@ -46,20 +45,9 @@ function Toast({ ok, agentId, message }: { ok: boolean; agentId?: string; messag
   );
 }
 
-function extractAgentIdVersion(req: any): { agentId: string; version: string } {
-  const params = req?.params || [];
-  const p0 = params[0] || {};
-  const p1 = params[1] || {};
-  const agentId = p0.agentId ?? p1.agentId ?? "";
-  const version = p1.version ?? p0.version ?? "main";
-  return { agentId, version };
-}
-
 function EditPanel({ agentId, version }: { agentId: string; version: string }) {
   return (
     <div className="flex flex-col h-full p-6 space-y-5 max-w-3xl mx-auto bg-gray-50">
-      <input type="hidden" name="agentId" value={agentId} />
-      <input type="hidden" name="version" value={version} />
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs text-indigo-600 uppercase tracking-widest font-medium mb-0.5">Policy Editor</p>
@@ -75,7 +63,7 @@ function EditPanel({ agentId, version }: { agentId: string; version: string }) {
           <button
             hx-post={"save"}
             hx-ext="json-enc"
-            hx-include="[name=agentId],[name=rules],[name=version]"
+            hx-include="#policy-panel [name=agentId], #policy-panel [name=rules], #policy-panel [name=version]"
             hx-target="#save-toast"
             hx-swap="outerHTML"
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
@@ -95,7 +83,7 @@ function EditPanel({ agentId, version }: { agentId: string; version: string }) {
         </div>
         <div
           id="rules-container"
-          hx-get={"rules"}
+          hx-get="rules"
           hx-trigger="load"
           hx-swap="innerHTML"
           className="min-h-[8rem]"
@@ -108,10 +96,9 @@ function EditPanel({ agentId, version }: { agentId: string; version: string }) {
 
 /** GET AgentPolicyVersions/agent-123/versions/<version>/edit → render policy editor */
 export async function GET_EDIT(this: any, req: cds.Request) {
-  const { agentId, version } = extractAgentIdVersion(req);
-  if (!agentId) return sendHtml(req, "");
+  const { agentId, version } = req.data
 
-  const panel = <EditPanel agentId={agentId} version={version} />;
+  const panel = <EditPanel agentId={agentId} version={version || "main"} />;
   const isHtmx = req?.http?.req?.headers?.["hx-request"] === "true";
 
   if (isHtmx) return sendHtml(req, renderToString(panel));
@@ -140,16 +127,13 @@ async function ensureBranchExists(octokit: any, branch: string): Promise<void> {
 
 /** POST AgentPolicyVersions/agent-123/versions/<version>/save → commit to Git */
 export async function POST_SAVE(this: any, req: cds.Request) {
-  const { agentId, version } = extractAgentIdVersion(req);
-  const { rules: rulesJson } = req.data as any;
-  if (!agentId) { req.error(400, "agentId is required"); return; }
-
-  const branch = branchFromRequest(req, agentId);
-  const ref = branch && branch !== "main" ? branch : "main";
+  const { agentId } = req.params[0] || {};
+  const { version, rules: rulesJson } = req.data || {};
+  const ref = version || "main";
 
   try {
     const octokit = await getOctokit();
-    await ensureBranchExists(octokit, ref);
+    await ensureBranchExists(octokit, version);
 
     const filePath = `${agentId}/policies.json`;
     const content = JSON.stringify(rulesToOdrl(safeJson(rulesJson, [])), null, 2);

@@ -50,6 +50,7 @@
   "@types/morgan": "^1.9.10",
   "@types/node": "^20.19.25",
   "@types/node-fetch": "^2.6.13",
+  "@playwright/test": "^1.49.0",
   "cap-js-mockdata": "^0.0.3",
   "ias-token": "workspace:*",
   "tailwindcss": "^4.1.4",
@@ -129,7 +130,10 @@
   "token:password:access_token": "npm run token:password --silent | jq -r '.access_token'",
   "token:password": "npx cds bind --profile hybrid  --exec -- ias-token password 2>/dev/null | tail -1",
   "token:exchange": "npx cds bind --profile hybrid --exec -- ias-token exchange 2>/dev/null | tail -1",
-  "token:exchange:from-password": "npx cds bind  --exec -- ias-token exchange --subject_token \"$(npm run token:password:id_token --silent)\" --subject_token_type urn:ietf:params:oauth:token-type:id_token"
+  "token:exchange:from-password": "npx cds bind  --exec -- ias-token exchange --subject_token \"$(npm run token:password:id_token --silent)\" --subject_token_type urn:ietf:params:oauth:token-type:id_token",
+  "test:e2e:policies": "playwright test tests/e2e/policies.spec.js --project=chromium",
+  "test:e2e:policies:ui": "playwright test tests/e2e/policies.spec.js --ui",
+  "postinstall": "npx playwright install chromium 2>/dev/null || true"
  },
  "workspaces": [
   "app/router",

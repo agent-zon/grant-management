@@ -5,39 +5,36 @@ const { defineConfig, devices } = require('@playwright/test');
  * @see https://playwright.dev/docs/test-configuration
  */
 module.exports = defineConfig({
-  testDir: './tests',
-  /* Run tests in files in parallel */
-  fullyParallel: true,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
+  testDir: './tests/e2e',
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
+  workers: process.env.CI ? 1 : 1,
   reporter: 'html',
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: process.env.TEST_URL || 'https://grants.c-127c9ef.stage.kyma.ondemand.com',
-
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
+    baseURL: process.env.TEST_URL || 'http://localhost:4004',
     trace: 'on-first-retry',
+    video: 'on-first-retry',
+    screenshot: 'only-on-failure',
   },
-
-  /* Configure projects for major browsers */
+  webServer:
+    !process.env.TEST_URL || process.env.TEST_URL.includes('4004')
+      ? {
+          command: 'npm run hybrid:cds',
+          url: (process.env.TEST_URL || 'http://localhost:4004').replace(/\/$/, '') + '/policies/AgentPolicies/view',
+          reuseExistingServer: !process.env.CI,
+          timeout: 90000,
+        }
+      : undefined,
   projects: [
+    { name: 'setup', testMatch: /.*\.setup\.js/ },
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'tests/e2e/.auth/user.json',
+      },
+      dependencies: ['setup'],
     },
   ],
-
-  /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run server',
-  //   url: 'http://localhost:3001',
-  //   reuseExistingServer: !process.env.CI,
-  //   timeout: 120 * 1000,
-  // },
 });
