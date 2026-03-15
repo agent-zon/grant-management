@@ -1,6 +1,8 @@
 import cds from "@sap/cds";
-import { LIST } from "./handler.agents.list";
-import { GET_REDIRECT } from "./handler.agents.edit";
+import { LIST, LIST_SIDEBAR } from "./handler.agents.list";
+import AgentPanel from "./handler.agents.panel";
+import layoutWrapMiddleware from "./middleware.layout";
+import { DASHBOARD } from "./handler.dashboard";
 import { GET_EDIT, POST_SAVE } from "./handler.policy.edit";
 import { RESOURCES } from "./handler.policy.resources";
 import { ADD_RULE, REMOVE_RULE, RULES } from "./handler.policy.rules";
@@ -12,20 +14,23 @@ import { default as GET_POLICY } from "./handler.policy";
 import { agents, versions } from "#cds-models/sap/scai/grants/policies/PoliciesService";
 export default class PoliciesService extends cds.ApplicationService {
   init() {
-    this.before(["view", "edit", "READ"], agents, agentsDataMiddleware);
-    this.on(["edit"], agents, GET_REDIRECT);
-    
+    this.on("dashboard", DASHBOARD);
+
+    this.before(["view", "edit", "READ", "list"], agents, agentsDataMiddleware);
     this.on("view", agents, LIST);
     this.on("READ", agents, LIST);
+    this.on("panel", agents, AgentPanel);
+
+    // this.on("list", agents, LIST_SIDEBAR);
 
     this.before(["*"], versions, policyMiddleware);
     this.before(["*"], versions, resourcesMiddleware);
-    
-    this.before(["UPDATE","CREATE", "save"], versions, pushMiddleware);
+    this.before(["UPDATE", "CREATE", "save"], versions, pushMiddleware);
     this.on("CREATE", agents, POST_SAVE);
     this.on("UPDATE", agents, POST_SAVE);
      
     this.on("READ", "versions", GET_POLICY);
+    // this.on("edit", versions, layoutWrapMiddleware);
     this.on("edit", "versions", GET_EDIT);
     this.on("save", "versions", POST_SAVE);
     this.on("resources", "versions", RESOURCES);

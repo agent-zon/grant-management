@@ -7,7 +7,7 @@ entity AgentPolicies {
   yaml: LargeString;     // YAML JSON
   createdAt: Timestamp @cds.on.insert: $now;
   modifiedAt: Timestamp @cds.on.insert: $now @cds.on.update: $now;
-   versions: composition of Policies on versions.agentId = agentId;
+   versions: composition of many Policies on versions.agentId = agentId;
 }
 
 @cds.persistence.skip
