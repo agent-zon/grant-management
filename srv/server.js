@@ -48,6 +48,17 @@ cds.on("bootstrap", (app) => {
   app.use(bodyParser.json({ extended: true }));
 
 
+  // Rewrite GET /admin/policies → /admin/dashboard() for dashboard layout
+  app.use((req, _res, next) => {
+    const raw = (req.originalUrl || req.url || "").split("?")[0];
+    if (req.method === "GET" && (raw === "/admin/policies" || raw === "/admin/policies/")) {
+      const qs = (req.originalUrl || req.url || "").includes("?") ? (req.originalUrl || req.url).slice((req.originalUrl || req.url).indexOf("?")) : "";
+      req.url = "/admin/dashboard()" + qs;
+      req.path = "/admin/dashboard()";
+    }
+    next();
+  });
+
   // Rewrite versions/key → versions('key') for CAP REST (treats versions.main as key otherwise)
   app.use((req, _res, next) => {
     const raw = (req.originalUrl || req.url || "").split("?")[0];

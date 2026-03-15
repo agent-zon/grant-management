@@ -41,6 +41,9 @@ export const htmxMiddleware = (req: cds.Request, res: any, next: any) => {
 };
 
 export function render(req: cds.Request, component: React.ReactNode, baseHref?: string) {
+   if (req?.http?.req?.headers?.["hx-request"] === "true") {
+    return sendHtml(req, renderToString(component));
+   }
   return sendHtml(req, htmlTemplate(renderToString(component), baseHref));
 }
 export function sendHtml(req: cds.Request, html: string) {

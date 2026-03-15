@@ -5,14 +5,14 @@ namespace sap.scai.grants.policies;
 @protocol: 'rest'
 @impl    : './policies-service.tsx'
 service PoliciesService {
+  function dashboard() returns String;
 
   @cds.persistence.skip
   entity agents   as projection on policies.AgentPolicies
     actions {
-
       function view(in: many $self) returns String;
-
-      function edit(agent: $self)   returns String; 
+      function list(in: many $self) returns String;
+      function panel(agent: $self)   returns String;
     }
 
   @cds.persistence.skip
