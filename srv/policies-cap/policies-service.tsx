@@ -6,25 +6,25 @@ import { RESOURCES } from "./handler.version.resources";
 import { ADD_RULE, REMOVE_RULE, RULES } from "./handler.version.rules";
 import { agentsDataMiddleware, default as LIST_DATA } from "./handler.agents";
 import { versionDataMiddleware, default as GET_VERSION } from "./handler.version";
-
+import { agents, versions } from "#cds-models/sap/scai/grants/policies/PoliciesService";
 export default class PoliciesService extends cds.ApplicationService {
   init() {
-    this.before(["READ", "view", "edit"], "AgentPolicies", agentsDataMiddleware);
-    this.on("edit", "AgentPolicies", GET_REDIRECT);
-    this.on("view", "AgentPolicies", LIST);
-    this.on("READ", "AgentPolicies", LIST_DATA);
+    this.before(["READ", "view", "edit"], agents, agentsDataMiddleware);
+    this.on("edit", agents, GET_REDIRECT);
+    this.on("view", agents, LIST);
+    this.on("READ", agents, LIST_DATA);
 
-    this.before(["READ", "edit", "save", "resources", "rules", "addRule", "removeRule"], "AgentPolicyVersions", versionDataMiddleware);
-    this.on("CREATE", "AgentPolicies", POST_SAVE);
-    this.on("UPDATE", "AgentPolicies", POST_SAVE);
+    this.before(["*"], versions, versionDataMiddleware);
+    this.on("CREATE", agents, POST_SAVE);
+    this.on("UPDATE", agents, POST_SAVE);
 
-    this.on("READ", "AgentPolicyVersions", GET_VERSION);
-    this.on("edit", "AgentPolicyVersions", GET_EDIT);
-    this.on("save", "AgentPolicyVersions", POST_SAVE);
-    this.on("resources", "AgentPolicyVersions", RESOURCES);
-    this.on("rules", "AgentPolicyVersions", RULES);
-    this.on("addRule", "AgentPolicyVersions", ADD_RULE);
-    this.on("removeRule", "AgentPolicyVersions", REMOVE_RULE);
+    this.on("READ", "versions", GET_VERSION);
+    this.on("edit", "versions", GET_EDIT);
+    this.on("save", "versions", POST_SAVE);
+    this.on("resources", "versions", RESOURCES);
+    this.on("rules", "versions", RULES);
+    this.on("addRule", "versions", ADD_RULE);
+    this.on("removeRule", "versions", REMOVE_RULE);
 
     return super.init();
   }

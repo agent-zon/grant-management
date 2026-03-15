@@ -2,7 +2,6 @@ import cds from "@sap/cds";
 import { render, sendHtml } from "#cds-ssr";
 import { renderToString } from "react-dom/server";
 import getOctokit from "./git-handler/git-handler";
-import { encodeTarget, fetchGitFile, safeJson, type PolicyRule } from "./handler.version.rules";
 import { FullPage, fetchAgents } from "./handler.agents.view";
 const GIT = { owner: "AIAM", repo: "policies" };
 
@@ -94,7 +93,7 @@ function EditPanel({ agentId, version }: { agentId: string; version: string }) {
   );
 }
 
-/** GET AgentPolicyVersions/agent-123/versions/<version>/edit → render policy editor */
+/** GET Policies/agent-123/versions/<version>/edit → render policy editor */
 export async function GET_EDIT(this: any, req: cds.Request) {
   const { agentId, version } = req.data
 
@@ -125,7 +124,7 @@ async function ensureBranchExists(octokit: any, branch: string): Promise<void> {
   });
 }
 
-/** POST AgentPolicyVersions/agent-123/versions/<version>/save → commit to Git */
+/** POST Policies/agent-123/versions/<version>/save → commit to Git */
 export async function POST_SAVE(this: any, req: cds.Request) {
   const { version, rules: rulesJson, agentId } = req.data || {};
   const ref = version || "main";
@@ -135,7 +134,7 @@ export async function POST_SAVE(this: any, req: cds.Request) {
     await ensureBranchExists(octokit, version);
 
     const filePath = `${agentId}/policies.json`;
-    const content = JSON.stringify(rulesToOdrl(safeJson(rulesJson, [])), null, 2);
+    const content = JSON.stringify(rulesToOdrl(JSON.parse(rulesJson)), null, 2);
 
     let sha: string | undefined;
     try { sha = ((await octokit.rest.repos.getContent({ ...GIT, path: filePath, ref })).data as any).sha; } catch { /* new file */ }

@@ -15,7 +15,7 @@ const TEST_PASSWORD = process.env.TEST_PASSWORD || '';
 
 setup('authenticate', async ({ page }) => {
   const baseURL = process.env.TEST_URL || 'http://localhost:4004';
-  const policiesUrl = `${baseURL.replace(/\/$/, '')}/policies/AgentPolicies/view`;
+  const policiesUrl = `${baseURL.replace(/\/$/, '')}/admin/agents/view`;
 
   await page.goto(policiesUrl, { waitUntil: 'networkidle', timeout: 30000 });
 
