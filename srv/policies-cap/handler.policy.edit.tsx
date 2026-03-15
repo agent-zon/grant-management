@@ -1,52 +1,15 @@
 import cds from "@sap/cds";
 import { render, sendHtml } from "#cds-ssr";
 import { renderToString } from "react-dom/server";
-import getOctokit from "./git-handler/git-handler";
-import { FullPage, fetchAgents } from "./handler.agents.list";
-import type { PolicyRule } from "./handler.policy";
-const GIT = { owner: "AIAM", repo: "policies" };
+import { fetchAgents } from "./handler.agents.list";
 
-function rulesToOdrl(rules: PolicyRule[]) {
-  const permission: any[] = [];
-  const prohibition: any[] = [];
-  for (const rule of rules) {
-    const entry: any = {
-      target: rule.target,
-      action: "use",
-      _metadata: { targetType: rule.targetType, targetName: rule.targetName },
-    };
-    if (rule.constraint && rule.constraintValue) {
-      entry.constraint = [{ leftOperand: `sap:${rule.constraint}`, operator: "isPartOf", rightOperand: [rule.constraintValue] }];
-    }
-    if (rule.actionType === "deny") {
-      prohibition.push(entry);
-    } else {
-      if (rule.actionType === "ask") { entry.duty = [{ action: "sap:obtainConsent" }]; entry.priority = 160; }
-      permission.push(entry);
-    }
-  }
-  return {
-    "@context": ["http://www.w3.org/ns/odrl.jsonld", { sap: "https://sap.com/odrl/extensions/" }],
-    "@type": "Set",
-    permission,
-    prohibition,
-  };
-}
+/** GET Policies/agent-123/versions/<version>/edit → render policy editor */
+export async function GET_EDIT(this: any, req: cds.Request) {
+  const { agentId, version } = req.data;
+  const v = version || "main";
+  const isHtmx = req?.http?.req?.headers?.["hx-request"] === "true";
 
-function Toast({ ok, agentId, message }: { ok: boolean; agentId?: string; message?: string }) {
-  return ok ? (
-    <div id="save-toast" className="flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm rounded-lg">
-      <span>✅</span><span>Committed to Git for <strong>{agentId}</strong></span>
-    </div>
-  ) : (
-    <div id="save-toast" className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
-      <span>❌</span><span>{message || "Save failed"}</span>
-    </div>
-  );
-}
-
-function EditPanel({ agentId, version }: { agentId: string; version: string }) {
-  return (
+  const panel = (
     <div className="flex flex-col h-full p-6 space-y-5 max-w-3xl mx-auto bg-gray-50">
       <div className="flex items-start justify-between">
         <div>
@@ -54,14 +17,13 @@ function EditPanel({ agentId, version }: { agentId: string; version: string }) {
           <h2 className="text-xl font-bold text-gray-900 font-mono">{agentId}</h2>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-sm text-gray-500">version:</span>
-            <span className="text-sm font-mono text-gray-700">{version}</span>
+            <span className="text-sm font-mono text-gray-700">{v}</span>
           </div>
         </div>
-
         <div className="flex items-center gap-3">
           <div id="save-toast" />
           <button
-            hx-post={"save"}
+            hx-post="save"
             hx-ext="json-enc"
             hx-include="#policy-panel [name=agentId], #policy-panel [name=rules], #policy-panel [name=version]"
             hx-target="#save-toast"
@@ -72,7 +34,6 @@ function EditPanel({ agentId, version }: { agentId: string; version: string }) {
           </button>
         </div>
       </div>
-
       <div className="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-gray-700">Access Policy Rules</h3>
@@ -81,82 +42,78 @@ function EditPanel({ agentId, version }: { agentId: string; version: string }) {
             <span className="text-xs text-gray-500">live</span>
           </div>
         </div>
-        <div
-          id="rules-container"
-          hx-get="rules"
-          hx-trigger="load"
-          hx-swap="innerHTML"
-          className="min-h-[8rem]"
-        />
+        <div id="rules-container" hx-get="rules" hx-trigger="load" hx-swap="innerHTML" className="min-h-[8rem]" />
+      </div>
+    </div>
+  );
 
+  if (isHtmx) return sendHtml(req, renderToString(panel));
+
+  const agents = req.data?.agents || [];
+  return render(
+    req,
+    <div className="flex flex-col h-screen bg-gray-100 text-gray-900 overflow-hidden">
+      <header className="h-11 flex items-center px-4 bg-[#354A5F] text-white shadow-md flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 bg-[#0854A0] rounded flex items-center justify-center font-bold text-sm">🛡</div>
+          <h1 className="text-base font-normal">AI Agent Policies</h1>
+        </div>
+      </header>
+      <div className="flex-1 min-h-0 flex">
+        <aside className="flex flex-col w-64 flex-shrink-0 border-r border-gray-200 bg-white h-full overflow-hidden shadow-sm">
+          <div className="px-4 py-4 border-b border-gray-200 bg-gray-50/50">
+            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Agents</h2>
+            <input
+              id="agent-search"
+              type="search"
+              placeholder="Filter agents…"
+              className="w-full bg-white border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-1.5 placeholder-gray-500 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+            />
+          </div>
+          <nav id="agents-nav" className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5 bg-white">
+            {agents.length === 0 ? (
+              <p className="text-xs text-gray-500 text-center py-8">No agents found</p>
+            ) : (
+              agents.map((id: string) => (
+                <button
+                  key={id}
+                  hx-get={`${id}/edit`}
+                  hx-target="#policy-panel"
+                  hx-swap="innerHTML"
+                  hx-push-url="true"
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-all group hover:bg-gray-100 border ${id === agentId ? "bg-indigo-50 border-indigo-200 text-indigo-800" : "bg-transparent border-transparent text-gray-600 hover:text-gray-900"}`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${id === agentId ? "bg-indigo-600" : "bg-gray-400 group-hover:bg-gray-600"}`} />
+                    <span className="text-sm font-mono truncate" title={id}>{id}</span>
+                  </div>
+                </button>
+              ))
+            )}
+          </nav>
+          <div className="px-4 py-3 border-t border-gray-200 bg-gray-50/50">
+            <p className="text-xs text-gray-500">{agents.length} agent{agents.length !== 1 ? "s" : ""}</p>
+          </div>
+          <script dangerouslySetInnerHTML={{ __html: `document.getElementById('agent-search').addEventListener('input',function(){var q=this.value.toLowerCase();document.querySelectorAll('#agents-nav button').forEach(function(btn){btn.style.display=btn.querySelector('span').textContent.toLowerCase().includes(q)?'':'none';});});` }} />
+        </aside>
+        <main id="policy-panel" className="flex-1 overflow-y-auto bg-gray-50">{panel}</main>
       </div>
     </div>
   );
 }
 
-/** GET Policies/agent-123/versions/<version>/edit → render policy editor */
-export async function GET_EDIT(this: any, req: cds.Request) {
-  const { agentId, version } = req.data
-
-  const panel = <EditPanel agentId={agentId} version={version || "main"} />;
-  const isHtmx = req?.http?.req?.headers?.["hx-request"] === "true";
-
-  if (isHtmx) return sendHtml(req, renderToString(panel));
-
-  const agents = await fetchAgents();
-  return render(req, <FullPage agents={agents} activeId={agentId} panelContent={panel} />);
-}
-
-
-/** Ensure branch exists; create from main if not. */
-async function ensureBranchExists(octokit: any, branch: string): Promise<void> {
-  if (!branch || branch === "main") return;
-  try {
-    await octokit.rest.repos.getBranch({ ...GIT, branch });
-    return;
-  } catch {
-    /* branch not found, create it */
-  }
-  const { data: main } = await octokit.rest.repos.getBranch({ ...GIT, branch: "main" });
-  await octokit.rest.git.createRef({
-    ...GIT,
-    ref: `refs/heads/${branch}`,
-    sha: main.commit.sha,
-  });
-}
-
-/** POST Policies/agent-123/versions/<version>/save → commit to Git */
+/** Response after push (Git done in middleware). HTML → Toast, else JSON. */
 export async function POST_SAVE(this: any, req: cds.Request) {
-  const { version, rules: rulesJson, agentId } = req.data || {};
-  const ref = version || "main";
-
-  try {
-    const octokit = await getOctokit();
-    await ensureBranchExists(octokit, version);
-
-    const filePath = `${agentId}/policies.json`;
-    const content = JSON.stringify(rulesToOdrl(JSON.parse(rulesJson)), null, 2);
-
-    let sha: string | undefined;
-    try { sha = ((await octokit.rest.repos.getContent({ ...GIT, path: filePath, ref })).data as any).sha; } catch { /* new file */ }
-
-    await octokit.rest.repos.createOrUpdateFileContents({
-      ...GIT,
-      path: filePath,
-      message: `Update policies for agent ${agentId}`,
-      content: Buffer.from(content, "utf8").toString("base64"),
-      ...(sha ? { sha } : {}),
-      branch: ref,
-    });
-
-    if (req?.http?.req.accepts("html")) {
-      return sendHtml(req, renderToString(<Toast ok agentId={agentId} />));
-    }
-    return { agentId, version, committed: true };
-  } catch (err: any) {
-    if (req?.http?.req.accepts("html")) {
-      return sendHtml(req, renderToString(<Toast ok={false} message={err.message} />));
-    }
-    req.error(500, err.message);
+  const { agentId, version } = req.data || {};
+  if (req?.http?.req.accepts("html")) {
+    return sendHtml(
+      req,
+      renderToString(
+        <div id="save-toast" className="flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm rounded-lg">
+          <span>✅</span><span>Committed to Git for <strong>{agentId}</strong></span>
+        </div>
+      )
+    );
   }
+  return { agentId, version, committed: true };
 }
