@@ -121,7 +121,7 @@ async function fetchGitFile(octokit: any, path: string, ref: string = "main"): P
 function encodeTarget(type: "mcp" | "tool", id: string, name: string) {
     return `${type}|${id}|${name}`;
 }
-/** READ handler — returns pre-loaded req.data.versionContent */
+/** READ handler — returns pre-loaded req.data.policy */
 export default async function GET_VERSION(this: any, req: cds.Request) {
     return req.data?.policy;
 }

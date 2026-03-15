@@ -3,6 +3,7 @@ import { render, sendHtml } from "#cds-ssr";
 import { renderToString } from "react-dom/server";
 import getOctokit from "./git-handler/git-handler";
 import { FullPage, fetchAgents } from "./handler.agents.list";
+import type { PolicyRule } from "./handler.policy";
 const GIT = { owner: "AIAM", repo: "policies" };
 
 function rulesToOdrl(rules: PolicyRule[]) {

@@ -1,11 +1,11 @@
 import cds from "@sap/cds";
-import { LIST } from "./handler.agents.view";
+import { LIST } from "./handler.agents.list";
 import { GET_REDIRECT } from "./handler.agents.edit";
-import { GET_EDIT, POST_SAVE } from "./handler.version.edit";
-import { RESOURCES } from "./handler.version.resources";
-import { ADD_RULE, REMOVE_RULE, RULES } from "./handler.version.rules";
+import { GET_EDIT, POST_SAVE } from "./handler.policy.edit";
+import { RESOURCES } from "./handler.policy.resources";
+import { ADD_RULE, REMOVE_RULE, RULES } from "./handler.policy.rules";
 import { agentsDataMiddleware, default as LIST_DATA } from "./handler.agents";
-import { versionDataMiddleware, default as GET_VERSION } from "./handler.version";
+import { versionDataMiddleware, default as GET_VERSION } from "./handler.policy";
 import { agents, versions } from "#cds-models/sap/scai/grants/policies/PoliciesService";
 export default class PoliciesService extends cds.ApplicationService {
   init() {

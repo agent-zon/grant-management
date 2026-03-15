@@ -3,7 +3,7 @@ import { sendHtml } from "#cds-ssr";
 import { renderToString } from "react-dom/server";
 import getOctokit from "./git-handler/git-handler";
 import { MAIN, branchFromRequest } from "./git-version";
-import { PolicyRule, TargetOption } from "./handler.version";
+import { PolicyRule, TargetOption } from "./handler.policy";
 
 const GIT = { owner: "AIAM", repo: "policies" };
 
