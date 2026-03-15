@@ -2,10 +2,9 @@ import cds from "@sap/cds";
 import { sendHtml } from "#cds-ssr";
 import getOctokit from "./git-handler/git-handler";
 import { branchFromRequest, branchToVersion } from "./git-version";
-import { fetchGitFile } from "./handler.version.rules";
 
 const GIT = { owner: "AIAM", repo: "policies" };
-const BASE = "/policies/AgentPolicies";
+const BASE = "/admin/agents";
 
 
 // ─── CDS handler: AgentPolicies/edit → redirect to versions/<version>/edit ─────
