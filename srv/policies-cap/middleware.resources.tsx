@@ -120,7 +120,7 @@ export async function fetchResourceById(
     label: displayName,
     slug: `agents/${agentId}/versions/${version}/resources/${encodeURIComponent(entry.name)}`,
     update: async (e: boolean) => {
-      await updateResourceFileEnabled(agentId, ref, entry.name, entry.refFile, result.sha!, e);
+      await updateResourceFileEnabled(agentId, ref, entry.name, entry.refFile, r.sha, e);
     },
   };
   return r;
@@ -152,13 +152,13 @@ export async function resourcesMiddleware(this: any, req: cds.Request) {
   }
 }
 
-/** Update one resource's enabled flag in its MCP file (_meta['sap/enabled']). */
+/** Update one resource's enabled flag in its MCP file (_meta['sap/enabled']). Uses sha from fetch for optimistic locking. */
 async function updateResourceFileEnabled(
   agentId: string,
   ref: string,
   resourceName: string,
   refFile: string,
-  sha: string,
+  savedSha: string | undefined,
   enabled: boolean
 ): Promise<void> {
   const octokit = await getOctokit();
@@ -169,6 +169,8 @@ async function updateResourceFileEnabled(
   if (!doc._meta) doc._meta = {};
   doc._meta["sap/enabled"] = enabled;
   const content = yaml.dump(doc, { indent: 2 });
+  const sha = result.sha ?? savedSha;
+  if (!sha) throw new Error(`Cannot update resource: missing file sha`);
   await octokit.rest.repos.createOrUpdateFileContents({
     ...GIT,
     path,

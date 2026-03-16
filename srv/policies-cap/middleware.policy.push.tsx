@@ -4,7 +4,7 @@ import type { OdrlSet } from "./handler.policy";
 
 const GIT = { owner: "AIAM", repo: "policies" };
 
-async function ensureBranchExists(octokit: any, branch: string): Promise<void> {
+export async function ensureBranchExists(octokit: any, branch: string): Promise<void> {
   if (!branch || branch === "main") return;
   try {
     await octokit.rest.repos.getBranch({ ...GIT, branch });

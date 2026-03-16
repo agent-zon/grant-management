@@ -34,7 +34,10 @@ const sidebarSelectScript = `
 /** Dashboard layout shell: header + sidebar [hx-get=list()] + main. activeAgentId optional for full-page edit. */
 function Layout({ children, activeAgentId }: { children: ReactNode; activeAgentId?: string }) {
   return (
-    <div className="flex flex-col h-screen bg-gray-100 text-gray-900 overflow-hidden" {...(activeAgentId ? { "data-active-agent": activeAgentId } : {})}>
+    <div
+      className="flex flex-col h-screen bg-gray-100 text-gray-900 overflow-hidden"
+      {...(activeAgentId ? { "data-active-agent": activeAgentId } : {})}
+    >
       <header className="h-11 flex items-center px-4 bg-[#354A5F] text-white shadow-md flex-shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 bg-[#0854A0] rounded flex items-center justify-center font-bold text-sm">🛡</div>

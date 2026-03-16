@@ -24,7 +24,6 @@ service PoliciesService {
       function edit(version: $self)                                                                                                    returns String;
       function title(version: $self) returns String;
       function resources(version: $self)                                                                                               returns String;
-      action   addResource(version: $self, destinationName: String) returns String;
       function rules(version: $self)                                                                                                   returns String;
       action   addRule(version: $self, odrl: String, ruleAction: String, target: String, constraint: String, constraintValue: String) returns String;
       action   removeRule(version: $self, odrl: String, removeKind: String, removeIndex: Integer) returns String;
@@ -37,6 +36,9 @@ service PoliciesService {
   entity resources as projection on policies.VersionResources
     actions {
       function pane(in: many $self) returns String;
+      function slot(in: many $self) returns String;  // resources list only, for reload on resource-updated
+      action   connect(in: many $self, destinationName: String) returns String;  // destination picker for Connect Resource
+      function connecter(in: many $self) returns String;  // destination picker for Connect Resource
       function card() returns String;  // full card with data (fetched on demand)
       function toggle() returns String;
       action   enable() returns String;

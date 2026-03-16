@@ -14,11 +14,12 @@ export const htmlTemplate = (reactContent: string, baseHref?: string ) => `
     <title>Grants Management For AI Agents </title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
    <script src="https://unpkg.com/htmx.org@2.0.7"></script>
-   <script>htmx.config.disableInheritance = true;</script>
    <script src="https://unpkg.com/htmx-ext-form-json"></script>
    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
    <script src="https://unpkg.com/htmx.org/dist/ext/path-params.js"></script>
+    <script src="https://unpkg.com/idiomorph@0.7.4/dist/idiomorph-ext.min.js" integrity="sha384-SsScJKzATF/w6suEEdLbgYGsYFLzeKfOA6PY+/C5ZPxOSuA+ARquqtz/BZz9JWU8" crossorigin="anonymous"></script>
 
+   <script>htmx.config.disableInheritance = true;</script>
 
     <style>
         body { font-family: 'Inter', system-ui, sans-serif; }
@@ -26,7 +27,7 @@ export const htmlTemplate = (reactContent: string, baseHref?: string ) => `
 
 
 </head>
-<body hx-ext="path-params">${reactContent}</div> 
+<body hx-ext="path-params" hx-ext="morph" >${reactContent}</div> 
 </body>
 </html>
 `;
