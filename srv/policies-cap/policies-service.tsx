@@ -6,6 +6,7 @@ import { GET as GET_PANEL, POST as POST_PANEL, Title } from "./handler.agents.pa
 import { RESOURCES, RESOURCES_PANE, RESOURCES_SLOT, RESOURCES_CARD, RESOURCES_TOGGLE, RESOURCES_ENABLE, RESOURCES_DISABLE } from "./handler.resources";
 import { RESOURCES_CONNECT_PICKER, ADD_RESOURCE } from "./handler.resources.connect";
 import { ADD_RULE, REMOVE_RULE, RULES } from "./handler.policy.rules";
+import { CONSTRAINTS, CONSTRAINT_VALUES, RESOURCE_CONSTRAINTS, RESOURCE_CONSTRAINT_VALUES } from "./handler.policy.constraints";
 import { agentsDataMiddleware } from "./middleware.agents";
 import policyMiddleware from "./middleware.policy";
 import { resourcesMiddleware } from "./middleware.resources";
@@ -32,7 +33,7 @@ export default class PoliciesService extends cds.ApplicationService {
     this.on("UPDATE", agents, POST_PANEL);
 
 
-    this.before(["READ", "pane", "slot", "card", "connect", "connecter","toggle", "enable", "disable"], "resources", compose(agentsDataMiddleware,policyMiddleware, resourcesMiddleware));
+    this.before(["READ", "pane", "slot", "card", "connect", "connecter","toggle", "enable", "disable" , "constraints", "constraintValues"], "resources", compose(agentsDataMiddleware,policyMiddleware, resourcesMiddleware));
     this.on("pane", "resources", RESOURCES_PANE);
     this.on("slot", "resources", RESOURCES_SLOT);
     this.on("connect", "resources", ADD_RESOURCE);
@@ -41,17 +42,21 @@ export default class PoliciesService extends cds.ApplicationService {
     this.on("toggle", "resources", RESOURCES_TOGGLE);
     this.on("enable", "resources", RESOURCES_ENABLE);
     this.on("disable", "resources", RESOURCES_DISABLE);
+    this.on("constraints", "resources", RESOURCE_CONSTRAINTS);
+    this.on("values", "resources", RESOURCE_CONSTRAINT_VALUES);
 
     this.before(["*"], versions, compose(agentsDataMiddleware,policyMiddleware, resourcesMiddleware));
     this.before(["UPDATE", "CREATE", "publish"], versions, compose(agentsDataMiddleware,policyMiddleware, resourcesMiddleware,pushMiddleware));
   
-    this.on("READ", versions, GET_POLICY);
+    this.on("READ", versions, GET_PANEL);
     this.on("title", versions, Title);
     this.on("publisher", versions, GET_PUBLISH);
     this.on("publish", versions, POST_PUBLISH);
     this.on("edit", versions, GET_PANEL);
     this.on("resources", versions, RESOURCES);
     this.on("rules", versions, RULES);
+    this.on("constraints", versions, CONSTRAINTS);
+    this.on("values", versions, CONSTRAINT_VALUES);
     this.on("addRule", versions, ADD_RULE);
     this.on("removeRule", versions, REMOVE_RULE);
 

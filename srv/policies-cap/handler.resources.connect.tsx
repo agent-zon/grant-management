@@ -6,7 +6,8 @@ import { Client } from "@modelcontextprotocol/sdk/client";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { getAllDestinationsFromDestinationService } from "@sap-cloud-sdk/connectivity";
 import type { DestinationWithoutToken } from "@sap-cloud-sdk/connectivity";
-import { ensureBranchExists } from "./middleware.policy.push.js";
+import { ensureBranchExists } from "./middleware.policy.push";
+import { McpCard } from "../../mcp-card.js";
 
 const GIT = { owner: "AIAM", repo: "policies" };
 
@@ -247,40 +248,3 @@ export async function RESOURCES_CONNECT_PICKER(this: any, req: cds.Request) {
 }
 
 
-type McpCard = {
-  $schema: string;
-  version: string;
-  protocolVersions: string[];
-  serverInfo: {
-    name: string;
-    title: string;
-    version: string;
-    description: string;
-  };
-  transport: {
-    type: string;
-    endpoint: string;
-    "x-destination": string;
-  };
-  capabilities: {
-    tools: Record<string, any>;
-    resources: Record<string, any>;
-  };
-  authentication: {
-    required: boolean;
-    schemas: string[];
-  };
-  _meta: Record<string, any>;
-  tools: {
-    name: string;
-    title: string;
-    description: string;
-    inputSchema: Record<string, any>;
-  }[];
-  links:{
-    slug: string;
-    content: string;
-    enable: string;
-    disable: string;
-  }
-};

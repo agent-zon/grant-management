@@ -53,13 +53,13 @@ function odrlToRows(odrl: OdrlSet): Row[] {
 
 export async function ADD_RULE(this: any, req: cds.Request) {
   const { odrl, ruleAction, target, constraint, constraintValue } = req.data;
-  if (!target) return RULES(req);
   const odrlSet = ensureOdrlSet(typeof odrl === "string" ? JSON.parse(odrl) : odrl);
-  const { type, name } = decodeTarget(target);
+  const effectiveTarget = target?.trim() || "mcp|sap:any|Any MCP server";
+  const { type, name } = decodeTarget(effectiveTarget);
   const action = ["allow", "deny", "ask"].includes(ruleAction) ? ruleAction : "allow";
   const { kind, entry } = ruleToOdrlEntry({
     actionType: action,
-    target,
+    target: effectiveTarget,
     targetType: type,
     targetName: name,
     constraint: constraint || "",
@@ -180,26 +180,35 @@ export async function RULES(req: cds.Request) {
             </select>
             <span className="text-gray-500 text-sm">to</span>
             <input
+              id="rule-target"
               type="text"
               name="target"
               list="resources-datalist"
-              placeholder="MCP server…"
+              placeholder="MCP server (or leave empty for any)"
               autoComplete="off"
               className="flex-1 min-w-[140px] rounded-lg text-xs font-medium px-3 py-2 bg-sky-50 border border-sky-200 text-sky-800 placeholder-sky-600/60 focus:ring-1 focus:ring-sky-500 focus:border-sky-500 outline-none"
             />
             <datalist id="resources-datalist">
+              <option value="" label="(Any server)" />
               {(resources as TargetOption[] | undefined)?.map((r: TargetOption) => (
                 <option key={r.value} value={r.value} label={r.label}>{r.label}</option>
               ))}
             </datalist>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2" data-agent={agentId} data-version={version}>
             <span className="text-gray-500 text-sm">Where</span>
             <select
+              id="rule-constraint"
               name="constraint"
               title="Constraint attribute"
               className="rounded-lg text-xs font-medium px-3 py-2 bg-gray-200 text-gray-800 border-0 focus:ring-1 focus:ring-indigo-500 outline-none"
-            >
+              hx-swap="innerHTML"
+              hx-post={`agents/${agentId}/versions/${version}/values`}
+              hx-trigger="change  "
+              hx-params="constraint"
+              hx-target="#constraint-values-datalist"
+            > 
+             
               <option value="">No constraint</option>
               <option value="accessLevel">accessLevel</option>
               <option value="riskLevel">riskLevel</option>
@@ -209,19 +218,24 @@ export async function RULES(req: cds.Request) {
             </select>
             <span className="text-gray-500 text-sm">equals</span>
             <input
+              id="rule-constraint-value"
               type="text"
               name="constraintValue"
+              list="constraint-values-datalist"
               placeholder="Value"
+              autoComplete="off"
               className="rounded-lg text-xs font-medium px-3 py-2 bg-white border border-gray-300 text-gray-800 w-32 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
             />
+            <datalist id="constraint-values-datalist" />
+            
           </div>
           <button
             hx-post={`agents/${agentId}/versions/${version}/addRule`}
             hx-ext="json-enc"
             hx-include="#rules-section"
             hx-target="#rules-section"
-            hx-params="odrl,ruleAction,target,constraint,constraintValue"
-            hx-swap="outerHTML"
+            hx-params="ruleAction,target,constraint,constraintValue"
+            hx-swap="morph:outerHTML"
             className="w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-medium transition-colors shadow-sm"
           >
             + Add rule
