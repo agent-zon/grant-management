@@ -4,6 +4,7 @@
  * Version = "main" or 12-char hex hash for draft branches.
  */
 
+import cds from "@sap/cds";
 import { createHash } from "crypto";
 
 export const MAIN = "main";
@@ -51,15 +52,8 @@ export function branchFromRequest(req: any, agentId: string): string {
 }
 
 /** Extract version from request: path param, query, or derive from auth (hash of draft branch). */
-export function versionFromRequest(req: any, agentId: string): string {
-  const params = req?.params || [];
-  const p1 = params[1];
-  const versionParam = (p1 && typeof p1 === "object" && p1.version) ?? params.find((p: any) => p?.version != null)?.version;
-  if (versionParam && typeof versionParam === "string") return versionParam;
-
-  const q = req?.query || req?.http?.req?.query || {};
-  const v = q.version;
-  if (v && typeof v === "string") return v;
+export function versionFromRequest(req: cds.Request): string {
+  const {agentId} = req?.data;
 
   const branch = draftBranchName(agentId, req?.user?.authInfo?.token?.payload?.sub, req?.user?.authInfo?.token?.payload?.sid);
   return branchToVersion(branch);
