@@ -14,6 +14,7 @@ export const htmlTemplate = (reactContent: string, baseHref?: string ) => `
     <title>Grants Management For AI Agents </title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
    <script src="https://unpkg.com/htmx.org@2.0.7"></script>
+   <script>htmx.config.disableInheritance = true;</script>
    <script src="https://unpkg.com/htmx-ext-form-json"></script>
    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
    <script src="https://unpkg.com/htmx.org/dist/ext/path-params.js"></script>
