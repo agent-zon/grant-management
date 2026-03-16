@@ -25,8 +25,7 @@ export const htmlTemplate = (reactContent: string, baseHref?: string ) => `
 
 
 </head>
-<body>
-    <div id="root">${reactContent}</div> 
+<body hx-ext="path-params">${reactContent}</div> 
 </body>
 </html>
 `;

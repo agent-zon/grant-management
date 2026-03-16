@@ -16,6 +16,35 @@ export type PolicyRule = {
 };
 
 export type TargetOption = { value: string; label: string; type: "mcp" | "tool" };
+
+/** ODRL Set shape we use (permission / prohibition arrays). */
+export type OdrlSet = {
+  "@context"?: unknown[];
+  "@type"?: string;
+  permission?: OdrlEntry[];
+  prohibition?: OdrlEntry[];
+};
+export type OdrlEntry = {
+  target: string;
+  action?: string;
+  _metadata?: { targetType?: string; targetName?: string };
+  constraint?: { leftOperand?: string; operator?: string; rightOperand?: string[] }[];
+  duty?: { action?: string }[];
+  priority?: number;
+};
+
+/** Ensure odrl has permission/prohibition arrays; default context. */
+export function ensureOdrlSet(odrl: OdrlSet | null | undefined): OdrlSet {
+  const p = Array.isArray(odrl?.permission) ? odrl.permission : [];
+  const q = Array.isArray(odrl?.prohibition) ? odrl.prohibition : [];
+  return {
+    "@context": odrl?.["@context"] ?? ["http://www.w3.org/ns/odrl.jsonld", { sap: "https://sap.com/odrl/extensions/" }],
+    "@type": odrl?.["@type"] ?? "Set",
+    permission: p,
+    prohibition: q,
+  };
+}
+
 export function odrlToRules(odrl: Record<string, any> | null): PolicyRule[] {
     const rules: PolicyRule[] = [];
     for (const perm of odrl?.permission || []) {
@@ -46,6 +75,33 @@ export function odrlToRules(odrl: Record<string, any> | null): PolicyRule[] {
 
 function encodeTarget(type: "mcp" | "tool", id: string, name: string) {
     return `${type}|${id}|${name}`;
+}
+
+/** Build one ODRL permission or prohibition entry from UI rule fields. */
+export function ruleToOdrlEntry(rule: {
+  actionType: "allow" | "deny" | "ask";
+  target: string;
+  targetType: "mcp" | "tool";
+  targetName: string;
+  constraint?: string;
+  constraintValue?: string;
+}): { kind: "permission" | "prohibition"; entry: OdrlEntry } {
+  const entry: OdrlEntry = {
+    target: rule.target,
+    action: "use",
+    _metadata: { targetType: rule.targetType, targetName: rule.targetName },
+  };
+  if (rule.constraint && rule.constraintValue) {
+    entry.constraint = [{ leftOperand: `sap:${rule.constraint}`, operator: "isPartOf", rightOperand: [rule.constraintValue] }];
+  }
+  if (rule.actionType === "deny") {
+    return { kind: "prohibition", entry };
+  }
+  if (rule.actionType === "ask") {
+    entry.duty = [{ action: "sap:obtainConsent" }];
+    entry.priority = 160;
+  }
+  return { kind: "permission", entry };
 }
 /** READ handler — returns pre-loaded req.data.policy; JSON or HTML by Accept. */
 export default async function GET_POLICY(this: any, req: cds.Request) {

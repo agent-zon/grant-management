@@ -14,7 +14,6 @@ service PoliciesService {
       function view(in: many $self)    returns String;
       function list(in: many $self)    returns String;
       function panel(agent: $self)     returns String;
-      function title(version: $self)   returns String;
       function selector(agent: $self)  returns String;
       action   ![select](agent: $self) returns String;
     }
@@ -23,12 +22,13 @@ service PoliciesService {
   entity versions as projection on policies.Policies
     actions {
       function edit(version: $self)                                                                                                    returns String;
+      function title(version: $self) returns String;
       function resources(version: $self)                                                                                               returns String;
       function rules(version: $self)                                                                                                   returns String;
-      action   addRule(version: $self, rules: String, ruleAction: String, target: String, constraint: String, constraintValue: String) returns String;
-      action   removeRule(version: $self, rules: String, index: Integer)                                                               returns String;
+      action   addRule(version: $self, odrl: String, ruleAction: String, target: String, constraint: String, constraintValue: String) returns String;
+      action   removeRule(version: $self, odrl: String, removeKind: String, removeIndex: Integer) returns String;
       function publisher(version: $self)                                                                                               returns String;
-      action   publish(version: $self, rules: String)                                                                                  returns String;
+      action   publish(version: $self, odrl: String) returns String;
 
     };
 
