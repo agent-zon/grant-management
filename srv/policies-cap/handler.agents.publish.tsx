@@ -9,7 +9,7 @@ export async function GET(this: any, req: cds.Request) {
   return render(req, (
     <div
       className="flex items-center gap-3"
-      hx-get={`agents/${agentId}/versions/${version}/publisher`}
+      hx-get={`agents/{agent}/versions/{version}/publisher`}
       hx-vals="js:{ version: event?.detail?.version, agent: event?.detail?.agent }"
       hx-swap="outerHTML"
       hx-trigger="agentSelected from:body"

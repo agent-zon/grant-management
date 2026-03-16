@@ -56,7 +56,7 @@ export async function getAgentManifestInfo(octokit: any, agentId: string, ref: s
       company: typeof company === "string" ? company : "SAP",
       tags,
       manifest: m,
-      sha: sha     
+      sha: sha
     };
   } catch {
     return { id: agentId, name: agentId, description: "", region: "", company: "SAP", tags: [] };
@@ -67,7 +67,7 @@ function agentManifestToInfo({
   manifest,
   sha,
   id
-}: { manifest: any, sha: string,id: string }): AgentInfo {
+}: { manifest: any, sha: string, id: string }): AgentInfo {
 
   const meta = manifest?.metadata || manifest || {};
   const labels = meta.labels || meta.tags || {};
@@ -94,41 +94,80 @@ function agentManifestToInfo({
     company: typeof company === "string" ? company : "SAP",
     tags,
     manifest: manifest,
-    sha: sha     
+    sha: sha
   };
+}
+
+
+/** Fetch agents with manifests via single GraphQL query (no per-agent REST fetches). */
+async function listAgents(octokit: any, ref: string = "main"): Promise<AgentInfo[]> {
+  const expression = `${ref}:`;
+  const { repository } = await octokit.graphql(`
+    query GetAgentsWithManifests($owner: String!, $repo: String!, $expression: String!) {
+      repository(owner: $owner, name: $repo) {
+        root: object(expression: $expression) {
+          ... on Tree {
+            entries {
+              name
+              type
+              object {
+                ... on Tree {
+                  entries {
+                    name
+                    type
+                    object {
+                      ... on Blob {
+                        text
+                        oid
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  `, {
+    owner: GIT.owner,
+    repo: GIT.repo,
+    expression,
+  });
+
+  const entries = repository?.root?.entries ?? [];
+  const agents: AgentInfo[] = [];
+
+  for (const entry of entries) {
+    if (entry.type !== "tree" || !entry.object?.entries) continue;
+    const agentId = entry.name;
+    const manifestEntry = entry.object.entries.find(
+      (e: { name: string }) => e.name === "agent_manifest.yaml"
+    );
+    if (!manifestEntry?.object?.text) continue;
+    try {
+      const manifest = yaml.load(manifestEntry.object.text) as any;
+      const sha = manifestEntry.object.oid ?? "";
+      agents.push(agentManifestToInfo({ id: agentId, manifest, sha }));
+    } catch (err) {
+      console.error(`Failed to parse manifest for ${agentId}`, err);
+    }
+  }
+  return agents;
 }
 
 /** Load agents (with manifest) and attach to req.data.agents as AgentInfo[]. */
 export async function agentsDataMiddleware(this: any, req: cds.Request) {
   req.data = req.data || {};
   const octokit = await getOctokit();
-  const { data } = await octokit.rest.repos.getContent({ ...GIT, path: "" });
-  const dirs = (Array.isArray(data) ? data : [data])
-    .filter((i: any) => i.type === "dir")
-    .map((i: any) => i.name as string);
-
-  const agentsWithManifest = await Promise.all(
-    dirs.map(async (id) => {
-      try {
-        const {data,sha} = await octokit.rest.repos.getContent({ ...GIT, path: `${id}/agent_manifest.yaml` });
-        const content = Buffer.from((data as any).content, "base64").toString("utf-8");
-        const manifest = yaml.load(content) as any;
-        return agentManifestToInfo({ id , manifest, sha: sha as string });
-      } catch (error) {
-        console.error(`Failed to load agent manifest for ${id}`, error);
-        return null;
-      }
-    })
-  );
-
-
-  req.data.agents = agentsWithManifest.filter((n)=> !!n);
+  const ref = req.data?.ref ?? req.data?.version ?? "main";
+  const agents = await listAgents(octokit, ref);
+  req.data.agents = agents;
 
   const { agentId } = req.params[0] || {};
-  if(agentId) {
-    req.data.agent = agentsWithManifest.find((a) => a?.id === agentId);
+  if (agentId) {
+    // req.data.agent = agentManifestToInfo(await octokit.rest.repos.getContent({ ...GIT, path: `${agentId}/agent_manifest.yaml`, ref }));
+    req.data.agent = agents.find((a) => a?.id === agentId);
     req.data.agentId = agentId;
   }
 }
-
-

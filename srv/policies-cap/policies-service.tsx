@@ -3,7 +3,8 @@ import { LIST, SELECTOR, SELECT } from "./handler.agents.list";
 import layoutWrapMiddleware from "./middleware.layout";
 import { DASHBOARD } from "./handler.agents.dashboard";
 import { GET as GET_PANEL, POST as POST_PANEL, Title } from "./handler.agents.panel";
-import { RESOURCES, RESOURCES_PANE, RESOURCES_CARD, RESOURCES_TOGGLE, RESOURCES_ENABLE, RESOURCES_DISABLE } from "./handler.resources";
+import { RESOURCES, RESOURCES_PANE, RESOURCES_SLOT, RESOURCES_CARD, RESOURCES_TOGGLE, RESOURCES_ENABLE, RESOURCES_DISABLE } from "./handler.resources";
+import { RESOURCES_CONNECT_PICKER, ADD_RESOURCE } from "./handler.resources.connect";
 import { ADD_RULE, REMOVE_RULE, RULES } from "./handler.policy.rules";
 import { agentsDataMiddleware } from "./middleware.agents";
 import policyMiddleware from "./middleware.policy";
@@ -30,15 +31,20 @@ export default class PoliciesService extends cds.ApplicationService {
     this.on("CREATE", agents, POST_PANEL);
     this.on("UPDATE", agents, POST_PANEL);
 
-    this.before(["*"], versions, policyMiddleware);
-    this.before(["UPDATE", "CREATE", "publish"], versions, pushMiddleware);
 
-    this.before(["READ", "pane", "card", "toggle", "enable", "disable"], "resources", compose(policyMiddleware, resourcesMiddleware));
+    this.before(["READ", "pane", "slot", "card", "connect", "connecter","toggle", "enable", "disable"], "resources", compose(agentsDataMiddleware,policyMiddleware, resourcesMiddleware));
     this.on("pane", "resources", RESOURCES_PANE);
+    this.on("slot", "resources", RESOURCES_SLOT);
+    this.on("connect", "resources", ADD_RESOURCE);
+    this.on("connecter", "resources", RESOURCES_CONNECT_PICKER);
     this.on("card", "resources", RESOURCES_CARD);
     this.on("toggle", "resources", RESOURCES_TOGGLE);
     this.on("enable", "resources", RESOURCES_ENABLE);
     this.on("disable", "resources", RESOURCES_DISABLE);
+
+    this.before(["*"], versions, compose(agentsDataMiddleware,policyMiddleware, resourcesMiddleware));
+    this.before(["UPDATE", "CREATE", "publish"], versions, compose(agentsDataMiddleware,policyMiddleware, resourcesMiddleware,pushMiddleware));
+  
     this.on("READ", versions, GET_POLICY);
     this.on("title", versions, Title);
     this.on("publisher", versions, GET_PUBLISH);

@@ -43,6 +43,25 @@ should restart
 | `chart/`                     | Kubernetes deployment configuration       |
 | `docs/`                      | Documentation and consent scenarios       |
 
+## HTMX Path-Params Pattern (Policies UI)
+
+The policies CAP service uses **HTMX** with the **path-params** extension for event-driven content reload. URL placeholders are filled at request time from event data—**do not** replace them with template literals or constants.
+
+**Pattern:**
+- Use `{agent}` and `{version}` placeholders in `hx-get` URLs (e.g. `agents/{agent}/versions/{version}/resources/pane`).
+- Provide values via `hx-vals` from the triggering event or DOM:
+  - From custom events: `hx-vals="js:{ agent: event?.detail?.agent, version: event?.detail?.version }"`
+  - From DOM data: `hx-vals="js:(()=>{const p=document.getElementById('resources-pane');return{agent:p?.dataset?.agent,version:p?.dataset?.version};})()"`
+- Use `hx-trigger` for event-driven reloads (e.g. `agentSelected from:body`, `resource-updated from:body`).
+- Requires `hx-ext="path-params"` on a parent (e.g. `body`). See `srv/render/index.tsx`.
+
+**Example:**
+```tsx
+hx-get="agents/{agent}/versions/{version}/resources/pane"
+hx-vals="js:{ agent: event?.detail?.agent, version: event?.detail?.version }"
+hx-trigger="agentSelected from:body, resource-updated from:body"
+```
+
 ## 📚 API Documentation
 
 The application exposes two main OData v4 services:

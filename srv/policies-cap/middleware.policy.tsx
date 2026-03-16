@@ -6,9 +6,9 @@ import { getAgentManifestInfo } from "./middleware.agents";
 
 /** Load version/policy data and attach to req.data (ref, policy, rules). Resources loaded by resourcesMiddleware. */
 export default async  function (this: any, req: cds.Request) {
-  const { agentId } = req.params[0] || {};
+  const { agentId, agent } = req.data || {};
   const { version } = req.params[1] || req.data || {};
-  console.log("version - middleware",req.http?.req.originalUrl, req.http?.req.method, version, agentId ,req.data, req
+  console.log("policy - middleware",  req.http?.req.method, req.http?.req.originalUrl,version, agentId ,req.data, req
     .params
    );
   req.data = { ...req.data, agentId,version };
@@ -28,6 +28,6 @@ export default async  function (this: any, req: cds.Request) {
 
     const raw = safeJson(Buffer.from((response.data as any).content, "base64").toString("utf-8"), null);
     req.data.odrl = ensureOdrlSet(raw);
-    req.data.agent = await getAgentManifestInfo(octokit, agentId, req.data.ref);
+    // req.data.agent = await getAgentManifestInfo(octokit, agentId, req.data.ref);
    }
 }

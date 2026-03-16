@@ -1,0 +1,34 @@
+---
+description: HTMX path-params extension pattern for event-driven URL params
+globs: srv/**/*.tsx
+alwaysApply: false
+---
+
+# HTMX Path-Params Pattern
+
+Use the **path-params** extension to drive URL parameters from events and reload content. Do not use template literals or hardcoded values for dynamic path segments.
+
+## Rules
+
+- Use `{agent}` and `{version}` placeholders in `hx-get` URLs, not `agents/${agentId}/versions/${version}`.
+- Fill values via `hx-vals` from the triggering event or DOM data attributes.
+- Use `hx-trigger` for event-driven reloads (e.g. `agentSelected from:body`, `resource-updated from:body`).
+- Ensure `hx-ext="path-params"` is set on a parent element (e.g. `body`).
+
+## Examples
+
+```tsx
+// ✅ GOOD - placeholders + event-driven values
+hx-get="agents/{agent}/versions/{version}/resources/pane"
+hx-vals="js:{ agent: event?.detail?.agent, version: event?.detail?.version }"
+hx-trigger="agentSelected from:body, resource-updated from:body"
+
+// ✅ GOOD - placeholders + values from DOM (for click-triggered requests)
+data-agent={agentId}
+data-version={version}
+// ... on child:
+hx-vals="js:(()=>{const p=document.getElementById('resources-pane');return{agent:p?.dataset?.agent,version:p?.dataset?.version};})()"
+
+// ❌ BAD - template literals / constants
+hx-get={`agents/${agentId}/versions/${version}/resources/pane`}
+```
