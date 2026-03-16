@@ -9,7 +9,7 @@ export async function DASHBOARD(this: any, req: cds.Request) {
       <header className="h-11 flex items-center px-4 bg-[#354A5F] text-white shadow-md flex-shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 bg-[#0854A0] rounded flex items-center justify-center font-bold text-sm">🛡</div>
-          <h1 className="text-base font-normal">AI Agent Policies</h1>
+          <h1 className="text-base font-normal">Grant Management for AI Agents</h1>
         </div>
       </header>
       <div className="flex-1 min-h-0 flex">

@@ -25,6 +25,8 @@ service PoliciesService {
       function title(version: $self) returns String;
       function resources(version: $self)                                                                                               returns String;
       function rules(version: $self)                                                                                                   returns String;
+      function constraints(version: $self)                                                                              returns String;
+      action   values(version: $self, constraint: String)                                                    returns String;
       action   addRule(version: $self, odrl: String, ruleAction: String, target: String, constraint: String, constraintValue: String) returns String;
       action   removeRule(version: $self, odrl: String, removeKind: String, removeIndex: Integer) returns String;
       function publisher(version: $self)                                                                                               returns String;
@@ -43,6 +45,9 @@ service PoliciesService {
       function toggle() returns String;
       action   enable() returns String;
       action   disable() returns String;
+      function constraints(version: $self)                                                                              returns String;
+      action   values(version: $self, constraint: String)                                                    returns String;
+
     };
 
 }
