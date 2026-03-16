@@ -7,7 +7,7 @@ import { versionFromRequest } from "./git-version";
 
 /** GET agents → JSON or full list page (handler = route UI) */
 export async function LIST(this: any, req: cds.Request, next: Function) {
-  const { agentId ,agents} = req.data;
+  const { agentId, agents } = req.data;
   console.log("agentId", agentId);
 
   if (!req?.http?.req.accepts("html")) {
@@ -40,11 +40,11 @@ export async function LIST(this: any, req: cds.Request, next: Function) {
         ) : (
           agents.map((id: string) => (
             <div key={id}
-            hx-get={`${req.http?.req.originalUrl}/${id}/selector`}
-            hx-trigger="load"
-            hx-push-url="false"
-            hx-swap="outerHTML">
-            </div> 
+              hx-get={`${req.http?.req.originalUrl}/${id}/selector`}
+              hx-trigger="load "
+              hx-push-url="false"
+              hx-swap="outerHTML">
+            </div>
           ))
         )}
       </nav>
@@ -52,22 +52,7 @@ export async function LIST(this: any, req: cds.Request, next: Function) {
         <p className="text-xs text-gray-500">{agents.length} agent{agents.length !== 1 ? "s" : ""}</p>
       </div>
       <script dangerouslySetInnerHTML={{ __html: `document.getElementById('agent-search').addEventListener('input',function(){var q=this.value.toLowerCase();document.querySelectorAll('#agents-nav button').forEach(function(btn){btn.style.display=btn.querySelector('span').textContent.toLowerCase().includes(q)?'':'none';});});` }} />
-      <script dangerouslySetInnerHTML={{
-        __html: `
-        document.body.addEventListener('sidebarSelect', function(evt) {
-          var id = evt.detail;
-          document.querySelectorAll('#agents-nav [data-agent-id]').forEach(function(el) {
-            var active = el.getAttribute('data-agent-id') === id;
-            el.classList.toggle('bg-indigo-50', active);
-            el.classList.toggle('border-indigo-200', active);
-            el.classList.toggle('text-indigo-800', active);
-            el.classList.toggle('bg-transparent', !active);
-            el.classList.toggle('border-transparent', !active);
-            var dot = el.querySelector('.w-2.h-2');
-            if (dot) { dot.classList.toggle('bg-indigo-600', active); dot.classList.toggle('bg-gray-400', !active); }
-          });
-        });
-      ` }} />
+     
     </>
 
 
@@ -76,22 +61,93 @@ export async function LIST(this: any, req: cds.Request, next: Function) {
 }
 
 
-export async function SELECTOR(this: any, req: cds.Request) {
-  const { agentId } = req.data;
+export async function AgentCard({ agentId, isSelected, name, description, location, tags }: { agentId: string, isSelected: boolean, name: string, description: string, location: string, tags: { key: string, value: string }[] }) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 text-slate-600">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /><rect width="20" height="14" x="2" y="6" rx="2" />
+        </svg>
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <span className={`font-semibold text-gray-900 truncate ${isSelected ? "text-indigo-800" : ""}`}>
+            {name}
+          </span>
+          <span className={`flex-shrink-0 text-indigo-600 agent-check ${isSelected ? "" : "hidden"}`} aria-hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+          </span>
+        </div>
+        {description && (
+          <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{description}</p>
+        )}
+        {location && (
+          <p className="text-[11px] text-gray-400 mt-1">{location}</p>
+        )}
+        {tags?.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {tags.slice(0, 4).map((t) => (
+              <span key={t.key} className="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 text-[10px] text-gray-600 font-medium">
+                {t.key}:{t.value}
+              </span>
+            ))}
+            {tags.length > 4 && (
+              <span className="text-[10px] text-gray-400">+{tags.length - 4}</span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export async function SELECTOR(req: cds.Request) {
+  const { agent, agents } = req.data;
+  const { id, name, description, location, tags } = agent || {}
   return render(
     req,
     <button
       type="button"
-      data-agent-id={agentId}
+      id={`selector-${id}`}
+      data-agent-id={id}
       hx-post={`${req.http?.req.originalUrl.replace(/selector/, 'select')}`}
       hx-trigger="click"
       hx-swap="outerHTML"
       hx-push-url="false"
-     className={`w-full text-left px-4 py-3 rounded-lg transition-all group hover:bg-gray-100 border text-gray-600 hover:text-gray-900 ${agentId === agentId ? "bg-indigo-50 border-indigo-200 text-indigo-800" : "bg-transparent border-transparent"}`}
+      hx-target={`#selector-name-${id}`}
+      className={`w-full text-left px-4 py-3 rounded-lg transition-all group hover:bg-gray-100 border text-gray-600 hover:text-gray-900  bg-transparent border-transparent`}
     >
-      <div className="flex items-center gap-2.5">
-        <div className="w-2 h-2 rounded-full flex-shrink-0 bg-transparent border-transparent" />
-        <span className="text-sm font-mono truncate" title={agentId}>{agentId}</span>
+      <div className="flex items-start gap-3">
+        <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 text-slate-600">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /><rect width="20" height="14" x="2" y="6" rx="2" />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2  transition-all duration-300 ease-in-out" id={`selector-name-${id}`}>
+            <span className={`font-semibold text-gray-900 truncate `}>
+              {name || id}
+            </span>
+          </div>
+          {description && (
+            <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{description}</p>
+          )}
+          {location && (
+            <p className="text-[11px] text-gray-400 mt-1">{location}</p>
+          )}
+          {tags?.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {tags.slice(0, 4).map((t) => (
+                <span key={t.key} className="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 text-[10px] text-gray-600 font-medium">
+                  {t.key}:{t.value}
+                </span>
+              ))}
+              {tags.length > 4 && (
+                <span className="text-[10px] text-gray-400">+{tags.length - 4}</span>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </button>
   );
@@ -99,27 +155,21 @@ export async function SELECTOR(this: any, req: cds.Request) {
 
 
 export async function SELECT(this: any, req: cds.Request) {
-  const { agentId } = req.data;
+  const { agent } = req.data;
+  const { id, name } = agent || {}
   const version = versionFromRequest(req);
-
-  req.http?.res.header("HX-Trigger", JSON.stringify({ agentSelected: { agent: agentId,version: version }, }));
+  req.http?.res.header("HX-Trigger", JSON.stringify({ agentSelected: { agent: id, version: version }, }));
   req.http?.res.header("HX-Push-Url", `${req.http?.req.originalUrl.replace(/select/, '')}`);
 
   return render(
     req,
-    <button
-      type="button"
-      data-agent-id={agentId}
-      hx-get={`${req.http?.req.originalUrl.replace(/select/, 'selector')}`}
-      hx-trigger="agentSelected from:body"
-      hx-swap="outerHTML"
-      hx-push-url="false"
-
-      className={`w-full text-left px-4 py-3 rounded-lg transition-all group hover:bg-gray-100 border text-gray-600 hover:text-gray-900bg-indigo-50 border-indigo-200 text-indigo-800`}>
-      <div className="flex items-center gap-2.5">
-        <div className="w-2 h-2 rounded-full flex-shrink-0 bg-transparent border-transparent" />
-        <span className="text-sm font-mono truncate" title={agentId}>{agentId}</span>
-      </div>
-    </button>
+    <div className="flex items-center justify-between gap-2 transition-all  ease-in-out " hx-get={`${req.http?.req.originalUrl.replace(/select/, 'selector')}`} hx-trigger="agentSelected from:body" hx-swap="outerHTML" hx-push-url="false" hx-target={`#selector-${id}`}>
+      <span className={`font-semibold text-gray-900 truncate  text-indigo-800`}>
+        {name || id}
+      </span>
+      <span className={`flex-shrink-0 text-indigo-600 agent-check `} aria-hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+      </span>
+    </div>
   );
 }

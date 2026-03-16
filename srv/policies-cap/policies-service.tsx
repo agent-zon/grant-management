@@ -16,13 +16,12 @@ export default class PoliciesService extends cds.ApplicationService {
   init() {
     this.on("dashboard", DASHBOARD);
 
-    this.before(["READ", "view", "edit", "list", "selector", "select", "title"], agents, agentsDataMiddleware);
+    this.before(["READ", "view", "edit", "list", "selector", "select"], agents, agentsDataMiddleware);
     this.on("view", agents, LIST);
     this.on("READ", agents, LIST);
     this.on("panel", agents, GET_PANEL);
     this.on("selector", agents, SELECTOR);
     this.on("select", agents, SELECT);
-    this.on("title", agents, Title);
 
     // this.on("list", agents, LIST_SIDEBAR);
 
@@ -31,12 +30,10 @@ export default class PoliciesService extends cds.ApplicationService {
     this.on("UPDATE", agents, POST_PANEL);
 
     this.before(["*"], versions, policyMiddleware);
-    // this.before(["*"], versions, resourcesMiddleware);
     this.before(["UPDATE", "CREATE", "publish"], versions, pushMiddleware);
 
     this.on("READ", versions, GET_POLICY);
-    this.before(["publisher", "edit"], versions, policyMiddleware);
-
+    this.on("title", versions, Title);
     this.on("publisher", versions, GET_PUBLISH);
     this.on("publish", versions, POST_PUBLISH);
     this.on("edit", versions, GET_PANEL);
