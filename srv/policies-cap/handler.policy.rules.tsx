@@ -34,10 +34,15 @@ export async function RULES(req: cds.Request) {
     ask: { label: "Ask Consent", badge: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500" },
   } as const;
 
-  return render(req,   <div id="rules-section" className="space-y-4">
-    <input type="hidden" name="version" value={version} />
-    <input type="hidden" name="rules" value={JSON.stringify(rules)} />
+  return render(req,  <div id="rules-section" 
+    className="space-y-4"  
+    hx-get="agents/{agent}/versions/{version}/rules"
+    hx-vals={`js:{ version: event?.detail?.version,agent: event?.detail?.agent}`}
+    hx-trigger="agentSelected from:body"
+    hx-swap="outerHTML">
     <div className="space-y-2 min-h-[4rem]">
+      <input type="hidden" name={`rules`} value={JSON.stringify(rules)} />
+
       {rules.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-10 border border-dashed border-gray-300 rounded-xl text-gray-500 bg-gray-50/50">
           <span className="text-2xl mb-1">📋</span>
@@ -46,18 +51,19 @@ export async function RULES(req: cds.Request) {
       ) : rules.map((rule, i) => {
         const cfg = ACTION_CFG[rule.actionType];
         return (
-          <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-gray-50 border border-gray-200 group hover:border-gray-300 hover:bg-gray-50/80 transition-colors">
+            <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-gray-50 border border-gray-200 group hover:border-gray-300 hover:bg-gray-50/80 transition-colors">
             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot}`} />
             <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border ${cfg.badge}`}>{cfg.label}</span>
             <div className="flex-1 min-w-0 text-sm">
-              <span className="text-gray-800 font-medium">{rule.targetName}</span>
+            <input type="text" name={`rules[${i}].targetName`} value={rule.targetName} className="w-full bg-white border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none" />
+
               <span className="ml-2 text-gray-500 text-xs">{rule.targetType === "mcp" ? "🔌 MCP Server" : "🔧 Tool"}</span>
               {rule.constraint && <span className="ml-2 text-xs text-indigo-600">· {rule.constraint} ∈ [{rule.constraintValue}]</span>}
             </div>
             <button
               hx-post="removeRule"
               hx-ext="json-enc"
-              hx-include="[name=rules],[name=version]"
+              hx-include="[name=rules]"
               hx-vals={`{"index":${i}}`}
               hx-target="#rules-section"
               hx-swap="outerHTML"

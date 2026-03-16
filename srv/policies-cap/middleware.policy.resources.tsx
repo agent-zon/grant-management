@@ -24,7 +24,7 @@ export async function fetchResources(agentId: string, ref: string = "main"): Pro
   const octokit = await getOctokit();
   const resources: TargetOption[] = [];
   const manifestRaw = await fetchGitFile(octokit, `${agentId}/agent_manifest.yaml`, ref);
-  console.log("resources - middleware", !!manifestRaw);
+  console.log("resources - middleware2", !!manifestRaw);
 
   if (!manifestRaw) return resources;
 
