@@ -66,7 +66,7 @@ export async function RESOURCES_DISABLE(this: any, req: cds.Request) {
 export async function RESOURCES_CARD(this: any, req: cds.Request) {
   const { resource } = req.data || {};
   if (!resource) return null;
-  const { name, displayName, enabled, slug, refFile } = resource;
+  const { name, displayName, enabled, slug, refFile, id } = resource;
   return render(
     req,
     <div
@@ -78,8 +78,8 @@ export async function RESOURCES_CARD(this: any, req: cds.Request) {
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-gray-900 truncate">{displayName || name}</p>
-        <p className="text-xs text-gray-500 font-mono truncate" title={refFile ?? name}>
-          {refFile ?? name}
+        <p className="text-xs text-gray-500 font-mono truncate" title={id}>
+          {slug}
         </p>
       </div>
       <div className="flex items-center gap-3 shrink-0">
