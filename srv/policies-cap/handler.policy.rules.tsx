@@ -183,7 +183,7 @@ export async function RULES(req: cds.Request) {
               type="text"
               name="target"
               list="resources-datalist"
-              placeholder="MCP server or tool…"
+              placeholder="MCP server…"
               autoComplete="off"
               className="flex-1 min-w-[140px] rounded-lg text-xs font-medium px-3 py-2 bg-sky-50 border border-sky-200 text-sky-800 placeholder-sky-600/60 focus:ring-1 focus:ring-sky-500 focus:border-sky-500 outline-none"
             />

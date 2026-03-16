@@ -24,12 +24,23 @@ service PoliciesService {
       function edit(version: $self)                                                                                                    returns String;
       function title(version: $self) returns String;
       function resources(version: $self)                                                                                               returns String;
+      action   addResource(version: $self, destinationName: String) returns String;
       function rules(version: $self)                                                                                                   returns String;
       action   addRule(version: $self, odrl: String, ruleAction: String, target: String, constraint: String, constraintValue: String) returns String;
       action   removeRule(version: $self, odrl: String, removeKind: String, removeIndex: Integer) returns String;
       function publisher(version: $self)                                                                                               returns String;
       action   publish(version: $self, odrl: String) returns String;
 
+    };
+
+  @cds.persistence.skip
+  entity resources as projection on policies.VersionResources
+    actions {
+      function pane(in: many $self) returns String;
+      function card() returns String;  // full card with data (fetched on demand)
+      function toggle() returns String;
+      action   enable() returns String;
+      action   disable() returns String;
     };
 
 }

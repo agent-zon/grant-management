@@ -3,31 +3,35 @@ import { render, sendHtml } from "#cds-ssr";
 import { renderToString } from "react-dom/server";
 import { mergeBranchToMain } from "./middleware.policy.push";
 
-/** GET Policies/agent-123/versions/<version>/edit → panel only; middleware sets wrapWithLayout for full page. */
+/** GET .../publisher → Publish button + toast slot. */
 export async function GET(this: any, req: cds.Request) {
   const { agentId, version } = req.data;
   return render(req, (
-    <div className="flex flex-col h-full p-6 space-y-5 max-w-3xl mx-auto bg-gray-50"
-      hx-get={`agents/{agent}/versions/{version}/publisher`}
-      hx-vals={`js:{ version: event?.detail?.version,agent: event?.detail?.agent}`}
+    <div
+      className="flex items-center gap-3"
+      hx-get={`agents/${agentId}/versions/${version}/publisher`}
+      hx-vals="js:{ version: event?.detail?.version, agent: event?.detail?.agent }"
       hx-swap="outerHTML"
       hx-trigger="agentSelected from:body"
     >
-    <div className="flex items-center gap-3">
-        <div id="publish-toast" />
-        <button
-          hx-post={`agents/${agentId}/versions/${version || "main"}/publish`}
-          hx-ext="json-enc"
-          hx-include="[name=odrl]"
-          hx-swap="outerHTML"
-          hx-target="#publish-toast"
-          type="submit"
-          hx-params="odrl"
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
-        >
-          <span>💾</span> Publish
-        </button>
-      </div>
+      <div id="publish-toast" className="min-w-0" />
+      <button
+        hx-post={`agents/${agentId}/versions/${version || "main"}/publish`}
+        hx-ext="json-enc"
+        hx-include="[name=odrl]"
+        hx-swap="outerHTML"
+        hx-target="#publish-toast"
+        type="submit"
+        hx-params="odrl"
+        className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 border-0"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        Publish
+      </button>
     </div>
   ));
 }
