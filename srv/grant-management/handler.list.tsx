@@ -20,10 +20,19 @@ export async function LIST(
 ) {
   console.log("🔍 Listing grants with expand:", req.data, req.query, req.id);
 
+  // Apply perspective filter: "subject" (default) or "actor"
+  const perspective =
+    (req?.http?.req?.query?.perspective as string) || "subject";
+  const callerId = cds.context?.user?.id;
+
+  if (callerId && (perspective === "subject" || perspective === "actor")) {
+    req.query.where({ [perspective]: callerId });
+  }
+
   const response = await next(req);
 
   if (isGrants(response)) {
-    const grants = await getGrants(this, response);
+    const grants = await getGrants(this, response, perspective, callerId);
 
     // For HTML responses, render the UI
     if (req?.http?.req.accepts("html")) {
@@ -320,8 +329,17 @@ export async function LIST(
 }
 
 //workround for last grant overwrite issue
-async function getGrants(srv: GrantsManagementService, data: Grants) {
-  const consentRecords = await srv.read(Consents);
+async function getGrants(
+  srv: GrantsManagementService,
+  data: Grants,
+  perspective?: string,
+  callerId?: string
+) {
+  const consentsQuery = SELECT.from(Consents);
+  if (callerId && perspective) {
+    consentsQuery.where({ [perspective]: callerId });
+  }
+  const consentRecords = await srv.run(consentsQuery);
   const authorization_details = await srv.run(
     cds.ql.SELECT.from(AuthorizationDetails)
   );
