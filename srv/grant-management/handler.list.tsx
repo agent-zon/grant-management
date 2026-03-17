@@ -14,6 +14,28 @@ import { isNativeError } from "node:util/types";
 import e from "express";
 import { render } from "#cds-ssr";
 
+/** Enriched grant object returned by getGrants(), extending Grant with aggregated consent data */
+interface EnrichedGrant {
+  id: string | null | undefined;
+  status?: string | null;
+  scope?: string;
+  subject?: string[] | string | null;
+  actor?: string[] | string | null;
+  client_id?: string[] | string | null;
+  risk_level?: string | null;
+  createdAt?: string | null;
+  modifiedAt?: string | null;
+  consents: Consent[];
+  authorization_details: Array<{
+    type?: string | null;
+    locations?: string[] | null;
+    actions?: string[] | null;
+    consent_grant_id?: string | null;
+    [key: string]: unknown;
+  }>;
+  [key: string]: unknown;
+}
+
 export async function LIST(
   this: GrantsManagementService,
   ...[req, next]: Parameters<GrantsHandler>
@@ -26,7 +48,7 @@ export async function LIST(
   const callerId = cds.context?.user?.id;
 
   if (callerId && (perspective === "subject" || perspective === "actor")) {
-    req.query.where({ [perspective]: callerId });
+    (req.query as any).where({ [perspective]: callerId });
   }
 
   const response = await next(req);
@@ -334,7 +356,7 @@ async function getGrants(
   data: Grants,
   perspective?: string,
   callerId?: string
-) {
+): Promise<EnrichedGrant[]> {
   const consentsQuery = SELECT.from(Consents);
   if (callerId && perspective) {
     consentsQuery.where({ [perspective]: callerId });
@@ -422,10 +444,10 @@ async function getGrants(
 
       return acc;
     },
-    {} as Record<string, Grant>
+    {} as Record<string, EnrichedGrant>
   );
 
-  return Object.values(grants).reverse();
+  return (Object.values(grants) as EnrichedGrant[]).reverse();
 }
 
 function unique<T>(value: T, index: number, array: T[]): value is T {
