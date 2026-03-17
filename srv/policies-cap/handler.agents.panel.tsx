@@ -25,9 +25,12 @@ export async function GET(this: any, req: cds.Request) {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-          <span className="text-[11px] text-gray-500">Live</span>
+        <div className="flex items-center gap-3">
+          <button type="button" id="restore-panels-btn" className="text-[11px] text-gray-500 hover:text-gray-700" title="Restore panel layout">Restore layout</button>
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+            <span className="text-[11px] text-gray-500">Live</span>
+          </span>
         </div>
         <div className="relative flex items-center gap-3 shrink-0">
           <div
@@ -39,13 +42,16 @@ export async function GET(this: any, req: cds.Request) {
           </div>
         </div>
       </div>
-      <div className="flex-1 grid gap-6 min-h-0 grid-cols-1 lg:grid-cols-[1fr_1fr_minmax(280px,32%)]">
+      <div id="agent-panels-wrap" className="flex-1 flex flex-col lg:flex-row min-h-0 gap-0 overflow-hidden">
       
         {/* Col 1: Resources + Landscape */}
-        <div className="flex flex-col gap-6 min-h-0 min-w-0 overflow-hidden">
+        <div id="panel-resources" className="flex flex-col gap-6 min-h-0 min-w-0 overflow-hidden border-r-0 lg:border-r border-gray-200 rounded-xl lg:rounded-none border border-gray-200 lg:border-0 lg:border-r">
           <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col min-h-0 flex-1">
-            <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
+            <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0 flex items-center justify-between">
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Resources</h3>
+              <button type="button" data-panel-toggle="0" className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-gray-700" title="Toggle panel">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
             <div className="p-5 flex-1 min-h-0 overflow-y-auto relative">
               <div
@@ -100,9 +106,12 @@ export async function GET(this: any, req: cds.Request) {
           </div>
         </div>
         {/* Col 2: Policy */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col min-h-0">
-          <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
+        <div id="panel-policy" className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col min-h-0 min-w-0 border-r-0 lg:border-r border-gray-200">
+          <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0 flex items-center justify-between">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Restrict</h3>
+            <button type="button" data-panel-toggle="1" className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-gray-700" title="Toggle panel">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
           </div>
           <div className="p-5 flex-1 min-h-0 overflow-y-auto relative">
             <div
@@ -127,10 +136,13 @@ export async function GET(this: any, req: cds.Request) {
           </div>
         </div>
         {/* Col 3: Test + Use */}
-        <div className="flex flex-col gap-6 min-h-0 min-w-0 overflow-hidden">
+        <div id="panel-test" className="flex flex-col gap-6 min-h-0 min-w-0 overflow-hidden">
           <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col min-h-0 flex-1">
-            <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
+            <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0 flex items-center justify-between">
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Test</h3>
+              <button type="button" data-panel-toggle="2" className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-gray-700" title="Toggle panel">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
             <div className="p-5 flex-1 min-h-0 overflow-y-auto relative">
               <div
@@ -186,6 +198,55 @@ export async function GET(this: any, req: cds.Request) {
           </div>
         </div>
       </div>
+      <script dangerouslySetInnerHTML={{ __html: `
+(function(){
+  var STORAGE_KEY = 'agent-panels-sizes';
+  function initSplit() {
+    var wrap = document.getElementById('agent-panels-wrap');
+    if (!wrap || !window.Split || window.innerWidth < 1024) return;
+    if (wrap.querySelector('.gutter')) return;
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch(e){}
+    var sizes = saved || [33, 34, 33];
+    window._agentPanelsSplit = Split(['#panel-resources', '#panel-policy', '#panel-test'], {
+      sizes: sizes,
+      minSize: [0, 0, 0],
+      gutterSize: 8,
+      direction: 'horizontal',
+      elementStyle: function(dim, size, gutterSize) {
+        return { 'flex-basis': 'calc(' + size + '% - ' + gutterSize + 'px)' };
+      },
+      gutterStyle: function(dim, gutterSize) {
+        return { 'flex-basis': gutterSize + 'px' };
+      },
+      onDragEnd: function(sizes) {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(sizes)); } catch(e){}
+      }
+    });
+  }
+  function onReady() {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initSplit);
+    } else {
+      initSplit();
+    }
+  }
+  document.body.addEventListener('htmx:afterSettle', function(){ setTimeout(initSplit, 0); });
+  onReady();
+  document.body.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-panel-toggle]');
+    if (btn && window._agentPanelsSplit) {
+      var idx = parseInt(btn.getAttribute('data-panel-toggle'), 10);
+      window._agentPanelsSplit.collapse(idx);
+      return;
+    }
+    if (e.target.id === 'restore-panels-btn' && window._agentPanelsSplit) {
+      window._agentPanelsSplit.setSizes([33, 34, 33]);
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify([33, 34, 33])); } catch(e){}
+    }
+  });
+})();
+      ` }} />
     </form>
   ));
 }

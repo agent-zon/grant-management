@@ -17,6 +17,7 @@ export const htmlTemplate = (reactContent: string, baseHref?: string ) => `
    <script src="https://unpkg.com/htmx-ext-form-json"></script>
    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
    <script src="https://unpkg.com/htmx.org/dist/ext/path-params.js"></script>
+    <script src="https://unpkg.com/split.js/dist/split.min.js"></script>
     <script src="https://unpkg.com/idiomorph@0.7.4/dist/idiomorph-ext.min.js" integrity="sha384-SsScJKzATF/w6suEEdLbgYGsYFLzeKfOA6PY+/C5ZPxOSuA+ARquqtz/BZz9JWU8" crossorigin="anonymous"></script>
 
    <script>htmx.config.disableInheritance = true;</script>
@@ -33,6 +34,9 @@ export const htmlTemplate = (reactContent: string, baseHref?: string ) => `
         /* Fade-in for loaded content */
         .content-fade-in { animation: content-fade-in 0.25s ease-out forwards; }
         @keyframes content-fade-in { from { opacity: 0; } to { opacity: 1; } }
+        .gutter.gutter-horizontal { background: #e5e7eb; cursor: col-resize; flex-shrink: 0; }
+        .gutter.gutter-horizontal:hover { background: #d1d5db; }
+        @media (max-width: 1023px) { #agent-panels-wrap .gutter { display: none !important; } #panel-resources, #panel-policy, #panel-test { flex: 1 1 100% !important; width: 100% !important; } }
     </style>
 
 
