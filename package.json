@@ -66,10 +66,11 @@
   "debug": "npx cds debug ",
   "serve": "npm run serve:approuter & npm run serve:cds",
   "serve:cds": "npx cds serve --profile dev",
-  "dev:approuter": "node node_modules/@sap/approuter/approuter.js --workingDir app/router --port 9000",
-  "serve:approuter": "node node_modules/@sap/approuter/approuter.js --workingDir app/router --port 9000",
+  "dev:approuter": "node --import tsx app/router/custom-server.js",
+  "serve:approuter": "node --import tsx app/router/custom-server.js",
+  "serve:approuter:plain": "node node_modules/@sap/approuter/approuter.js --workingDir app/router --port 9000",
   "hybrid": "npx cds bind --exec -- npm run serve",
-  "hybrid:approuter": "npx cds bind --exec -- npm run serve:approuter",
+  "hybrid:approuter": "npx cds bind --exec -- node --import tsx app/router/custom-server.js",
   "hybrid:portal": "npx cds bind --exec -- npm run dev -w portal",
   "hybrid:cds": "npx cds bind --profile hybrid --exec -- cds debug --profile hybrid",
   "hybrid:mcp-client": "npx cds bind --profile hybrid --exec -- npm run start -w examples/client",
@@ -135,6 +136,7 @@
   "token:exchange:from-password": "npx cds bind  --exec -- ias-token exchange --subject_token \"$(npm run token:password:id_token --silent)\" --subject_token_type urn:ietf:params:oauth:token-type:id_token",
   "test:e2e:policies": "playwright test tests/e2e/policies.spec.js --project=chromium",
   "test:e2e:policies:ui": "playwright test tests/e2e/policies.spec.js --ui",
+  "test:e2e:connection-management": "TEST_URL=https://connection-managment-sdyz.bolt.host playwright test tests/e2e/connection-management.spec.js --project=connection-management",
   "postinstall-test": "npx playwright install chromium 2>/dev/null || true"
  },
  "workspaces": [

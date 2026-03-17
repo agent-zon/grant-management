@@ -1,0 +1,8 @@
+[
+  { "name": "connection-managment", "url": "https://connection-managment-sdyz.bolt.host" },
+  { "name": "role-propagation", "url": "https://light-theme-consent-4b50.bolt.host" },
+  { "name": "consent-requests", "url": "https://agent-consent-d3j4.bolt.host/workloads" },
+  { "name": "governance", "url": "https://control.ai.authz.id" },
+  { "name": "supply-chain-permission-request", "url": "https://supplier-contact-app-tb5n.bolt.host" },
+  { "name": "agent-grant-e2e", "url": "https://agent-consent-d3j4.bolt.host" }
+]

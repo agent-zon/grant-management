@@ -51,6 +51,15 @@
       "authenticationType": "ias",
       "dynamicIdentityProvider": true
     },
+
+    {
+      "source": "^/sketch/([^/]+)(.*)$",
+      "target": "$2",
+      "destination": "$1",
+      "csrfProtection": false,
+      "authenticationType": "none"
+    
+    },
     {
       "source": "^/(.*)$",
       "target": "$1",

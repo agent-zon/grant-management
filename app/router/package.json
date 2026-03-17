@@ -1,10 +1,15 @@
 {
   "name": "approuter",
+  "type": "module",
   "dependencies": {
-    "@sap/approuter": "^20.0.0"
+    "tsx": "^4.20.6",
+    "@hono/node-server": "^1.19.9",
+    "@sap-cloud-sdk/connectivity": "^4.1.2",
+    "@sap/approuter": "^20.0.0",
+    "hono": "^4.11.4"
   },
   "scripts": {
-    "start": "node node_modules/@sap/approuter/approuter.js",
+    "start": "node --import tsx custom-server.js",
     "hybrid": "npx cds bind --exec -- npm run start",
     "build": "rsync -av --exclude node_modules . ../../gen/chart/router/"
   }

@@ -230,6 +230,46 @@ backendDestinations:
     preserveHostHeader: true
     forwardAuthToken: true
 
+  connection-managment:
+    external: true
+    name: connection-managment
+    url: https://connection-managment-sdyz.bolt.host
+    labels: [sketch]
+
+  role-propagation:
+    external: true
+    name: role-propagation
+    url: https://light-theme-consent-4b50.bolt.host
+    labels: [sketch]
+
+  consent-requests:
+    external: true
+    name: consent-requests
+    url: https://agent-consent-d3j4.bolt.host/workloads
+    labels: [sketch]
+
+  governance:
+    external: true
+    name: governance
+    url: https://control.ai.authz.id
+    labels: [sketch]
+
+  supply-chain-permission-request:
+    external: true
+    name: supply-chain-permission-request
+    url: https://supplier-contact-app-tb5n.bolt.host
+    labels: [sketch]
+
+  agent-grant-e2e:
+    external: true
+    name: agent-grant-e2e
+    url: https://agent-consent-d3j4.bolt.host
+    labels: [sketch]
+  authorization-live-monitor:
+    external: true
+    name: authorization-live-monitor
+    url: https://authorization-layers-jgt9.bolt.host/live-requests
+    labels: [sketch]
   # user-portal:
   #   service: portal
   #   forwardAuthToken: true
