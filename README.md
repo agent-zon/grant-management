@@ -1067,15 +1067,33 @@ curl -X DELETE http://localhost:4004/grants-management/Grants('grant_xxx')
 
 ### Production Deployment
 
+**Prerequisites** (required for `npm run deploy`):
+
+- **Node.js 18+** and `npm install` (provides `ctz` and CDS tooling)
+- **Docker** – build and push images; log in to your container registry before deploy:
+  ```bash
+  docker login scai-dev.common.repositories.cloud.sap   # or your registry
+  ```
+- **Helm** – install if missing (e.g. `brew install helm` on macOS, or [helm.sh/docs/intro/install](https://helm.sh/docs/intro/install))
+- **GitHub binding** – the backend (srv) requires `cds.requires.github` for the policies admin (`/admin/dashboard`). Ensure a service instance and binding exist in the target namespace, e.g.:
+  ```bash
+  npm run bind:github   # creates git-credentials binding for the current k8s context
+  ```
+
 Deploy to SAP BTP Kyma environment:
 
 ```bash
 # Set your namespace
 export NAMESPACE=grant-management
 
-# Deploy using Helm
+# Deploy using Helm (builds containers, pushes to registry, then helm upgrade)
 npm run deploy
+```
 
+To build and deploy without pushing images (e.g. when registry auth is not set up):
+
+```bash
+npm run deploy:no-push
 ```
 
 Or use the containerization workflow:

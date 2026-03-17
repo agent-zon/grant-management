@@ -39,6 +39,7 @@
   "zod": "^4.0"
  },
  "devDependencies": {
+  "ctz": "^0.2.7",
   "@cap-js/cds-test": "^0.4.0",
   "@cap-js/cds-typer": "^0.38.0",
   "@cap-js/cds-types": "^0.15.0",
@@ -73,8 +74,8 @@
   "hybrid:cds": "npx cds bind --profile hybrid --exec -- cds debug --profile hybrid",
   "hybrid:mcp-client": "npx cds bind --profile hybrid --exec -- npm run start -w examples/client",
   "build": "npx cds build --production",
-  "build:containers": "ctz containerize.yaml --log",
-  "build:push": "ctz containerize.yaml --log --push",
+  "build:containers": "npx ctz containerize.yaml --log",
+  "build:push": "npx ctz containerize.yaml --log --push",
   "bind:srv": "npx cds bind --to-app-services agents-srv --on k8s",
   "bind:router": "cds bind --to-app-services agents-approuter --on k8s",
   "bind:auth": "cds bind ias -2 agents-identity --on k8s",
@@ -86,9 +87,10 @@
   "setup:local": "npm run bind:all && npm run serve:hybrid",
   "setup:dev": "npm install && npm run bind:auth && npm run serve",
   "deploy": "npm run build:push && npm run deploy:helm",
+  "deploy:no-push": "npm run build:containers && npm run deploy:helm",
   "deploy:sqlite": "npx cds deploy --to sqlite --profile development",
   "deploy:srv": "npm run build  && docker buildx build --platform linux/amd64 -t scai-dev.common.repositories.cloud.sap/grant-management/api:v31 -f Dockerfile . --push && kubectl rollout restart deployment agents-srv",
-  "deploy:helm": "npm run build && helm upgrade agents ./gen/chart --install --create-namespace",
+  "deploy:helm": "npm run build && (export PATH=\"$HOME/bin:$PATH\"; helm upgrade console ./gen/chart --install --create-namespace)",
   "deploy:to:sqlite": "npx cds deploy --to sqlite",
   "copy-docker-secret": "./scripts/copy-docker-secret.sh",
   "setup-namespace": "./scripts/setup-namespace.sh",
@@ -133,7 +135,7 @@
   "token:exchange:from-password": "npx cds bind  --exec -- ias-token exchange --subject_token \"$(npm run token:password:id_token --silent)\" --subject_token_type urn:ietf:params:oauth:token-type:id_token",
   "test:e2e:policies": "playwright test tests/e2e/policies.spec.js --project=chromium",
   "test:e2e:policies:ui": "playwright test tests/e2e/policies.spec.js --ui",
-  "postinstall": "npx playwright install chromium 2>/dev/null || true"
+  "postinstall-test": "npx playwright install chromium 2>/dev/null || true"
  },
  "workspaces": [
   "app/router",

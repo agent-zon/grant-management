@@ -8,9 +8,9 @@ modules:
   - name: grant-management/api
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t scai-dev.common.repositories.cloud.sap/grant-management/api:v35 -f Dockerfile . --push
+        - docker buildx build --platform linux/amd64 -t scai-dev.common.repositories.cloud.sap/grant-management/api:v35 -f Dockerfile .  
 
   - name: grant-management/approuter
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t scai-dev.common.repositories.cloud.sap/grant-management/approuter:v35 app/router --push
+        - docker buildx build --platform linux/amd64 -t scai-dev.common.repositories.cloud.sap/grant-management/approuter:v35 app/router 

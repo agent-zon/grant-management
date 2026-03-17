@@ -1,5 +1,5 @@
 import cds from "@sap/cds";
-import getOctokit from "./git-handler/git-handler.js";
+import getOctokit from "./git-handler/git-handler";
 import yaml from "js-yaml";
 import { render } from "#cds-ssr";
 import { Client } from "@modelcontextprotocol/sdk/client";
@@ -7,7 +7,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { getAllDestinationsFromDestinationService } from "@sap-cloud-sdk/connectivity";
 import type { DestinationWithoutToken } from "@sap-cloud-sdk/connectivity";
 import { ensureBranchExists } from "./middleware.policy.push";
-import { McpCard } from "../../mcp-card.js";
+import { McpCard } from "../../mcp-card";
 
 const GIT = { owner: "AIAM", repo: "policies" };
 
