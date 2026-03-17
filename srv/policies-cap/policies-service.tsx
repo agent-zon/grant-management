@@ -9,7 +9,7 @@ import { ADD_RULE, REMOVE_RULE, RULES } from "./handler.policy.rules";
 import { CONSTRAINTS, CONSTRAINT_VALUES, RESOURCE_CONSTRAINTS, RESOURCE_CONSTRAINT_VALUES } from "./handler.policy.constraints";
 import { TEST } from "./handler.agents.test";
 import { USE } from "./handler.agents.use";
-import { agentsDataMiddleware } from "./middleware.agents";
+import { agentsDataMiddleware, paramsToData } from "./middleware.agents";
 import policyMiddleware from "./middleware.policy";
 import { resourcesMiddleware } from "./middleware.resources";
 import { pushMiddleware } from "./middleware.policy.push";
@@ -23,8 +23,9 @@ import { GET as GET_PUBLISH, POST as POST_PUBLISH } from "./handler.agents.publi
 export default class PoliciesService extends cds.ApplicationService {
   init() {
     this.on("dashboard", DASHBOARD);
+    this.before(["*"], agents, paramsToData);
 
-    this.before(["READ", "view", "edit", "list", "selector", "select"], agents, agentsDataMiddleware);
+    this.before(["READ", "view", "edit", "list", "selector", "select"], agents, compose(paramsToData, agentsDataMiddleware));
     this.on("view", agents, LIST);
     this.on("READ", agents, LIST);
     this.on("panel", agents, GET_PANEL);
@@ -33,8 +34,9 @@ export default class PoliciesService extends cds.ApplicationService {
     this.on("CREATE", agents, POST_PANEL);
     this.on("UPDATE", agents, POST_PANEL);
 
+    this.before(["*"], "resources", paramsToData);
 
-    this.before(["READ", "pane", "slot", "card", "connect", "connecter","toggle", "enable", "disable" , "constraints", "constraintValues"], "resources", compose(agentsDataMiddleware,policyMiddleware, resourcesMiddleware));
+    this.before(["READ", "pane", "slot", "card", "connect", "connecter","toggle", "enable", "disable" , "constraints", "constraintValues"], "resources", compose(paramsToData, agentsDataMiddleware,policyMiddleware, resourcesMiddleware));
     this.on("pane", "resources", RESOURCES_PANE);
     this.on("slot", "resources", RESOURCES_SLOT);
     this.on("connect", "resources", ADD_RESOURCE);
@@ -46,8 +48,10 @@ export default class PoliciesService extends cds.ApplicationService {
     this.on("constraints", "resources", RESOURCE_CONSTRAINTS);
     this.on("values", "resources", RESOURCE_CONSTRAINT_VALUES);
 
-    this.before(["*"], versions, compose(agentsDataMiddleware,policyMiddleware, resourcesMiddleware));
-    this.before(["UPDATE", "CREATE", "publish"], versions, compose(agentsDataMiddleware,policyMiddleware, resourcesMiddleware,pushMiddleware));
+    this.before(["*"], versions, paramsToData);
+    this.before(["UPDATE", "CREATE", "publish"], versions, compose(paramsToData, agentsDataMiddleware,policyMiddleware, resourcesMiddleware,pushMiddleware));
+    this.before(["resources", "rules", "constraints", "values", "test", "use", "addRule", "removeRule"], versions, compose(paramsToData, agentsDataMiddleware,policyMiddleware, resourcesMiddleware));
+    this.before(["title", "publisher","publish" ], versions, compose(paramsToData, agentsDataMiddleware));
   
     this.on("READ", versions, GET_PANEL);
     this.on("title", versions, Title);

@@ -8,7 +8,7 @@ export async function GET(this: any, req: cds.Request) {
   const { agentId, version } = req.data;
   return render(req, (
     <div
-      className="flex items-center gap-3"
+      className="relative flex items-center gap-3 content-fade-in"
       hx-get={`agents/{agent}/versions/{version}/publisher`}
       hx-vals="js:{ version: event?.detail?.version, agent: event?.detail?.agent }"
       hx-swap="outerHTML"

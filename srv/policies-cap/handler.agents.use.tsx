@@ -11,7 +11,7 @@ export async function USE(this: any, req: cds.Request) {
 
   return render(
     req,
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 content-fade-in">
       <div>
         <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">MCP Server (Grants Proxy)</h4>
         <div className="flex gap-2 items-center" id="use-mcp-copy-area">

@@ -20,7 +20,8 @@ async function fetchGitFile(octokit: any, path: string, ref: string = "main"): P
       content: Buffer.from((data as any).content, "base64").toString("utf-8"),
       sha: sha as string
     };
-  } catch {
+  } catch (err) {
+    console.error(`Failed to fetch file ${path}`, err);
     return null;
   }
 }
@@ -67,7 +68,7 @@ function agentManifestToInfo({
   manifest,
   sha,
   id
-}: { manifest: any, sha: string, id: string }): AgentInfo {
+}: { manifest: any, sha?: string, id: string }): AgentInfo {
 
   const meta = manifest?.metadata || manifest || {};
   const labels = meta.labels || meta.tags || {};
@@ -156,18 +157,35 @@ async function listAgents(octokit: any, ref: string = "main"): Promise<AgentInfo
   return agents;
 }
 
+export async function paramsToData(req: cds.Request) {
+  req.data= req.params.reduce((acc, curr) => {
+    acc= {
+      ...acc,
+      ...curr,
+    };
+    return acc;
+  }, req.data || {});
+  console.log("paramsToData", req.http?.req.originalUrl, req.data);
+}
+
 /** Load agents (with manifest) and attach to req.data.agents as AgentInfo[]. */
 export async function agentsDataMiddleware(this: any, req: cds.Request) {
   req.data = req.data || {};
   const octokit = await getOctokit();
-  const ref = req.data?.ref ?? req.data?.version ?? "main";
-  const agents = await listAgents(octokit, ref);
-  req.data.agents = agents;
+  const { version , agentId } = req.data || {};
+  console.log("agentsDataMiddleware",req.http?.req.originalUrl, req.data);
+  if (!agentId) {
 
-  const { agentId } = req.params[0] || {};
-  if (agentId) {
-    // req.data.agent = agentManifestToInfo(await octokit.rest.repos.getContent({ ...GIT, path: `${agentId}/agent_manifest.yaml`, ref }));
-    req.data.agent = agents.find((a) => a?.id === agentId);
-    req.data.agentId = agentId;
+    const agents = await listAgents(octokit, version);
+    req.data.agents = agents;
+
   }
+  if (agentId) {
+    const { content, sha } = await fetchGitFile(octokit, `${agentId}/agent_manifest.yaml`, version ?? "main") || {};
+    console.log("agentsDataMiddleware-content", content, sha);
+     if(content ) {
+      req.data.agent = agentManifestToInfo( { manifest: yaml.load(content) as any, sha, id: agentId } );
+     }
+  }
+  console.log("agentsDataMiddleware-end", req.data);
 }

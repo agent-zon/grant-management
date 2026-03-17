@@ -37,8 +37,11 @@ export async function RESOURCES_ENABLE(this: any, req: cds.Request) {
       hx-post={`${resource.slug}/disable`}
       hx-swap="outerHTML"
       hx-trigger="click"
+      hx-indicator=".htmx-indicator"
       className="shrink-0 relative inline-flex items-center cursor-pointer w-11 h-6 bg-emerald-500 rounded-full peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 transition-colors after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:translate-x-full"
-    />
+    >
+      <div className="htmx-indicator bg-emerald-500 animate-pulse-slow" />
+    </button>
   );
 }
 
@@ -56,9 +59,12 @@ export async function RESOURCES_DISABLE(this: any, req: cds.Request) {
       hx-post={`${resource.slug}/enable`}
       hx-swap="outerHTML"
       hx-trigger="click"
-      className="shrink-0 relative inline-flex items-center cursor-pointer w-11 h-6 bg-gray-200 rounded-full peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 transition-colors after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5"
-    />
-
+      hx-indicator=".htmx-indicator"
+      className="shrink-0 relative inline-flex items-center cursor-pointer
+       w-11 h-6 bg-slate-400 rounded-full peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 transition-colors after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5"
+    >
+      <div className="htmx-indicator bg-slate-400 animate-pulse-slow" />
+    </button>
   );
 }
 
@@ -71,7 +77,7 @@ export async function RESOURCES_CARD(this: any, req: cds.Request) {
     req,
     <div
       key={name}
-      className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 border-l-4 border-emerald-200 border border-gray-200 hover:border-gray-300 transition-colors"
+      className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 border-l-4 border-emerald-200 border border-gray-200 hover:border-gray-300 transition-colors content-fade-in"
     >
       <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center shrink-0">
         <span className="text-sm font-medium">{displayName?.charAt(0)?.toUpperCase() ?? name?.charAt(0)?.toUpperCase() ?? "M"}</span>
@@ -82,7 +88,7 @@ export async function RESOURCES_CARD(this: any, req: cds.Request) {
           {slug}
         </p>
       </div>
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="relative flex items-center gap-3 shrink-0">
         {/* <a
         href={`#resource-${encodeURIComponent(name)}`}
         className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
@@ -104,7 +110,7 @@ export async function RESOURCES_CARD(this: any, req: cds.Request) {
             hx-post={`${slug}/enable`}
             hx-swap="outerHTML"
             hx-trigger="click"
-            className="shrink-0 relative inline-flex items-center cursor-pointer w-11 h-6 bg-gray-200 rounded-full peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 transition-colors after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5"
+            className="shrink-0 relative inline-flex items-center cursor-pointer w-11 h-6 bg-slate-400 rounded-full peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 transition-colors after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5"
           />
         )}
       </div>
@@ -128,11 +134,20 @@ function resourcesListContent(resources: { name: string; displayName: string; re
       key={r.name}
       hx-get={`${r.slug}/card`}
       hx-trigger="load"
-      hx-swap="outerHTML swap:200ms"
+      hx-swap="outerHTML"
       hx-params="v"
       hx-vals="js:{ }"
-      className="transition-all fade-in fade-out empty:hidden min-h-0"
-    />
+      className="transition-all empty:hidden min-h-0"
+    >
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 border-l-4 border-gray-200 border border-gray-200">
+        <div className="skeleton w-10 h-10 rounded-full shrink-0" />
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="skeleton h-4 w-32" />
+          <div className="skeleton h-3 w-24" />
+        </div>
+        <div className="skeleton w-11 h-6 rounded-full shrink-0" />
+      </div>
+    </div>
   ));
 }
 
@@ -151,19 +166,19 @@ export async function RESOURCES_PANE(this: any, req: cds.Request) {
     req,
     <div
       id="resources-pane"
-      className="flex flex-col gap-4 min-h-0 flex-1"
+      className="flex flex-col gap-4 min-h-0 flex-1 content-fade-in"
       data-agent="{agentId}"
       data-version="{version}"
       hx-get="agents/{agent}/versions/{version}/resources/pane"
       hx-vals="js:{ version: event?.detail?.version, agent: event?.detail?.agent }"
-      hx-trigger="agentSelected from:body, resource-updated from:body "
+      hx-trigger="agentSelected from:body, resource-updated from:body"
       hx-swap="morph:outerHTML"
     >  
       <div className="flex-1 min-h-0 space-y-3 overflow-y-auto pr-1">
         {resourcesListContent(Array.isArray(resources) ? resources : [], agentId ?? "", version ?? "main")}
       </div>
       {/* 3rd pane: connect section — picker stays visible, success/error to connect-status-slot */}
-      <div className="pt-4 border-t border-gray-200 space-y-3 shrink-0">
+      {/* <div className="pt-4 border-t border-gray-200 space-y-3 shrink-0">
         <div id="connect-status-slot" className="min-h-0 shrink-0" />
         <div className="flex items-center gap-2">
           <button
@@ -179,7 +194,7 @@ export async function RESOURCES_PANE(this: any, req: cds.Request) {
             Connect Resource
           </button>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

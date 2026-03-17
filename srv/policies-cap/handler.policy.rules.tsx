@@ -101,7 +101,7 @@ export async function RULES(req: cds.Request) {
     req,
     <div
       id="rules-section"
-      className="space-y-5"
+      className="relative space-y-5 content-fade-in"
       hx-get={`agents/{agent}/versions/{version}/rules`}
       hx-vals="js:{ version: event?.detail?.version, agent: event?.detail?.agent }"
       hx-trigger="agentSelected from:body"
@@ -204,7 +204,7 @@ export async function RULES(req: cds.Request) {
               className="rounded-lg text-xs font-medium px-3 py-2 bg-gray-200 text-gray-800 border-0 focus:ring-1 focus:ring-indigo-500 outline-none"
               hx-swap="innerHTML"
               hx-post={`agents/${agentId}/versions/${version}/values`}
-              hx-trigger="change  "
+              hx-trigger="change"
               hx-params="constraint"
               hx-target="#constraint-values-datalist"
             > 

@@ -6,8 +6,7 @@ import { getAgentManifestInfo } from "./middleware.agents";
 
 /** Load version/policy data and attach to req.data (ref, policy, rules). Resources loaded by resourcesMiddleware. */
 export default async  function (this: any, req: cds.Request) {
-  const { agentId, agent } = req.data || {};
-  const { version } = req.params[1] || req.data || {};
+  const { agentId, agent, version } = req.data || {};
   console.log("policy - middleware",  req.http?.req.method, req.http?.req.originalUrl,version, agentId ,req.data, req
     .params
    );

@@ -23,6 +23,16 @@ export const htmlTemplate = (reactContent: string, baseHref?: string ) => `
 
     <style>
         body { font-family: 'Inter', system-ui, sans-serif; }
+        /* Swap/settle animations */
+        .htmx-swapping { opacity: 0; transition: opacity 150ms ease-out; }
+        .htmx-settling { opacity: 0; animation: htmx-fade-in 180ms ease-out forwards; }
+        @keyframes htmx-fade-in { to { opacity: 1; } }
+        /* Skeleton shimmer */
+        .skeleton { background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: skeleton-shimmer 1.5s ease-in-out infinite; border-radius: 0.375rem; }
+        @keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        /* Fade-in for loaded content */
+        .content-fade-in { animation: content-fade-in 0.25s ease-out forwards; }
+        @keyframes content-fade-in { from { opacity: 0; } to { opacity: 1; } }
     </style>
 
 
