@@ -4,12 +4,13 @@
  "description": "A simple CAP project.",
  "type": "module",
  "dependencies": {
-  "@cap-js/postgres": "^2",
+  "@cap-js/hana": "^2",
   "@cap-js/sqlite": "^2",
   "@modelcontextprotocol/sdk": "^1.26.0",
   "@sap-cloud-sdk/connectivity": "^4.1.2",
   "@sap-cloud-sdk/http-client": "^4.1.2",
   "@sap/cds": "^9.3.1",
+  "@sap/cds-mtxs": "^3",
   "@sap/xssec": "^4",
   "@types/mustache": "^4.2.6",
   "axios": "^1.12.2",
@@ -86,7 +87,15 @@
   "deploy:sqlite": "npx cds deploy --to sqlite --profile development",
   "deploy:srv": "npm run build  && docker buildx build --platform linux/amd64 -t scai-dev.common.repositories.cloud.sap/grant-management/api:v31 -f Dockerfile . --push && kubectl rollout restart deployment agents-srv",
   "deploy:helm": "npm run build && helm upgrade agents ./gen/chart --install --create-namespace",
-  "deploy:to:sqlite": "npx cds deploy --to sqlite",
+  "deploy:to:sqlite": "npx cds deploy --to sqlite",  
+  "pipeline": "pwsh ./scripts/pipeline/pipeline.ps1",
+  "pipeline:srv": "pwsh ./scripts/pipeline/pipeline.ps1 -Target srv",
+  "pipeline:sidecar": "pwsh ./scripts/pipeline/pipeline.ps1 -Target sidecar",
+  "pipeline:approuter": "pwsh ./scripts/pipeline/pipeline.ps1 -Target approuter",
+  "watch:mt": "npx cds-tsx watch --profile local-multitenancy",
+  "watch:sidecar": "npx cds-tsx watch mtx/sidecar --profile local-multitenancy",
+  "subscribe:t1": "npx cds subscribe t1 --to http://localhost:4005 -u yves:",
+  "subscribe:t2": "npx cds subscribe t2 --to http://localhost:4005 -u yves:",
   "copy-docker-secret": "./scripts/copy-docker-secret.sh",
   "setup-namespace": "./scripts/setup-namespace.sh",
   "add:approuter": "cds add approuter",
@@ -131,9 +140,13 @@
  },
  "workspaces": [
   "app/router",
-  "tools/ias-token-cli"
+  "tools/ias-token-cli",
+  "mtx/sidecar"
  ],
  "private": true,
+ "cds": {
+  "profile": "with-mtx-sidecar"
+ },
  "imports": {
   "#cds-models/*": "./@cds-models/*/index.js",
   "#cds-ssr": "./srv/render/index.js",

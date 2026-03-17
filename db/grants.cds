@@ -9,13 +9,13 @@ cuid give the ID:UUID
 // Grants as primary entity - not a projection
 entity Grants: managed {
   key id : String @cds.primary.key; 
-  client_id: String=max(requests.client_id);
-  risk_level:String=max(requests.risk_level);
+  client_id: String;
+  risk_level: String;
   status: String enum { active; revoked; } default 'active';
   revoked_at: DateTime;
   revoked_by: User;
   subject: User;
-  actor: String=consents.request.requested_actor;
+  actor: String;
   scope:String;
   consents: Composition of many Consents on consents.grant_id = $self.id;
   requests: Composition of many AuthorizationRequests on requests.grant = $self;

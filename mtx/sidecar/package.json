@@ -1,0 +1,18 @@
+{
+  "name": "mtx-sidecar",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@sap/cds": "^9.3.1",
+    "@sap/cds-mtxs": "^3",
+    "@cap-js/hana": "^2",
+    "@sap/xssec": "^4",
+    "express": "^4.21.2"
+  },
+  "cds": {
+    "profile": "mtx-sidecar"
+  },
+  "scripts": {
+    "start": "cds-serve"
+  }
+}

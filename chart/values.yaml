@@ -21,6 +21,8 @@ srv:
         validity-type: DAYS
     destination:
       serviceInstanceName: destination
+    service-manager:
+      serviceInstanceName: service-manager
   image:
     repository: grant-management/api
   resources:
@@ -48,13 +50,16 @@ srv:
 
 approuter:
   replicaCount: 1
+  startupTimeoutSeconds: 120
   networkSecurity:
     allowNamespaceInternal: true
   expose:
     enabled: true
+    host: "{{ tpl .Values.global.host . }}"
     corsPolicy:
       allowOrigins:
         - regex: ".*-approuter-{{ .Release.Namespace }}.{{ .Values.global.domain }}"
+        - regex: ".*-{{ tpl .Values.global.host . }}"
         - exact: "https://*.{{ tpl .Values.global.domain . }}"
         - exact: "http://localhost:9000"
         - exact: "http://localhost:4338"
@@ -90,6 +95,8 @@ approuter:
         validity: 365
         validity-type: DAYS
 
+    xsuaa:
+      serviceInstanceName: xsuaa
     destination:
       serviceInstanceName: destination
   image:
@@ -105,15 +112,14 @@ approuter:
       memory: 500M
   health:
     liveness:
-      path: /
+      path: ""
     readiness:
-      path: /
+      path: ""
   envFrom:
     - configMapRef:
         name: "{{ .Release.Name }}-approuter-configmap"
   env:
-    # TENANT_HOST_PATTERN: "^(.*)-{{ tpl .Values.global.domain . }}"
-    # TENANT_MODE: "shared"
+    TENANT_HOST_PATTERN: "^(.*)-{{ tpl .Values.global.host . }}"
     OTEL_EXPORTER_OTLP_ENDPOINT: http://otlp-dashboard:18889
     OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
     OTEL_SERVICE_NAME: approuter
@@ -228,6 +234,10 @@ backendDestinations:
     preserveHostHeader: true
     forwardAuthToken: true
 
+  mtx-api:
+    service: sidecar
+    forwardAuthToken: true
+
   # user-portal:
   #   service: portal
   #   forwardAuthToken: true
@@ -242,7 +252,65 @@ destination:
   parameters:
     version: 1.0.0
 
-postgresql:
-  serviceOfferingName: postgresql-db
-  servicePlanName: development
-  fullnameOverride: grants-postgres
+sidecar:
+  replicaCount: 1
+  bindings:
+    xsuaa:
+      serviceInstanceName: xsuaa
+    saas-registry:
+      serviceInstanceName: saas-registry
+    service-manager:
+      serviceInstanceName: service-manager
+  image:
+    repository: grant-management/sidecar
+  resources:
+    limits:
+      ephemeral-storage: 1G
+      memory: 500M
+    requests:
+      ephemeral-storage: 512M
+      cpu: 250m
+      memory: 216M
+  health:
+    liveness:
+      path: /health
+    readiness:
+      path: /health
+  networkSecurity:
+    allowNamespaceInternal: true
+  env:
+    NODE_ENV: production
+    SUBSCRIPTION_URL: "https://${tenant_subdomain}-{{ tpl .Values.global.host . }}"
+
+xsuaa:
+  serviceOfferingName: xsuaa
+  servicePlanName: application
+  parameters:
+    xsappname: "grant-management-{{ .Release.Namespace }}"
+    tenant-mode: shared
+    scopes:
+      - name: "$XSAPPNAME.mtcallback"
+        description: "Multi-tenancy callback scope"
+        grant-as-authority-to-apps:
+          - "$XSAPPNAME(application, sap-provisioning, tenant-onboarding)"
+
+saas-registry:
+  serviceOfferingName: saas-registry
+  servicePlanName: application
+  parameters:
+    xsappname: "grant-management-{{ .Release.Namespace }}"
+    appName: "grant-management-{{ .Release.Namespace }}"
+    displayName: "Grant Management (Canary - {{ .Release.Namespace }})"
+    description: "Grant Management (Canary - {{ .Release.Namespace }})"
+    category: "AI"
+    appUrls:
+      getDependencies: "https://{{ .Release.Name }}-sidecar-{{ .Release.Namespace }}.{{ .Values.global.domain }}/-/cds/saas-provisioning/dependencies"
+      onSubscription: "https://{{ .Release.Name }}-sidecar-{{ .Release.Namespace }}.{{ .Values.global.domain }}/-/cds/saas-provisioning/tenant/{tenantId}"
+      onSubscriptionAsync: true
+      onUnSubscriptionAsync: true
+      onUpdateDependenciesAsync: true
+      callbackTimeoutMillis: 300000
+
+service-manager:
+  serviceOfferingName: service-manager
+  servicePlanName: container
