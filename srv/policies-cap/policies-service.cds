@@ -31,6 +31,8 @@ service PoliciesService {
       action   removeRule(version: $self, odrl: String, removeKind: String, removeIndex: Integer) returns String;
       function publisher(version: $self)                                                                                               returns String;
       action   publish(version: $self, odrl: String) returns String;
+      function test(version: $self) returns String;
+      function use(version: $self) returns String;
 
     };
 

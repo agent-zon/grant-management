@@ -27,39 +27,44 @@ export async function GET(this: any, req: cds.Request) {
           hx-trigger="load"
         />
       </div>
-      <div className="flex-1 grid gap-6 min-h-0 grid-cols-1 lg:grid-cols-[1fr_minmax(280px,38%)] grid-auto-flow">
-         {/* Connect */}
-        <div className="grid row-start-2  rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col min-w-0 shrink-0 [&:has(#connect-picker-slot:empty)]:hidden">
-          <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0 top-0 sticky max-h-12">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Connect</h3>
+      <div className="flex-1 grid gap-6 min-h-0 grid-cols-1 lg:grid-cols-[1fr_1fr_minmax(280px,32%)]">
+      
+        {/* Col 1: Resources + Landscape */}
+        <div className="flex flex-col gap-6 min-h-0 min-w-0 overflow-hidden">
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col min-h-0 flex-1">
+            <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Resources</h3>
+            </div>
+            <div className="p-5 flex-1 min-h-0 overflow-y-auto">
+              <div
+                id="resources-pane-container"
+                hx-get={`agents/${agentId}/versions/${version}/resources/pane`}
+                hx-swap="innerHTML"
+                hx-trigger="load"
+              />
+            </div>
           </div>
-          <div
-            id="connect-picker-slot"
-            className="p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 max-h-48"
-            hx-get="agents/{agent}/versions/{version}/resources/connecter"
-            hx-trigger="connect from:body"
-            hx-swap="morph:innerHTML"
-            hx-vals="js:{ agent: event?.detail?.agent, version: event?.detail?.version }"
-          />
+          <div className="shrink-0 [&:has(#connect-picker-slot:empty)]:hidden">
+            <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col">
+              <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Landscape</h3>
+                <p className="text-xs text-gray-500">Connect your agent to the services in your landscape</p>
+              </div>
+              <div
+                id="connect-picker-slot"
+                className="p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 max-h-48"
+                hx-get="agents/{agent}/versions/{version}/resources/connecter"
+                hx-trigger="load, connect from:body"
+                hx-swap="morph:innerHTML"
+                hx-vals="js:{ agent: event?.detail?.agent, version: event?.detail?.version }"
+              />
+            </div>
+          </div>
         </div>
-        {/* Resources */}
-        <div className="grid row-start-0 col-start-1 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col min-h-0">
-          <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between shrink-0 top-0 sticky max-h-12">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Resources</h3>
-          </div>
-          <div className="p-5 flex-1 min-h-0  overflow-y-auto max-h-full">
-            <div
-              id="resources-pane-container"
-              hx-get={`agents/${agentId}/versions/${version}/resources/pane`}
-              hx-swap="innerHTML"
-              hx-trigger="load"
-            />
-          </div>
-        </div>
-        {/* Policy */}
-        <div className="row-start-0 row-span-2 col-start-2 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col min-h-0">
-          <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between shrink-0 top-0 sticky max-h-12">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Policy</h3>
+        {/* Col 2: Policy */}
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col min-h-0">
+          <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Restrict</h3>
           </div>
           <div className="p-5 flex-1 min-h-0 overflow-y-auto">
             <div
@@ -68,6 +73,35 @@ export async function GET(this: any, req: cds.Request) {
               hx-swap="outerHTML"
               hx-trigger="load"
             />
+          </div>
+        </div>
+        {/* Col 3: Test + Use */}
+        <div className="flex flex-col gap-6 min-h-0 min-w-0 overflow-hidden">
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col min-h-0 flex-1">
+            <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Test</h3>
+            </div>
+            <div className="p-5 flex-1 min-h-0 overflow-y-auto">
+              <div
+                id="test-pane-container"
+                hx-get={`agents/${agentId}/versions/${version}/test`}
+                hx-swap="innerHTML"
+                hx-trigger="load"
+              />
+            </div>
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col shrink-0">
+            <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Use</h3>
+            </div>
+            <div className="p-5 min-h-0 overflow-y-auto">
+              <div
+                id="use-pane-container"
+                hx-get={`agents/${agentId}/versions/${version}/use`}
+                hx-swap="innerHTML"
+                hx-trigger="load"
+              />
+            </div>
           </div>
         </div>
       </div>
