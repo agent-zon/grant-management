@@ -24,7 +24,7 @@ export async function LIST(this: any, req: cds.Request, next: Function) {
   // remove the service name from the path 
   return render(
     req,
-    <>
+    <div className="content-fade-in">
       <div className="px-4 py-4 border-b border-gray-200 bg-gray-50/50">
         <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Agents</h2>
         <input
@@ -39,11 +39,21 @@ export async function LIST(this: any, req: cds.Request, next: Function) {
           <p className="text-xs text-gray-500 text-center py-8">No agents found</p>
         ) : (
           agents.map(({ id }) => (
-            <div key={id}
+            <div
+              key={id}
+              className="relative"
               hx-get={`${req.http?.req.originalUrl}/${id}/selector`}
-              hx-trigger="load "
+              hx-trigger="load"
               hx-push-url="false"
-              hx-swap="outerHTML">
+              hx-swap="outerHTML"
+            >
+              <div className="flex items-start gap-3 px-4 py-3 rounded-lg border border-transparent">
+                <div className="skeleton w-9 h-9 rounded-lg shrink-0" />
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="skeleton h-4 w-28" />
+                  <div className="skeleton h-3 w-full max-w-40" />
+                </div>
+              </div>
             </div>
           ))
         )}
@@ -52,11 +62,7 @@ export async function LIST(this: any, req: cds.Request, next: Function) {
         <p className="text-xs text-gray-500">{agents.length} agent{agents.length !== 1 ? "s" : ""}</p>
       </div>
       <script dangerouslySetInnerHTML={{ __html: `document.getElementById('agent-search').addEventListener('input',function(){var q=this.value.toLowerCase();document.querySelectorAll('#agents-nav button').forEach(function(btn){btn.style.display=btn.querySelector('span').textContent.toLowerCase().includes(q)?'':'none';});});` }} />
-
-    </>
-
-
-
+    </div>
   );
 }
 
@@ -77,7 +83,7 @@ export async function SELECTOR(req: cds.Request) {
       hx-swap="outerHTML"
       hx-push-url="false"
       hx-target={`#selector-name-${id}`}
-      className={`w-full text-left px-4 py-3 rounded-lg transition-all group hover:bg-gray-100 border text-gray-600 hover:text-gray-900  bg-transparent border-transparent`}
+      className="relative w-full text-left px-4 py-3 rounded-lg transition-all group hover:bg-gray-100 border text-gray-600 hover:text-gray-900 bg-transparent border-transparent content-fade-in"
     >
       <div className="flex items-start gap-3">
         <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 text-slate-600">
@@ -125,12 +131,14 @@ export async function SELECT(this: any, req: cds.Request) {
 
   return render(
     req,
-    <div className="flex items-center justify-between gap-2 transition-all  ease-in-out "
+    <div
+      className="flex items-center justify-between gap-2 transition-all ease-in-out"
       hx-get={`${req.http?.req.originalUrl.replace(/select/, 'selector')}`}
       hx-trigger="agentSelected from:body"
-      hx-swap="outerHTML" 
+      hx-swap="outerHTML"
       hx-push-url="false"
-      hx-target={`#selector-${id}`}>
+      hx-target={`#selector-${id}`}
+    >
       <span className={`font-semibold text-gray-900 truncate  text-indigo-800`}>
         {name || id}
       </span>

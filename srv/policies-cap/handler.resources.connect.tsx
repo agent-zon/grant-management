@@ -212,7 +212,7 @@ export async function RESOURCES_CONNECT_PICKER(this: any, req: cds.Request) {
     ));
   }
   return render(req, (
-    <div id="connect-picker" className="space-y-3">
+    <div id="connect-picker" className="space-y-3 content-fade-in">
       <div id="connect-error-slot" className="min-h-0 shrink-0" />
       <p className="text-xs font-medium text-gray-600">Select an MCP destination to connect</p>
       {destinations.length === 0 ? (
@@ -238,7 +238,7 @@ export async function RESOURCES_CONNECT_PICKER(this: any, req: cds.Request) {
                 <p className="text-sm font-semibold text-gray-900 truncate">{d.name}</p>
                 <p className="text-xs text-gray-500 font-mono truncate">{d.url || "No URL"}</p>
               </div>
-              <span id={`connect-${d.name}`} className="text-xs text-indigo-600 font-medium shrink-0">Connect</span>
+              <span id={`connect-${d.name}`} className="text-xs text-indigo-600 font-medium shrink-0 cursor-pointer hover:text-indigo-800 transition-colors hover:underline hover:underline-offset-2 hover:underline-thickness-2 hover:underline-color-indigo-800 hover:underline-style-solid hover:underline-decoration-indigo-800 hover:underline-width-2 hover:underline-offset-2 hover:underline-offset-2 hover:underline-thickness-2 hover:underline-color-indigo-800 hover:underline-style-solid hover:underline-decoration-indigo-800 hover:underline-width-2 ">Connect</span>
             </button>
           ))}
         </div>

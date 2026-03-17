@@ -51,7 +51,7 @@ export async function TEST(this: any, req: cds.Request) {
 
   return render(
     req,
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 content-fade-in">
       <div className="flex gap-2 flex-wrap">
         <a
           href={chatUrl}
