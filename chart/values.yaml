@@ -21,6 +21,8 @@ srv:
         validity-type: DAYS
     destination:
       serviceInstanceName: destination
+    github:
+      fromSecret: git-credentials
   image:
     repository: grant-management/api
   resources:
@@ -105,9 +107,9 @@ approuter:
       memory: 500M
   health:
     liveness:
-      path: /
+      path: /health
     readiness:
-      path: /
+      path: /health
   envFrom:
     - configMapRef:
         name: "{{ .Release.Name }}-approuter-configmap"
@@ -235,6 +237,23 @@ backendDestinations:
   #    forwardAuthCertificates: true
   #    HTML5.IASDependencyName: grant-api
   #    HTML5.ForwardAuthCertificates: true
+
+# Git credentials: ServiceInstance must exist for srv (policies admin). Optional: create from chart.
+gitCredentialsInstance:
+  enabled: false
+  name: git-credentials
+  externalName: git-credentials
+  serviceOfferingName: ""
+  servicePlanName: ""
+  parameters: {}
+
+# Explicit ServiceBinding (apiVersion: services.cloud.sap.com/v1). Set enabled: true to create it.
+gitCredentialsBinding:
+  enabled: false
+  bindingName: git-credentials
+  serviceInstanceName: git-credentials
+  externalName: git-credentials
+  secretName: git-credentials
 
 destination:
   serviceOfferingName: destination

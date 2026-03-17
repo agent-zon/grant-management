@@ -2,6 +2,13 @@
   "welcomeFile": "./api-docs/index.html",
   "routes": [
     {
+      "source": "^/health$",
+      "target": "/health.html",
+      "localDir": ".",
+      "csrfProtection": false,
+      "authenticationType": "none"
+    },
+    {
       "source": "^/api-docs/openapi/(.*)$",
       "target": "/$1",
       "localDir": "./api-docs/openapi",

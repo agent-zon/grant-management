@@ -1,7 +1,5 @@
 import cds from "@sap/cds";
-import { render, sendHtml } from "#cds-ssr";
-import { renderToString } from "react-dom/server";
-import getOctokit from "./git-handler/git-handler";
+import { render } from "#cds-ssr";
 import { versionFromRequest } from "./git-version";
 
 

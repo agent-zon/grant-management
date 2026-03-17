@@ -11,11 +11,38 @@ Object.keys(process.env).forEach((key) => {
 });
 
 import cds from "@sap/cds";
+import fs from "fs";
+import path from "path";
 import bodyParser from "body-parser";
 import methodOverride from "method-override";
 import React from "react";
 // Make React available globally for JSX in handlers
 global.React = React;
+
+// Ensure cds.requires.github exists when credentials are mounted at /bindings/github/
+// (Container runs from gen/srv which has no .cdsrc.yaml; K8s secret is mounted via fromSecret)
+const bindingRoot = process.env.SERVICE_BINDING_ROOT || "/bindings";
+const githubPath = path.join(bindingRoot, "github");
+if (fs.existsSync(githubPath) && fs.statSync(githubPath).isDirectory()) {
+  try {
+    const read = (name) => {
+      const p = path.join(githubPath, name);
+      return fs.existsSync(p) ? fs.readFileSync(p, "utf8").trim() : undefined;
+    };
+    const token = read("token") || read("access_token") || read("password");
+    const url = read("url") || read("api_url") || "https://github.tools.sap/api/v3";
+    if (token) {
+      if (!cds.env.requires) cds.env.requires = {};
+      if (!cds.env.requires.github) cds.env.requires.github = { kind: "rest", credentials: {} };
+      if (!cds.env.requires.github.credentials) cds.env.requires.github.credentials = {};
+      cds.env.requires.github.credentials.token = token;
+      cds.env.requires.github.credentials.url = url;
+      cds.env.requires.github.kind = cds.env.requires.github.kind || "rest";
+    }
+  } catch (e) {
+    console.warn("[server] Could not read github binding from", githubPath, e.message);
+  }
+}
 
 // Process-level error handlers to prevent crashes
 process.on("uncaughtException", (error) => {

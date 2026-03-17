@@ -1,5 +1,5 @@
 import cds from "@sap/cds";
-import getOctokit from "./git-handler/git-handler.js";
+import getOctokit from "./git-handler/git-handler";
 import yaml from "js-yaml";
 
 const GIT = { owner: "AIAM", repo: "policies" };
