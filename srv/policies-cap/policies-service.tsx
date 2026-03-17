@@ -7,6 +7,8 @@ import { RESOURCES, RESOURCES_PANE, RESOURCES_SLOT, RESOURCES_CARD, RESOURCES_TO
 import { RESOURCES_CONNECT_PICKER, ADD_RESOURCE } from "./handler.resources.connect";
 import { ADD_RULE, REMOVE_RULE, RULES } from "./handler.policy.rules";
 import { CONSTRAINTS, CONSTRAINT_VALUES, RESOURCE_CONSTRAINTS, RESOURCE_CONSTRAINT_VALUES } from "./handler.policy.constraints";
+import { TEST } from "./handler.agents.test";
+import { USE } from "./handler.agents.use";
 import { agentsDataMiddleware } from "./middleware.agents";
 import policyMiddleware from "./middleware.policy";
 import { resourcesMiddleware } from "./middleware.resources";
@@ -27,8 +29,7 @@ export default class PoliciesService extends cds.ApplicationService {
     this.on("READ", agents, LIST);
     this.on("panel", agents, GET_PANEL);
     this.on("selector", agents, SELECTOR);
-    this.on("select", agents, SELECT);
-
+    this.on("select", agents, SELECT); 
     this.on("CREATE", agents, POST_PANEL);
     this.on("UPDATE", agents, POST_PANEL);
 
@@ -59,6 +60,8 @@ export default class PoliciesService extends cds.ApplicationService {
     this.on("values", versions, CONSTRAINT_VALUES);
     this.on("addRule", versions, ADD_RULE);
     this.on("removeRule", versions, REMOVE_RULE);
+    this.on("test", versions, TEST);
+    this.on("use", versions, USE);
 
     return super.init();
   }
