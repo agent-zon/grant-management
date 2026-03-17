@@ -13,6 +13,7 @@ import AUTH from "./handler.authentication";
 export default class Service extends cds.ApplicationService {
   init() {
     this.on("READ", destinations, GET);
+    //@ts-ignore
     this.on("READ", destinations, LIST);
     // Draft: register form UI (GET /dest/draft()) for HTMX hx-get
     this.on("draft", destinations, DRAFT);

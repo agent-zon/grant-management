@@ -64,7 +64,7 @@ export default async function discoverTools(
     }
     return tools;
   }
-  catch (error) {
+  catch (error: any) {
     console.error(error);
     if (req?.http?.req.accepts("html")) {
       return render(req,
@@ -73,7 +73,7 @@ export default async function discoverTools(
           <pre className="text-xs text-red-600 mt-1">{url.toString()}</pre>
           <p className="text-sm font-medium text-red-700">Discovery Error</p>
           <p className="text-xs text-red-600 mt-1">{String(error)}</p>
-          <pre className="text-xs text-red-600 mt-1">{error.stack}</pre>
+          <pre className="text-xs text-red-600 mt-1">{error?.stack}</pre>
         </div>
       );
     }

@@ -42,7 +42,7 @@ export function versionToBranch(version: string): string | null {
 
 /** Extract branch from request: path version or query, or compute draft from auth. */
 export function branchFromRequest(req: any, agentId: string): string {
-  const version = versionFromRequest(req, agentId);
+  const version = versionFromRequest(req);
   if (version === MAIN) return MAIN;
   const branch = versionToBranch(version);
   if (branch) return branch;

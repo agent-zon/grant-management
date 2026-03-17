@@ -20,7 +20,7 @@ export async function REGISTER(req: cds.Request) {
           Destination <span className="font-mono">{req.data.name}</span> registered successfully
         </span>
       </div>
-      ) 
+      )
     }
 
     return {
@@ -36,7 +36,7 @@ export async function REGISTER(req: cds.Request) {
       return render(
         req, <div className="flex items-center space-x-2 text-red-600" id="register-result-content">
         <span>❌</span>
-        <span className="text-sm">{message ?? "Registration failed"}</span>
+        <span className="text-sm">{(err?.message || err?.toString()) || "Registration failed"}</span>
       </div>
       );
     }
