@@ -9,15 +9,13 @@ import { dirname } from "path";
 import { fileURLToPath } from "url";
 import { createSketchMiddleware } from "./sketch-proxy.js";
 import { sketches } from "./sketches/index.tsx";
-
-const require = createRequire(import.meta.url);
+import approuter from "@sap/approuter";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const approuter = require("@sap/approuter");
 const ar = approuter();
 
 // Sketches dashboard (Hono+HTMX) - before auth
-ar.first.use("/sketches", async (req, res, next) => {
+ar.first.use("/shell", async (req, res, next) => {
   try {
     await getRequestListener(sketches.fetch)(req, res);
   } catch (e) {
