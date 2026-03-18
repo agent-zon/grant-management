@@ -1,4 +1,5 @@
 import cds from "@sap/cds";
+import { ulid } from "ulid";
 import AuthorizationDetailsComponent from "./details/index.tsx";
 import "./handler.authorize.tsx";
 import type { AuthorizationService } from "./authorization-service.tsx";
@@ -8,6 +9,7 @@ import {
 } from "#cds-models/sap/scai/grants/AuthorizationService";
 import GrantsManagementService, {
   Grants,
+  AuthorizationDetails,
 } from "#cds-models/sap/scai/grants/GrantsManagementService";
 import { renderToString } from "react-dom/server";
 import { htmlTemplate } from "#cds-ssr";
@@ -44,21 +46,82 @@ export default async function authorize(
       .set`subject = ${cds.context?.user?.id}`;
   }
 
-  // Load the grant associated with this request
+  // Resolve grant: subject is now known from authentication.
+  // Look for existing active grant for (subject, actor) pair,
+  // or generate a new grant_id if none exists.
+  const subject = request.subject || cds.context?.user?.id;
+  const actor = request.requested_actor;
+  let resolvedGrantId = request.grant_id;
+
+  if (subject && actor) {
+    const activeGrants = await cds.run(
+      SELECT.from(Grants)
+        .where({ subject, actor, status: "active" })
+        .orderBy("modifiedAt desc")
+    );
+    if (activeGrants.length > 0) {
+      resolvedGrantId = activeGrants[0].id;
+      console.log(`🔗 Auto-resolved grant ${resolvedGrantId} for (${subject}, ${actor})`);
+      if (resolvedGrantId !== request.grant_id) {
+        await this.update(AuthorizationRequests, id)
+          .set`grant_id = ${resolvedGrantId}`
+          .set`grant_management_action = ${"merge"}`;
+        request.grant_id = resolvedGrantId;
+        request.grant_management_action = "merge";
+      }
+    }
+  }
+
+  // If still no grant_id (no existing grant found, none provided at PAR),
+  // generate one now that the subject is known.
+  if (!resolvedGrantId) {
+    resolvedGrantId = `gnt_${ulid()}`;
+    console.log(`🆕 Generated new grant ${resolvedGrantId} for (${subject}, ${actor})`);
+    await this.update(AuthorizationRequests, id)
+      .set`grant_id = ${resolvedGrantId}`;
+    request.grant_id = resolvedGrantId;
+  }
+
+  // Load or create the grant associated with this request
   console.log("🔧 Reading grant:", request);
   const grantManagement = await cds.connect.to(GrantsManagementService);
 
   const grant = await grantManagement
     .upsert({
-      id: request.grant_id,
+      id: resolvedGrantId,
       client_id: request.client_id,
       risk_level: request.risk_level,
       actor: request.requested_actor,
-      subject: request.subject,
+      subject,
     })
     .into(Grants);
 
   console.log("📋 Grant loaded for authorization:", grant.id);
+
+  // Filter out already-granted authorization details when merging
+  let newAccessDetails: any[] = request.access || [];
+  if (request.grant_management_action === "merge") {
+    const existingDetails = await cds.run(
+      SELECT.from(AuthorizationDetails).where({ consent_grant_id: resolvedGrantId })
+    );
+    console.log(`🔍 Existing details (${existingDetails.length}):`, JSON.stringify(existingDetails.map((d: any) => ({ type: d.type, server: d.server, tools: d.tools }))));
+    console.log(`🔍 Requested details (${request.access?.length ?? 0}):`, JSON.stringify((request.access || []).map((d: any) => ({ type_code: d.type_code, server: d.server, tools: d.tools }))));
+    newAccessDetails = filterNewDetails(newAccessDetails, existingDetails);
+    console.log(
+      `🔍 Filtered: ${request.access?.length ?? 0} requested → ${newAccessDetails.length} new`
+    );
+  }
+
+  // If everything is already granted, auto-approve (no consent screen needed)
+  if (request.grant_management_action === "merge" && newAccessDetails.length === 0) {
+    console.log("✅ All requested capabilities already granted, skipping consent");
+    req.http?.res.setHeader("Content-Type", "application/json");
+    return req.http?.res.json({
+      grant_id: resolvedGrantId,
+      status: "already_granted",
+    });
+  }
+
   req.http?.res.setHeader("Content-Type", "text/html");
   req.http?.res.send(
     htmlTemplate(
@@ -171,7 +234,7 @@ export default async function authorize(
                         </div>
                       </div>
                     )}
-                    {request.access?.map((detail, index) => {
+                    {newAccessDetails.map((detail, index) => {
                       return (
                         <AuthorizationDetailsComponent
                           {...detail}
@@ -237,4 +300,61 @@ export default async function authorize(
       )
     )
   );
+}
+
+/**
+ * Filters requested authorization details against already-granted ones.
+ * - MCP type: removes individual tools that already exist for the same server
+ * - Other types: removes entire detail if type + locations already match
+ * Returns only genuinely new details (or details with only new tools).
+ */
+function filterNewDetails(
+  requested: any[],
+  existing: any[]
+): any[] {
+  return requested
+    .map((detail) => {
+      const type = detail.type_code as string;
+      const matchingExisting = existing.filter((e) => e.type === type);
+
+      if (matchingExisting.length === 0) return detail;
+
+      if (type === "mcp") {
+        // For MCP: match by server, then filter out already-granted tools
+        // Also match null/undefined server (legacy data without server field)
+        const server = detail.server as string;
+        const serverMatch = matchingExisting.filter(
+          (e) => e.server === server || !e.server
+        );
+        if (serverMatch.length === 0) return detail;
+
+        const grantedTools = new Set(
+          serverMatch.flatMap((e) =>
+            e.tools && typeof e.tools === "object" ? Object.keys(e.tools) : []
+          )
+        );
+
+        const requestedTools = detail.tools as Record<string, unknown> | null;
+        if (!requestedTools) return null;
+
+        const newTools = Object.fromEntries(
+          Object.entries(requestedTools).filter(([name]) => !grantedTools.has(name))
+        );
+
+        if (Object.keys(newTools).length === 0) return null;
+        return { ...detail, tools: newTools };
+      }
+
+      // For other types: match by type + locations
+      const locations = detail.locations as string[] | undefined;
+      const alreadyGranted = matchingExisting.some((e) => {
+        const existingLocations = e.locations as string[] | undefined;
+        if (!locations && !existingLocations) return true;
+        if (!locations || !existingLocations) return false;
+        return locations.every((loc) => existingLocations.includes(loc));
+      });
+
+      return alreadyGranted ? null : detail;
+    })
+    .filter(Boolean) as Array<Record<string, unknown>>;
 }

@@ -50,6 +50,22 @@ export default function MCPAuthorizationDetail({
 
       <p className="text-base text-gray-700 mb-5 leading-relaxed">{description}</p>
 
+      {/* Persist server and transport for consent record */}
+      {detail.server && (
+        <input
+          type="hidden"
+          name={`authorization_details[${index}].server`}
+          value={detail.server}
+        />
+      )}
+      {detail.transport && (
+        <input
+          type="hidden"
+          name={`authorization_details[${index}].transport`}
+          value={detail.transport}
+        />
+      )}
+
       {/* Available Tools */}
       {
         detail.tools && Object.keys(detail.tools).length > 0 && (
