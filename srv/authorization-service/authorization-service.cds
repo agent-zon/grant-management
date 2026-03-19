@@ -38,7 +38,7 @@ service AuthorizationService {
     ) returns String;
 
     // PAR (Pushed Authorization Request) endpoint with Rich Authorization Requests support
-    @requires: ['authenticated-user', 'system-user']
+    // Auth enforced at service level (@requires on line 11)
     action par(
         response_type: String,
         client_id: String,
