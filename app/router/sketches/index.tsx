@@ -5,12 +5,18 @@
  */
 /** @jsxImportSource hono/jsx */
 /** @jsx jsx */
-import { Hono } from "hono";
-import { Fragment, jsx } from "hono/jsx";
+import { Context, Hono } from "hono";
+import { FC, Fragment, jsx, PropsWithChildren } from "hono/jsx";
 import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { jsxRenderer, useRequestContext } from 'hono/jsx-renderer'
+import { useOrFetchDestination, isHttpDestination } from "@sap-cloud-sdk/connectivity";
+import { executeHttpRequest } from "@sap-cloud-sdk/http-client";
+import { stream, streamText, streamSSE } from 'hono/streaming'
+
 import destinations from "../sketches-destinations.json";
+import { StreamingApi } from "hono/utils/stream";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 type SketchDest = { name: string; url: string; labels: string[] };
@@ -37,111 +43,154 @@ function loadSketchDestinations(): SketchDest[] {
 const sketches = new Hono();
 
 
-sketches.use("/*", async (c, next) => {
-  c.setRenderer((content) =>
-    c.html(
-      <html>
-        <head>
-          <title>Playground: SAP Engagement Layer</title>
-          <meta
-            hx-preserve="true"
-            name="viewport"
-            content="width=device-width, initial-scale=1"
-          />
-          <script
-            hx-preserve="true"
-            src="https://cdn.jsdelivr.net/npm/iconify-icon@2.1.0/dist/iconify-icon.min.js"
-          >
-          </script>
-          <script
-            hx-preserve="true"
-            src="https://cdn.jsdelivr.net/npm/@gigya/wc/+esm"
-            type="module"
-            crossorigin="anonymous"
-          >
-          </script>
+sketches.use("/*",
+  jsxRenderer(({ children }) => {
+    const c = useRequestContext();
+    return <html>
+      <head>
+        <title>Playground: SAP Engagement Layer</title>
+        <base href="/sketches/" />
+        <meta
+          hx-preserve="true"
+          name="viewport"
+          content="width=device-width, initial-scale=1"
+        />
+        <script
+          hx-preserve="true"
+          src="https://cdn.jsdelivr.net/npm/iconify-icon@2.1.0/dist/iconify-icon.min.js"
+        >
+        </script>
+        <script
+          hx-preserve="true"
+          src="https://cdn.jsdelivr.net/npm/@gigya/wc/+esm"
+          type="module"
+          crossorigin="anonymous"
+        >
+        </script>
 
-          <script
-            hx-preserve="true"
-            src="https://unpkg.com/htmx.org@2.0.2"
-          >
-          </script>
-          <script
-            hx-preserve="true"
-            src="https://unpkg.com/htmx-ext-sse@2.2.2/sse.js"
-          >
-          </script>
-          <script
-            hx-preserve="true"
-            src="https://unpkg.com/idiomorph@0.3.0/dist/idiomorph-ext.min.js"
-            async
-            crossorigin="anonymous"
-          >
-          </script>
-          <script
-            src="https://cdn.jsdelivr.net/npm/iconify-icon@2.1.0/dist/iconify-icon.min.js"
-            async
-            hx-preserve="true"
-            crossorigin="anonymous"
-          >
-          </script>
+        <script
+          hx-preserve="true"
+          src="https://unpkg.com/htmx.org@2.0.2"
+        >
+        </script>
+        <script
+          hx-preserve="true"
+          src="https://unpkg.com/htmx-ext-sse@2.2.2/sse.js"
+        >
+        </script>
+        <script
+          hx-preserve="true"
+          src="https://unpkg.com/idiomorph@0.3.0/dist/idiomorph-ext.min.js"
+          async
+          crossorigin="anonymous"
+        >
+        </script>
+        <script
+          src="https://cdn.jsdelivr.net/npm/iconify-icon@2.1.0/dist/iconify-icon.min.js"
+          async
+          hx-preserve="true"
+          crossorigin="anonymous"
+        >
+        </script>
 
-          <script
-            hx-preserve="true"
-            src="https://unpkg.com/htmx-ext-head-support@2.0.2"
-          >
-          </script>
-          <script
-            hx-preserve="true"
-            src="https://unpkg.com/@tailwindcss/browser@4"
-            crossorigin="anonymous"
-          >
-          </script>
-          <base href="/shell/" />
-        </head>
-        <body hx-ext="head-support">
-          {content}
-        </body>
-      </html>
-    )
-  );
-  return await next();
-});
+        <script
+          hx-preserve="true"
+          src="https://unpkg.com/htmx-ext-head-support@2.0.2"
+        >
+        </script>
+        <script
+          hx-preserve="true"
+          src="https://unpkg.com/@tailwindcss/browser@4"
+          crossorigin="anonymous"
+        >
+        </script>
+      </head>
+      <body hx-ext="head-support">
+        {children}
+      </body>
+    </html>
+  }
+    , { stream: true })
+);
+sketches.use(
+  jsxRenderer(function ({ children, Layout }) {
+    const c = useRequestContext()
+    const panel = c.req.param("sketch")
+    return <Layout>
+      <div className="relative min-h-screen min-w-screen">
+        <header class="sticky top-0 z-[100]  w-full flex items-center justify-between *:py-2 *:shadow-md *:rounded-lg *:bg-white/90 *:backdrop-blur-xl *:border-b *:border-slate-200  max-h-[49px] ">
+          <div class="max-w-[1200px] flex items-center gap-4 justify-start px-10   ">
+            <nav class="flex flex-wrap items-center gap-2 text-sm text-slate-500 left-0
+              *:gap-2.5 *:text-sm *:text-slate-500 *:left-0 *:hover:text-sky-600 *:transition-colors *:flex *:items-center *:gap-2.5 *:flex *:items-center *:gap-2.5 *:text-sm  *:hover:text-sky-600 *:transition-colors *:flex *:items-center *:gap-2.5  *:text-sky-500 *:cursor-pointer ">
+              <a href="/grants-management" >
+                <iconify-icon
+                  icon="mdi:shield-lock-outline"
+                  width="14"
+                  height="14"
+                  class="text-sky-500"
+                />
+                <span class="text-sky-500">Grants Management</span>
+              </a>
+              <span class="text-slate-300">/</span>
+              <a href="/sketches" >
+                <iconify-icon
+                  icon="mdi:palette-outline"
+                  width="14"
+                  height="14"
+                  class="text-sky-600"
+                />
+                <span class={!panel ? "font-semibold text-sky-600" : "text-sky-500"} >Sketches</span>
+              </a>
+              {panel && (
+                <Fragment>
+                  <iconify-icon
+                    icon="mdi:chevron-right"
+                    width="14"
+                    height="14"
+                    class="text-sky-500"
+                  />
+                  <a href={`/sketches/${panel}`} >
 
+                    <span class="font-semibold text-sky-600">
+                      {panel}
+                    </span>
+                  </a>
+                </Fragment>
+              )}
+            </nav>
+
+          </div>
+          <div class="flex gap-2 items-center justify-end inset-10 gap-4 px-10 ">
+            <a href="/sketches" aria-label="Back to Sketches" title="Back to Sketches">
+              <div class="flex items-center gap-2.5 text-lg font-bold text-slate-900   ">
+                <iconify-icon
+                  icon="mdi:palette-outline"
+                  width="28"
+                  height="28"
+                  class="text-sky-500 "
+                />
+              </div>
+            </a>
+          </div>
+        </header>
+        {children}
+      </div >
+    </Layout >
+  }, { stream: true })
+)
 
 sketches.get("/", (c) => {
   const dests = loadSketchDestinations();
   return c.render(
-    <div class="min-h-screen flex flex-col">
-      <header class="sticky top-0 z-[100] bg-white/90 backdrop-blur-xl border-b border-slate-200">
-        <div class="max-w-[1200px] mx-auto px-6 py-4 flex items-center justify-between">
-          <div class="flex items-center gap-2.5 text-lg font-bold text-slate-900">
-            <iconify-icon
-              icon="mdi:palette-outline"
-              width="28"
-              height="28"
-              class="text-sky-500"
-            />
-            <span>Sketches</span>
-          </div>
-          <div class="flex gap-2">
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-500 text-white">
-              HTMX 2.0
-            </span>
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
-              {dests.length} destinations
-            </span>
-          </div>
-        </div>
-      </header>
+    <Fragment>
       <main class="flex-1 max-w-[1200px] mx-auto px-6 py-10 w-full">
         <div class="mb-8">
           <h1 class="text-2xl font-bold text-slate-900 mb-2">
-            Sketch Tiles
+            Sketches of Grants Management for AI Agents
           </h1>
+
           <p class="text-slate-600 max-w-xl">
-            Each tile below is loaded independently using HTMX. Content is
-            fetched as HTML fragments and injected directly into the page.
+
           </p>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -179,14 +228,14 @@ sketches.get("/", (c) => {
       <footer class="border-t border-slate-200 px-6 py-5 text-center text-sm text-slate-400 mt-auto">
         Powered by HTMX + SAP App Router · Grant Management
       </footer>
-    </div>
+    </Fragment>
   );
 });
 
-sketches.get("/:name/tile", (c) => {
-  const name = c.req.param("name");
+sketches.get("/:sketch/tile", (c) => {
+  const sketch = c.req.param("sketch");
   const dests = loadSketchDestinations();
-  const d = dests.find((x) => x.name === name);
+  const d = dests.find((x) => x.name === sketch);
   if (!d) return c.notFound();
   return c.html(<div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
     <div class="flex items-center gap-3 mb-2">
@@ -200,7 +249,7 @@ sketches.get("/:name/tile", (c) => {
     </div>
     <p class="text-sm text-slate-500 truncate mb-3">{d.url}</p>
     <a
-      hx-get={`${encodeURIComponent(name)}/panel`}
+      hx-get={`${encodeURIComponent(sketch)}/panel`}
       hx-trigger="click"
       hx-target="body"
       hx-push-url="true"
@@ -212,74 +261,131 @@ sketches.get("/:name/tile", (c) => {
   </div>);
 });
 
-sketches.get("/:name/panel", (c) => {
-  const name = c.req.param("name");
-  // return c.render(<Fragment>
-  //   <head>
-  //     <base href={`/shell/${encodeURIComponent(name)}/`} />
-  //   </head>
-  //   <div class="relative min-h-screen ">
-  //     <header className="mb-6 sticky z-10 bg-smoked-white backdrop-blur-xl border-b border-slate-200  z-100">
-  //       <a href="/shell" className="text-sky-600 hover:text-sky-700 font-semibold">← Sketches</a>
-  //     </header>
-  //     <div hx-get={`/sketch/${encodeURIComponent(name)}`} hx-trigger="load" hx-swap="innerHTML" class="h-full w-full">
-  //       <div class="flex flex-col items-center justify-center gap-3 h-[160px] text-slate-400 text-sm">
-  //         <div class="spinner" />
-  //         <span>Loading {name}...</span>
-  //       </div>
-  //     </div>
-  //   </div>
-  // </Fragment>);
-  return c.render(<Fragment>
-    <div className="relative min-h-screen min-w-screen">
-      <header class="sticky top-0 z-[100] bg-white/90 backdrop-blur-xl border-b border-slate-200">
+const AsyncComponent = async () => {
+  const c = useRequestContext();
+  const sketch = c.req.param("sketch");
+  // const destination = await useOrFetchDestination({
+  //   destinationName: sketch,
+  //   jwt: c.req.header("Authorization")?.replace("Bearer ", ""),
+  // });
 
-        <div class="max-w-[1200px] mx-auto px-6 py-4 flex items-center justify-between">
+  // const destination = await fetch(`/destination/${sketch}`);
+  return streamText(c, async (stream) => {
+    const destination = await executeHttpRequest({
+      destinationName: sketch,
+      jwt: c.req.header("Authorization")?.replace("Bearer ", ""),
+    }, {
+      streaming: true,
+      method: "GET",
+    }, {
+      fetchCsrfToken: false,
+    });
 
-          <div class="flex items-center gap-4 justify-start">
-            <nav class="flex flex-wrap items-center gap-2 text-sm text-slate-500 left-0">
-              <a href="/grants-management" class="hover:text-sky-600 transition-colors">Grants Management</a>
-              <span class="text-slate-300">/</span>
-              <a href="/shell" class="hover:text-sky-600 transition-colors">Sketches</a>
-              <span class="text-slate-300">/</span>
-              <span class="font-semibold text-sky-600">{name}</span>
-            </nav>
+    if (!destination.body) {
+      stream.write("No response body from destination.");
+      return;
+    }
 
-          </div>
-          <div class="flex gap-2 items-center justify-end">
-            {/* <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
-              {destinations.length} destinations
-            </span> */}
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-500 text-white">
-              {name}
-            </span>
-            <div class="flex items-center gap-2.5 text-lg font-bold text-slate-900   ">
-              <iconify-icon
-                icon="mdi:palette-outline"
-                width="28"
-                height="28"
-                class="text-sky-500"
-              />
-              <span>Sketches</span>
-            </div>
-          </div>
-        </div>
-      </header>
+    const baseHref = `/html/${encodeURIComponent(sketch)}/`;
 
-      <iframe
-        src={`/sketch/${name}/`}
-        className="w-full h-screen absolute top-0 left-0  my-0 inset-0"
-        title={name}
-      />
+    const decoder = new TextDecoder();
+    const reader = destination.body.getReader();
 
-      {/* <div
-        hx-get={`/sketch/${name}/`}
-        hx-trigger="load"
-        hx-swap="innerHTML"
-        className="w-full h-screen absolute top-0 left-0  absolute my-0 inset-0"
-        title={name}
-      /> */}
-    </div >
-  </Fragment>);
+    let buffer = "";
+    let headRewritten = false;
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // Until we can rewrite <head>...</head>, keep buffering.
+      if (!headRewritten) {
+        const headStart = buffer.toLowerCase().indexOf("<head");
+        if (headStart === -1) continue;
+
+        const headTagEnd = buffer.indexOf(">", headStart);
+        if (headTagEnd === -1) continue;
+
+        const headClose = buffer.toLowerCase().indexOf("</head>", headTagEnd);
+        if (headClose === -1) continue;
+
+        const beforeHeadContent = buffer.slice(0, headTagEnd + 1);
+        let headContent = buffer.slice(headTagEnd + 1, headClose);
+        const afterHead = buffer.slice(headClose); // includes </head> + remainder
+
+        // Remove existing <base ...> tags in <head>
+        headContent = headContent.replace(/<base\b[^>]*?>/gi, "");
+
+        const rewritten =
+          beforeHeadContent +
+          headContent +
+          `\n<base href="${baseHref}" />\n` +
+          afterHead;
+
+        stream.write(rewritten);
+        buffer = "";
+        headRewritten = true;
+        continue;
+      }
+
+      // After rewriting head, stream through progressively.
+      if (buffer.length > 0) {
+        stream.write(buffer);
+        buffer = "";
+      }
+    }
+
+    // Flush any remaining decoder output/buffer.
+    buffer += decoder.decode();
+    if (buffer) stream.write(buffer);
+  });
+};
+
+sketches.get("/:sketch", (c) => {
+  const sketch = c.req.param("sketch");
+  return c.html(
+    <html>
+      <head>
+        <base href={`/destination/${encodeURIComponent(sketch)}/`} />
+        <script src="https://unpkg.com/htmx.org@2.0.2"></script>
+      </head>
+      <body>
+        <div hx-get={`/destination/${encodeURIComponent(sketch)}`} hx-trigger="load" hx-target="body" hx-swap="outerHTML" ></div>
+      </body>
+    </html>
+  );
 });
+
+sketches.get("/:sketch/panel", (c) => {
+  const sketch = c.req.param("sketch");
+  return c.render(
+    <iframe src={`/html/${encodeURIComponent(sketch)}`} class="w-full h-full"></iframe>);
+});
+
 export { sketches };
+
+function injectBaseHref(data: string, baseHref: string): string | Uint8Array<ArrayBufferLike> {
+  return data.replace(/<base\b[^>]*?>/gi, "") + `\n<base href="${baseHref}" />\n`;
+}
+
+
+async function fetchDestination(sketch: string, c: Context, stream: StreamingApi) {
+
+  const destination = await useOrFetchDestination({
+    destinationName: sketch,
+    jwt: c.req.header("Authorization")?.replace("Bearer ", ""),
+  });
+  if (!destination) {
+    stream.write("No destination found.");
+    return;
+  }
+
+  const response = await fetch(`${destination.url}/`, {
+    headers: {
+      ...Object.fromEntries(destination?.authTokens?.map(token => [token.http_header.key, token.http_header.value]) || []),
+    },
+  });
+  return response;
+}

@@ -7,7 +7,7 @@ import { useOrFetchDestination, isHttpDestination } from "@sap-cloud-sdk/connect
 
 function rewriteHtmlBase(html, basePath) {
   if (!html || typeof html !== "string") return html;
-  const base = `/sketch/${basePath}/`;
+  const base = `/html/${basePath}/`;
   return html
     .replace(/\bhref="\/(?!\/)/g, `href="${base}`)
     .replace(/\bhref='\/(?!\/)/g, `href='${base}`)
@@ -17,10 +17,10 @@ function rewriteHtmlBase(html, basePath) {
 }
 
 /**
- * Creates Express/connect middleware for /sketch/:destName/* that:
+ * Creates Express/connect middleware for /html/:destName/* that:
  * 1. Resolves destination via useOrFetchDestination (approuter-style)
  * 2. Proxies request to destination
- * 3. Rewrites HTML so assets load from /sketch/{destName}/
+ * 3. Rewrites HTML so assets load from /html/{destName}/
  * @param {{ jwt?: string }} [opts] - Optional jwt for authenticated destinations
  * @returns {import('connect').NextHandleFunction}
  */
@@ -33,7 +33,7 @@ export function createSketchMiddleware(opts = {}) {
 
     if (!destName) {
       res.writeHead(400, { "Content-Type": "text/plain" });
-      res.end("Missing destination name in path: /sketch/{destinationName}/...");
+      res.end("Missing destination name in path: /html/{destinationName}/...");
       return;
     }
 
@@ -73,7 +73,7 @@ export function createSketchMiddleware(opts = {}) {
     headers.host = targetHost;
     headers["x-forwarded-host"] = req.headers.host || "";
     headers["x-forwarded-proto"] = req.headers["x-forwarded-proto"] || "http";
-    headers["x-forwarded-path"] = `/sketch/${destName}/${path}`.replace(/\/+$/, "") || `/sketch/${destName}`;
+    headers["x-forwarded-path"] = `/html/${destName}/${path}`.replace(/\/+$/, "") || `/html/${destName}`;
 
     if (destination.authTokens?.[0]?.value) {
       headers.authorization = `Bearer ${destination.authTokens[0].value}`;

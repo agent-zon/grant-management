@@ -15,7 +15,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ar = approuter();
 
 // Sketches dashboard (Hono+HTMX) - before auth
-ar.first.use("/shell", async (req, res, next) => {
+ar.first.use("/sketches", async (req, res, next) => {
   try {
     await getRequestListener(sketches.fetch)(req, res);
   } catch (e) {
@@ -25,7 +25,7 @@ ar.first.use("/shell", async (req, res, next) => {
 
 // Sketch proxy - useOrFetchDestination (same as approuter: default-env, BTP, K8s)
 const sketchMiddleware = createSketchMiddleware();
-ar.first.use("/sketch", (req, res, next) => {
+ar.first.use("/html", (req, res, next) => {
   sketchMiddleware(req, res, next).catch(next);
 });
 
