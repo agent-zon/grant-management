@@ -426,7 +426,6 @@ async function getGrant(srv: GrantsManagementService, { id, ...grant }: Grant) {
 
   return {
     id,
-    status: "active",
     ...grant,
     scope: aggregatedScope,
     authorization_details: mcpDetails(authorization_details),

@@ -160,10 +160,10 @@ export default async function token(
     }
     //todo: use ias code
     if (grant_type == "authorization_code") {
-      const request = cds.read(
+      const request = (await cds.read(
         AuthorizationRequests,
         code
-      ) as AuthorizationRequest;
+      )) as AuthorizationRequest;
       if (request.subject_token) {
         const tokenUr = await authService.getTokenUrl(
           "urn:ietf:params:oauth:grant-type:token-exchange"
@@ -194,10 +194,7 @@ export default async function token(
       }
       return {
         access_token: req.user?.authInfo?.token?.jwt,
-        expires_in:
-          (req.user?.authInfo?.token.expirationDate?.getUTCDate() ||
-            new Date(Date.now() + 36000).getUTCDate()) -
-          new Date(Date.now()).getUTCDate(),
+        expires_in: tokenExpiresInSeconds(req),
         grant_id: request?.grant_id,
       };
     }
@@ -205,11 +202,18 @@ export default async function token(
     console.log("no grant type return current session");
     return {
       access_token: req.user?.authInfo?.token?.jwt,
-      expires_in:
-        (req.user?.authInfo?.token.expirationDate?.getUTCDate() ||
-          new Date(Date.now() + 36000).getUTCDate()) -
-        new Date(Date.now()).getUTCDate(),
+      expires_in: tokenExpiresInSeconds(req),
       grant_id: req.user?.authInfo?.token?.payload["sid"],
     };
   }
+}
+
+/** Compute seconds remaining until token expiration (UTC-safe). */
+function tokenExpiresInSeconds(req: cds.Request): number {
+  const expiresAtMs = req.user?.authInfo?.token?.expirationDate?.getTime();
+  const nowMs = Date.now();
+  if (expiresAtMs) {
+    return Math.max(0, Math.floor((expiresAtMs - nowMs) / 1000));
+  }
+  return 3600; // default 1 hour
 }

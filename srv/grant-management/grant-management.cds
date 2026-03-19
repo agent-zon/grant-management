@@ -25,4 +25,8 @@ service GrantsManagementService {
     entity FindingConditions as projection on grants.FindingConditions;
 
     function agentGraph(actor: String) returns String;
+
+    // Admin-only: view all grants for a given actor across all resource owners
+    @requires: 'grant_admin'
+    function adminAgentGraph(actor: String) returns String;
 }

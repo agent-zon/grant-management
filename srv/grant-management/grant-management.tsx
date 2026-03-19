@@ -3,7 +3,7 @@ import cds from "@sap/cds";
 import { LIST } from "./handler.list.tsx";
 import { GET, POST } from "./handler.edit.tsx";
 import { DELETE } from "./handler.revoke.tsx";
-import { GRAPH } from "./handler.graph.tsx";
+import { GRAPH, ADMIN_GRAPH } from "./handler.graph.tsx";
 import {
   Grant,
   Grants,
@@ -24,8 +24,10 @@ export default class Service extends cds.ApplicationService {
     // @ts-ignore TODO: Fix typing handler
     this.on("GET", Grants, LIST);
 
-    // Agent graph handler
+    // Agent graph handler — user view (scoped to current user as subject)
     this.on("agentGraph", GRAPH);
+    // Admin graph handler — cross-subject view (requires grant_admin role)
+    this.on("adminAgentGraph", ADMIN_GRAPH);
 
     return super.init();
   }

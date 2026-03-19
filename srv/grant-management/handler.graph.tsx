@@ -376,52 +376,53 @@ function evaluateFindings(
   return findings;
 }
 
-// ── Main handler ─────────────────────────────────────────────────────────────
+// ── Grant query builder ──────────────────────────────────────────────────────
 
-export async function GRAPH(req: cds.Request) {
-  const selectedActor = req.data?.actor as string | undefined;
+function grantsQuery(db: any) {
+  const { Grants } = db.entities("sap.scai.grants");
+  return SELECT.from(Grants).columns((g: any) => {
+    g.id,
+      g.status,
+      g.scope,
+      g.subject,
+      g.actor,
+      g.consents((c: any) => {
+        c.grant_id,
+          c.actor,
+          c.request((r: any) => {
+            r.requested_actor;
+          }),
+          c.authorization_details((d: any) => {
+            d("*"), d.locations, d.actions, d.tools,
+            d.roots, d.databases, d.schemas, d.tables,
+            d.urls, d.protocols, d.privileges, d.resources;
+          });
+      });
+  });
+}
+
+// ── Shared graph builder ─────────────────────────────────────────────────────
+
+interface FlatGrant {
+  grant: Record<string, unknown>;
+  actor: string;
+  details: Record<string, unknown>[];
+}
+
+async function buildGraph(
+  allGrants: Array<Record<string, unknown>>,
+  selectedActor: string | undefined
+) {
   const db = cds.db;
-
-  // 1. Fetch all grants for the user with authorization_details
-  const { Grants, FindingRules } = db.entities("sap.scai.grants");
-
-  const allGrants = await SELECT.from(Grants)
-    .columns((g: any) => {
-      g.id,
-        g.status,
-        g.scope,
-        g.subject,
-        g.consents((c: any) => {
-          c.grant_id,
-            c.actor,
-            c.request((r: any) => {
-              r.requested_actor;
-            }),
-            c.authorization_details((d: any) => {
-              d("*"), d.locations, d.actions, d.tools,
-              d.roots, d.databases, d.schemas, d.tables,
-              d.urls, d.protocols, d.privileges, d.resources;
-            });
-        });
-    })
-    .where({ subject: req.user.id });
-
-  // 2. Group by actor — build actor list and per-actor detail map
-  type DbGrant = (typeof allGrants)[number];
+  const { FindingRules } = db.entities("sap.scai.grants");
 
   // Flatten: each grant → actor(s) from consents
-  interface FlatGrant {
-    grant: DbGrant;
-    actor: string;
-    details: Record<string, unknown>[];
-  }
-
   const flatGrants: FlatGrant[] = [];
   for (const grant of allGrants) {
     const consents = (grant as any).consents ?? [];
     for (const consent of consents) {
       const actor =
-        consent.actor ?? consent.request?.requested_actor ?? "unknown";
+        consent.actor ?? consent.request?.requested_actor ?? (grant as any).actor ?? "unknown";
       const details = consent.authorization_details ?? [];
       flatGrants.push({ grant, actor, details });
     }
@@ -431,16 +432,11 @@ export async function GRAPH(req: cds.Request) {
   const actors = Array.from(actorSet).sort();
 
   if (!selectedActor) {
-    return JSON.stringify({ actors, selectedActor: null, grants: [], findings: [] });
+    return { actors, selectedActor: null, grants: [], findings: [] };
   }
 
-  // 3. Build per-actor detail index (for delegation resolution)
-  //    Map<actor, detail[]>
-  const actorDetailIndex = new Map<
-    string,
-    Array<Record<string, unknown>>
-  >();
-
+  // Build per-actor detail index (for delegation resolution)
+  const actorDetailIndex = new Map<string, Array<Record<string, unknown>>>();
   for (const fg of flatGrants) {
     if (!actorDetailIndex.has(fg.actor)) {
       actorDetailIndex.set(fg.actor, []);
@@ -450,11 +446,9 @@ export async function GRAPH(req: cds.Request) {
     }
   }
 
-  // 4. Transform selected actor's grants to frontend shape + resolve delegations
+  // Transform selected actor's grants to frontend shape + resolve delegations
   const selectedFlat = flatGrants.filter((fg) => fg.actor === selectedActor);
   const frontendGrants: FrontendGrant[] = [];
-
-  // Track visited agents to prevent infinite recursion
   const visited = new Set<string>();
 
   function resolveDelegation(
@@ -469,7 +463,6 @@ export async function GRAPH(req: cds.Request) {
       (dbDetail.locations as string[] | undefined)?.[0];
     if (!targetAgent) return;
 
-    // Prevent cycles
     if (visited.has(targetAgent)) return;
     visited.add(targetAgent);
 
@@ -478,12 +471,9 @@ export async function GRAPH(req: cds.Request) {
 
     for (const tgtDetail of targetDetails) {
       const transformed = transformDetail(tgtDetail);
-
-      // Recurse if the matched detail is itself an agent_invocation
       if ((tgtDetail as any).type === "agent_invocation") {
         resolveDelegation(transformed, tgtDetail, depth + 1);
       }
-
       delegated.push(transformed);
     }
 
@@ -499,12 +489,10 @@ export async function GRAPH(req: cds.Request) {
 
     for (const dbDetail of fg.details) {
       const transformed = transformDetail(dbDetail);
-
       if ((dbDetail as any).type === "agent_invocation") {
         visited.clear();
         resolveDelegation(transformed, dbDetail, 0);
       }
-
       grantDetails.push(transformed);
     }
 
@@ -519,7 +507,7 @@ export async function GRAPH(req: cds.Request) {
     });
   }
 
-  // 5. Evaluate findings
+  // Evaluate findings
   const allDetails = frontendGrants.flatMap((g) => g.authorization_details);
   const leaves = extractLeavesForEval(allDetails);
 
@@ -532,11 +520,34 @@ export async function GRAPH(req: cds.Request) {
     findingRules as Array<Record<string, unknown>>
   );
 
-  // 6. Return
-  return JSON.stringify({
-    actors,
-    selectedActor,
-    grants: frontendGrants,
-    findings,
-  });
+  return { actors, selectedActor, grants: frontendGrants, findings };
+}
+
+// ── User view ────────────────────────────────────────────────────────────────
+// Actors dropdown: only agents that the current user granted permissions to.
+// Selected actor: only grants from the current user (subject).
+
+export async function GRAPH(req: cds.Request) {
+  const selectedActor = req.data?.actor as string | undefined;
+  const allGrants = await grantsQuery(cds.db).where({ subject: req.user.id });
+  return JSON.stringify(await buildGraph(allGrants, selectedActor));
+}
+
+// ── Admin view ───────────────────────────────────────────────────────────────
+// Actors dropdown: ALL agents across all resource owners.
+// Selected actor: ALL grants for that actor from every resource owner.
+// Protected by @requires: 'grant_admin' in CDS.
+
+export async function ADMIN_GRAPH(req: cds.Request) {
+  const selectedActor = req.data?.actor as string | undefined;
+
+  if (!selectedActor) {
+    // No actor selected — return all known actors from all grants
+    const allGrants = await grantsQuery(cds.db);
+    return JSON.stringify(await buildGraph(allGrants, undefined));
+  }
+
+  // Fetch all grants where this actor is the agent — across all subjects
+  const allGrants = await grantsQuery(cds.db).where({ actor: selectedActor });
+  return JSON.stringify(await buildGraph(allGrants, selectedActor));
 }

@@ -4,6 +4,16 @@
       "name": "srv-api",
       "url": "http://localhost:4004",
       "forwardAuthToken": true
-    } 
+    },
+    {
+      "name": "mtx-api",
+      "url": "http://localhost:4004",
+      "forwardAuthToken": true
+    },
+    {
+      "name": "portal",
+      "url": "http://localhost:4004",
+      "forwardAuthToken": true
+    }
   ]
 }
