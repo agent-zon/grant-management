@@ -105,7 +105,7 @@ sketches.use("/*",
         >
         </script>
       </head>
-      <body hx-ext="head-support">
+      <body hx-ext="head-support" class="w-screen h-screen">
         {children}
       </body>
     </html>
@@ -118,7 +118,7 @@ sketches.use(
     const panel = c.req.param("sketch")
     return <Layout>
       <div className="relative min-h-screen min-w-screen">
-        <header class="sticky top-0 z-[100]  w-full flex items-center justify-between *:py-2 *:shadow-md *:rounded-lg *:bg-white/90 *:backdrop-blur-xl *:border-b *:border-slate-200  max-h-[49px] ">
+        <header class="sticky bg-opacity-25 backdrop-blur-xl top-0 z-[100]  w-full flex items-center justify-between *:py-2 *:shadow-md *:rounded-lg *:bg-white/90 *:backdrop-blur-xl *:border-b *:border-slate-200  max-h-[49px] ">
           <div class="max-w-[1200px] flex items-center gap-4 justify-start px-10   ">
             <nav class="flex flex-wrap items-center gap-2 text-sm text-slate-500 left-0
               *:gap-2.5 *:text-sm *:text-slate-500 *:left-0 *:hover:text-sky-600 *:transition-colors *:flex *:items-center *:gap-2.5 *:flex *:items-center *:gap-2.5 *:text-sm  *:hover:text-sky-600 *:transition-colors *:flex *:items-center *:gap-2.5  *:text-sky-500 *:cursor-pointer ">
@@ -208,7 +208,7 @@ sketches.get("/", (c) => {
             </div>
           ))}
         </div>
-        <div class="mt-12 bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+        {/* <div class="mt-12 bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
           <h3 class="text-sm font-semibold text-slate-900 mb-4 uppercase tracking-wide">
             Data Sources
           </h3>
@@ -223,7 +223,7 @@ sketches.get("/", (c) => {
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
       </main>
       <footer class="border-t border-slate-200 px-6 py-5 text-center text-sm text-slate-400 mt-auto">
         Powered by HTMX + SAP App Router · Grant Management
@@ -249,7 +249,7 @@ sketches.get("/:sketch/tile", (c) => {
     </div>
     <p class="text-sm text-slate-500 truncate mb-3">{d.url}</p>
     <a
-      hx-get={`${encodeURIComponent(sketch)}/panel`}
+      hx-get={`${encodeURIComponent(sketch)}`}
       hx-trigger="click"
       hx-target="body"
       hx-push-url="true"
@@ -261,89 +261,8 @@ sketches.get("/:sketch/tile", (c) => {
   </div>);
 });
 
-const AsyncComponent = async () => {
-  const c = useRequestContext();
-  const sketch = c.req.param("sketch");
-  // const destination = await useOrFetchDestination({
-  //   destinationName: sketch,
-  //   jwt: c.req.header("Authorization")?.replace("Bearer ", ""),
-  // });
 
-  // const destination = await fetch(`/destination/${sketch}`);
-  return streamText(c, async (stream) => {
-    const destination = await executeHttpRequest({
-      destinationName: sketch,
-      jwt: c.req.header("Authorization")?.replace("Bearer ", ""),
-    }, {
-      streaming: true,
-      method: "GET",
-    }, {
-      fetchCsrfToken: false,
-    });
-
-    if (!destination.body) {
-      stream.write("No response body from destination.");
-      return;
-    }
-
-    const baseHref = `/html/${encodeURIComponent(sketch)}/`;
-
-    const decoder = new TextDecoder();
-    const reader = destination.body.getReader();
-
-    let buffer = "";
-    let headRewritten = false;
-
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-
-      // Until we can rewrite <head>...</head>, keep buffering.
-      if (!headRewritten) {
-        const headStart = buffer.toLowerCase().indexOf("<head");
-        if (headStart === -1) continue;
-
-        const headTagEnd = buffer.indexOf(">", headStart);
-        if (headTagEnd === -1) continue;
-
-        const headClose = buffer.toLowerCase().indexOf("</head>", headTagEnd);
-        if (headClose === -1) continue;
-
-        const beforeHeadContent = buffer.slice(0, headTagEnd + 1);
-        let headContent = buffer.slice(headTagEnd + 1, headClose);
-        const afterHead = buffer.slice(headClose); // includes </head> + remainder
-
-        // Remove existing <base ...> tags in <head>
-        headContent = headContent.replace(/<base\b[^>]*?>/gi, "");
-
-        const rewritten =
-          beforeHeadContent +
-          headContent +
-          `\n<base href="${baseHref}" />\n` +
-          afterHead;
-
-        stream.write(rewritten);
-        buffer = "";
-        headRewritten = true;
-        continue;
-      }
-
-      // After rewriting head, stream through progressively.
-      if (buffer.length > 0) {
-        stream.write(buffer);
-        buffer = "";
-      }
-    }
-
-    // Flush any remaining decoder output/buffer.
-    buffer += decoder.decode();
-    if (buffer) stream.write(buffer);
-  });
-};
-
-sketches.get("/:sketch", (c) => {
+sketches.get("/:sketch/test", (c) => {
   const sketch = c.req.param("sketch");
   return c.html(
     <html>
@@ -358,34 +277,10 @@ sketches.get("/:sketch", (c) => {
   );
 });
 
-sketches.get("/:sketch/panel", (c) => {
+sketches.get("/:sketch", (c) => {
   const sketch = c.req.param("sketch");
   return c.render(
-    <iframe src={`/html/${encodeURIComponent(sketch)}`} class="w-full h-full"></iframe>);
+    <iframe src={`/html/${encodeURIComponent(sketch)}`} class="w-screen h-screen scroll-smooth "></iframe>);
 });
 
 export { sketches };
-
-function injectBaseHref(data: string, baseHref: string): string | Uint8Array<ArrayBufferLike> {
-  return data.replace(/<base\b[^>]*?>/gi, "") + `\n<base href="${baseHref}" />\n`;
-}
-
-
-async function fetchDestination(sketch: string, c: Context, stream: StreamingApi) {
-
-  const destination = await useOrFetchDestination({
-    destinationName: sketch,
-    jwt: c.req.header("Authorization")?.replace("Bearer ", ""),
-  });
-  if (!destination) {
-    stream.write("No destination found.");
-    return;
-  }
-
-  const response = await fetch(`${destination.url}/`, {
-    headers: {
-      ...Object.fromEntries(destination?.authTokens?.map(token => [token.http_header.key, token.http_header.value]) || []),
-    },
-  });
-  return response;
-}
