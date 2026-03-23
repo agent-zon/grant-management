@@ -331,9 +331,16 @@ function filterNewDetails(
         );
         if (serverMatch.length === 0) return detail;
 
+        // Only consider tools with boolean values (true/false) as decided.
+        // Tools with null or other non-boolean values mean the user never
+        // made a decision and should be presented again for consent.
         const grantedTools = new Set(
           serverMatch.flatMap((e) =>
-            e.tools && typeof e.tools === "object" ? Object.keys(e.tools) : []
+            e.tools && typeof e.tools === "object"
+              ? Object.entries(e.tools)
+                  .filter(([, v]) => typeof v === "boolean")
+                  .map(([name]) => name)
+              : []
           )
         );
 
