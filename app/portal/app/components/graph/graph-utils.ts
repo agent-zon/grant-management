@@ -333,7 +333,7 @@ export function transformGrantsToGraph(
     position: { x: 0, y: 0 },
     data: {
       label: actor.replace(/^urn:agent:/, ""),
-      grantCount: grants.length,
+      grantCount: new Set(grants.map((g) => g.grant_id)).size,
       permissionCount: totalLeaves,
       deniedCount,
     },
