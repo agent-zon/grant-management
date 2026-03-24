@@ -529,7 +529,11 @@ async function buildGraph(
 
 export async function GRAPH(req: cds.Request) {
   const selectedActor = req.data?.actor as string | undefined;
-  const allGrants = await grantsQuery(cds.db).where({ subject: req.user.id });
+  const callerUuid = cds.context?.user?.authInfo?.token?.payload?.user_uuid as string | undefined;
+  const callerEmail = (cds.context?.user?.authInfo?.token?.payload?.mail ?? cds.context?.user?.authInfo?.token?.payload?.email) as string | undefined;
+  const callerId = req.user.id;
+  const ids = [callerUuid, callerId, callerEmail].filter(Boolean) as string[];
+  const allGrants = await grantsQuery(cds.db).where`subject_uuid in ${ids} or subject in ${ids}`;
   return JSON.stringify(await buildGraph(allGrants, selectedActor));
 }
 

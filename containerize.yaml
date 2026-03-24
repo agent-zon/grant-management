@@ -1,6 +1,6 @@
 _schema-version: "1.0"
 repository: scai-dev.common.repositories.cloud.sap
-tag: v53
+tag: v54
 before-all:
   - npx cds build --production
 
@@ -8,9 +8,9 @@ modules:
   - name: grant-management/api
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t scai-dev.common.repositories.cloud.sap/grant-management/api:v53 -f Dockerfile . --push
+        - docker buildx build --platform linux/amd64 -t scai-dev.common.repositories.cloud.sap/grant-management/api:v54 -f Dockerfile . --push
 
   - name: grant-management/approuter
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t scai-dev.common.repositories.cloud.sap/grant-management/approuter:v53 app/router --push
+        - docker buildx build --platform linux/amd64 -t scai-dev.common.repositories.cloud.sap/grant-management/approuter:v54 app/router --push

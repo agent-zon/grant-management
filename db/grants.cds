@@ -15,6 +15,7 @@ entity Grants: managed {
   revoked_at: DateTime;
   revoked_by: User;
   subject: User;
+  subject_uuid: String; // IAS user_uuid for stable identity matching across auth contexts
   actor: String;
   scope:String;
   consents: Composition of many Consents on consents.grant_id = $self.id;
@@ -43,6 +44,7 @@ entity Grants: managed {
   subject_token_type: String;
   subject_token: String;
   subject: User;
+  subject_uuid: String; // IAS user_uuid for stable identity matching
   expires_in: Integer;
 
    
@@ -87,6 +89,7 @@ entity Consents:cuid,managed {
   authorization_details: Composition of many AuthorizationDetails on authorization_details.consent = $self;
   duration: Timespan;
   subject: User; //@cds.on.insert: $user;
+  subject_uuid: String; // IAS user_uuid for stable identity matching
   previous_consent: Association to Consents; // Reference to the previous consent for this grant
   @calculated
   redirect_uri: String=request.redirect_uri;

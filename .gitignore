@@ -49,3 +49,4 @@ temp/
 *-secret.*
 secret/
 .claude
+.cds-services.json

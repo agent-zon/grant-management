@@ -162,8 +162,11 @@ All API endpoints require a valid access token with appropriate scopes:
 
 ### Creation
 
-Grants are created through the standard OAuth authorization flow. When a grant
-is created, a `grant_id` is returned in the token response:
+The **client** is responsible for generating and tracking `grant_id` values.
+The client provides the `grant_id` in the PAR (Pushed Authorization Request),
+typically derived deterministically from known data (e.g. subject, actor).
+
+When a grant is created, the `grant_id` is returned in the token response:
 
 ```json
 {
@@ -175,12 +178,20 @@ is created, a `grant_id` is returned in the token response:
 }
 ```
 
-### Modification
+### Modification (create_or_merge)
 
 Grants can be modified through the authorization flow using:
 
-- `grant_management_action=update`: Merge new permissions with existing ones
+- `grant_management_action=merge`: Merge new permissions with existing grant.
+  Acts as **create_or_merge** — if no `grant_id` is provided, the server
+  generates one and creates a new grant instead.
 - `grant_management_action=replace`: Replace existing permissions entirely
+
+When merging, tools in the existing grant are compared against incoming tools:
+- Tools with boolean values (`true`/`false`) are considered **decided** and
+  filtered out of the consent screen
+- Tools with non-boolean values (`null`/other) are considered **undecided** and
+  presented to the user for consent
 
 ### Deletion
 
@@ -194,9 +205,13 @@ Grants are revoked using the DELETE endpoint, which:
 
 1. **Grant IDs are public identifiers** - they are not secrets and may leak
    through authorization requests
-2. **Access control** - Clients can only access grants they are authorized for
-3. **Token management** - The API does not expose tokens to prevent leakage
-4. **Privacy** - No user identity data is exposed in grant status responses
+2. **Grant ID ownership** - the client generates and provides `grant_id` values;
+   the server does not auto-resolve grants by (subject, actor) lookup
+3. **GET ownership check** - querying a grant by ID requires the caller to be
+   the grant's `subject`, `actor`, or hold the `grant_admin` role (403 otherwise)
+4. **Access control** - Clients can only access grants they are authorized for
+5. **Token management** - The API does not expose tokens to prevent leakage
+6. **Privacy** - No user identity data is exposed in grant status responses
 
 ## Implementation Notes
 

@@ -33,50 +33,35 @@ export default async function authorize(
       .send("Authorization request not found");
   }
 
+  const user_uuid = cds.context?.user?.authInfo?.token?.payload?.user_uuid as string | undefined;
+
   if (request.subject && request.subject !== cds.context?.user?.id) {
-    return cds.context?.http?.res
-      .status(403)
-      .send(
-        "Authorization request subject does not match the authenticated user"
-      );
+    // Also accept match by subject_uuid for cross-context identity
+    if (!(request.subject_uuid && user_uuid && request.subject_uuid === user_uuid)) {
+      return cds.context?.http?.res
+        .status(403)
+        .send(
+          "Authorization request subject does not match the authenticated user"
+        );
+    }
   }
   if (!request.subject_token || !request.subject) {
     const subject = cds.context?.user?.id;
     await this.update(AuthorizationRequests, id)
       .set`subject_token = ${cds.context?.user?.authInfo?.token.jwt}`
-      .set`subject = ${subject}`;
+      .set`subject = ${subject}`
+      .set`subject_uuid = ${user_uuid}`;
     // Keep local variable in sync with DB update
     request.subject = subject;
+    (request as any).subject_uuid = user_uuid;
   }
 
-  // Resolve grant: subject is now known from authentication.
-  // Look for existing active grant for (subject, actor) pair,
-  // or generate a new grant_id if none exists.
+  // Grant ID and action come from the client via PAR.
+  // "merge" acts as create_or_merge: if no grant_id provided, generate one.
   const subject = request.subject || cds.context?.user?.id;
   const actor = request.requested_actor;
   let resolvedGrantId = request.grant_id;
 
-  if (subject && actor) {
-    const activeGrants = await cds.run(
-      SELECT.from(Grants)
-        .where({ subject, actor, status: "active" })
-        .orderBy("modifiedAt desc")
-    );
-    if (activeGrants.length > 0) {
-      resolvedGrantId = activeGrants[0].id;
-      console.log(`🔗 Auto-resolved grant ${resolvedGrantId} for (${subject}, ${actor})`);
-      if (resolvedGrantId !== request.grant_id) {
-        await this.update(AuthorizationRequests, id)
-          .set`grant_id = ${resolvedGrantId}`
-          .set`grant_management_action = ${"merge"}`;
-        request.grant_id = resolvedGrantId;
-        request.grant_management_action = "merge";
-      }
-    }
-  }
-
-  // If still no grant_id (no existing grant found, none provided at PAR),
-  // generate one now that the subject is known.
   if (!resolvedGrantId) {
     resolvedGrantId = `gnt_${ulid()}`;
     console.log(`🆕 Generated new grant ${resolvedGrantId} for (${subject}, ${actor})`);
@@ -96,6 +81,7 @@ export default async function authorize(
       risk_level: request.risk_level,
       actor: request.requested_actor,
       subject,
+      subject_uuid: user_uuid,
     })
     .into(Grants);
 
@@ -156,6 +142,11 @@ export default async function authorize(
                   type="hidden"
                   name="subject"
                   value={cds.context?.user?.id}
+                />
+                <input
+                  type="hidden"
+                  name="subject_uuid"
+                  value={user_uuid || ""}
                 />
                 <input type="hidden" name="scope" value={grant.scope} />
 

@@ -36,10 +36,34 @@ export async function GET(
   }
   console.log("🔧 Single grant request.");
   // Apply workaround to process grant with consents and authorization details
+  const raw = await next(req);
+  if (!raw || isNativeError(raw) || !(raw as Grant).id) {
+    return req.reject(404, "Grant not found");
+  }
   let grant = await getGrant(this, {
     ...req.data,
-    ...(await next(req)),
+    ...raw,
   });
+
+  // Ownership check: caller must be subject, actor, or grant_admin
+  const callerUuid = cds.context?.user?.authInfo?.token?.payload?.user_uuid as string | undefined;
+  const callerEmail = (cds.context?.user?.authInfo?.token?.payload?.mail ?? cds.context?.user?.authInfo?.token?.payload?.email) as string | undefined;
+  const callerId = cds.context?.user?.id;
+  const isAdmin = cds.context?.user?.is("grant_admin");
+
+  // Build set of all known caller identities for matching
+  const callerIds = new Set([callerId, callerUuid, callerEmail].filter(Boolean));
+
+  // If both grant and caller have UUID, compare those (stable across auth contexts);
+  // otherwise fall back to matching subject against any known caller identity
+  const isSubject = ((grant as any).subject_uuid && callerUuid)
+    ? (grant as any).subject_uuid === callerUuid
+    : callerIds.has(grant.subject as string);
+  const isActor = callerIds.has(grant.actor as string);
+
+  if (!isAdmin && !isSubject && !isActor) {
+    return req.reject(403, "Not authorized to view this grant");
+  }
 
   if (req?.http?.req.accepts("html")) {
     return render(

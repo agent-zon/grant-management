@@ -20,6 +20,7 @@ interface EnrichedGrant {
   status?: string | null;
   scope?: string;
   subject?: string[] | string | null;
+  subject_uuid?: string[] | string | null;
   actor?: string[] | string | null;
   client_id?: string[] | string | null;
   risk_level?: string | null;
@@ -45,10 +46,18 @@ export async function LIST(
   // Apply perspective filter: "subject" (default) or "actor"
   const perspective =
     (req?.http?.req?.query?.perspective as string) || "subject";
+  const callerUuid = cds.context?.user?.authInfo?.token?.payload?.user_uuid as string | undefined;
+  const callerEmail = (cds.context?.user?.authInfo?.token?.payload?.mail ?? cds.context?.user?.authInfo?.token?.payload?.email) as string | undefined;
   const callerId = cds.context?.user?.id;
 
   if (callerId && (perspective === "subject" || perspective === "actor")) {
-    (req.query as any).where({ [perspective]: callerId });
+    if (perspective === "subject") {
+      // Match by UUID, user.id, or email for backward compat with old grants
+      const ids = [callerUuid, callerId, callerEmail].filter(Boolean) as string[];
+      (req.query as any).where`subject_uuid in ${ids} or subject in ${ids}`;
+    } else {
+      (req.query as any).where({ [perspective]: callerId });
+    }
   }
 
   const response = await next(req);
@@ -357,9 +366,16 @@ async function getGrants(
   perspective?: string,
   callerId?: string
 ): Promise<EnrichedGrant[]> {
+  const callerUuid = cds.context?.user?.authInfo?.token?.payload?.user_uuid as string | undefined;
+  const callerEmail = (cds.context?.user?.authInfo?.token?.payload?.mail ?? cds.context?.user?.authInfo?.token?.payload?.email) as string | undefined;
   const consentsQuery = SELECT.from(Consents);
   if (callerId && perspective) {
-    consentsQuery.where({ [perspective]: callerId });
+    if (perspective === "subject") {
+      const ids = [callerUuid, callerId, callerEmail].filter(Boolean) as string[];
+      consentsQuery.where`subject_uuid in ${ids} or subject in ${ids}`;
+    } else {
+      consentsQuery.where({ [perspective]: callerId });
+    }
   }
   const consentRecords = await srv.run(consentsQuery);
   const authorization_details = await srv.run(
@@ -412,6 +428,11 @@ async function getGrants(
         .filter(Boolean)
         .filter(unique);
 
+      const subject_uuids = consents
+        .map((c: any) => c.subject_uuid)
+        .filter(Boolean)
+        .filter(unique);
+
       acc[consent.grant_id!] = {
         consents: consents,
         authorization_details: [
@@ -439,6 +460,11 @@ async function getGrants(
           ? subjects
           : grant?.subject
             ? [grant.subject]
+            : undefined) as any,
+        subject_uuid: (subject_uuids.length > 0
+          ? subject_uuids
+          : (grant as any)?.subject_uuid
+            ? [(grant as any).subject_uuid]
             : undefined) as any,
       };
 

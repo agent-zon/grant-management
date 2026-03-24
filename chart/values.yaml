@@ -7,7 +7,7 @@ global:
     name: docker-registry
   image:
     registry: scai-dev.common.repositories.cloud.sap
-    tag: v53
+    tag: v54
   imagePullPolicy: Always
 srv:
   replicaCount: 1
