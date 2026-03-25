@@ -1,25 +1,22 @@
 import cds from "@sap/cds";
 import { render } from "#cds-ssr";
 import { versionFromRequest } from "./git-version";
+ 
 
 
 /** GET agents → JSON or full list page (handler = route UI) */
-export async function LIST(this: any, req: cds.Request, next: Function) {
-  const { agentId, agents } = req.data;
+export async function LIST(this: cds.ApplicationService, req: cds.Request, next: Function) {
+  const { agentId, agents, agent, version } = req.data;
   console.log("agentId", agentId);
 
   if (!req?.http?.req.accepts("html")) {  
-    return agents;
+    return agent || agents;
   }
-  if (agentId) {
-    req.http.res.header("HX-Trigger-After-Swap", JSON.stringify({ agentSelected: { agent: agentId }, }));
-    // req.http.res.header("HX-Trigger", JSON.stringify({ agentSelected: { agent: agentId }, }));
-
-    // req.http.res.header("HX-Trigger-After-Settle", JSON.stringify({ agentSelected: { agent: agentId }, }));
+  if (agentId ) {
+    req.http.res.header("HX-Trigger-After-Settle", JSON.stringify({ selectAgent: { agent: agentId   }, }));
+    return await next(req);
   }
 
-  console.log(req.path, req.target.name, req.http?.req.path, req.http?.req.url, req.http?.req.originalUrl);
-  // remove the service name from the path 
   return render(
     req,
     <div className="content-fade-in">
@@ -77,7 +74,7 @@ export async function SELECTOR(req: cds.Request) {
       type="button"
       data-agent-id={agentId}
       hx-post={`${req.http?.req.originalUrl.replace(/selector/, 'select')}`}
-      hx-trigger="click"
+      hx-trigger="click, selectAgent from:body"
       hx-swap="outerHTML"
       hx-push-url="false"
       hx-target={`#selector-name-${id}`}
@@ -125,7 +122,7 @@ export async function SELECT(this: any, req: cds.Request) {
   const { id, name } = agent || {}
   const version = versionFromRequest(req);
   req.http?.res.header("HX-Trigger", JSON.stringify({ agentSelected: { agent: id, version: version }, }));
-  req.http?.res.header("HX-Push-Url", `${req.http?.req.originalUrl.replace(/select/, '')}`);
+  req.http?.res.header("HX-Push-Url", `${req.http?.req.originalUrl.replace(/\/select/, '')}`);
 
   return render(
     req,

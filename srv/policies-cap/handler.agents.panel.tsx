@@ -5,8 +5,11 @@ import { wrapWithLayout, setHtmxSidebarSelect } from "./middleware.layout";
 
 /** GET Policies/agent-123/versions/<version>/edit → panel only; middleware sets wrapWithLayout for full page. */
 export async function GET(this: any, req: cds.Request) {
-  const {  version, agentId } = req.data || {};
+  const {  version, agentId , agent} = req.data || {};
   console.log("get panel", agentId, version);
+  if (!req?.http?.req.accepts("html")) {
+    return agent;
+  }
   return render(req, (
     <form className="flex flex-col min-h-[calc(100vh-2.75rem)] w-full p-6 gap-6 bg-gray-50 content-fade-in">
       <div className="flex items-center justify-between shrink-0 gap-6">
@@ -78,11 +81,10 @@ export async function GET(this: any, req: cds.Request) {
               <div
                 id="connect-picker-slot"
                 className="p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 max-h-48"
-                hx-get="agents/{agent}/versions/{version}/resources/connecter"
-                hx-trigger="load, connect from:body"
+                hx-get={`agents/${agentId}/versions/${version}/resources/connecter`}
+                hx-trigger="load"
                 hx-swap="morph:innerHTML"
-                hx-vals="js:{ agent: event?.detail?.agent, version: event?.detail?.version }"
-              >
+               >
                 <div className="space-y-2">
                   <div className="skeleton h-3 w-48 mb-3" />
                   {[1, 2].map((i) => (
@@ -187,7 +189,7 @@ export async function GET(this: any, req: cds.Request) {
         </div>
       </div>
     </form>
-  ));
+  ), "/admin/");
 }
 
 export async function Title(this: any, req: cds.Request) {

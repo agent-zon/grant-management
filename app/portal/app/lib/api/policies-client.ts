@@ -1,7 +1,7 @@
 // API client for CAP Policies service
 import type { AgentPolicies } from "~/types/policies";
 
-const BASE_URL = process.env.POLICIES_API_URL || "http://localhost:4004/policies";
+const BASE_URL = process.env.POLICIES_API_URL || "http://localhost:4004";
 
 export class PoliciesApiError extends Error {
   constructor(
@@ -19,10 +19,10 @@ export class PoliciesApiError extends Error {
  */
 export async function getAllAgents(): Promise<AgentPolicies[]> {
   try {
-    const response = await fetch(`${BASE_URL}/AgentPolicies`, {
+    const response = await fetch(`${BASE_URL}/admin/agents`, {
       method: "GET",
       headers: {
-        "Content-Type": "application/json",
+        "Accept": "application/json",
       },
     });
 
@@ -34,7 +34,7 @@ export async function getAllAgents(): Promise<AgentPolicies[]> {
     }
 
     const data = await response.json();
-    return data.value || [];
+    return data || [];
   } catch (error) {
     if (error instanceof PoliciesApiError) {
       throw error;
@@ -50,10 +50,10 @@ export async function getAllAgents(): Promise<AgentPolicies[]> {
  */
 export async function getAgentPolicies(agentId: string): Promise<AgentPolicies> {
   try {
-    const response = await fetch(`${BASE_URL}/AgentPolicies('${agentId}')`, {
+    const response = await fetch(`${BASE_URL}/admin/agents/${agentId}/main/policy`, {
       method: "GET",
       headers: {
-        "Content-Type": "application/json",
+        "Accept": "application/json",
       },
     });
 

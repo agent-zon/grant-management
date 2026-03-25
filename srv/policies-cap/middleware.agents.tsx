@@ -165,6 +165,7 @@ export async function paramsToData(req: cds.Request) {
     };
     return acc;
   }, req.data || {});
+  req.data.version = req.data.version || "main";
   console.log("paramsToData", req.http?.req.originalUrl, req.data);
 }
 

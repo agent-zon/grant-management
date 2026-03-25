@@ -1,6 +1,7 @@
 {
   "welcomeFile": "./api-docs/index.html",
   "routes": [
+    
     {
       "source": "^/health$",
       "target": "/health.html",
@@ -45,11 +46,23 @@
       "service": "sap-approuter-userapi"
     },
     {
-      "source": "^/destination/([^/]+)/(.*)$",
+      "source": "^/destination/([^/]+)(.*)$",
       "target": "$2",
       "destination": "$1",
-      "authenticationType": "ias",
-      "dynamicIdentityProvider": true
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/html/([^/]+)(.*)$",
+      "target": "$2",
+      "destination": "$1",
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/sketches(.*)$",
+      "target": "sketches$1",
+      "destination": "srv-api",
+      "csrfProtection": false,
+      "authenticationType": "none"
     },
     {
       "source": "^/(.*)$",

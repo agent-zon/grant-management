@@ -3,6 +3,9 @@ import { render } from "#cds-ssr";
 
 /** GET /admin/dashboard() or /admin/policies → layout inline: sidebar [hx-get=agents], policy pane (empty state). */
 export async function DASHBOARD(this: any, req: cds.Request) {
+  const { agent } = req.data;
+  req.http?.res?.header("HX-Trigger-After-Swap", JSON.stringify({ agentSelected: { agent: agent?.id }, }));
+
   return render(
     req,
     <div hx-ext="path-params" className="flex flex-col h-screen bg-gray-100 text-gray-900 overflow-hidden">

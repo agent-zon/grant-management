@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { Link, useParams } from "react-router";
 import { FolderOpen, Search, AlertCircle, Loader2 } from "lucide-react";
 import type { AgentPolicies } from "~/types/policies";
+import type { Agent } from "~/types/agents";
 
 interface AgentsSidebarProps {
-  agents: AgentPolicies[];
+  agents: Agent[];
   isCollapsed?: boolean;
   isLoading?: boolean;
   error?: string;
@@ -21,7 +22,7 @@ export function AgentsSidebar({
 
   // Filter agents based on search term
   const filteredAgents = agents.filter((agent) =>
-    agent.agentId.toLowerCase().includes(searchTerm.toLowerCase())
+    agent.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isCollapsed) {
@@ -29,19 +30,20 @@ export function AgentsSidebar({
       <div className="p-2 space-y-2">
         {agents.map((agent) => (
           <Link
-            key={agent.agentId}
-            to={`/policies/${agent.agentId}`}
+            key={agent.id}
+            to={`/policies/${agent.id}`}
             className={`
               block p-2 rounded-lg transition-colors
               ${
-                agentId === agent.agentId
+                agentId === agent.id
                   ? "bg-blue-600/20 border-l-4 border-blue-500"
                   : "hover:bg-gray-700/50"
               }
             `}
-            title={agent.agentId}
+            title={agent.name}
           >
             <FolderOpen className="w-5 h-5" />
+            <span className="text-sm font-medium">{agent.name}</span>
           </Link>
         ))}
       </div>
@@ -118,12 +120,12 @@ export function AgentsSidebar({
             <div className="space-y-1 p-2">
               {filteredAgents.map((agent) => (
                 <Link
-                  key={agent.agentId}
-                  to={`/policies/${agent.agentId}`}
+                  key={agent.id}
+                  to={`/policies/${agent.id}`}
                   className={`
                     block px-4 py-3 rounded-lg transition-all duration-200
                     ${
-                      agentId === agent.agentId
+                      agentId === agent.id
                         ? "bg-blue-600/20 border-l-4 border-blue-500 pl-3"
                         : "bg-gray-700/30 hover:bg-gray-700/50 border-l-4 border-transparent"
                     }
@@ -132,7 +134,7 @@ export function AgentsSidebar({
                   <div className="flex items-center space-x-3">
                     <FolderOpen
                       className={`w-5 h-5 flex-shrink-0 ${
-                        agentId === agent.agentId
+                        agentId === agent.id
                           ? "text-blue-400"
                           : "text-gray-400"
                       }`}
@@ -140,12 +142,12 @@ export function AgentsSidebar({
                     <div className="flex-1 min-w-0">
                       <p
                         className={`text-sm font-medium truncate ${
-                          agentId === agent.agentId
+                          agentId === agent.id
                             ? "text-blue-300"
                             : "text-white"
                         }`}
                       >
-                        {agent.agentId}
+                        {agent.name}
                       </p>
                       {agent.modifiedAt && (
                         <p className="text-xs text-gray-500 mt-0.5">

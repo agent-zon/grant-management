@@ -84,7 +84,7 @@ function buildMcpCard(destinationName: string, tools: { name: string; descriptio
       title: t.name,
       description: t.description ?? "",
       inputSchema: t.inputSchema ?? { type: "object", properties: {} },
-    })),
+    }))
   };
 }
 
@@ -212,7 +212,12 @@ export async function RESOURCES_CONNECT_PICKER(this: any, req: cds.Request) {
     ));
   }
   return render(req, (
-    <div id="connect-picker" className="space-y-3 content-fade-in">
+    <div id="connect-picker" className="space-y-3 content-fade-in"      
+    hx-get="agents/{agent}/versions/{version}/resources/connecter"
+    hx-trigger="connect from:body"
+    hx-swap="morph:outerHTML"
+    hx-vals="js:{ agent: event?.detail?.agent, version: event?.detail?.version }"
+>
       <div id="connect-error-slot" className="min-h-0 shrink-0" />
       <p className="text-xs font-medium text-gray-600">Select an MCP destination to connect</p>
       {destinations.length === 0 ? (

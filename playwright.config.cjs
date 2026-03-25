@@ -36,5 +36,13 @@ module.exports = defineConfig({
       },
       dependencies: ['setup'],
     },
+    {
+      name: 'connection-management',
+      testMatch: /connection-management\.spec\.js/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'https://connection-managment-sdyz.bolt.host',
+      },
+    },
   ],
 });

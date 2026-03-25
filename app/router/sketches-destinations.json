@@ -1,0 +1,9 @@
+[
+  { "name": "connection-managment", "url": "https://connection-managment-sdyz.bolt.host" , "description": "Possible experience for connection management for business users, showing the “magic” effect on smart apps." },
+  { "name": "role-propagation", "url": "https://light-theme-consent-4b50.bolt.host" , "description": "Explains the role propagation scenarios and their design. Follow the different stories using the “Start Wizard“ controls." },
+  { "name": "consent-requests", "url": "https://agent-consent-d3j4.bolt.host/workloads" , "description": "Shows pending consent requests and their related workload, and allows to grant or reject - Task Center Like." },
+  { "name": "supply-chain-permission-request", "url": "https://supplier-contact-app-tb5n.bolt.host" , "description": "Example of an informed, time-bound decision to grant an agent an additional role to perform a specific task." },
+  { "name": "agent-grant-e2e", "url": "https://agent-consent-d3j4.bolt.host" , "description": "Agent Grant E2E- Does not work." },
+  { "name": "governance", "url": "https://control.ai.authz.id" , "description": "Meta Control Center for AI Governance." }
+
+] 
