@@ -48,6 +48,7 @@ export default class Service extends cds.ApplicationService {
     this.on("authentication", AUTH);
     // Register a new MCP server destination (dedicated route for HTMX)
     this.on("POST", REGISTER);
+    //@ts-ignore
     this.on("READ", destinations, LIST);
     this.on("READ", destinations, GET );
 

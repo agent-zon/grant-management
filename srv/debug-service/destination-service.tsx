@@ -1,8 +1,7 @@
 import {registerDestination, useOrFetchDestination} from "@sap-cloud-sdk/connectivity";
 import cds, {ApplicationService} from "@sap/cds";
-import {Destinations} from "#cds-models/sap/scai/debug/DestinationService";
+import {Destinations,Destination} from "#cds-models/sap/scai/debug/DestinationService";
 import * as util from "node:util";
-import {Destination} from "#cds-models/sap/scai/debug";
 import {isNativeError} from "node:util/types";
 import {Entity} from "#cds-models/_";
  // import {DestinationCds} from "#cds-models/sap/scai/grants";

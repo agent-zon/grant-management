@@ -19,34 +19,75 @@ import {
 } from "#cds-models/sap/scai/destinations/DestinationManagementService";
 import { CdsMap } from "#cds-models/_";
 
-// ----- Helpers -----
 
-interface DiscoveredTool {
-  name: string;
-  description?: string;
-  inputSchema?: object;
-  annotations?: object;
-}
 
-async function fetchDestination(name: string, jwt?: string) {
-  return await useOrFetchDestination({
-    destinationName: name,
-    jwt,
-    selectionStrategy: subscriberFirst,
-  }) as destination;
+// ----- GET single destination (detail page + discover action) -----
+
+export async function GET(
+  this: DestinationManagementService,
+  ...[req, next]: Parameters<DestinationsHandlerSingle>
+): Promise<void | destination | Error | Response> {
+  // Single destination detail — only handle single-entity reads
+
+  const { name, tools, discoveryError, authTokens, url, ...destination } =
+    req.data as destination || {}; // Handle the discover action
+
+  if (name) {
+    return render(
+      req,
+      <div className="min-h-screen bg-gray-50 text-gray-900">
+      <div className="container mx-auto px-4 py-6 max-w-4xl space-y-6">
+        {/* Header */}
+        <div className="flex items-center space-x-3">
+          <a
+            href="/inspect/destinations"
+            className="w-10 h-10 bg-white hover:bg-gray-100 rounded-xl flex items-center justify-center transition-colors border border-gray-200 shadow-sm"
+          >
+            <span className="text-lg text-gray-600">←</span>
+          </a>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Tool Discovery</h1>
+            <p className="text-sm text-gray-500">
+              <span className="font-mono">{name}</span> — {url}
+            </p>
+          </div>
+        </div>
+
+        <DestinationInfo name={name} url={url} tools={tools} discoveryError={discoveryError} {...destination} />
+
+         {/* Auth Tokens */}
+         <AuthInfo authTokens={authTokens} />
+
+        {/* Discovered Tools */}
+        <ToolsView name={name} url={url} tools={tools} discoveryError={discoveryError} {...destination} />
+
+        <a
+          href="/inspect/destinations"
+          className="inline-flex items-center space-x-2 px-5 py-2.5 bg-white hover:bg-gray-100 text-gray-600 rounded-xl transition-colors border border-gray-200 text-sm shadow-sm"
+        >
+          <span>←</span>
+          <span>Back to Registry</span>
+        </a>
+      </div>
+    </div>,
+    ) as unknown as Response;
+  }
+  return await next(req);
 }
+ 
 
 export async function Destination(
   this: DestinationManagementService,
   ...[req, next]: Parameters<DestinationsHandlerSingle>
 ): Promise<void | destination | Error | Response> {
+
   let { name, destinationName } = {
     ...req.params.reduce((acc, curr) => {
       acc[curr.name] = curr.value;
       return acc;
     }, {} as Record<string, any>),
     ...req.data,
-  };
+  } as { name?: string, destinationName?: string };
   destinationName ??= name;
   console.log("🚀 Destination Handler-before", destinationName, req.data);
   const jwt = req.user?.authInfo?.token?.jwt;
@@ -66,10 +107,18 @@ export async function Destination(
     }
   }
   return await next(req);
+
+  async function fetchDestination(name: string, jwt?: string) {
+    return await useOrFetchDestination({
+      destinationName: name,
+      jwt,
+      selectionStrategy: subscriberFirst,
+    }) as destination;
+  }
 }
 
 export async function Discovery(
-  this: DestinationManagementService,
+  this: cds.ApplicationService,
   ...[req, next]: Parameters<DestinationsHandlerSingle>
 ): Promise<void | destination | Error | Response> {
   if (req.data?.url) {
@@ -132,6 +181,8 @@ export async function Tools(
   }
   return await next(req);
 }
+
+
 
 function DestinationInfo({ name, url, tools, discoveryError, ...destination } : destination) {
   return   <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
@@ -207,8 +258,8 @@ function  ToolsView({ name, url, tools, discoveryError, ...destination } : desti
           {tools?.length} tool{tools?.length !== 1 ? "s" : ""} discovered
         </span>
         <a
-          href={`${encodeURIComponent(name)}/discover`}
-          hx-get={`${encodeURIComponent(name)}/discover`}
+          href={`${encodeURIComponent(name || "")}/discover`}
+          hx-get={`${encodeURIComponent(name || "")}/discover`}
           hx-target="#tools-container"
           hx-swap="innerHTML"
           className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-medium rounded-lg transition-colors border border-purple-200"
@@ -288,64 +339,7 @@ function  ToolsView({ name, url, tools, discoveryError, ...destination } : desti
   </div>  
 }
 
-// ----- GET single destination (detail page + discover action) -----
-
-export async function GET(
-  this: DestinationManagementService,
-  ...[req, next]: Parameters<DestinationsHandlerSingle>
-): Promise<void | destination | Error | Response> {
-  // Single destination detail — only handle single-entity reads
-
-  const { name, tools, discoveryError, authTokens, url, ...destination } =
-    req.data as destination || {}; // Handle the discover action
-
-  if (name) {
-    return render(
-      req,
-      <div className="min-h-screen bg-gray-50 text-gray-900">
-      <div className="container mx-auto px-4 py-6 max-w-4xl space-y-6">
-        {/* Header */}
-        <div className="flex items-center space-x-3">
-          <a
-            href="/inspect/destinations"
-            className="w-10 h-10 bg-white hover:bg-gray-100 rounded-xl flex items-center justify-center transition-colors border border-gray-200 shadow-sm"
-          >
-            <span className="text-lg text-gray-600">←</span>
-          </a>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">Tool Discovery</h1>
-            <p className="text-sm text-gray-500">
-              <span className="font-mono">{name}</span> — {url}
-            </p>
-          </div>
-        </div>
-
-        <DestinationInfo name={name} url={url} tools={tools} discoveryError={discoveryError} {...destination} />
-
-         {/* Auth Tokens */}
-         <AuthInfo authTokens={authTokens} />
-
-        {/* Discovered Tools */}
-        <ToolsView name={name} url={url} tools={tools} discoveryError={discoveryError} {...destination} />
-
-        <a
-          href="/inspect/destinations"
-          className="inline-flex items-center space-x-2 px-5 py-2.5 bg-white hover:bg-gray-100 text-gray-600 rounded-xl transition-colors border border-gray-200 text-sm shadow-sm"
-        >
-          <span>←</span>
-          <span>Back to Registry</span>
-        </a>
-      </div>
-    </div>,
-    ) as unknown as Response;
-  }
-  return await next(req);
-}
  
- 
-type Request<
-  TOneOrMany extends destinations | destination = destinations | destination,
-> = cds.Request<TOneOrMany>;
 function AuthInfo({ authTokens }: { authTokens: { type?: string | null; value?: string | null; expiresIn?: string | null; error?: string | null; http_header?: CdsMap | null; }[] | undefined }) {
   return <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
     <div className="flex items-center justify-between mb-4">
