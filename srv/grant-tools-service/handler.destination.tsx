@@ -20,6 +20,7 @@ export default async function (this: GrantToolsService, req: cds.Request<MCPRequ
     jwt: req.user?.authInfo?.token?.jwt,
     selectionStrategy: subscriberFirst,
   });
+  
   console.log("🚀 Destination:", "authTokens:", destination?.authTokens, "name:", destination?.name, "url:", destination?.url);
 
   if (isHttpDestination(destination)) {

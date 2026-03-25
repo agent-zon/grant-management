@@ -5,6 +5,7 @@ import type {
   DestinationManagementService,
 } from "./destination-service";
 import { DestinationWithoutToken, getAllDestinationsFromDestinationService } from "@sap-cloud-sdk/connectivity";
+import { destination } from "#cds-models/sap/scai/destinations/DestinationManagementService";
 
 export async function LIST(
   this: DestinationManagementService,
@@ -19,6 +20,8 @@ export async function LIST(
     const destinations = filterMcpServers(await getAllDestinationsFromDestinationService({
       jwt: req.user?.authInfo?.token?.jwt,
     }));
+
+    req.data=destinations;
 
 
     if (req?.http?.req.accepts("html")) {
@@ -188,7 +191,9 @@ export async function LIST(
 
   return await next(req);
 }
-function filterMcpServers(destinations: DestinationWithoutToken[]) {
-  return destinations.filter((d) => d.url && d.originalProperties?.kind === "mcp");
+
+type MCPDestination = DestinationWithoutToken & typeof destination & {name: string};
+function filterMcpServers(destinations: DestinationWithoutToken[]): MCPDestination[]{
+  return destinations.filter((d) => d.url && d.originalProperties?.kind === "mcp").map(e=> e as MCPDestination);
 }
 

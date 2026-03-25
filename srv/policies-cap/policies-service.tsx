@@ -16,6 +16,7 @@ import { pushMiddleware } from "./middleware.policy.push";
 import { default as GET_POLICY } from "./handler.policy";
 import { agents, versions } from "#cds-models/sap/scai/grants/policies/PoliciesService";
 import { GET as GET_PUBLISH, POST as POST_PUBLISH } from "./handler.agents.publish";
+import { Destination, Discovery } from "@/destination-service/handler.detail";
 
 
  
@@ -41,6 +42,9 @@ export default class PoliciesService extends cds.ApplicationService {
     this.before(["READ", "pane", "slot", "card", "connect", "connecter","toggle", "enable", "disable" , "constraints", "constraintValues"], "resources", compose(paramsToData, agentsDataMiddleware,policyMiddleware, resourcesMiddleware));
     this.on("READ", "resources", RESOURCES_PANE);
     this.on("pane", "resources", RESOURCES_PANE);
+
+    this.on("connect", "resources", Destination);
+    this.on("connect", "resources", Discovery);
 
     this.on("connect", "resources", ADD_RESOURCE);
     this.on("connecter", "resources", RESOURCES_CONNECT_PICKER);

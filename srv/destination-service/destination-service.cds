@@ -12,14 +12,16 @@ namespace sap.scai.destinations;
 service DestinationManagementService {
 
     @cds.persistence.skip
-    entity destinations as projection on debug.Destinations actions {
+    entity destinations as projection on debug.MCPResource actions {
         function draft(in: many $self) returns String;
 
 function authentication(in: many $self, type : String) returns String;
 
 function discovery(destination: $self) returns String;
-
+function tools(destination: $self) returns String;
+@Core.MediaType: 'text/html'
 function bind(destination: $self,agent: String) returns String;
+
 
 
 }

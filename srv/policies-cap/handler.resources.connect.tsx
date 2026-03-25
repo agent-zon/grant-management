@@ -8,6 +8,7 @@ import { getAllDestinationsFromDestinationService } from "@sap-cloud-sdk/connect
 import type { DestinationWithoutToken } from "@sap-cloud-sdk/connectivity";
 import { ensureBranchExists } from "./middleware.policy.push";
 import { McpCard } from "../../mcp-card";
+import DestinationManagementService, { destination, destinations } from "#cds-models/sap/scai/destinations/DestinationManagementService";
 
 const GIT = { owner: "AIAM", repo: "policies" };
 
@@ -28,38 +29,53 @@ export async function discoverToolsFromDestination(
   destinationName: string,
   baseUrl: string,
   jwt: string
-): Promise<{ name: string; description?: string; inputSchema?: object }[]> {
-  const url = new URL(`${baseUrl}/grants/mcp`);
-  const transport = new StreamableHTTPClientTransport(url, {
-    requestInit: {
-      headers: {
-        Authorization: `Bearer ${jwt}`,
-        "x-destination": destinationName,
-      },
+): Promise< destination['tools']> {
+  const destinationService = await cds.connect.to(DestinationManagementService, {
+    credentials: {
+      jwt: jwt,
+      headers:{ "Accept":"application/json"}
     },
   });
-
-  const client = new Client({
-    name: `discover:${destinationName}`,
-    version: "1.0.0",
-    description: `Tool discovery for ${destinationName}`,
-  });
-
   try {
-    await client.connect(transport);
-    const { tools } = await client.listTools();
-    return tools ?? [];
-  } finally {
-    try {
-      await client.close();
-    } catch {
-      /* ignore */
-    }
+    const  destination= await destinationService.read(`destinations`, destinationName) as destination;
+    const {tools, name, url, authTokens} = destination || {name:"damm"};
+    console.log("🚀 Tools:", tools, url, name, authTokens);
+    return tools ?? []  
+  } catch (error) {
+    console.error("🚀 Error:", error);
+    throw new Error(`Failed to discover tools from destination ${destinationName}: ${error}`);
   }
+ 
+  // const transport = new StreamableHTTPClientTransport(url, {
+  //   requestInit: {
+  //     headers: {
+  //       Authorization: `Bearer ${jwt}`,
+  //       "x-destination": destinationName,
+  //     },
+  //   },
+  // });
+
+  // const client = new Client({
+  //   name: `discover:${destinationName}`,
+  //   version: "1.0.0",
+  //   description: `Tool discovery for ${destinationName}`,
+  // });
+
+  // try {
+  //   await client.connect(transport);
+  //   const { tools } = await client.listTools();
+  //   return tools ?? [];
+  // } finally {
+  //   try {
+  //     await client.close();
+  //   } catch {
+  //     /* ignore */
+  //   }
+  // }
 }
 
 /** Build MCP card YAML from discovery result. Destination-backed: uses /grants/mcp with x-destination. */
-function buildMcpCard(destinationName: string, tools: { name: string; description?: string; inputSchema?: object }[]) {
+function buildMcpCard(destinationName: string, tools: destination['tools']) {
   const slug = destinationName.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || "mcp";
   return {
     $schema: "https://static.modelcontextprotocol.io/schemas/2025-12-11/server-card.schema.json",
@@ -79,7 +95,7 @@ function buildMcpCard(destinationName: string, tools: { name: string; descriptio
     capabilities: { tools: {}, resources: {} },
     authentication: { required: true, schemas: ["oauth2", "bearer"] },
     _meta: { "sap/destination": destinationName, "sap/enabled": true },
-    tools: tools.map((t) => ({
+    tools: tools?.map((t) => ({
       name: t.name,
       title: t.name,
       description: t.description ?? "",
@@ -89,23 +105,24 @@ function buildMcpCard(destinationName: string, tools: { name: string; descriptio
 }
 
 /** Create MCP card file and add to manifest. */
-export async function connectResourceToAgent(
-  agentId: string,
-  ref: string,
-  destinationName: string,
-  baseUrl: string,
-  jwt: string
+export async function connectResourceToAgent( agentId,
+  ref, {
+ 
+  tools,
+  name,
+  url,
+  authTokens,
+}:{
+   tools: destination['tools'],
+  name: string,
+  url: string,
+  authTokens: destination['authTokens']}
 ): Promise<McpCard> {
   const octokit = await getOctokit();
   await ensureBranchExists(octokit, ref);
 
-  const tools = await discoverToolsFromDestination(destinationName, baseUrl, jwt);
-  if (tools.length === 0) {
-    throw new Error(`No tools discovered from destination ${destinationName}`);
-  }
-
-  const card = buildMcpCard(destinationName, tools);
-  const name = (card.serverInfo as any).name;
+ 
+  const card = buildMcpCard(name, tools);
   const fileName = `${name}.yaml`;
   const refFile = `./mcps/${fileName}`;
   const cardPath = `${agentId}/mcps/${fileName}`;
@@ -120,7 +137,7 @@ export async function connectResourceToAgent(
   await octokit.rest.repos.createOrUpdateFileContents({
     ...GIT,
     path: cardPath,
-    message: `Agent ${agentId}: add MCP resource from destination ${destinationName}`,
+    message: `Agent ${agentId}: add MCP resource from destination ${name}`,
     content: Buffer.from(cardContent, "utf8").toString("base64"),
     ...(cardSha ? { sha: cardSha } : {}),
     branch: ref,
@@ -151,23 +168,19 @@ export async function connectResourceToAgent(
   }
   const slug = `agents/${agentId}/versions/${ref}/resources/${encodeURIComponent(name)}`;
 
-  return {   ...card , links: { slug: slug, content: `${slug}/card`, enable: `${slug}/enable`, disable: `${slug}/disable` } };
+  return {   ...card , links: { slug: slug, content: `${slug}/card`, enable: `${slug}/enable`, disable: `${slug}/disable` } } as McpCard;
 }
 
 /** POST versions/connect → discovery, create card, update manifest, return refreshed pane. */
 export async function ADD_RESOURCE(this: any, req: cds.Request) {
   const { agentId, version, ref } = req.data || {};
-  const destinationName = req.data?.destinationName ?? (req.params as any)?.destinationName;
-  if (!agentId || !destinationName) {
-    return req.reject(400, "Missing agentId or destinationName");
-  }
-  const branch = ref ?? version ?? "main";
-  const jwt = (req as any).user?.authInfo?.token?.jwt;
-  if (!jwt) return req.reject(401, "Unauthorized");
-  const baseUrl = `${req.http?.req?.protocol || "https"}://${req.http?.req?.headers?.host || "localhost"}`;
+  console.log("🚀 ADD_RESOURCE", req.data);
+  const {tools, name, url, authTokens} = req.data as destination || {};
+  // if (!agentId || !name) {
+  //   return req.reject(400, "Missing agentId or destinationName /n \n" + JSON.stringify(req.data,null,2));
+  // }
   try {
-    req.data.resource = await connectResourceToAgent(agentId, branch, destinationName, baseUrl, jwt);
-
+    req.data.resource = await connectResourceToAgent(agentId, ref,  req.data as any);
   } catch (err) {
     if (req.http?.req.accepts("html")) {
       req.http?.res?.setHeader("HX-Retarget", "#connect-status-slot");

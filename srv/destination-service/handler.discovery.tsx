@@ -10,8 +10,8 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 export default async function discoverTools(
   req: cds.Request<{ name: string }>
 ) {
-  const { name: destination } = req.params[0];
-
+  const { name: destination } = req.params[0] || req.data as any;
+  
   const url = new URL(`${req.http?.req.protocol}://${req.http?.req.headers.host}/grants/mcp`);
   const transport = new StreamableHTTPClientTransport(url, {
     requestInit: {
