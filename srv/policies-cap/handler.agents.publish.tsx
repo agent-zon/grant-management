@@ -12,7 +12,7 @@ export async function GET(this: any, req: cds.Request) {
       hx-get={`agents/{agent}/versions/{version}/publisher`}
       hx-vals="js:{ version: event?.detail?.version, agent: event?.detail?.agent }"
       hx-swap="outerHTML"
-      hx-trigger="agentSelected from:body"
+      hx-trigger="agent-selected from:body"
     >
       <div id="publish-toast" className="min-w-0" />
       <button

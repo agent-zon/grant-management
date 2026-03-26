@@ -47,7 +47,7 @@ export async function TEST(this: any, req: cds.Request) {
           className="relative space-y-5 content-fade-in"
           hx-get={`agents/{agent}/versions/{version}/tools`}
           hx-vals="js:{ version: event?.detail?.version, agent: event?.detail?.agent }"
-          hx-trigger="agentSelected from:body"
+          hx-trigger="agent-selected from:body"
           hx-swap="innerHTML"
           hx-select="#tools-section"
         >

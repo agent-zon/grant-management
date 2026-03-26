@@ -188,11 +188,9 @@ export async function RESOURCES_PANE(this: any, req: cds.Request) {
     <div
       id="resources-pane"
       className="flex flex-col gap-4 min-h-0 flex-1 content-fade-in"
-      data-agent="{agentId}"
-      data-version="{version}"
       hx-get="agents/{agent}/versions/{version}/resources/pane"
       hx-vals="js:{ version: event?.detail?.version, agent: event?.detail?.agent }"
-      hx-trigger="agentSelected from:body, resource-updated from:body"
+      hx-trigger="agent-selected from:body, resource-updated from:body"
       hx-swap="morph:outerHTML"
     >
       <div className="flex-1 min-h-0 space-y-3 overflow-y-auto pr-1">

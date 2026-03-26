@@ -52,14 +52,14 @@ The policies CAP service uses **HTMX** with the **path-params** extension for ev
 - Provide values via `hx-vals` from the triggering event or DOM:
   - From custom events: `hx-vals="js:{ agent: event?.detail?.agent, version: event?.detail?.version }"`
   - From DOM data: `hx-vals="js:(()=>{const p=document.getElementById('resources-pane');return{agent:p?.dataset?.agent,version:p?.dataset?.version};})()"`
-- Use `hx-trigger` for event-driven reloads (e.g. `agentSelected from:body`, `resource-updated from:body`).
+- Use `hx-trigger` for event-driven reloads (e.g. `agent-selected from:body`, `resource-updated from:body`).
 - Requires `hx-ext="path-params"` on a parent (e.g. `body`). See `srv/render/index.tsx`.
 
 **Example:**
 ```tsx
 hx-get="agents/{agent}/versions/{version}/resources/pane"
 hx-vals="js:{ agent: event?.detail?.agent, version: event?.detail?.version }"
-hx-trigger="agentSelected from:body, resource-updated from:body"
+hx-trigger="agent-selected from:body, resource-updated from:body"
 ```
 
 ## 📚 API Documentation

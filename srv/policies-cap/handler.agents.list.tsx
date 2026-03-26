@@ -121,7 +121,7 @@ export async function SELECT(this: any, req: cds.Request) {
   const { agent } = req.data;
   const { id, name } = agent || {}
   const version = versionFromRequest(req);
-  req.http?.res.header("HX-Trigger", JSON.stringify({ agentSelected: { agent: id, version: version }, }));
+  req.http?.res.header("HX-Trigger", JSON.stringify({ "agent-selected": { agent: id, version: version }, }));
   req.http?.res.header("HX-Push-Url", `${req.http?.req.originalUrl.replace(/\/select/, '')}`);
 
   return render(
@@ -129,7 +129,7 @@ export async function SELECT(this: any, req: cds.Request) {
     <div
       className="flex items-center justify-between gap-2 transition-all ease-in-out"
       hx-get={`${req.http?.req.originalUrl.replace(/select/, 'selector')}`}
-      hx-trigger="agentSelected from:body"
+      hx-trigger="agent-selected from:body"
       hx-swap="outerHTML"
       hx-push-url="false"
       hx-target={`#selector-${id}`}

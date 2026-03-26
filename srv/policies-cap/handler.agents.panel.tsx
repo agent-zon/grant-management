@@ -201,7 +201,7 @@ export async function Title(this: any, req: cds.Request) {
       className="relative flex flex-col gap-1 min-w-0 content-fade-in"
       hx-get={`agents/{agent}/versions/{version}/title`}
       hx-vals="js:{ version: event?.detail?.version, agent: event?.detail?.agent }"
-      hx-trigger="agentSelected from:body"
+      hx-trigger="agent-selected from:body"
       hx-swap="innerHTML"
     >
       <h2 className="text-xl font-bold text-gray-900 font-mono truncate" >

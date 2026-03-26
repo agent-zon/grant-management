@@ -104,7 +104,7 @@ export async function RULES(req: cds.Request) {
       className="relative space-y-5 content-fade-in"
       hx-get={`agents/{agent}/versions/{version}/rules`}
       hx-vals="js:{ version: event?.detail?.version, agent: event?.detail?.agent }"
-      hx-trigger="agentSelected from:body"
+      hx-trigger="agent-selected from:body"
       hx-swap="outerHTML"
     >
       <input type="hidden" name="odrl" value={JSON.stringify(odrlSet)} />

@@ -4,7 +4,7 @@ import { render } from "#cds-ssr";
 /** GET /admin/dashboard() or /admin/policies → layout inline: sidebar [hx-get=agents], policy pane (empty state). */
 export async function DASHBOARD(this: any, req: cds.Request) {
   const { agent } = req.data;
-  req.http?.res?.header("HX-Trigger-After-Swap", JSON.stringify({ agentSelected: { agent: agent?.id }, }));
+  req.http?.res?.header("HX-Trigger-After-Swap", JSON.stringify({ "agent-selected": { agent: agent?.id }, }));
 
   return render(
     req,
@@ -46,7 +46,7 @@ export async function DASHBOARD(this: any, req: cds.Request) {
           id="policy-panel"
           className="relative flex-1 overflow-y-auto bg-gray-50"
           hx-get={`agents/{agent}/versions/{version}/edit`}
-          hx-trigger="agentSelected from:body"
+          hx-trigger="agent-selected from:body"
           hx-swap="outerHTML"
           hx-vals={`js:{ version: event?.detail?.version,agent: event?.detail?.agent}`}
         >
@@ -59,7 +59,7 @@ export async function DASHBOARD(this: any, req: cds.Request) {
         {/* <div id="rules-container" 
             hx-get="agents/{agent}/versions/{version}/rules" 
             hx-vals={`js:{ version: event?.detail?.version,agent: event?.detail?.agent}`} 
-            hx-trigger="agentSelected from:body" 
+            hx-trigger="agent-selected from:body" 
             hx-swap="innerHTML" 
             className="min-h-[8rem]" /> */}
       </div>
