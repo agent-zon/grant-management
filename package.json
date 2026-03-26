@@ -128,7 +128,7 @@
   "inspector:mcp": "npx @modelcontextprotocol/inspector  --config ./mcps.json --server grant-management",
   "compile:mcp": "npx cds compile srv --service all -2 edmx > grants-management.edmx",
   "token:destination": "node scripts/get-destination-token.js",
-  "token:client-credentials:access_token": "npm run token:client-credentials --silent | jq -r '.access_token'",
+  "token:client-credentials:access_token": "npm run token:client-credentials --silent 2>/dev/null | tail -1",
   "token:client-credentials": "npx cds bind --profile hybrid --exec -- ias-token client-credentials ",
   "token:password:id_token": "npm run token:password --silent | jq -r '.id_token'",
   "token:password:access_token": "npm run token:password --silent | jq -r '.access_token'",

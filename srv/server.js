@@ -107,10 +107,7 @@ cds.on("bootstrap", (app) => {
     if (req.method === "GET" && path?.endsWith("/mcp")) {
       console.log("🚀 MCP Endpoint GET detected - returning 405");
       res.set("Allow", "POST");
-      res.status(405).json({
-        error: "Method Not Allowed",
-        message: "MCP endpoint accepts POST only. Use POST with JSON-RPC body.",
-      });
+      
       return;
     }
     next();

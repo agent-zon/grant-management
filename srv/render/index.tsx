@@ -33,6 +33,9 @@ export const htmlTemplate = (reactContent: string, baseHref?: string ) => `
         /* Fade-in for loaded content */
         .content-fade-in { animation: content-fade-in 0.25s ease-out forwards; }
         @keyframes content-fade-in { from { opacity: 0; } to { opacity: 1; } }
+        /* HTMX request indicators (hx-indicator / .htmx-indicator) */
+        .htmx-indicator { opacity: 0; transition: opacity 160ms ease-out; }
+        .htmx-indicator.htmx-request { opacity: 1; }
     </style>
 
 

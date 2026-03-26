@@ -122,6 +122,7 @@ export async function fetchResourceById(
     update: async (e: boolean) => {
       await updateResourceFileEnabled(agentId, ref, entry.name, entry.refFile, r.sha, e);
     },
+    ...mcp
   };
   return r;
 }

@@ -49,7 +49,7 @@ service PoliciesService {
       action   disable() returns String;
       function constraints(version: $self)                                                                              returns String;
       action   values(version: $self, constraint: String)                                                    returns String;
-
+      function tools(in: many $self) returns String;
     };
 
 }

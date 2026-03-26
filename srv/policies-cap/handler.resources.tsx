@@ -1,5 +1,6 @@
 import cds from "@sap/cds";
 import { render, sendHtml } from "#cds-ssr";
+import { agent } from "#cds-models/sap/scai/grants/policies/PoliciesService";
 
 /** GET Policies/.../resources → <option> elements for the datalist (MCP servers only). */
 export async function RESOURCES(this: any, req: cds.Request) {
@@ -40,7 +41,23 @@ export async function RESOURCES_ENABLE(this: any, req: cds.Request) {
   if (req.http?.res) {
     req.http.res.setHeader(
       "HX-Trigger",
-      JSON.stringify({ "resource-enabled": { agentId, version, resource } }),
+      JSON.stringify({
+        "resource-enabled": {
+          agent: agentId,
+          version,
+          resource: resource.name,
+        },
+      }),
+    ), 
+    req.http.res.setHeader(
+      "HX-Trigger",
+      JSON.stringify({
+        [`resource-${resource.name}-updated`]: {
+          agent: agentId,
+          version,
+          resource: resource.name,
+        },
+      }),
     );
   }
   return render(
@@ -67,9 +84,20 @@ export async function RESOURCES_DISABLE(this: any, req: cds.Request) {
       "HX-Trigger",
       JSON.stringify({
         "resource-disabled": {
-          agentId: agent?.id ?? req.data?.agentId,
+          agent: agent?.id ?? req.data?.agentId,
           version,
-          resource,
+          resource: resource.name,
+        },
+      }),
+    ),
+  
+    req.http.res.setHeader(
+      "HX-Trigger",
+      JSON.stringify({
+        [`resource-${resource.name}-updated`]: {
+          agent: agent?.id ?? req.data?.agentId,
+          version,
+          resource: resource.name,
         },
       }),
     );
@@ -239,5 +267,4 @@ export async function RESOURCES_PANE(this: any, req: cds.Request) {
       </div>
     ));
   }
-
 }
