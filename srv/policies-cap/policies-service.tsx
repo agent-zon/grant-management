@@ -8,6 +8,7 @@ import { RESOURCES_CONNECT_PICKER, ADD_RESOURCE } from "./handler.resources.conn
 import { ADD_RULE, REMOVE_RULE, RULES } from "./handler.policy.rules";
 import { CONSTRAINTS, CONSTRAINT_VALUES, RESOURCE_CONSTRAINTS, RESOURCE_CONSTRAINT_VALUES } from "./handler.policy.constraints";
 import { TEST } from "./handler.agents.test";
+import { Tools } from "./handler.resources.tools";
 import { USE } from "./handler.agents.use";
 import { agentsDataMiddleware, paramsToData } from "./middleware.agents";
 import policyMiddleware from "./middleware.policy";
@@ -17,7 +18,6 @@ import { default as GET_POLICY } from "./handler.policy";
 import { agents, versions } from "#cds-models/sap/scai/grants/policies/PoliciesService";
 import { GET as GET_PUBLISH, POST as POST_PUBLISH } from "./handler.agents.publish";
 import { Destination, Discovery } from "@/destination-service/handler.detail";
-import { Tools } from "./handler.agents.test";
 
  
 
