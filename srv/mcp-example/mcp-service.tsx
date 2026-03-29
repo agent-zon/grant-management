@@ -4,7 +4,7 @@ import cds from "@sap/cds";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import callback from "./handler.callback";
 import grant from "./handler.grant";
-import { errorHandler, logHandler } from "@/mcp-service/handelr.debug";
+import { errorHandler, logHandler } from "@/mcp-example/handelr.debug";
 import mcp from "./handler.mcp";
 import meta from "./handler.meta";
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};

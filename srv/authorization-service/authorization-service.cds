@@ -9,9 +9,9 @@ using sap.scai.grants as grants from '../../db/grants.cds';
 @Core.LongDescription: 'Authorization Server endpoints for authorization, PAR, and token exchange with Rich Authorization Requests (RAR) support and grant_id propagation.'
 @OpenAPI.externalDocs: { description: 'Playground', url: '/demo/index' }
 service AuthorizationService {
-     @cds. redirection.target
+     @cds.redirection.target
     entity AuthorizationRequests as projection on grants.AuthorizationRequests;
-    @requires: ['authenticated-user', 'system-user'] 
+    // @requires: ['authenticated-user', 'system-user'] 
     entity Consents as projection on grants.Consents;
  
     

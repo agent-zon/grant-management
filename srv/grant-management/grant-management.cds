@@ -8,7 +8,7 @@ namespace sap.scai.grants;
 @OpenAPI.externalDocs: { description: 'User Dashboard', url: '/grants-management/Grants' }
 @protocol: 'rest'
 @path: '/grants-management' 
-@requires: ['authenticated-user', 'system-user']
+// @requires: ['authenticated-user', 'system-user']
 @impl: './grant-management.tsx'
 service GrantsManagementService {
    

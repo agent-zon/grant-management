@@ -1,11 +1,8 @@
-
 Object.keys(process.env).forEach((key) => {
   const value = process.env[key];
   // Remove any env vars that look like Kubernetes service URLs (tcp://host:port)
   if (typeof value === "string" && value.startsWith("tcp://")) {
-    console.log(
-      `[ENV ] K8s env var: ${key}=${value}`
-    );
+    console.log(`[ENV ] K8s env var: ${key}=${value}`);
     // delete process.env[key];
   }
 });
@@ -16,6 +13,8 @@ import path from "path";
 import bodyParser from "body-parser";
 import methodOverride from "method-override";
 import React from "react";
+import { getRequestListener } from "@hono/node-server";
+import mcpApp from "./mcp-service/app.tsx";
 // Make React available globally for JSX in handlers
 global.React = React;
 
@@ -30,17 +29,24 @@ if (fs.existsSync(githubPath) && fs.statSync(githubPath).isDirectory()) {
       return fs.existsSync(p) ? fs.readFileSync(p, "utf8").trim() : undefined;
     };
     const token = read("token") || read("access_token") || read("password");
-    const url = read("url") || read("api_url") || "https://github.tools.sap/api/v3";
+    const url =
+      read("url") || read("api_url") || "https://github.tools.sap/api/v3";
     if (token) {
       if (!cds.env.requires) cds.env.requires = {};
-      if (!cds.env.requires.github) cds.env.requires.github = { kind: "rest", credentials: {} };
-      if (!cds.env.requires.github.credentials) cds.env.requires.github.credentials = {};
+      if (!cds.env.requires.github)
+        cds.env.requires.github = { kind: "rest", credentials: {} };
+      if (!cds.env.requires.github.credentials)
+        cds.env.requires.github.credentials = {};
       cds.env.requires.github.credentials.token = token;
       cds.env.requires.github.credentials.url = url;
       cds.env.requires.github.kind = cds.env.requires.github.kind || "rest";
     }
   } catch (e) {
-    console.warn("[server] Could not read github binding from", githubPath, e.message);
+    console.warn(
+      "[server] Could not read github binding from",
+      githubPath,
+      e.message,
+    );
   }
 }
 
@@ -64,22 +70,43 @@ process.on("unhandledRejection", (reason, promise) => {
   // Don't exit the process - keep the service running
 });
 
-
-
 cds.on("bootstrap", (app) => {
   // add your own middleware before any by cds are added
   // for example, serve static resources incl. index.html
 
-  // IMPORTANT: Parse urlencoded BEFORE anything else
+  // ── MCP endpoint (Hono app) ──────────────────────────────────────────────
+  // Mounted BEFORE bodyParser so the raw body stream is available to
+  // getRequestListener → createMcpHandler (which reads req.body itself).
+  const mcpListener = getRequestListener(mcpApp.fetch);
+  app.use(
+    "/mcp",
+    cds.middlewares.before,
+    async (req, res, next) => {
+      try {
+        await mcpListener(req, res);
+      } catch (e) {
+        next(e);
+      }
+    },
+    cds.middlewares.after,
+  );
+
+  // IMPORTANT: Parse urlencoded BEFORE anything else (but after MCP handler)
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json({ extended: true }));
-
 
   // Rewrite GET /admin/policies → /admin/dashboard() for dashboard layout
   app.use((req, _res, next) => {
     const raw = (req.originalUrl || req.url || "").split("?")[0];
-    if (req.method === "GET" && (raw === "/admin/policies" || raw === "/admin/policies/")) {
-      const qs = (req.originalUrl || req.url || "").includes("?") ? (req.originalUrl || req.url).slice((req.originalUrl || req.url).indexOf("?")) : "";
+    if (
+      req.method === "GET" &&
+      (raw === "/admin/policies" || raw === "/admin/policies/")
+    ) {
+      const qs = (req.originalUrl || req.url || "").includes("?")
+        ? (req.originalUrl || req.url).slice(
+            (req.originalUrl || req.url).indexOf("?"),
+          )
+        : "";
       req.url = "/admin/dashboard()" + qs;
       req.path = "/admin/dashboard()";
     }
@@ -89,26 +116,19 @@ cds.on("bootstrap", (app) => {
   // Rewrite versions/key → versions('key') for CAP REST (treats versions.main as key otherwise)
   app.use((req, _res, next) => {
     const raw = (req.originalUrl || req.url || "").split("?")[0];
-    const match = raw.match(/^(\/policies\/AgentPolicies\/[^/]+)\/versions\/([^/'()]+)(\/.*)?$/);
+    const match = raw.match(
+      /^(\/policies\/AgentPolicies\/[^/]+)\/versions\/([^/'()]+)(\/.*)?$/,
+    );
     if (match) {
       const [, prefix, key, rest = ""] = match;
-      const qs = (req.originalUrl || req.url || "").includes("?") ? (req.originalUrl || req.url).slice((req.originalUrl || req.url).indexOf("?")) : "";
+      const qs = (req.originalUrl || req.url || "").includes("?")
+        ? (req.originalUrl || req.url).slice(
+            (req.originalUrl || req.url).indexOf("?"),
+          )
+        : "";
       const newPath = prefix + "/versions('" + key + "')" + rest;
       req.url = newPath + qs;
       req.path = newPath;
-    }
-    next();
-  });
-
-  // MCP action is POST-only; GET hits CDS parse and returns 400, causing client retry loop.
-  // Answer GET /grants/mcp with 405 so clients don't retry and CDS never sees the GET.
-  app.use((req, res, next) => {
-    const path = (req.path || req.url?.split("?")[0] || "").replace(/\/$/, "");
-    if (req.method === "GET" && path?.endsWith("/mcp")) {
-      console.log("🚀 MCP Endpoint GET detected - returning 405");
-      res.set("Allow", "POST");
-      
-      return;
     }
     next();
   });
@@ -161,14 +181,11 @@ cds.on("bootstrap", (app) => {
       const errorMessage = err.message || "Internal Server Error";
       // Check if headers have already been sent
       if (!res.headersSent && req.accepts("json")) {
-
         return res.status(statusCode).json({
           error: errorMessage,
           statusCode,
         });
       }
-
-
     }
   }
 
@@ -177,9 +194,9 @@ cds.on("bootstrap", (app) => {
   // Convert to JSON format that CDS REST protocol expects
   app.use((req, _res, next) => {
     const contentType = req.get("content-type") || "";
-    if (req.path !== '/health')
+    if (req.path !== "/health")
       console.log(
-        `[${new Date(Date.now()).toUTCString()}] [MIDDLEWARE] ${req.method} ${req.path} - Content-Type: ${contentType}`
+        `[${new Date(Date.now()).toUTCString()}] [MIDDLEWARE] ${req.method} ${req.path} - Content-Type: ${contentType}`,
       );
 
     if (contentType.includes("application/x-www-form-urlencoded")) {
@@ -190,7 +207,7 @@ cds.on("bootstrap", (app) => {
           body: req.body,
           path: req.path,
           originalContentType: contentType,
-        }
+        },
       );
 
       if (req.body && typeof req.body === "object") {
@@ -244,7 +261,7 @@ cds.on("bootstrap", (app) => {
         delete req.body._method;
         return method;
       }
-    })
+    }),
   );
 
   // Add global error handler to catch all errors and prevent service crashes
@@ -266,7 +283,7 @@ cds.on("bootstrap", (app) => {
     // Check if headers have already been sent
     if (res.headersSent) {
       console.error(
-        "[ERROR HANDLER] Headers already sent, delegating to default error handler"
+        "[ERROR HANDLER] Headers already sent, delegating to default error handler",
       );
       return next(err);
     }
