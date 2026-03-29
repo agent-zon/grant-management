@@ -1,4 +1,4 @@
-import { Context, Hono } from "hono";
+import { Hono } from "hono";
 import { RegisteredTool } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
@@ -7,7 +7,7 @@ import { inspect } from "node:util";
 import cds from "@sap/cds";
 import type { SessionMeta } from "./middleware.meta";
 import { Env } from "./type";
-import { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 
 // ---------------------------------------------------------------------------
 // Hono sub-app  —  mounted at /:destination/grant by the root app
@@ -15,10 +15,6 @@ import { Tool } from "@modelcontextprotocol/sdk/types.js";
 
 const app = new Hono<Env>();
 
-/**
- * Build the Zod schema for the `tools` input parameter of push-authorization-request.
- * Lists tool names that are NOT yet approved (i.e. not in authorizationDetails).
- */
 function toolsInputSchema(
   tools: Record<string, Tool>,
   authorizationDetails: Record<string, unknown>,
@@ -35,18 +31,63 @@ function toolsInputSchema(
   };
 }
 
-/**
- * Factory: creates an MCP handler that serves grant tools only.
- *
- * Receives `meta` and `authorizationDetails` from the Hono context
- * (set by the meta and grant middlewares upstream).
- */
-function createGrantHandler(
-  c: Context<Env>,
-  pathname: string,
+function pushAuthorizationRequestDescription(requireGrant: string[]) {
+  return [
+    "Some tools are disabled until the user gives permission.",
+    "Use this tool to build an authorization request for one or more tools.",
+    "It returns an authorization URL for user approval.",
+    requireGrant.length
+      ? `Tools requiring authorization (${requireGrant.length}): ${requireGrant.join(", ")}`
+      : "No tools currently require authorization.",
+  ].join(" ");
+}
 
+function applyPushParToolFromDetails(
+  parTool: RegisteredTool,
+  remoteTools: Record<string, Tool>,
+  details: Record<string, unknown>,
 ) {
-  return createMcpHandler(
+  const { schema: toolsSchema, requireGrant } = toolsInputSchema(
+    remoteTools,
+    details,
+  );
+  parTool.update({
+    description: pushAuthorizationRequestDescription(requireGrant),
+    paramsSchema: {
+      tools: toolsSchema.describe("Tools that need user authorization"),
+      redirect_uri: z
+        .string()
+        .default("urn:scai:grant:callback")
+        .describe("Redirect URI for the authorization request"),
+    },
+    outputSchema: {
+      authorization_url: z
+        .string()
+        .optional()
+        .describe("URL for user approval"),
+      request_uri: z.string().optional().describe("Internal request URI"),
+      expires_in: z.number().optional().describe("Seconds until expiry"),
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Route — expects meta + grant middlewares to have run upstream
+// ---------------------------------------------------------------------------
+
+app.all("/", async (c) => {
+  const meta = c.get("meta") as SessionMeta;
+  const authorizationDetails =
+    (c.get("authorization_details") as Record<string, unknown>) || {};
+
+  console.log(
+    `[mcp.grant] ${c.req.method}`,
+    `\n  destination: ${meta.destination}`,
+    `\n  agent: ${meta.agent}`,
+    `\n  grant_id: ${meta.grant_id}`,
+  );
+  const pathname = new URL(c.req.raw.url).pathname;
+  const handler = await createMcpHandler(
     async (server) => {
       const start = Date.now();
       const tools: Record<string, RegisteredTool> = {};
@@ -58,9 +99,10 @@ function createGrantHandler(
         "sap.scai.grants.AuthorizationService",
       );
 
+      const remoteTools = c.get("client")?.tools || {};
       const { schema: toolsSchema, requireGrant } = toolsInputSchema(
-        c.get("client")?.tools || {},
-        c.get("authorization_details"),
+        remoteTools,
+        c.get("authorization_details") as Record<string, unknown>,
       );
 
       // ── push-authorization-request tool ───────────────────────────────────
@@ -68,14 +110,7 @@ function createGrantHandler(
         "push-authorization-request",
         {
           title: "Tool Authorization Request",
-          description: [
-            "Some tools are disabled until the user gives permission.",
-            "Use this tool to build an authorization request for one or more tools.",
-            "It returns an authorization URL for user approval.",
-            requireGrant.length
-              ? `Tools requiring authorization (${requireGrant.length}): ${requireGrant.join(", ")}`
-              : "No tools currently require authorization.",
-          ].join(" "),
+          description: pushAuthorizationRequestDescription(requireGrant),
           inputSchema: {
             tools: toolsSchema.describe("Tools that need user authorization"),
             redirect_uri: z
@@ -135,6 +170,17 @@ function createGrantHandler(
         },
       );
 
+      const watch = c.get("grant.watch");
+      if (watch) {
+        watch((details) => {
+          applyPushParToolFromDetails(
+            tools["push-authorization-request"],
+            remoteTools,
+            details,
+          );
+        });
+      }
+
       // ── authorization-url prompt ──────────────────────────────────────────
       server.registerPrompt(
         "authorization-url",
@@ -170,9 +216,7 @@ function createGrantHandler(
         `\n  tools: ${inspect(Object.keys(tools), { colors: true, compact: true })}`,
         `\n  requireGrant: ${requireGrant.length}`,
       );
-      c.set("tools", tools);
-      c.set("server", server);
-    },
+     },
     {
       serverInfo: {
         name: `grant:${c.get("destination").name}`,
@@ -186,25 +230,6 @@ function createGrantHandler(
       redisUrl: process.env.REDIS_URL,
     },
   );
-}
-
-// ---------------------------------------------------------------------------
-// Route — expects meta + grant middlewares to have run upstream
-// ---------------------------------------------------------------------------
-
-app.all("/", async (c) => {
-  const meta = c.get("meta") as SessionMeta;
-  const authorizationDetails =
-    (c.get("authorization_details") as Record<string, unknown>) || {};
-
-  console.log(
-    `[mcp.grant] ${c.req.method}`,
-    `\n  destination: ${meta.destination}`,
-    `\n  agent: ${meta.agent}`,
-    `\n  grant_id: ${meta.grant_id}`,
-  );
-
-  const handler = createGrantHandler(c, new URL(c.req.raw.url).pathname);
   return handler(c.req.raw);
 });
 

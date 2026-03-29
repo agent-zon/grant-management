@@ -12,6 +12,10 @@ export type Env = {
   Variables: {
     tools: Record<string, RegisteredTool>;
     authorization_details: AuthorizationDetail & AuthorizationDetail["tools"];
+    "grant.refresh": () => Promise<Record<string, unknown>>;
+    "grant.watch": (
+      handler: (details: Record<string, unknown>) => void,
+    ) => () => void;
    };
 } & McpServerEnv & McpClientEnv & McpDestinationEnv & MetaEnv
 

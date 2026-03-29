@@ -16,7 +16,7 @@ import type { SessionMeta } from "./middleware.meta";
 // Expects upstream middleware to have set:
 //   c.get("meta")          — SessionMeta
 //   c.get("destination")   — HttpDestination | null  (from destination middleware)
-//   c.get("mergedHeaders") — Record<string, string>  (from destination middleware)
+//   c.get("destination.headers") — Record<string, string>  (from destination middleware)
 // ---------------------------------------------------------------------------
 
 export default createMiddleware(async (c, next) => {
@@ -76,8 +76,6 @@ export default createMiddleware(async (c, next) => {
       err.message,
       err.stack,
     );
-    c.set("client", null);
-    c.set("remoteTools", []);
   }
 
   return await next();
