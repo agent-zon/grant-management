@@ -11,7 +11,7 @@ using sap.scai.grants as grants from '../../db/grants.cds';
 service AuthorizationService {
      @cds.redirection.target
     entity AuthorizationRequests as projection on grants.AuthorizationRequests;
-    // @requires: ['authenticated-user', 'system-user'] 
+    @requires: ['authenticated-user', 'system-user'] 
     entity Consents as projection on grants.Consents;
  
     
