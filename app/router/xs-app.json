@@ -1,7 +1,6 @@
 {
   "welcomeFile": "./api-docs/index.html",
   "routes": [
-    
     {
       "source": "^/health$",
       "target": "/health.html",

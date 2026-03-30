@@ -1,31 +1,228 @@
 import React, { useState } from "react";
-import { Copy, Download, CheckCircle, FileJson, FileText } from "lucide-react";
-import type { AgentPolicies, OdrlPolicy } from "~/types/policies";
+import {
+  Copy,
+  Download,
+  CheckCircle,
+  FileJson,
+  Shield,
+  ShieldOff,
+  FileText,
+  ChevronRight,
+  Layers,
+  Zap,
+  Target,
+  GitBranch,
+} from "lucide-react";
+import type {
+  AgentPolicies,
+  DcnContainer,
+  DcnPolicy,
+  PolicyRule,
+  PolicyCondition,
+  PolicyConditionArg,
+} from "~/types/policies";
 
 interface PolicyViewerProps {
   agent: AgentPolicies;
   manifest?: string;
 }
 
-type TabType = "odrl" | "yaml" | "manifest";
+type TabType = "dcn" | "rules" | "manifest";
+
+function parsePolicies(raw: string): DcnContainer | DcnPolicy[] | null {
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function extractPolicies(data: DcnContainer | DcnPolicy[] | null): DcnPolicy[] {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  return data.policies ?? [];
+}
+
+function totalRules(policies: DcnPolicy[]): number {
+  return policies.reduce((sum, p) => sum + (p.rules?.length ?? 0), 0);
+}
+
+function totalResources(policies: DcnPolicy[]): number {
+  const resources = new Set<string>();
+  for (const p of policies) {
+    for (const r of p.rules ?? []) {
+      for (const res of r.resources ?? []) {
+        resources.add(res);
+      }
+    }
+  }
+  return resources.size;
+}
+
+function ConditionRenderer({ condition, depth = 0 }: { condition: PolicyCondition; depth?: number }) {
+  const operator = condition.call?.[0] ?? "?";
+
+  return (
+    <div className={`${depth > 0 ? "ml-4 pl-3 border-l border-gray-600/50" : ""}`}>
+      <div className="flex items-center gap-1.5 text-xs">
+        <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 rounded font-mono font-medium">
+          {operator}
+        </span>
+      </div>
+      <div className="mt-1 space-y-1">
+        {condition.args?.map((arg, i) => (
+          <ConditionArgRenderer key={i} arg={arg} depth={depth + 1} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ConditionArgRenderer({ arg, depth }: { arg: PolicyConditionArg; depth: number }) {
+  if (typeof arg === "string" || typeof arg === "number" || typeof arg === "boolean") {
+    return (
+      <div className="ml-4 flex items-center gap-1.5 text-xs text-gray-300">
+        <span className="w-1.5 h-1.5 bg-blue-400 rounded-full flex-shrink-0" />
+        <span className="font-mono">{JSON.stringify(arg)}</span>
+      </div>
+    );
+  }
+
+  if (arg && typeof arg === "object" && "ref" in arg) {
+    return (
+      <div className="ml-4 flex items-center gap-1.5 text-xs">
+        <GitBranch className="w-3 h-3 text-purple-400 flex-shrink-0" />
+        <span className="font-mono text-purple-300">
+          {(arg as { ref: string[] }).ref.join(".")}
+        </span>
+      </div>
+    );
+  }
+
+  if (arg && typeof arg === "object" && "call" in arg) {
+    return <ConditionRenderer condition={arg as PolicyCondition} depth={depth} />;
+  }
+
+  return (
+    <div className="ml-4 text-xs text-gray-500 font-mono">
+      {JSON.stringify(arg)}
+    </div>
+  );
+}
+
+function RuleCard({ rule, index }: { rule: PolicyRule; index: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const isGrant = rule.rule === "grant";
+
+  return (
+    <div className="bg-gray-800/60 rounded-lg border border-gray-700 overflow-hidden">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700/30 transition-colors"
+      >
+        <ChevronRight
+          className={`w-4 h-4 text-gray-400 transition-transform ${expanded ? "rotate-90" : ""}`}
+        />
+        <div className={`flex items-center gap-2 px-2 py-0.5 rounded text-xs font-semibold ${
+          isGrant
+            ? "bg-emerald-500/20 text-emerald-300"
+            : "bg-red-500/20 text-red-300"
+        }`}>
+          {isGrant ? <Shield className="w-3.5 h-3.5" /> : <ShieldOff className="w-3.5 h-3.5" />}
+          {rule.rule.toUpperCase()}
+        </div>
+        <div className="flex-1 text-left">
+          <span className="text-sm text-gray-300">
+            {(rule.resources ?? []).join(", ") || "all resources"}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {(rule.actions ?? []).map((action) => (
+            <span
+              key={action}
+              className="px-2 py-0.5 text-xs bg-blue-500/15 text-blue-300 rounded-full"
+            >
+              {action}
+            </span>
+          ))}
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="px-4 pb-4 pt-1 border-t border-gray-700/50">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+            {/* Actions */}
+            <div>
+              <div className="flex items-center gap-1.5 text-xs text-gray-400 uppercase tracking-wider mb-2">
+                <Zap className="w-3 h-3" />
+                Actions
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {(rule.actions ?? []).map((action) => (
+                  <span
+                    key={action}
+                    className="px-2.5 py-1 text-xs bg-blue-500/15 text-blue-300 rounded-md border border-blue-500/20"
+                  >
+                    {action}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Resources */}
+            <div>
+              <div className="flex items-center gap-1.5 text-xs text-gray-400 uppercase tracking-wider mb-2">
+                <Target className="w-3 h-3" />
+                Resources
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {(rule.resources ?? []).map((resource) => (
+                  <span
+                    key={resource}
+                    className="px-2.5 py-1 text-xs bg-purple-500/15 text-purple-300 rounded-md border border-purple-500/20 font-mono"
+                  >
+                    {resource}
+                  </span>
+                ))}
+                {(rule.resources ?? []).length === 0 && (
+                  <span className="text-xs text-gray-500 italic">all</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Condition */}
+          {rule.condition && (
+            <div className="mt-4">
+              <div className="flex items-center gap-1.5 text-xs text-gray-400 uppercase tracking-wider mb-2">
+                <Layers className="w-3 h-3" />
+                Condition
+              </div>
+              <div className="bg-gray-900/60 rounded-md p-3 border border-gray-700/50">
+                <ConditionRenderer condition={rule.condition} />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function PolicyViewer({ agent, manifest }: PolicyViewerProps) {
-  const [activeTab, setActiveTab] = useState<TabType>("odrl");
+  const [activeTab, setActiveTab] = useState<TabType>("rules");
   const [copied, setCopied] = useState(false);
 
-  let parsedPolicies: OdrlPolicy | null = null;
-  try {
-    parsedPolicies = JSON.parse(agent.policies);
-  } catch (error) {
-    console.error("Failed to parse policies JSON:", error);
-  }
+  const parsed = parsePolicies(agent.policies);
+  const policies = extractPolicies(parsed);
 
   const handleCopy = async () => {
     let content = "";
-    if (activeTab === "odrl") {
-      content = JSON.stringify(parsedPolicies, null, 2);
-    } else if (activeTab === "yaml") {
-      content = agent.yaml;
+    if (activeTab === "dcn") {
+      content = JSON.stringify(parsed, null, 2);
+    } else if (activeTab === "rules") {
+      content = JSON.stringify(policies, null, 2);
     } else if (activeTab === "manifest" && manifest) {
       content = manifest;
     }
@@ -44,14 +241,14 @@ export function PolicyViewer({ agent, manifest }: PolicyViewerProps) {
     let filename = "";
     let mimeType = "";
 
-    if (activeTab === "odrl") {
-      content = JSON.stringify(parsedPolicies, null, 2);
-      filename = `${agent.agentId}-policies.json`;
+    if (activeTab === "dcn") {
+      content = JSON.stringify(parsed, null, 2);
+      filename = `${agent.agentId}-policy.dcn.json`;
       mimeType = "application/json";
-    } else if (activeTab === "yaml") {
-      content = agent.yaml;
-      filename = `${agent.agentId}.yaml`;
-      mimeType = "text/yaml";
+    } else if (activeTab === "rules") {
+      content = JSON.stringify(policies, null, 2);
+      filename = `${agent.agentId}-rules.json`;
+      mimeType = "application/json";
     } else if (activeTab === "manifest" && manifest) {
       content = manifest;
       filename = `${agent.agentId}-manifest.yaml`;
@@ -80,7 +277,7 @@ export function PolicyViewer({ agent, manifest }: PolicyViewerProps) {
             </h2>
             <div className="flex items-center space-x-4 text-sm text-gray-400">
               <span>Created: {new Date(agent.createdAt).toLocaleString()}</span>
-              <span>•</span>
+              <span>·</span>
               <span>
                 Modified: {new Date(agent.modifiedAt).toLocaleString()}
               </span>
@@ -118,32 +315,32 @@ export function PolicyViewer({ agent, manifest }: PolicyViewerProps) {
       <div className="bg-gray-800/50 backdrop-blur-sm border-b border-gray-700">
         <div className="flex space-x-1 p-2">
           <button
-            onClick={() => setActiveTab("odrl")}
+            onClick={() => setActiveTab("rules")}
             className={`
               flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors
               ${
-                activeTab === "odrl"
+                activeTab === "rules"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-400 hover:text-white hover:bg-gray-700/50"
+              }
+            `}
+          >
+            <Shield className="w-4 h-4" />
+            <span className="text-sm font-medium">AMS Rules</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("dcn")}
+            className={`
+              flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors
+              ${
+                activeTab === "dcn"
                   ? "bg-blue-600 text-white"
                   : "text-gray-400 hover:text-white hover:bg-gray-700/50"
               }
             `}
           >
             <FileJson className="w-4 h-4" />
-            <span className="text-sm font-medium">ODRL JSON</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("yaml")}
-            className={`
-              flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors
-              ${
-                activeTab === "yaml"
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-400 hover:text-white hover:bg-gray-700/50"
-              }
-            `}
-          >
-            <FileText className="w-4 h-4" />
-            <span className="text-sm font-medium">YAML</span>
+            <span className="text-sm font-medium">DCN JSON</span>
           </button>
           {manifest && (
             <button
@@ -166,24 +363,52 @@ export function PolicyViewer({ agent, manifest }: PolicyViewerProps) {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
-        {activeTab === "odrl" && (
+        {/* Rules Tab */}
+        {activeTab === "rules" && (
+          <div className="space-y-6">
+            {policies.length === 0 && (
+              <div className="text-center py-12 text-gray-500">
+                <Shield className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                <p>No AMS policies defined</p>
+              </div>
+            )}
+
+            {policies.map((policy, pIdx) => (
+              <div key={pIdx}>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-1.5 bg-indigo-500/20 rounded">
+                    <Layers className="w-4 h-4 text-indigo-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white">
+                    {policy.policy?.join(".") || `Policy ${pIdx + 1}`}
+                  </h3>
+                  <span className="text-xs text-gray-500 ml-2">
+                    {policy.rules?.length ?? 0} rule{(policy.rules?.length ?? 0) !== 1 ? "s" : ""}
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  {(policy.rules ?? []).map((rule, rIdx) => (
+                    <RuleCard key={rIdx} rule={rule} index={rIdx} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* DCN JSON Tab */}
+        {activeTab === "dcn" && (
           <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
             <pre className="text-sm text-gray-300 font-mono">
-              {parsedPolicies
-                ? JSON.stringify(parsedPolicies, null, 2)
-                : "Failed to parse ODRL policies"}
+              {parsed
+                ? JSON.stringify(parsed, null, 2)
+                : "Failed to parse AMS DCN policy"}
             </pre>
           </div>
         )}
 
-        {activeTab === "yaml" && (
-          <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-            <pre className="text-sm text-gray-300 font-mono">
-              {agent.yaml || "No YAML data available"}
-            </pre>
-          </div>
-        )}
-
+        {/* Manifest Tab */}
         {activeTab === "manifest" && manifest && (
           <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
             <pre className="text-sm text-gray-300 font-mono">{manifest}</pre>
@@ -191,17 +416,17 @@ export function PolicyViewer({ agent, manifest }: PolicyViewerProps) {
         )}
 
         {/* Policy Stats */}
-        {activeTab === "odrl" && parsedPolicies && (
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        {activeTab === "rules" && policies.length > 0 && (
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700 p-4">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-green-500/20 rounded-lg">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
+                <div className="p-2 bg-indigo-500/20 rounded-lg">
+                  <Layers className="w-5 h-5 text-indigo-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400">Permissions</p>
+                  <p className="text-sm text-gray-400">Policies</p>
                   <p className="text-xl font-bold text-white">
-                    {parsedPolicies.permission?.length || 0}
+                    {policies.length}
                   </p>
                 </div>
               </div>
@@ -209,13 +434,27 @@ export function PolicyViewer({ agent, manifest }: PolicyViewerProps) {
 
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700 p-4">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-red-500/20 rounded-lg">
-                  <FileJson className="w-5 h-5 text-red-400" />
+                <div className="p-2 bg-emerald-500/20 rounded-lg">
+                  <Shield className="w-5 h-5 text-emerald-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400">Prohibitions</p>
+                  <p className="text-sm text-gray-400">Rules</p>
                   <p className="text-xl font-bold text-white">
-                    {parsedPolicies.prohibition?.length || 0}
+                    {totalRules(policies)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700 p-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-purple-500/20 rounded-lg">
+                  <Target className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Resources</p>
+                  <p className="text-xl font-bold text-white">
+                    {totalResources(policies)}
                   </p>
                 </div>
               </div>

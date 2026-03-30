@@ -1,4 +1,4 @@
-// API client for CAP Policies service
+// API client for AMS policy service
 import type { AgentPolicies } from "~/types/policies";
 
 const BASE_URL = process.env.POLICIES_API_URL || "http://localhost:4004";
@@ -136,7 +136,6 @@ export async function updateAgentPolicies(
       body: JSON.stringify({
         agentId,
         policies,
-        yaml: "{}",
       }),
     });
 

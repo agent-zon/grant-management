@@ -33,8 +33,14 @@ type GrantDetailsHandler = (details: Record<string, unknown>) => void;
  
 
 
-const emmiter = await grantEvents();
+let _emitter: EventEmitter | null = null;
+async function getEmitter() {
+  if (!_emitter) _emitter = await grantEvents();
+  return _emitter;
+}
+
 export default createMiddleware(async (c, next) => {
+  const emitter = await getEmitter();
   const meta = c.get("meta") as SessionMeta | undefined;
   const grantId = meta?.grant_id || "";
 
@@ -74,7 +80,7 @@ export default createMiddleware(async (c, next) => {
   });
 
   c.set("grant.watch", (handler: GrantDetailsHandler) => {
-    if (!grantId  ) return () => {};
+    if (!grantId) return () => {};
     const listener = (details: Record<string, unknown>) => {
       try {
         handler(details);
@@ -82,8 +88,8 @@ export default createMiddleware(async (c, next) => {
         console.error("[grant-sync] listener error:", e?.message, e?.stack);
       }
     };
-    emmiter.on(grantId, listener);
-    return () => emmiter.off(grantId, listener);
+    emitter.on(grantId, listener);
+    return () => emitter.off(grantId, listener);
   });
 
   await next();

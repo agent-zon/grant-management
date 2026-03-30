@@ -47,6 +47,9 @@ srv:
       value: "destinations"
     - name: BASE_API_URL
       value: "https://{{ tpl .Values.global.host . }}"
+  expose:
+    gateway: "{{ .Release.Namespace }}/kyma-mtls-gateway"
+    host: "{{ .Release.Name }}-srv-{{ .Release.Namespace }}.cert"
 
 approuter:
   replicaCount: 1
@@ -82,6 +85,8 @@ approuter:
       allowHeaders:
         - "*"
       allowCredentials: true
+    gateway: "{{ .Release.Namespace }}/kyma-mtls-gateway"
+    host: "{{ .Release.Name }}-approuter-{{ .Release.Namespace }}.cert"
 
   bindings:
     auth:
@@ -184,7 +189,7 @@ identity:
         - password
       token-policy:
         access-token-format: "jwt"
-        
+
       redirect-uris:
         - https://{{ tpl .Values.global.domain . }}/login/callback
         - https://*.{{ tpl .Values.global.domain . }}/login/callback
@@ -201,9 +206,12 @@ identity:
         - http://localhost:5000/login/callback?authType=ias
         - http://localhost:9000/login/callback?authType=ias
         - http://localhost:9000/login/callback?authType=ias
+        - https://*.{{ tpl .Values.global.domain . }}/**
 
       post-logout-redirect-uris:
         - https://*.{{ tpl .Values.global.domain . }}/*/logout.html
+    authorization:
+      enabled: true
 
 backendDestinations:
   srv-api:
@@ -270,22 +278,23 @@ backendDestinations:
     name: authorization-live-monitor
     url: https://authorization-layers-jgt9.bolt.host/live-requests
     # labels: [sketch]
-  # user-portal:
-  #   service: portal
-  #   forwardAuthToken: true
-  #    sap-client: true
-  #    forwardAuthCertificates: true
-  #    HTML5.IASDependencyName: grant-api
-  #    HTML5.ForwardAuthCertificates: true
+    # user-portal:
+    #   service: portal
+    #   forwardAuthToken: true
+    #    sap-client: true
+    #    forwardAuthCertificates: true
+    #    HTML5.IASDependencyName: grant-api
+    #    HTML5.ForwardAuthCertificates: true
 
-# Git credentials: ServiceInstance must exist for srv (policies admin). Optional: create from chart.
+    # Git credentials: ServiceInstance must exist for srv (policies admin). Optional: create from chart.
 gitCredentialsInstance:
   enabled: false
   name: git-credentials
   externalName: git-credentials
   serviceOfferingName: ""
   servicePlanName: ""
-  parameters: {}
+  parameters:
+    {}
 
 # Explicit ServiceBinding (apiVersion: services.cloud.sap.com/v1). Set enabled: true to create it.
 gitCredentialsBinding:
@@ -305,3 +314,13 @@ postgresql:
   serviceOfferingName: postgresql-db
   servicePlanName: development
   fullnameOverride: grants-postgres
+
+ams-policies-deployer:
+  image:
+    repository: grant-management-ams-policies-deployer
+  bindings:
+    identity:
+      serviceInstanceName: identity
+      parameters:
+        credential-type: X509_GENERATED
+        app-identifier: ams-policy-deployer

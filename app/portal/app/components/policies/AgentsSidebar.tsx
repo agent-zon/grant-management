@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Link, useParams } from "react-router";
 import { FolderOpen, Search, AlertCircle, Loader2 } from "lucide-react";
-import type { AgentPolicies } from "~/types/policies";
 import type { Agent } from "~/types/agents";
 
 interface AgentsSidebarProps {

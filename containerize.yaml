@@ -8,9 +8,17 @@ modules:
   - name: grant-management/api
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t grant-management/api:cln -f Dockerfile .  
+        - docker buildx build --platform linux/amd64 -t grant-management/api:cln -f Dockerfile .
 
   - name: grant-management/approuter
     build-parameters:
       commands:
-        - docker buildx build --platform linux/amd64 -t grant-management/approuter:cln app/router 
+        - docker buildx build --platform linux/amd64 -t grant-management/approuter:cln app/router
+  - name: grant-management-ams-policies-deployer
+    build-parameters:
+      buildpack:
+        type: nodejs
+        builder: builder-jammy-base
+        path: gen/policies
+        env:
+          BP_NODE_RUN_SCRIPTS: ""
