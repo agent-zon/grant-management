@@ -346,6 +346,28 @@ function filterNewDetails(
         return { ...detail, tools: newTools };
       }
 
+      if (type === "system_connection") {
+        // For system_connection: match by system, filter already-granted scopes
+        const system = detail.system as string;
+        const systemMatch = matchingExisting.filter(
+          (e) => e.system === system
+        );
+        if (systemMatch.length === 0) return detail;
+
+        const grantedScopes = new Set(
+          systemMatch.flatMap((e) =>
+            Array.isArray(e.connection_scopes) ? e.connection_scopes : []
+          )
+        );
+
+        const requestedScopes = detail.connection_scopes as string[] | undefined;
+        if (!requestedScopes || requestedScopes.length === 0) return null;
+
+        const newScopes = requestedScopes.filter((s: string) => !grantedScopes.has(s));
+        if (newScopes.length === 0) return null;
+        return { ...detail, connection_scopes: newScopes };
+      }
+
       // For other types: match by type + locations
       const locations = detail.locations as string[] | undefined;
       const alreadyGranted = matchingExisting.some((e) => {

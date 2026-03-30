@@ -91,6 +91,23 @@ cds.on("bootstrap", (app) => {
     cds.middlewares.after,
   );
 
+  // ── JWKS endpoint ────────────────────────────────────────────────────
+  app.get("/.well-known/jwks.json", async (_req, res) => {
+    const { getJWKS } = await import("./jwt/index.js");
+    res.json(await getJWKS());
+  });
+
+  // ── GET /oauth-server/authorize → rewrite to POST for CDS handler ──
+  app.get("/oauth-server/authorize", (req, res, next) => {
+    req.method = "POST";
+    req.body = {
+      request_uri: req.query.request_uri,
+      client_id: req.query.client_id,
+    };
+    req.headers["content-type"] = "application/json";
+    next();
+  });
+
   // IMPORTANT: Parse urlencoded BEFORE anything else (but after MCP handler)
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json({ extended: true }));
@@ -252,6 +269,18 @@ cds.on("bootstrap", (app) => {
 
   // Add usage tracking middleware for grant usage monitoring
   // app.use(createUsageTracker());
+
+  // Normalize connection_scopes: ensure it's always an array before CDS validation
+  app.use((req, _res, next) => {
+    if (req.body?.authorization_details && Array.isArray(req.body.authorization_details)) {
+      for (const detail of req.body.authorization_details) {
+        if (detail?.connection_scopes && !Array.isArray(detail.connection_scopes)) {
+          detail.connection_scopes = [detail.connection_scopes];
+        }
+      }
+    }
+    next();
+  });
 
   app.use(
     methodOverride(function (req, _res) {
