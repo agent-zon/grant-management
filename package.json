@@ -25,6 +25,7 @@
     "express": "^4.21.2",
     "hono": "^4.11.4",
     "isbot": "^5.1.27",
+    "jose": "^6.2.2",
     "json-schema-to-zod": "^2.7.0",
     "jwt-decode": "^4.0.0",
     "mcp-handler": "^1.1.0",

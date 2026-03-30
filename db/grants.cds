@@ -46,8 +46,8 @@ entity Grants: managed {
   subject: User;
   subject_uuid: String; // IAS user_uuid for stable identity matching
   expires_in: Integer;
+  webhook_uri: String;  // optional: POST signed JWT here after consent approval
 
-   
   // calculated fields and associations
   grant: Association to Grants;
   consent: Association to Consents on consent.request = $self;
@@ -100,7 +100,7 @@ entity Consents:cuid,managed {
 
 
 @cds.autoexpose :true
-entity AuthorizationDetails:cuid,managed, AuthorizationDetailMcpTools, AuthorizationDetailFileSystem, AuthorizationDetailDatabase, AuthorizationDetailApi {
+entity AuthorizationDetails:cuid,managed, AuthorizationDetailMcpTools, AuthorizationDetailFileSystem, AuthorizationDetailDatabase, AuthorizationDetailApi, AuthorizationDetailSystemConnection {
   consent: Association to Consents;
   type: String;
   locations: array of String;
@@ -133,6 +133,13 @@ aspect AuthorizationDetailMcpTools {
 }
 
 
+aspect AuthorizationDetailSystemConnection {
+  system: String;           // system identifier (merge key)
+  provider_name: String;    // display name of external system
+  provider_url: String;     // URL of external system
+  connection_scopes: array of String; // granted scopes
+}
+
 aspect AuthorizationDetailFileSystem {
   // type: String enum { fs };
   roots: array of String;   // File system root paths
@@ -158,7 +165,7 @@ aspect AuthorizationDetailFileSystem {
 // entity MyGrants as SELECT from Grants where modifiedBy = $user;
 
 
-type AuthorizationDetailRequest: MCPToolAuthorizationDetailRequest, FileSystemAuthorizationDetailRequest, DatabaseAuthorizationDetailRequest, ApiAuthorizationDetailRequest {
+type AuthorizationDetailRequest: MCPToolAuthorizationDetailRequest, FileSystemAuthorizationDetailRequest, DatabaseAuthorizationDetailRequest, ApiAuthorizationDetailRequest, SystemConnectionAuthorizationDetailRequest {
   type: Association to AuthorizationDetailType;
   locations: array of String;
   actions: array of String;
@@ -175,6 +182,7 @@ entity AuthorizationDetailType: sap.common.CodeList {
       file_access;
       data_access;
       network_access;
+      system_connection;
     };
     template: LargeString; // Mustache template for future use
     description: String; // Human-readable description
@@ -218,6 +226,12 @@ aspect ApiAuthorizationDetailRequest {
   protocols: array of String;
 }
 
+aspect SystemConnectionAuthorizationDetailRequest {
+  system: String;
+  provider_name: String;
+  provider_url: String;
+  connection_scopes: array of String;
+}
 
 type RARClaim {
   essential: Boolean;

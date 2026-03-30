@@ -41,6 +41,8 @@ interface FrontendDetail {
   protocols?: string[];
   agent?: string;
   description?: string;
+  system?: string;
+  connection_scopes?: string[];
   delegated_details?: FrontendDetail[];
 }
 
@@ -84,19 +86,19 @@ interface LeafForEval {
 
 // ── Transform helpers ────────────────────────────────────────────────────────
 
-/** Transform tools from CDS Map to frontend array */
+/** Transform tools from CDS Map to frontend array, filtering out undecided (null) tools */
 function transformTools(tools: unknown): ToolInfo[] | undefined {
   if (!tools || typeof tools !== "object") return undefined;
-  return Object.entries(tools as Record<string, unknown>).map(
-    ([name, value]) => ({
+  return Object.entries(tools as Record<string, unknown>)
+    .filter(([, value]) => typeof value === "boolean" || (value && typeof value === "object"))
+    .map(([name, value]) => ({
       name,
       granted: Boolean(
         value && typeof value === "object" && "essential" in (value as object)
           ? (value as { essential: boolean }).essential
           : value
       ),
-    })
-  );
+    }));
 }
 
 /** Map backend type codes to frontend type names */
@@ -107,7 +109,7 @@ function mapType(backendType: string): string {
     case "fs":
       return "file_system";
     default:
-      return backendType; // database, api, agent_invocation pass through
+      return backendType; // database, api, agent_invocation, system_connection pass through
   }
 }
 
@@ -177,6 +179,11 @@ function transformDetail(dbDetail: Record<string, unknown>): FrontendDetail {
         undefined;
       // delegated_details will be resolved later
       detail.delegated_details = [];
+      break;
+    }
+    case "system_connection": {
+      detail.system = dbDetail.system as string | undefined;
+      detail.connection_scopes = dbDetail.connection_scopes as string[] | undefined;
       break;
     }
   }
@@ -272,6 +279,18 @@ function extractLeavesForEval(
           leaves.push(
             ...extractLeavesForEval(detail.delegated_details, agentName)
           );
+        }
+        break;
+      }
+      case "system_connection": {
+        for (const scope of detail.connection_scopes ?? []) {
+          leaves.push({
+            leafType: "system_connection_scope",
+            label: scope,
+            sublabel: detail.system ?? "",
+            viaAgent,
+            sourceDetailType: sourceType,
+          });
         }
         break;
       }
