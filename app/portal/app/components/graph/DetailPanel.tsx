@@ -20,6 +20,7 @@ const leafIcons = {
   db_table: Database,
   fs_path: HardDrive,
   api_endpoint: Globe,
+  system_connection_scope: Shield,
 } as const;
 
 // ── Styles ───────────────────────────────────────────────────────────────────

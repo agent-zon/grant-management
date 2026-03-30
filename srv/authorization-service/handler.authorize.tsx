@@ -111,6 +111,20 @@ export default async function authorize(
     });
   }
 
+  const selectAllScript = `<script>
+document.body.addEventListener('click', function(e) {
+  var sa = e.target;
+  if (sa && sa.id && sa.id.indexOf('selectall_') === 0) {
+    var container = sa.closest('.mb-4');
+    if (container) {
+      container.querySelectorAll('input[type="checkbox"]:not(:disabled)').forEach(function(cb) {
+        if (cb !== sa) cb.checked = sa.checked;
+      });
+    }
+  }
+});
+</script>`;
+
   req.http?.res.setHeader("Content-Type", "text/html");
   req.http?.res.send(
     htmlTemplate(
@@ -292,7 +306,7 @@ export default async function authorize(
           </div>
         </div>
       )
-    )
+    ).replace('</body>', selectAllScript + '</body>')
   );
 }
 

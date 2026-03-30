@@ -11,6 +11,7 @@ export default function metadata(this: AuthorizationService, req: cds.Request) {
     authorization_endpoint: `${baseUrl}/oauth-server/authorize`,
     token_endpoint: `${baseUrl}/oauth-server/token`,
     pushed_authorization_request_endpoint: `${baseUrl}/oauth-server/par`,
+    jwks_uri: `/.well-known/jwks.json`,
     authorization_details_types_supported: JSON.stringify([
       "grant_management",
       "file_access",
@@ -20,6 +21,7 @@ export default function metadata(this: AuthorizationService, req: cds.Request) {
       "api",
       "database",
       "fs",
+      "system_connection",
     ]),
     grant_types_supported: JSON.stringify([
       "authorization_code",
