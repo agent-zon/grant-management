@@ -119,7 +119,8 @@ approuter:
     - configMapRef:
         name: "{{ .Release.Name }}-approuter-configmap"
   env:
-    TENANT_HOST_PATTERN: "^(.*)-{{ tpl .Values.global.host . }}"
+    # TENANT_HOST_PATTERN disabled — single-tenant deployment.
+    # Enabling this causes 500 errors when the hostname doesn't contain a tenant subdomain.
     OTEL_EXPORTER_OTLP_ENDPOINT: http://otlp-dashboard:18889
     OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
     OTEL_SERVICE_NAME: approuter
