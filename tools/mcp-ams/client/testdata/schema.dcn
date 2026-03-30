@@ -1,0 +1,1702 @@
+{
+    "version": 1,
+    "policies": null,
+    "functions": null,
+    "schemas": [
+        {
+            "schema": [
+                "schema"
+            ],
+            "definition": {
+                "attribute": "Structure",
+                "nested": {
+                    "$app": {
+                        "attribute": "Structure",
+                        "nested": {
+                            "tools": {
+                                "attribute": "Structure",
+                                "nested": {
+                                    "add_comment_to_pending_review": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "body": {
+                                                "attribute": "String"
+                                            },
+                                            "line": {
+                                                "attribute": "Number"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "path": {
+                                                "attribute": "String"
+                                            },
+                                            "pullNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "side": {
+                                                "attribute": "String"
+                                            },
+                                            "startLine": {
+                                                "attribute": "Number"
+                                            },
+                                            "startSide": {
+                                                "attribute": "String"
+                                            },
+                                            "subjectType": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "add_issue_comment": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "body": {
+                                                "attribute": "String"
+                                            },
+                                            "issue_number": {
+                                                "attribute": "Number"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "add_sub_issue": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "issue_number": {
+                                                "attribute": "Number"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "replace_parent": {
+                                                "attribute": "Boolean"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "sub_issue_id": {
+                                                "attribute": "Number"
+                                            }
+                                        }
+                                    },
+                                    "assign_copilot_to_issue": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "issueNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "cancel_workflow_run": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "run_id": {
+                                                "attribute": "Number"
+                                            }
+                                        }
+                                    },
+                                    "create_and_submit_pull_request_review": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "body": {
+                                                "attribute": "String"
+                                            },
+                                            "commitID": {
+                                                "attribute": "String"
+                                            },
+                                            "event": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "pullNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "create_branch": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "branch": {
+                                                "attribute": "String"
+                                            },
+                                            "from_branch": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "create_gist": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "content": {
+                                                "attribute": "String"
+                                            },
+                                            "description": {
+                                                "attribute": "String"
+                                            },
+                                            "filename": {
+                                                "attribute": "String"
+                                            },
+                                            "public": {
+                                                "attribute": "Boolean"
+                                            }
+                                        }
+                                    },
+                                    "create_issue": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "assignees": {
+                                                "attribute": "Array"
+                                            },
+                                            "body": {
+                                                "attribute": "String"
+                                            },
+                                            "labels": {
+                                                "attribute": "Array"
+                                            },
+                                            "milestone": {
+                                                "attribute": "Number"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "title": {
+                                                "attribute": "String"
+                                            },
+                                            "type": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "create_or_update_file": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "branch": {
+                                                "attribute": "String"
+                                            },
+                                            "content": {
+                                                "attribute": "String"
+                                            },
+                                            "message": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "path": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "sha": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "create_pending_pull_request_review": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "commitID": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "pullNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "create_pull_request": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "base": {
+                                                "attribute": "String"
+                                            },
+                                            "body": {
+                                                "attribute": "String"
+                                            },
+                                            "draft": {
+                                                "attribute": "Boolean"
+                                            },
+                                            "head": {
+                                                "attribute": "String"
+                                            },
+                                            "maintainer_can_modify": {
+                                                "attribute": "Boolean"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "title": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "create_pull_request_with_copilot": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "base_ref": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "problem_statement": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "title": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "create_repository": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "autoInit": {
+                                                "attribute": "Boolean"
+                                            },
+                                            "description": {
+                                                "attribute": "String"
+                                            },
+                                            "name": {
+                                                "attribute": "String"
+                                            },
+                                            "private": {
+                                                "attribute": "Boolean"
+                                            }
+                                        }
+                                    },
+                                    "delete_file": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "branch": {
+                                                "attribute": "String"
+                                            },
+                                            "message": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "path": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "delete_pending_pull_request_review": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "pullNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "delete_workflow_run_logs": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "run_id": {
+                                                "attribute": "Number"
+                                            }
+                                        }
+                                    },
+                                    "dismiss_notification": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "state": {
+                                                "attribute": "String"
+                                            },
+                                            "threadID": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "download_workflow_run_artifact": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "artifact_id": {
+                                                "attribute": "Number"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "fork_repository": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "organization": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_code_scanning_alert": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "alertNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_commit": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "sha": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_dependabot_alert": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "alertNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_discussion": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "discussionNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_discussion_comments": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "after": {
+                                                "attribute": "String"
+                                            },
+                                            "discussionNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_file_contents": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "path": {
+                                                "attribute": "String"
+                                            },
+                                            "ref": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "sha": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_global_security_advisory": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "ghsaId": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_issue": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "issue_number": {
+                                                "attribute": "Number"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_issue_comments": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "issue_number": {
+                                                "attribute": "Number"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_job_logs": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "failed_only": {
+                                                "attribute": "Boolean"
+                                            },
+                                            "job_id": {
+                                                "attribute": "Number"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "return_content": {
+                                                "attribute": "Boolean"
+                                            },
+                                            "run_id": {
+                                                "attribute": "Number"
+                                            },
+                                            "tail_lines": {
+                                                "attribute": "Number"
+                                            }
+                                        }
+                                    },
+                                    "get_latest_release": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_me": {
+                                        "attribute": "Structure"
+                                    },
+                                    "get_notification_details": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "notificationID": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_pull_request": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "pullNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_pull_request_comments": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "pullNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_pull_request_diff": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "pullNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_pull_request_files": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "pullNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_pull_request_reviews": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "pullNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_pull_request_status": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "pullNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_release_by_tag": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "tag": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_secret_scanning_alert": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "alertNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_tag": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "tag": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_team_members": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "org": {
+                                                "attribute": "String"
+                                            },
+                                            "team_slug": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_teams": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "user": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "get_workflow_run": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "run_id": {
+                                                "attribute": "Number"
+                                            }
+                                        }
+                                    },
+                                    "get_workflow_run_logs": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "run_id": {
+                                                "attribute": "Number"
+                                            }
+                                        }
+                                    },
+                                    "get_workflow_run_usage": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "run_id": {
+                                                "attribute": "Number"
+                                            }
+                                        }
+                                    },
+                                    "list_branches": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "list_code_scanning_alerts": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "ref": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "severity": {
+                                                "attribute": "String"
+                                            },
+                                            "state": {
+                                                "attribute": "String"
+                                            },
+                                            "tool_name": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "list_commits": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "author": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "sha": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "list_dependabot_alerts": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "severity": {
+                                                "attribute": "String"
+                                            },
+                                            "state": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "list_discussion_categories": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "list_discussions": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "after": {
+                                                "attribute": "String"
+                                            },
+                                            "category": {
+                                                "attribute": "String"
+                                            },
+                                            "direction": {
+                                                "attribute": "String"
+                                            },
+                                            "orderBy": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "list_gists": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "since": {
+                                                "attribute": "String"
+                                            },
+                                            "username": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "list_global_security_advisories": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "affects": {
+                                                "attribute": "String"
+                                            },
+                                            "cveId": {
+                                                "attribute": "String"
+                                            },
+                                            "cwes": {
+                                                "attribute": "Array"
+                                            },
+                                            "ecosystem": {
+                                                "attribute": "String"
+                                            },
+                                            "ghsaId": {
+                                                "attribute": "String"
+                                            },
+                                            "isWithdrawn": {
+                                                "attribute": "Boolean"
+                                            },
+                                            "modified": {
+                                                "attribute": "String"
+                                            },
+                                            "published": {
+                                                "attribute": "String"
+                                            },
+                                            "severity": {
+                                                "attribute": "String"
+                                            },
+                                            "type": {
+                                                "attribute": "String"
+                                            },
+                                            "updated": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "list_issue_types": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "list_issues": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "after": {
+                                                "attribute": "String"
+                                            },
+                                            "direction": {
+                                                "attribute": "String"
+                                            },
+                                            "labels": {
+                                                "attribute": "Array"
+                                            },
+                                            "orderBy": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "since": {
+                                                "attribute": "String"
+                                            },
+                                            "state": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "list_notifications": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "before": {
+                                                "attribute": "String"
+                                            },
+                                            "filter": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "since": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "list_org_repository_security_advisories": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "direction": {
+                                                "attribute": "String"
+                                            },
+                                            "org": {
+                                                "attribute": "String"
+                                            },
+                                            "sort": {
+                                                "attribute": "String"
+                                            },
+                                            "state": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "list_pull_requests": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "base": {
+                                                "attribute": "String"
+                                            },
+                                            "direction": {
+                                                "attribute": "String"
+                                            },
+                                            "head": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "sort": {
+                                                "attribute": "String"
+                                            },
+                                            "state": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "list_releases": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "list_repository_security_advisories": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "direction": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "sort": {
+                                                "attribute": "String"
+                                            },
+                                            "state": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "list_secret_scanning_alerts": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "resolution": {
+                                                "attribute": "String"
+                                            },
+                                            "secret_type": {
+                                                "attribute": "String"
+                                            },
+                                            "state": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "list_sub_issues": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "issue_number": {
+                                                "attribute": "Number"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "per_page": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "list_tags": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "list_workflow_jobs": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "filter": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "run_id": {
+                                                "attribute": "Number"
+                                            }
+                                        }
+                                    },
+                                    "list_workflow_run_artifacts": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "run_id": {
+                                                "attribute": "Number"
+                                            }
+                                        }
+                                    },
+                                    "list_workflow_runs": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "actor": {
+                                                "attribute": "String"
+                                            },
+                                            "branch": {
+                                                "attribute": "String"
+                                            },
+                                            "event": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "status": {
+                                                "attribute": "String"
+                                            },
+                                            "workflow_id": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "list_workflows": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "manage_notification_subscription": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "action": {
+                                                "attribute": "String"
+                                            },
+                                            "notificationID": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "manage_repository_notification_subscription": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "action": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "mark_all_notifications_read": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "lastReadAt": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "merge_pull_request": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "commit_message": {
+                                                "attribute": "String"
+                                            },
+                                            "commit_title": {
+                                                "attribute": "String"
+                                            },
+                                            "merge_method": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "pullNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "push_files": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "branch": {
+                                                "attribute": "String"
+                                            },
+                                            "files": {
+                                                "attribute": "Array"
+                                            },
+                                            "message": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "remove_sub_issue": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "issue_number": {
+                                                "attribute": "Number"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "sub_issue_id": {
+                                                "attribute": "Number"
+                                            }
+                                        }
+                                    },
+                                    "reprioritize_sub_issue": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "after_id": {
+                                                "attribute": "Number"
+                                            },
+                                            "before_id": {
+                                                "attribute": "Number"
+                                            },
+                                            "issue_number": {
+                                                "attribute": "Number"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "sub_issue_id": {
+                                                "attribute": "Number"
+                                            }
+                                        }
+                                    },
+                                    "request_copilot_review": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "pullNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "rerun_failed_jobs": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "run_id": {
+                                                "attribute": "Number"
+                                            }
+                                        }
+                                    },
+                                    "rerun_workflow_run": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "run_id": {
+                                                "attribute": "Number"
+                                            }
+                                        }
+                                    },
+                                    "run_workflow": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "inputs": {
+                                                "attribute": "Structure"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "ref": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "workflow_id": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "search_code": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "order": {
+                                                "attribute": "String"
+                                            },
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "query": {
+                                                "attribute": "String"
+                                            },
+                                            "sort": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "search_issues": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "order": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "query": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "sort": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "search_orgs": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "order": {
+                                                "attribute": "String"
+                                            },
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "query": {
+                                                "attribute": "String"
+                                            },
+                                            "sort": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "search_pull_requests": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "order": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "query": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "sort": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "search_repositories": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "query": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "search_users": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "order": {
+                                                "attribute": "String"
+                                            },
+                                            "page": {
+                                                "attribute": "Number"
+                                            },
+                                            "perPage": {
+                                                "attribute": "Number"
+                                            },
+                                            "query": {
+                                                "attribute": "String"
+                                            },
+                                            "sort": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "submit_pending_pull_request_review": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "body": {
+                                                "attribute": "String"
+                                            },
+                                            "event": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "pullNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "update_gist": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "content": {
+                                                "attribute": "String"
+                                            },
+                                            "description": {
+                                                "attribute": "String"
+                                            },
+                                            "filename": {
+                                                "attribute": "String"
+                                            },
+                                            "gist_id": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "update_issue": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "assignees": {
+                                                "attribute": "Array"
+                                            },
+                                            "body": {
+                                                "attribute": "String"
+                                            },
+                                            "issue_number": {
+                                                "attribute": "Number"
+                                            },
+                                            "labels": {
+                                                "attribute": "Array"
+                                            },
+                                            "milestone": {
+                                                "attribute": "Number"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "state": {
+                                                "attribute": "String"
+                                            },
+                                            "title": {
+                                                "attribute": "String"
+                                            },
+                                            "type": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "update_pull_request": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "base": {
+                                                "attribute": "String"
+                                            },
+                                            "body": {
+                                                "attribute": "String"
+                                            },
+                                            "draft": {
+                                                "attribute": "Boolean"
+                                            },
+                                            "maintainer_can_modify": {
+                                                "attribute": "Boolean"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "pullNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            },
+                                            "reviewers": {
+                                                "attribute": "Array"
+                                            },
+                                            "state": {
+                                                "attribute": "String"
+                                            },
+                                            "title": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    },
+                                    "update_pull_request_branch": {
+                                        "attribute": "Structure",
+                                        "nested": {
+                                            "expectedHeadSha": {
+                                                "attribute": "String"
+                                            },
+                                            "owner": {
+                                                "attribute": "String"
+                                            },
+                                            "pullNumber": {
+                                                "attribute": "Number"
+                                            },
+                                            "repo": {
+                                                "attribute": "String"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ],
+    "tests": null
+}
