@@ -63,7 +63,7 @@ export async function LIST(
   const response = await next(req);
 
   if (isGrants(response)) {
-    const grants = await getGrants(this, response, perspective, callerId);
+    const grants = await getGrants(this, response);
 
     // For HTML responses, render the UI
     if (req?.http?.req.accepts("html")) {

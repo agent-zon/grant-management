@@ -2,22 +2,18 @@ import cds from "@sap/cds";
 import type { AuthorizationService } from "./authorization-service.tsx";
 import { AuthorizationRequests } from "#cds-models/sap/scai/grants/AuthorizationService";
 
-type PARRequest = {
-  grant_id?: string;
-  grant_management_action?: string;
-  requested_actor?: string;
-  subject?: string;
-  authorization_details?: string;
-  client_id?: string;
-  scope?: string;
-};
-
 export default async function push(
   this: AuthorizationService,
-  req: cds.Request<PARRequest>
+  req: cds.Request<{
+    grant_id?: string;
+    subject?: string;
+    authorization_details?: string;
+    client_id?: string;
+    scope?: string;
+  }>
 ) {
   console.log(
-    `🔑 PAR request (action: ${req.data.grant_management_action ?? "none"}, grant_id: ${req.data.grant_id ?? "deferred"})`
+    `🔑 PAR request (grant_id: ${req.data.grant_id ?? "deferred"})`
   );
 
   // Store the request as-is — grant resolution happens at authorize time
