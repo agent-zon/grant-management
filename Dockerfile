@@ -23,6 +23,7 @@ RUN npm install --omit=dev
 # Copy application code
 COPY gen/srv/ ./
 COPY srv/server.js ./srv/server.js
+COPY srv/jwt/ ./srv/jwt/
 # CDS build does not copy git-handler; required by policies-cap
 COPY srv/policies-cap/git-handler ./srv/policies-cap/git-handler
 COPY db.sqlite ./
