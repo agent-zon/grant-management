@@ -41,6 +41,8 @@ interface FrontendDetail {
   protocols?: string[];
   agent?: string;
   description?: string;
+  system?: string;
+  connection_scopes?: string[];
   delegated_details?: FrontendDetail[];
 }
 
@@ -107,7 +109,7 @@ function mapType(backendType: string): string {
     case "fs":
       return "file_system";
     default:
-      return backendType; // database, api, agent_invocation pass through
+      return backendType; // database, api, agent_invocation, system_connection pass through
   }
 }
 
@@ -177,6 +179,11 @@ function transformDetail(dbDetail: Record<string, unknown>): FrontendDetail {
         undefined;
       // delegated_details will be resolved later
       detail.delegated_details = [];
+      break;
+    }
+    case "system_connection": {
+      detail.system = dbDetail.system as string | undefined;
+      detail.connection_scopes = dbDetail.connection_scopes as string[] | undefined;
       break;
     }
   }
@@ -272,6 +279,18 @@ function extractLeavesForEval(
           leaves.push(
             ...extractLeavesForEval(detail.delegated_details, agentName)
           );
+        }
+        break;
+      }
+      case "system_connection": {
+        for (const scope of detail.connection_scopes ?? []) {
+          leaves.push({
+            leafType: "system_connection_scope",
+            label: scope,
+            sublabel: detail.system ?? "",
+            viaAgent,
+            sourceDetailType: sourceType,
+          });
         }
         break;
       }

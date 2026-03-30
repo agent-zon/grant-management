@@ -34,6 +34,8 @@ export function getTypeColor(type: AuthorizationDetailType): string {
       return "#0070f2";
     case "agent_invocation":
       return "#0d7c3d";
+    case "system_connection":
+      return "#0891b2";
   }
 }
 
@@ -49,6 +51,8 @@ export function getTypeLabel(type: AuthorizationDetailType): string {
       return "API";
     case "agent_invocation":
       return "Agent";
+    case "system_connection":
+      return "Sys";
   }
 }
 
@@ -62,6 +66,8 @@ export function getLeafTypeLabel(type: LeafType): string {
       return "FS";
     case "api_endpoint":
       return "API";
+    case "system_connection_scope":
+      return "Sys";
   }
 }
 
@@ -182,6 +188,22 @@ function extractLeavesFromDetail(
           constraintsSummary: methods,
           viaAgent,
           sourceDetailType: delegation ? "agent_invocation" : "api",
+          trace: { ...traceBase },
+        });
+      }
+      break;
+    }
+    case "system_connection": {
+      for (const scope of detail.connection_scopes ?? []) {
+        leaves.push({
+          id: `${prefix}sys::${detail.system ?? ""}::${scope}`,
+          leafType: "system_connection_scope",
+          label: scope,
+          sublabel: detail.system ?? "",
+          status: "granted",
+          constraintsSummary: "granted",
+          viaAgent,
+          sourceDetailType: delegation ? "agent_invocation" : "system_connection",
           trace: { ...traceBase },
         });
       }

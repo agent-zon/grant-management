@@ -7,7 +7,8 @@ export type AuthorizationDetailType =
   | "file_system"
   | "database"
   | "api"
-  | "agent_invocation";
+  | "agent_invocation"
+  | "system_connection";
 
 export interface McpAuthorizationDetail {
   type: "mcp_server";
@@ -53,12 +54,19 @@ export interface AgentInvocationAuthorizationDetail {
   delegated_details: Exclude<AuthorizationDetail, AgentInvocationAuthorizationDetail>[];
 }
 
+export interface SystemConnectionAuthorizationDetail {
+  type: "system_connection";
+  system: string;
+  connection_scopes?: string[];
+}
+
 export type AuthorizationDetail =
   | McpAuthorizationDetail
   | FsAuthorizationDetail
   | DatabaseAuthorizationDetail
   | ApiAuthorizationDetail
-  | AgentInvocationAuthorizationDetail;
+  | AgentInvocationAuthorizationDetail
+  | SystemConnectionAuthorizationDetail;
 
 /** A non-delegation authorization detail (everything except agent_invocation). */
 export type ResourceAuthorizationDetail = Exclude<
@@ -79,7 +87,7 @@ export interface ApiGrant {
 
 // --- Leaf-focused graph data types ---
 
-export type LeafType = "mcp_tool" | "db_table" | "fs_path" | "api_endpoint";
+export type LeafType = "mcp_tool" | "db_table" | "fs_path" | "api_endpoint" | "system_connection_scope";
 
 export interface AuthorizationTrace {
   grant: {
