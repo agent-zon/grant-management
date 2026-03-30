@@ -15,6 +15,7 @@ export default function AgentInvocationAuthorizationDetail({
   actions,
 }: AgentInvocationProps) {
   const agentName = identifier?.replace(/^urn:agent:/, "") ?? "Unknown Agent";
+  const hasOptional = (actions?.length ?? 0) > 0;
 
   return (
     <div
@@ -94,9 +95,17 @@ export default function AgentInvocationAuthorizationDetail({
       {/* Requested Skills / Actions */}
       {actions && actions.length > 0 && (
         <div className="mb-4">
-          <h5 className="text-sm font-semibold text-gray-900 mb-3">
-            Requested Skills:
-          </h5>
+          <div className="flex items-center justify-between mb-3">
+            <h5 className="text-sm font-semibold text-gray-900">
+              Requested Skills:
+            </h5>
+            {hasOptional && (
+              <label className="flex items-center space-x-2 text-xs text-gray-600 cursor-pointer">
+                <input type="checkbox" id={`selectall_${index}`} className="w-4 h-4 text-blue-600 border-gray-300 rounded" />
+                <span>Select All</span>
+              </label>
+            )}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {actions.map((action) => (
               <div
@@ -114,9 +123,9 @@ export default function AgentInvocationAuthorizationDetail({
                   htmlFor={`action_${action}_${index}`}
                   className="flex-1"
                 >
-                  <div className="text-sm text-gray-900 font-semibold mb-1">
+                  <span className="text-sm text-gray-900 font-semibold">
                     {action}
-                  </div>
+                  </span>
                   <div className="text-xs text-gray-600">
                     Skill invocation on {agentName}
                   </div>

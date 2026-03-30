@@ -10,6 +10,13 @@ export default function MCPAuthorizationDetail({
   category,
   ...detail
 }: MCPToolAuthorizationDetailRequest & AuthorizationDetailProps) {
+  const toolEntries = detail.tools
+    ? Object.entries(detail.tools as Record<string, boolean | null | { essential: boolean }>)
+    : [];
+  const hasOptional = toolEntries.some(
+    ([, v]) => !(v instanceof Object && v.essential)
+  );
+
   return (
     <div
       className={`bg-white rounded-xl p-6 border-2 ${riskLevel === "high"
@@ -32,6 +39,9 @@ export default function MCPAuthorizationDetail({
           >
             Grant Tools Access
           </div>
+          {detail.server && (
+            <span className="text-sm text-gray-600 font-medium">{detail.server}</span>
+          )}
           {category && (
             <span className="text-sm text-gray-600 font-medium">{category}</span>
           )}
@@ -59,56 +69,57 @@ export default function MCPAuthorizationDetail({
       )}
 
       {/* Available Tools */}
-      {
-        detail.tools && Object.keys(detail.tools).length > 0 && (
-          <div className="mb-4">
-            <h5 className="text-sm font-semibold text-gray-900 mb-3">Available Capabilities:</h5>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {Object.entries(
-                detail.tools as Record<
-                  string,
-                  boolean | null | { essential: boolean }
-                >
-              ).map(([toolName, permission]) => (
+      {toolEntries.length > 0 && (
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <h5 className="text-sm font-semibold text-gray-900">Available Capabilities:</h5>
+            {hasOptional && (
+              <label className="flex items-center space-x-2 text-xs text-gray-600 cursor-pointer">
+                <input type="checkbox" id={`selectall_${index}`} className="w-4 h-4 text-blue-600 border-gray-300 rounded" />
+                <span>Select All</span>
+              </label>
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {toolEntries.map(([toolName, permission]) => {
+              const isRequired = permission instanceof Object && permission.essential;
+              return (
                 <div
                   key={toolName}
-                  className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg border border-gray-200"
+                  className={`flex items-start space-x-3 p-4 rounded-lg border ${
+                    isRequired ? "bg-blue-50/50 border-blue-200" : "bg-gray-50 border-gray-200"
+                  }`}
                 >
                   <input
                     type="checkbox"
                     name={`authorization_details[${index}].tools.${toolName.replace(/\./g, "_")}`}
                     id={`tool_${toolName}_${index}`}
                     value="true"
-                    defaultChecked={Boolean(
-                      permission instanceof Object
-                        ? permission.essential
-                        : permission
-                    )}
-                    disabled={Boolean(
-                      permission instanceof Object ? permission.essential : false
-                    )}
-                    className="w-5 h-5 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 mt-0.5"
+                    defaultChecked={Boolean(isRequired ? true : permission)}
+                    disabled={Boolean(isRequired)}
+                    className={`w-5 h-5 border-gray-300 rounded focus:ring-blue-500 mt-0.5 ${
+                      isRequired ? "text-blue-400 cursor-not-allowed" : "text-blue-600"
+                    }`}
                   />
                   <label htmlFor={`tool_${toolName}_${index}`} className="flex-1">
-                    <div className="text-sm text-gray-900 font-semibold mb-1">
-                      {toolName}
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-900 font-semibold">{toolName}</span>
+                      {isRequired && (
+                        <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">Required</span>
+                      )}
                     </div>
-                    {permission instanceof Object && permission.essential ? (
-                      <div className="text-xs text-red-700 bg-red-100 px-2 py-1 rounded-md mt-1 inline-block font-medium">
-                        Required
-                      </div>
-                    ) : (
+                    {!isRequired && (
                       <div className="text-xs text-gray-600">
                         Optional - You can choose to grant or deny this capability
                       </div>
                     )}
                   </label>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
-        )
-      }
-    </div >
+        </div>
+      )}
+    </div>
   );
 }
