@@ -21,15 +21,20 @@ export default async function token(
 ) {
   const { grant_type, code, refresh_token, subject_token } = req.data;
 
-  const { access_token, ...tokens } = await getTokens();
+  const { access_token, grant_id: tokenGrantId, ...tokens } = await getTokens();
   if (!access_token) {
     return tokens;
   }
-  const { sid: grant_id } = jwtDecode<{ sid: string }>(access_token);
+  // Prefer grant_id from the authorization request (known at PAR/consent time),
+  // fall back to sid claim in the JWT (set by IAS session)
+  const grant_id = tokenGrantId ?? jwtDecode<{ sid: string }>(access_token).sid;
 
-  // Fetch authorization details from DB by consent foreign key
-  const authorization_details = await cds.run(
-    cds.ql.SELECT.from(AuthorizationDetails).where({
+  // Use db layer to query authorization details — avoids service projection issues
+  // in action handler contexts where the service transaction may not be available
+  const db = cds.db;
+  const { AuthorizationDetails: DbDetails } = db.entities("sap.scai.grants");
+  const authorization_details = await db.run(
+    cds.ql.SELECT.from(DbDetails).where({
       consent_grant_id: grant_id,
     })
   );
