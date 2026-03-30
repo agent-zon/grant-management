@@ -8,14 +8,8 @@ import { isNativeError } from "node:util/types";
 import type {
   Grants,
   Grant,
-  AuthorizationDetail,
-} from "#cds-models/sap/scai/grants/GrantsManagementService";
-import {
-  Consents,
-  AuthorizationDetails,
 } from "#cds-models/sap/scai/grants/GrantsManagementService";
 import { render } from "#cds-ssr";
-import { AuthorizationDetailMcpTool } from "#cds-models/sap/scai/grants";
 
 export function POST(
   this: GrantsManagementService,
@@ -247,112 +241,16 @@ export async function GET(
               </button>
             </div>
 
-            {/* Authorization Details for Demo */}
             <div className="space-y-4">
-              {/* MCP Tools Access */}
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">🔧</span>
-                    <div>
-                      <h4 className="text-sm font-medium text-white">
-                        MCP Tools Access
-                      </h4>
-                      <p className="text-xs text-slate-400">
-                        Development & monitoring tools
-                      </p>
-                    </div>
-                  </div>
-                  <button className="text-xs text-blue-400 hover:text-blue-300">
-                    Edit
-                  </button>
+              {(grant.authorization_details || []).length === 0 && (
+                <div className="text-center py-8 text-slate-400">
+                  <span className="text-3xl block mb-2">🔒</span>
+                  <p className="text-sm">No authorization details for this grant.</p>
                 </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {["metrics.read", "logs.query", "dashboard.view"].map(
-                    (tool, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between bg-emerald-500/10 rounded-lg p-2 border border-emerald-500/20"
-                      >
-                        <span className="text-xs text-emerald-300">{tool}</span>
-                        <input
-                          type="checkbox"
-                          checked
-                          className="w-3 h-3 text-emerald-500"
-                          title={`Toggle ${tool}`}
-                        />
-                      </div>
-                    )
-                  )}
-                </div>
-              </div>
-
-              {/* API Access */}
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">🌐</span>
-                    <div>
-                      <h4 className="text-sm font-medium text-white">
-                        API Access
-                      </h4>
-                      <p className="text-xs text-slate-400">
-                        External service endpoints
-                      </p>
-                    </div>
-                  </div>
-                  <button className="text-xs text-blue-400 hover:text-blue-300">
-                    Edit
-                  </button>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between bg-blue-500/10 rounded-lg p-2 border border-blue-500/20">
-                    <span className="text-xs text-blue-300">
-                      https://api.monitoring.internal/v1/metrics
-                    </span>
-                    <span className="text-xs text-slate-400">HTTPS</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* File System Access */}
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">📁</span>
-                    <div>
-                      <h4 className="text-sm font-medium text-white">
-                        File System Access
-                      </h4>
-                      <p className="text-xs text-slate-400">
-                        Directory and file permissions
-                      </p>
-                    </div>
-                  </div>
-                  <button className="text-xs text-blue-400 hover:text-blue-300">
-                    Edit
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {["read", "write", "execute", "list"].map((perm, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between bg-yellow-500/10 rounded-lg p-2 border border-yellow-500/20"
-                    >
-                      <span className="text-xs text-yellow-300">{perm}</span>
-                      <input
-                        type="checkbox"
-                        checked={perm !== "execute"}
-                        className="w-3 h-3 text-yellow-500"
-                        title={`Toggle ${perm} permission`}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
+              )}
+              {(grant.authorization_details || []).map((detail: any, dIdx: number) => (
+                <DetailCard key={dIdx} detail={detail} />
+              ))}
             </div>
           </div>
 
@@ -412,51 +310,27 @@ export async function GET(
   return grant;
 }
 
-//workaround for single grant query
-async function getGrant(srv: GrantsManagementService, { id, ...grant }: Grant) {
-  const consentRecords = await srv.run(
-    cds.ql.SELECT.from(Consents).where({ grant_id: id })
-  );
-  const authorization_details = await srv.run(
-    cds.ql.SELECT.from(AuthorizationDetails).where({
-      consent_grant_id: id,
-    })
-  );
+async function getGrant(_srv: GrantsManagementService, { id, ...grant }: Grant) {
+  const db = cds.db;
+  const { Consents, AuthorizationDetails } = db.entities("sap.scai.grants");
 
-  // Collect unique client_ids, actors, and subjects from all consents
-  const client_ids = consentRecords
-    .map((c: any) => c.client_id)
-    .filter(Boolean)
-    .filter(unique);
+  const [consentRecords, authorization_details] = await Promise.all([
+    db.run(SELECT.from(Consents).where({ grant_id: id })),
+    db.run(SELECT.from(AuthorizationDetails).where({ consent_grant_id: id })),
+  ]);
 
-  const actors = consentRecords
-    .map((c: any) => c.actor)
-    .filter(Boolean)
-    .filter(unique);
-
-  const subjects = consentRecords
-    .map((c: any) => c.subject)
-    .filter(Boolean)
-    .filter(unique);
-
-  // Aggregate scope from all consents
   const aggregatedScope = consentRecords
     .map((c: any) => c.scope)
+    .filter(Boolean)
     .filter(unique)
-    .join(" ")
-    .split(/\s+/)
-    .filter((v: string, i: number, a: string[]) => v && a.indexOf(v) === i)
     .join(" ");
 
   return {
     id,
     ...grant,
     scope: aggregatedScope,
-    authorization_details: mcpDetails(authorization_details),
+    authorization_details,
     consents: consentRecords,
-    client_id: client_ids.length > 1 ? client_ids : client_ids[0],
-    actor: actors.length > 1 ? actors : actors[0],
-    subject: subjects.length > 1 ? subjects : subjects[0],
   } as Grant;
 }
 
@@ -492,33 +366,139 @@ function isGrant(grant: Grant | void | Grants | Error): grant is Grant {
   );
 }
 
-//workaround, should be done in grant server
-function mcpDetails(
-  authorization_details?: AuthorizationDetail[]
-): AuthorizationDetailMcpTool[] | undefined {
-  const details = authorization_details
-    ?.filter((detail) => detail.type === "mcp")
-    .reduce(
-      (acc, detail) => {
-        const server = detail.server || "default";
-        if (!acc[server]) {
-          acc[server] = detail;
-        }
-        acc[server] = {
-          ...acc[server],
-          tools: {
-            ...acc[server].tools,
-            ...detail.tools,
-          },
-        };
-        return acc;
-      },
-      {} as Record<string, AuthorizationDetailMcpTool>
-    );
+const detailMeta: Record<string, { icon: string; label: string; color: string }> = {
+  mcp:               { icon: "🔧", label: "MCP Tools",          color: "emerald" },
+  system_connection: { icon: "🔗", label: "System Connection",  color: "cyan" },
+  api:               { icon: "🌐", label: "API Access",         color: "blue" },
+  database:          { icon: "🗄️", label: "Database Access",    color: "purple" },
+  fs:                { icon: "📁", label: "File System",         color: "yellow" },
+  agent_invocation:  { icon: "🤖", label: "Agent Invocation",   color: "green" },
+};
 
-  return details
-    ? Object.values(details).concat(
-        authorization_details?.filter((detail) => detail.type != "mcp") || []
-      )
-    : [];
+function colorClasses(color: string) {
+  const map: Record<string, { bg: string; border: string; text: string }> = {
+    emerald: { bg: "bg-emerald-500/10", border: "border-emerald-500/20", text: "text-emerald-300" },
+    cyan:    { bg: "bg-cyan-500/10",    border: "border-cyan-500/20",    text: "text-cyan-300" },
+    blue:    { bg: "bg-blue-500/10",    border: "border-blue-500/20",    text: "text-blue-300" },
+    purple:  { bg: "bg-purple-500/10",  border: "border-purple-500/20",  text: "text-purple-300" },
+    yellow:  { bg: "bg-yellow-500/10",  border: "border-yellow-500/20",  text: "text-yellow-300" },
+    green:   { bg: "bg-green-500/10",   border: "border-green-500/20",   text: "text-green-300" },
+    slate:   { bg: "bg-slate-500/10",   border: "border-slate-500/20",   text: "text-slate-300" },
+  };
+  return map[color] || map.slate;
+}
+
+function DetailCard({ detail, key: _key }: { detail: any; key?: any }) {
+  const type = detail.type as string || "unknown";
+  const meta = detailMeta[type] || { icon: "📋", label: type, color: "slate" };
+  const c = colorClasses(meta.color);
+
+  return (
+    <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+      <div className="flex items-center space-x-3 mb-3">
+        <span className="text-2xl">{meta.icon}</span>
+        <div>
+          <h4 className="text-sm font-medium text-white">{meta.label}</h4>
+          {detail.server && <p className="text-xs text-slate-400">{detail.server}</p>}
+          {detail.system && <p className="text-xs text-slate-400">{detail.provider_name || detail.system}</p>}
+        </div>
+      </div>
+
+      {/* MCP Tools */}
+      {type === "mcp" && detail.tools && (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          {Object.entries(detail.tools as Record<string, unknown>)
+            .filter(([, v]) => typeof v === "boolean")
+            .map(([name, granted]) => (
+              <div key={name} className={`flex items-center justify-between ${c.bg} rounded-lg p-2 border ${c.border}`}>
+                <span className={`text-xs ${c.text}`}>{name}</span>
+                <span className={`text-xs ${granted ? "text-emerald-400" : "text-red-400"}`}>
+                  {granted ? "granted" : "denied"}
+                </span>
+              </div>
+            ))}
+        </div>
+      )}
+
+      {/* System Connection Scopes */}
+      {type === "system_connection" && detail.connection_scopes && (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          {(detail.connection_scopes as string[]).map((scope: string) => (
+            <div key={scope} className={`${c.bg} rounded-lg p-2 border ${c.border}`}>
+              <span className={`text-xs ${c.text}`}>{scope}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* API */}
+      {type === "api" && (
+        <div className="space-y-2">
+          {(detail.urls || []).map((url: string) => (
+            <div key={url} className={`flex items-center justify-between ${c.bg} rounded-lg p-2 border ${c.border}`}>
+              <span className={`text-xs ${c.text} font-mono`}>{url}</span>
+              <span className="text-xs text-slate-400">
+                {(detail.protocols || []).join(", ") || "HTTPS"}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Database */}
+      {type === "database" && (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          {(detail.tables || []).map((table: string) => (
+            <div key={table} className={`${c.bg} rounded-lg p-2 border ${c.border}`}>
+              <span className={`text-xs ${c.text}`}>{table}</span>
+            </div>
+          ))}
+          {(detail.schemas || []).map((schema: string) => (
+            <div key={schema} className={`${c.bg} rounded-lg p-2 border ${c.border}`}>
+              <span className={`text-xs ${c.text}`}>schema: {schema}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* File System */}
+      {type === "fs" && (
+        <div className="space-y-2">
+          {(detail.roots || []).map((root: string) => (
+            <div key={root} className={`${c.bg} rounded-lg p-2 border ${c.border}`}>
+              <span className={`text-xs ${c.text} font-mono`}>{root}</span>
+            </div>
+          ))}
+          {detail.permissions && (
+            <div className="grid grid-cols-3 gap-2">
+              {Object.entries(detail.permissions as Record<string, boolean>)
+                .filter(([, v]) => v)
+                .map(([perm]) => (
+                  <div key={perm} className={`${c.bg} rounded-lg p-2 border ${c.border}`}>
+                    <span className={`text-xs ${c.text}`}>{perm}</span>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Agent Invocation */}
+      {type === "agent_invocation" && detail.identifier && (
+        <div className={`${c.bg} rounded-lg p-3 border ${c.border}`}>
+          <span className={`text-xs ${c.text} font-mono`}>
+            {detail.identifier}
+          </span>
+        </div>
+      )}
+
+      {/* Fallback for unknown types */}
+      {!["mcp", "system_connection", "api", "database", "fs", "agent_invocation"].includes(type) && (
+        <div className="text-xs text-slate-400">
+          {detail.locations && <p>Locations: {(detail.locations as string[]).join(", ")}</p>}
+          {detail.actions && <p>Actions: {(detail.actions as string[]).join(", ")}</p>}
+        </div>
+      )}
+    </div>
+  );
 }
