@@ -2,16 +2,13 @@ import cds from "@sap/cds";
 import {
   type Grant,
   Grants,
-  Consents,
-  AuthorizationDetails,
-  Consent,
+  type Consent,
 } from "#cds-models/sap/scai/grants/GrantsManagementService";
 import type {
   GrantsHandler,
   GrantsManagementService,
 } from "./grant-management";
 import { isNativeError } from "node:util/types";
-import e from "express";
 import { render } from "#cds-ssr";
 
 /** Enriched grant object returned by getGrants(), extending Grant with aggregated consent data */
@@ -359,121 +356,45 @@ export async function LIST(
   return response;
 }
 
-//workround for last grant overwrite issue
+// Use cds.db to query directly, avoiding service handler re-entry
 async function getGrants(
-  srv: GrantsManagementService,
+  _srv: GrantsManagementService,
   data: Grants,
-  perspective?: string,
-  callerId?: string
 ): Promise<EnrichedGrant[]> {
-  const callerUuid = cds.context?.user?.authInfo?.token?.payload?.user_uuid as string | undefined;
-  const callerEmail = (cds.context?.user?.authInfo?.token?.payload?.mail ?? cds.context?.user?.authInfo?.token?.payload?.email) as string | undefined;
-  const consentsQuery = SELECT.from(Consents);
-  if (callerId && perspective) {
-    if (perspective === "subject") {
-      const ids = [callerUuid, callerId, callerEmail].filter(Boolean) as string[];
-      consentsQuery.where`subject_uuid in ${ids} or subject in ${ids}`;
-    } else {
-      consentsQuery.where({ [perspective]: callerId });
-    }
+  const db = cds.db;
+  const { Consents, AuthorizationDetails } = db.entities("sap.scai.grants");
+
+  // Get all grant IDs from the service-layer response (already filtered by perspective)
+  const grantIds = data.map((g) => g.id).filter(Boolean) as string[];
+  if (grantIds.length === 0) return [];
+
+  // Query consents and details via db layer (no handler re-entry)
+  const [consentRecords, allDetails] = await Promise.all([
+    db.run(SELECT.from(Consents).where({ grant_id: { in: grantIds } })),
+    db.run(SELECT.from(AuthorizationDetails).where({ consent_grant_id: { in: grantIds } })),
+  ]);
+
+  // Group by grant_id
+  const grants: Record<string, EnrichedGrant> = {};
+  for (const grant of data) {
+    if (!grant.id) continue;
+    const consents = consentRecords.filter((c: any) => c.grant_id === grant.id);
+    const details = allDetails.filter((d: any) => d.consent_grant_id === grant.id);
+
+    grants[grant.id] = {
+      ...(grant as any),
+      id: grant.id,
+      consents,
+      authorization_details: details,
+      scope: consents.map((c: any) => c.scope).filter(unique).join(" "),
+      client_id: grant.client_id,
+      actor: grant.actor,
+      subject: grant.subject,
+      subject_uuid: (grant as any).subject_uuid,
+    };
   }
-  const consentRecords = await srv.run(consentsQuery);
-  const authorization_details = await srv.run(
-    cds.ql.SELECT.from(AuthorizationDetails)
-  );
 
-  // Fetch all AuthorizationRequests to get client_id mapping
-  const authRequests = await cds.run(
-    cds.ql.SELECT.from("sap.scai.grants.AuthorizationRequests").columns(
-      "ID",
-      "client_id",
-      "grant_id"
-    )
-  );
-  const grantToClientMap = new Map<string, string>();
-  authRequests.forEach((req: any) => {
-    if (req.grant_id && req.client_id) {
-      grantToClientMap.set(req.grant_id, req.client_id);
-    }
-  });
-
-  const grants = consentRecords.reduce(
-    (acc, consent) => {
-      const consents = [...(acc[consent.grant_id!]?.consents || []), consent];
-      const grant = data?.find((g) => g.id === consent.grant_id);
-
-      // Collect unique client_ids, actors, and subjects from all consents
-      const client_ids = consents
-        .map((c: any) => c.client_id)
-        .filter(Boolean)
-        .filter(unique);
-
-      // If no client_ids from consents, try grant record or AuthRequest mapping
-      const finalClientIds =
-        client_ids.length > 0
-          ? client_ids
-          : [
-            grant?.client_id ||
-            grantToClientMap.get(consent.grant_id!) ||
-            "unknown",
-          ].filter(Boolean);
-
-      const actors = consents
-        .map((c: any) => c.actor)
-        .filter(Boolean)
-        .filter(unique);
-
-      const subjects = consents
-        .map((c: any) => c.subject)
-        .filter(Boolean)
-        .filter(unique);
-
-      const subject_uuids = consents
-        .map((c: any) => c.subject_uuid)
-        .filter(Boolean)
-        .filter(unique);
-
-      acc[consent.grant_id!] = {
-        consents: consents,
-        authorization_details: [
-          ...(acc[consent.grant_id!]?.authorization_details || []),
-          ...authorization_details.filter(
-            (detail) => detail.consent_grant_id === consent.grant_id
-          ),
-        ],
-        scope: consents
-          .map((c) => c.scope)
-          .filter(unique)
-          .join(" "),
-        createdAt: consent[0]?.createdAt,
-        modifiedAt: consent[0]?.modifiedAt,
-        risk_level: consent[0]?.risk_level,
-        ...(grant || {}),
-        id: consent.grant_id,
-        client_id: finalClientIds as any,
-        actor: (actors.length > 0
-          ? actors
-          : grant?.actor
-            ? [grant.actor]
-            : undefined) as any,
-        subject: (subjects.length > 0
-          ? subjects
-          : grant?.subject
-            ? [grant.subject]
-            : undefined) as any,
-        subject_uuid: (subject_uuids.length > 0
-          ? subject_uuids
-          : (grant as any)?.subject_uuid
-            ? [(grant as any).subject_uuid]
-            : undefined) as any,
-      };
-
-      return acc;
-    },
-    {} as Record<string, EnrichedGrant>
-  );
-
-  return (Object.values(grants) as EnrichedGrant[]).reverse();
+  return Object.values(grants).reverse();
 }
 
 function unique<T>(value: T, index: number, array: T[]): value is T {
