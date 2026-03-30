@@ -27,10 +27,10 @@ service PoliciesService {
       function rules(version: $self)                                                                                                   returns String;
       function constraints(version: $self)                                                                              returns String;
       action   values(version: $self, constraint: String)                                                    returns String;
-      action   addRule(version: $self, odrl: String, ruleAction: String, target: String, constraint: String, constraintValue: String) returns String;
-      action   removeRule(version: $self, odrl: String, removeKind: String, removeIndex: Integer) returns String;
+      action   addRule(version: $self, dcn: String, policy: String, action: String, target: String, constraint: String, constraintValue: String) returns String;
+      action   removeRule(version: $self, dcn: String, removePolicyIndex: Integer, removeRuleIndex: Integer) returns String;
       function publisher(version: $self)                                                                                               returns String;
-      action   publish(version: $self, odrl: String) returns String;
+      action   publish(version: $self, dcn: String) returns String;
       function test(version: $self) returns String;
       function use(version: $self) returns String;
 

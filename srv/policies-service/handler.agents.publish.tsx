@@ -18,11 +18,11 @@ export async function GET(this: any, req: cds.Request) {
       <button
         hx-post={`agents/${agentId}/versions/${version || "main"}/publish`}
         hx-ext="json-enc"
-        hx-include="[name=odrl]"
+        hx-include="[name=dcn]"
         hx-swap="outerHTML"
         hx-target="#publish-toast"
         type="submit"
-        hx-params="odrl"
+        hx-params="dcn"
         className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 border-0"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">

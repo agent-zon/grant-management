@@ -5,6 +5,8 @@
 
 export interface DcnContainer {
   version: number;
+  id?: string;
+  name?: string;
   policies?: DcnPolicy[];
   functions?: unknown[];
   schemas?: DcnSchema[];
@@ -17,26 +19,29 @@ export interface DcnSchema {
 }
 
 export interface SchemaAttribute {
-  attribute: string; // "Structure" | "String" | "Number" | "Bool" | "Array" etc.
+  attribute: string;
   nested?: Record<string, SchemaAttribute>;
 }
 
 // --- Policy ---
 
 export interface DcnPolicy {
-  policy: string[]; // qualified name, e.g. ["scai", "test"]
+  policy: string[];          // semantic name = authorization context, e.g. ["obo_authenticated_user"]
+  description?: string;      // human-readable, shown during consent
+  duties?: string[];         // e.g. ["consent"] — policy requires user approval to activate
+  schedule?: string;         // cron pattern — policy only active during matching times
   rules: PolicyRule[];
 }
 
 export interface PolicyRule {
   rule: "grant" | "deny";
-  actions: string[];
-  resources: string[];
+  actions: string[];         // "access" (catch-all), "call", "read", "render"
+  resources: string[];       // "{server}.{type}" e.g. "ariba-mcp.tools", "agent.artifacts"
   condition?: PolicyCondition;
 }
 
 export interface PolicyCondition {
-  call: string[];            // e.g. ["eq"], ["and"], ["in"]
+  call: string[];
   args: PolicyConditionArg[];
 }
 
@@ -44,14 +49,14 @@ export type PolicyConditionArg =
   | string
   | number
   | boolean
-  | { ref: string[] }        // attribute reference, e.g. ["$app","tools","list_commits","repo"]
-  | PolicyCondition;          // nested condition
+  | { ref: string[] }
+  | PolicyCondition;
 
 // --- Agent Policies (API shape) ---
 
 export interface AgentPolicies {
   agentId: string;
-  policies: string; // AMS DCN JSON string (DcnContainer or DcnPolicy[])
+  policies: string;
   createdAt: string;
   modifiedAt: string;
 }
@@ -67,7 +72,6 @@ export interface AgentManifest {
   name: string;
   version: string;
   description?: string;
-  requires?: string[];
   tools?: McpTool[];
   resources?: McpResource[];
   attributes?: Record<string, unknown>;

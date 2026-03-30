@@ -6,104 +6,143 @@ export const GIT = { owner: "AIAM", repo: "policies" };
 export function safeJson<T>(s: string | undefined | null, fallback: T): T {
     try { return s ? JSON.parse(s) : fallback; } catch { return fallback; }
 }
-export type PolicyRule = {
-    actionType: "allow" | "deny" | "ask";
-    target: string;
-    targetType: "mcp" | "tool";
-    targetName: string;
-    constraint: string;
-    constraintValue: string;
+
+// ---------------------------------------------------------------------------
+// AMS DCN types — aligned with dcn.go in tools/mcp-ams
+// ---------------------------------------------------------------------------
+
+export type DcnContainer = {
+  version: number;
+  id?: string;
+  name?: string;
+  policies?: DcnPolicy[];
+  functions?: unknown[];
+  schemas?: unknown[];
+  tests?: unknown[];
 };
+
+export type DcnPolicy = {
+  policy: string[];
+  description?: string;
+  default?: boolean;
+  internal?: boolean;
+  uses?: DcnUse[];
+  rules: DcnRule[];
+  annotations?: Record<string, any>;
+};
+
+export type DcnUse = {
+  use: string[];
+  restrictions?: any[];
+  annotations?: Record<string, any>;
+};
+
+export type DcnRule = {
+  rule: "grant" | "deny";
+  actions: string[];
+  resources: string[];
+  condition?: DcnCondition;
+  annotations?: Record<string, any>;
+};
+
+export type DcnCondition = {
+  call: string[];
+  args: DcnConditionArg[];
+};
+
+export type DcnConditionArg =
+  | string
+  | number
+  | boolean
+  | { ref: string[] }
+  | DcnCondition;
 
 export type TargetOption = { value: string; label: string; type: "mcp" | "tool" };
 
-/** ODRL Set shape we use (permission / prohibition arrays). */
-export type OdrlSet = {
-  "@context"?: unknown[];
-  "@type"?: string;
-  permission?: OdrlEntry[];
-  prohibition?: OdrlEntry[];
-};
-export type OdrlEntry = {
-  target: string;
-  action?: string;
-  _metadata?: { targetType?: string; targetName?: string };
-  constraint?: { leftOperand?: string; operator?: string; rightOperand?: string[] }[];
-  duty?: { action?: string }[];
-  priority?: number;
-};
-
-/** Ensure odrl has permission/prohibition arrays; default context. */
-export function ensureOdrlSet(odrl: OdrlSet | null | undefined): OdrlSet {
-  const p = Array.isArray(odrl?.permission) ? odrl.permission : [];
-  const q = Array.isArray(odrl?.prohibition) ? odrl.prohibition : [];
+/** Ensure raw JSON has the DcnContainer envelope. */
+export function ensureDcnContainer(raw: any): DcnContainer {
+  if (!raw || typeof raw !== "object") {
+    return { version: 1, policies: [{ policy: ["default"], default: true, rules: [] }] };
+  }
+  if (Array.isArray(raw)) {
+    return { version: 1, policies: raw };
+  }
+  const c = raw as DcnContainer;
   return {
-    "@context": odrl?.["@context"] ?? ["http://www.w3.org/ns/odrl.jsonld", { sap: "https://sap.com/odrl/extensions/" }],
-    "@type": odrl?.["@type"] ?? "Set",
-    permission: p,
-    prohibition: q,
+    version: c.version ?? 1,
+    id: c.id,
+    name: c.name,
+    policies: Array.isArray(c.policies) ? c.policies : [{ policy: ["default"], default: true, rules: [] }],
+    functions: c.functions ?? [],
+    tests: c.tests ?? [],
   };
 }
 
-export function odrlToRules(odrl: Record<string, any> | null): PolicyRule[] {
-    const rules: PolicyRule[] = [];
-    for (const perm of odrl?.permission || []) {
-        const isAsk = perm.duty?.some((d: any) => d.action === "sap:obtainConsent");
-        const c = perm.constraint?.[0];
-        rules.push({
-            actionType: isAsk ? "ask" : "allow",
-            target: encodeTarget(perm._metadata?.targetType || "mcp", perm.target, perm._metadata?.targetName || perm.target),
-            targetType: perm._metadata?.targetType || "mcp",
-            targetName: perm._metadata?.targetName || perm.target,
-            constraint: c?.leftOperand?.replace("sap:", "") || "",
-            constraintValue: c?.rightOperand?.[0] || "",
-        });
-    }
-    for (const prohib of odrl?.prohibition || []) {
-        const c = prohib.constraint?.[0];
-        rules.push({
-            actionType: "deny",
-            target: encodeTarget(prohib._metadata?.targetType || "mcp", prohib.target, prohib._metadata?.targetName || prohib.target),
-            targetType: prohib._metadata?.targetType || "mcp",
-            targetName: prohib._metadata?.targetName || prohib.target,
-            constraint: c?.leftOperand?.replace("sap:", "") || "",
-            constraintValue: c?.rightOperand?.[0] || "",
-        });
-    }
-    return rules;
+/** Get the default policy (or first policy). */
+export function getDefaultPolicy(container: DcnContainer): DcnPolicy | undefined {
+  return container.policies?.find((p) => p.default) ?? container.policies?.[0];
 }
 
-function encodeTarget(type: "mcp" | "tool", id: string, name: string) {
-    return `${type}|${id}|${name}`;
+/** Find a policy by qualified name. */
+export function findPolicy(container: DcnContainer, name: string): DcnPolicy | undefined {
+  return container.policies?.find((p) => (p.policy ?? []).join(".") === name);
 }
 
-/** Build one ODRL permission or prohibition entry from UI rule fields. */
-export function ruleToOdrlEntry(rule: {
-  actionType: "allow" | "deny" | "ask";
-  target: string;
-  targetType: "mcp" | "tool";
-  targetName: string;
+/** Get annotations helper. */
+export function getAnnotation<T>(obj: { annotations?: Record<string, any> } | undefined, key: string): T | undefined {
+  return obj?.annotations?.[key] as T | undefined;
+}
+
+/** Build a DCN rule from UI form fields. */
+export function buildDcnRule(opts: {
+  ruleType: "grant" | "deny";
+  resource: string;
   constraint?: string;
   constraintValue?: string;
-}): { kind: "permission" | "prohibition"; entry: OdrlEntry } {
-  const entry: OdrlEntry = {
-    target: rule.target,
-    action: "use",
-    _metadata: { targetType: rule.targetType, targetName: rule.targetName },
+}): DcnRule {
+  const rule: DcnRule = {
+    rule: opts.ruleType,
+    actions: ["access"],
+    resources: opts.resource ? [opts.resource] : ["agent.artifacts"],
   };
-  if (rule.constraint && rule.constraintValue) {
-    entry.constraint = [{ leftOperand: `sap:${rule.constraint}`, operator: "isPartOf", rightOperand: [rule.constraintValue] }];
+
+  if (opts.constraint && opts.constraintValue) {
+    rule.condition = {
+      call: ["eq"],
+      args: [
+        { ref: ["$app", "tools", "*", opts.constraint] },
+        opts.constraintValue,
+      ],
+    };
   }
-  if (rule.actionType === "deny") {
-    return { kind: "prohibition", entry };
-  }
-  if (rule.actionType === "ask") {
-    entry.duty = [{ action: "sap:obtainConsent" }];
-    entry.priority = 160;
-  }
-  return { kind: "permission", entry };
+
+  return rule;
 }
-/** READ handler — returns pre-loaded req.data.policy; JSON or HTML by Accept. */
+
+/** Format a condition for display. */
+export function conditionSummary(cond: DcnCondition | undefined): string {
+  if (!cond) return "";
+  const op = cond.call?.[0] ?? "?";
+  const parts = (cond.args ?? []).map((a) => {
+    if (typeof a === "string") return `"${a}"`;
+    if (typeof a === "number" || typeof a === "boolean") return String(a);
+    if (a && typeof a === "object" && "ref" in a) return (a as { ref: string[] }).ref.join(".");
+    return "…";
+  });
+  return `${op}(${parts.join(", ")})`;
+}
+
+export function formatSchedule(cron: string): string {
+  const parts = cron.trim().split(/\s+/);
+  if (parts.length < 5) return cron;
+  const [, hours, , , days] = parts;
+  const dayMap: Record<string, string> = { "1-5": "Mon-Fri", "0-6": "Daily", "1-7": "Daily", "0,6": "Weekends" };
+  const dayLabel = dayMap[days] || days;
+  const hourLabel = hours === "*" ? "" : hours.replace("-", ":00-") + ":00";
+  return [dayLabel, hourLabel].filter(Boolean).join(" ");
+}
+
+/** READ handler. */
 export default async function GET_POLICY(this: any, req: cds.Request) {
   const policy = req.data?.policy;
   if (req?.http?.req.accepts("html")) {

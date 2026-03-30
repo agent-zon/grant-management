@@ -25,28 +25,14 @@ import GrantsManagementService, {
  
 type GrantDetailsHandler = (details: Record<string, unknown>) => void;
 
- 
 
-
-
- 
- 
-
-
-let _emitter: EventEmitter | null = null;
-async function getEmitter() {
-  if (!_emitter) _emitter = await grantEvents();
-  return _emitter;
-}
 
 export default createMiddleware(async (c, next) => {
   const emitter = await getEmitter();
   const meta = c.get("meta") as SessionMeta | undefined;
   const grantId = meta?.grant_id || "";
 
-  const grantService = await cds.connect.to(GrantsManagementService, {
-    credentials: { jwt: c.get("token").access_token },
-  });
+  const grantService = await cds.connect.to(GrantsManagementService);
 
   const authorizationDetails = mcpDetails(
     await grantService.run(
@@ -80,7 +66,7 @@ export default createMiddleware(async (c, next) => {
   });
 
   c.set("grant.watch", (handler: GrantDetailsHandler) => {
-    if (!grantId) return () => {};
+    if (!grantId  ) return () => {};
     const listener = (details: Record<string, unknown>) => {
       try {
         handler(details);
@@ -120,22 +106,26 @@ function mcpDetails(
     );
 }
 
-
-async function grantEvents(){
-  const grantService = await cds.connect.to(GrantsManagementService); 
-  const emmiter = new EventEmitter();
+let _emitterPromise: Promise<EventEmitter> | null = null;
+function getEmitter() {
+  if (!_emitterPromise) _emitterPromise = grantEvents();
+  return _emitterPromise;
+}
+async function grantEvents() {
+  const grantService = await cds.connect.to(GrantsManagementService);
+  const emitter = new EventEmitter();
   grantService.after(
     ["CREATE", "UPDATE"],
     AuthorizationDetails,
     async (data) => {
-      if(data?.consent_grant_id){
-        emmiter.emit(data?.consent_grant_id, mcpDetails( await grantService.run(
+      if (data?.consent_grant_id) {
+        emitter.emit(data.consent_grant_id, mcpDetails(await grantService.run(
           cds.ql.SELECT.from(
             "sap.scai.grants.GrantsManagementService.AuthorizationDetails",
-          ).where({ consent_grant_id: data?.consent_grant_id }),
+          ).where({ consent_grant_id: data.consent_grant_id }),
         )));
       }
-    }
+    },
   );
-  return emmiter; 
+  return emitter;
 }
