@@ -13,6 +13,7 @@ import GrantsManagementService, {
 } from "#cds-models/sap/scai/grants/GrantsManagementService";
 import { renderToString } from "react-dom/server";
 import { htmlTemplate } from "#cds-ssr";
+import { signConsentJWT } from "../jwt/index.js";
 
 export default async function authorize(
   this: AuthorizationService,
@@ -104,11 +105,54 @@ export default async function authorize(
   // If everything is already granted, auto-approve (no consent screen needed)
   if (request.grant_management_action === "merge" && newAccessDetails.length === 0) {
     console.log("✅ All requested capabilities already granted, skipping consent");
-    req.http?.res.setHeader("Content-Type", "application/json");
-    return req.http?.res.json({
-      grant_id: resolvedGrantId,
-      status: "already_granted",
-    });
+
+    // For system_connection with a real redirect_uri: mint JWT and auto-POST
+    const sysConn = (request.access || []).find((d: any) => d.type_code === "system_connection");
+    if (sysConn && request.redirect_uri && request.redirect_uri !== "urn:scai:grant:callback") {
+      const existingDetails = await cds.run(
+        SELECT.from(AuthorizationDetails).where({ consent_grant_id: resolvedGrantId })
+      );
+      const allScopes = Array.from(new Set(
+        existingDetails
+          .filter((d: any) => d.type === "system_connection" && d.system === sysConn.system)
+          .flatMap((d: any) => Array.isArray(d.connection_scopes) ? d.connection_scopes : [])
+      )) as string[];
+
+      const jwt = await signConsentJWT({
+        sub: subject!,
+        sub_uuid: user_uuid,
+        grant_id: resolvedGrantId,
+        actor: request.requested_actor || "",
+        system: sysConn.system || "",
+        scopes: allScopes,
+        provider_url: sysConn.provider_url || "",
+      });
+
+      const escHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      req.http?.res.setHeader("Content-Type", "text/html");
+      return req.http?.res.send(`<html><body>
+<form id="consent-redirect" method="POST" action="${escHtml(request.redirect_uri)}">
+<input type="hidden" name="consent_token" value="${escHtml(jwt)}" />
+<input type="hidden" name="code" value="${escHtml(id!)}" />
+${request.state ? `<input type="hidden" name="state" value="${escHtml(request.state)}" />` : ""}
+</form>
+<script>document.getElementById("consent-redirect").submit();</script>
+</body></html>`);
+    }
+
+    // For callback URN: return JSON
+    if (request.redirect_uri === "urn:scai:grant:callback") {
+      req.http?.res.setHeader("Content-Type", "application/json");
+      return req.http?.res.json({
+        grant_id: resolvedGrantId,
+        status: "already_granted",
+      });
+    }
+
+    // For real redirect_uri: redirect with code
+    // @ts-ignore
+    cds.context?.http?.res.redirect(301, `${request.redirect_uri}?code=${id}`);
+    return;
   }
 
   const selectAllScript = `<script>
