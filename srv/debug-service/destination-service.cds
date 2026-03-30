@@ -7,7 +7,7 @@ namespace sap.scai.debug;
 @Core.title: 'Destination Debug Service'
 service  DestinationService { 
          
-    entity Destinations as projection on debug.Destinations actions { 
+    entity Destinations as projection on debug.MCPResource actions { 
         //bound to the collection and not a specific instance of Foo
         action customCreate (in: many $self, name: String) returns Destinations;
 

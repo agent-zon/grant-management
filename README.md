@@ -56,6 +56,25 @@ Recommended command:
 | `chart/`                     | Kubernetes deployment configuration       |
 | `docs/`                      | Documentation and consent scenarios       |
 
+## HTMX Path-Params Pattern (Policies UI)
+
+The policies CAP service uses **HTMX** with the **path-params** extension for event-driven content reload. URL placeholders are filled at request time from event data—**do not** replace them with template literals or constants.
+
+**Pattern:**
+- Use `{agent}` and `{version}` placeholders in `hx-get` URLs (e.g. `agents/{agent}/versions/{version}/resources/pane`).
+- Provide values via `hx-vals` from the triggering event or DOM:
+  - From custom events: `hx-vals="js:{ agent: event?.detail?.agent, version: event?.detail?.version }"`
+  - From DOM data: `hx-vals="js:(()=>{const p=document.getElementById('resources-pane');return{agent:p?.dataset?.agent,version:p?.dataset?.version};})()"`
+- Use `hx-trigger` for event-driven reloads (e.g. `agent-selected from:body`, `resource-updated from:body`).
+- Requires `hx-ext="path-params"` on a parent (e.g. `body`). See `srv/render/index.tsx`.
+
+**Example:**
+```tsx
+hx-get="agents/{agent}/versions/{version}/resources/pane"
+hx-vals="js:{ agent: event?.detail?.agent, version: event?.detail?.version }"
+hx-trigger="agent-selected from:body, resource-updated from:body"
+```
+
 ## 📚 API Documentation
 
 The application exposes two main OData v4 services:
@@ -1061,15 +1080,33 @@ curl -X DELETE http://localhost:4004/grants-management/Grants('grant_xxx')
 
 ### Production Deployment
 
+**Prerequisites** (required for `npm run deploy`):
+
+- **Node.js 18+** and `npm install` (provides `ctz` and CDS tooling)
+- **Docker** – build and push images; log in to your container registry before deploy:
+  ```bash
+  docker login scai-dev.common.repositories.cloud.sap   # or your registry
+  ```
+- **Helm** – install if missing (e.g. `brew install helm` on macOS, or [helm.sh/docs/intro/install](https://helm.sh/docs/intro/install))
+- **GitHub binding** – the backend (srv) requires `cds.requires.github` for the policies admin (`/admin/dashboard`). Ensure a service instance and binding exist in the target namespace, e.g.:
+  ```bash
+  npm run bind:github   # creates git-credentials binding for the current k8s context
+  ```
+
 Deploy to SAP BTP Kyma environment:
 
 ```bash
 # Set your namespace
 export NAMESPACE=grant-management
 
-# Deploy using Helm
+# Deploy using Helm (builds containers, pushes to registry, then helm upgrade)
 npm run deploy
+```
 
+To build and deploy without pushing images (e.g. when registry auth is not set up):
+
+```bash
+npm run deploy:no-push
 ```
 
 Or use the containerization workflow:

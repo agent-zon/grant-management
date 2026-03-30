@@ -6,6 +6,6 @@ export default {
   ssr: true,
   basename: "/portal",
   future: {
-    unstable_viteEnvironmentApi: true,
+    v8_viteEnvironmentApi: true,
   },
 } satisfies Config;

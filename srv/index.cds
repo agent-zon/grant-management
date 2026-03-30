@@ -8,6 +8,9 @@ using from './debug-service/auth-service.cds';
 
 using from './debug-service/destination-service.cds';
 
-using from './mcp-service/mcp-service.cds';
+using from './mcp-example/mcp-service';
 
-using from './grant-tools-service/grant-tools-service.cds';
+
+using from './destination-service/destination-service.cds';
+
+using from './policies-cap/policies-service.cds';
