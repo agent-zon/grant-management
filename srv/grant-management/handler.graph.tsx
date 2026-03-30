@@ -86,19 +86,19 @@ interface LeafForEval {
 
 // ── Transform helpers ────────────────────────────────────────────────────────
 
-/** Transform tools from CDS Map to frontend array */
+/** Transform tools from CDS Map to frontend array, filtering out undecided (null) tools */
 function transformTools(tools: unknown): ToolInfo[] | undefined {
   if (!tools || typeof tools !== "object") return undefined;
-  return Object.entries(tools as Record<string, unknown>).map(
-    ([name, value]) => ({
+  return Object.entries(tools as Record<string, unknown>)
+    .filter(([, value]) => typeof value === "boolean" || (value && typeof value === "object"))
+    .map(([name, value]) => ({
       name,
       granted: Boolean(
         value && typeof value === "object" && "essential" in (value as object)
           ? (value as { essential: boolean }).essential
           : value
       ),
-    })
-  );
+    }));
 }
 
 /** Map backend type codes to frontend type names */

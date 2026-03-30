@@ -54,13 +54,17 @@ export async function POST(
           const { type_code, ...rest } = original;
           const merged: Record<string, unknown> = { ...rest };
           if (type_code) merged.type = type_code;
-          // Apply tool selections from the form — normalize "on"/truthy to true
+          // Apply tool selections from the form — normalize "on"/truthy to true.
+          // If no tools were checked, clear the tools map (don't keep PAR's null values).
           if (formDetail.tools && typeof formDetail.tools === "object") {
             const normalizedTools: Record<string, boolean> = {};
             for (const [name, value] of Object.entries(formDetail.tools)) {
               normalizedTools[name] = Boolean(value);
             }
             merged.tools = normalizedTools;
+          } else if (rest.tools) {
+            // MCP type with no tools selected — clear the null-valued PAR tools
+            merged.tools = {};
           }
           // Merge form-only fields not present in the original PAR request
           // (e.g., identifier for agent_invocation, which the PAR stores in locations)
