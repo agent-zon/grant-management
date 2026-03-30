@@ -29,6 +29,11 @@ env/kube.env
 secret.sh
 gen/
 
+# SQLite
+db.sqlite
+db.sqlite-shm
+db.sqlite-wal
+
 # added by cds
 .cdsrc-private.json
 .deno/
@@ -45,6 +50,8 @@ temp/
 @cds-models
 *-secret.*
 secret/
+.claude
+.cds-services.json
 
 # Playwright auth state (contains session cookies)
 tests/e2e/.auth/

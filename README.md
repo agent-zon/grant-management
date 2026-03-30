@@ -17,6 +17,19 @@ should restart
 - _Simulation_ \
   https://grant-management-dashboard.c-127c9ef.stage.kyma.ondemand.com -->
 
+## Pipeline
+
+For build, push, and deployment workflows, use these repository resources:
+
+- Pipeline guide: [scripts/pipeline/README.md](scripts/pipeline/README.md)
+- Pipeline entry script: [scripts/pipeline/pipeline.ps1](scripts/pipeline/pipeline.ps1)
+
+Recommended command:
+
+```powershell
+./scripts/pipeline/pipeline.ps1
+```
+
 ## ✨ Features
 
 - **OAuth 2.0 Grant Management API**: Full implementation of the Grant Management specification using SAP CAP framework

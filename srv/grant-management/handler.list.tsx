@@ -14,11 +14,51 @@ import { isNativeError } from "node:util/types";
 import e from "express";
 import { render } from "#cds-ssr";
 
+/** Enriched grant object returned by getGrants(), extending Grant with aggregated consent data */
+interface EnrichedGrant {
+  id: string | null | undefined;
+  status?: string | null;
+  scope?: string;
+  subject?: string[] | string | null;
+  subject_uuid?: string[] | string | null;
+  actor?: string[] | string | null;
+  client_id?: string[] | string | null;
+  risk_level?: string | null;
+  createdAt?: string | null;
+  modifiedAt?: string | null;
+  consents: Consent[];
+  authorization_details: Array<{
+    type?: string | null;
+    locations?: string[] | null;
+    actions?: string[] | null;
+    consent_grant_id?: string | null;
+    [key: string]: unknown;
+  }>;
+  [key: string]: unknown;
+}
+
 export async function LIST(
   this: GrantsManagementService,
   ...[req, next]: Parameters<GrantsHandler>
 ) {
   console.log("🔍 Listing grants with expand:", req.data, req.query, req.id);
+
+  // Apply perspective filter: "subject" (default) or "actor"
+  const perspective =
+    (req?.http?.req?.query?.perspective as string) || "subject";
+  const callerUuid = cds.context?.user?.authInfo?.token?.payload?.user_uuid as string | undefined;
+  const callerEmail = (cds.context?.user?.authInfo?.token?.payload?.mail ?? cds.context?.user?.authInfo?.token?.payload?.email) as string | undefined;
+  const callerId = cds.context?.user?.id;
+
+  if (callerId && (perspective === "subject" || perspective === "actor")) {
+    if (perspective === "subject") {
+      // Match by UUID, user.id, or email for backward compat with old grants
+      const ids = [callerUuid, callerId, callerEmail].filter(Boolean) as string[];
+      (req.query as any).where`subject_uuid in ${ids} or subject in ${ids}`;
+    } else {
+      (req.query as any).where({ [perspective]: callerId });
+    }
+  }
 
   const response = await next(req);
 
@@ -320,8 +360,24 @@ export async function LIST(
 }
 
 //workround for last grant overwrite issue
-async function getGrants(srv: GrantsManagementService, data: Grants) {
-  const consentRecords = await srv.read(Consents);
+async function getGrants(
+  srv: GrantsManagementService,
+  data: Grants,
+  perspective?: string,
+  callerId?: string
+): Promise<EnrichedGrant[]> {
+  const callerUuid = cds.context?.user?.authInfo?.token?.payload?.user_uuid as string | undefined;
+  const callerEmail = (cds.context?.user?.authInfo?.token?.payload?.mail ?? cds.context?.user?.authInfo?.token?.payload?.email) as string | undefined;
+  const consentsQuery = SELECT.from(Consents);
+  if (callerId && perspective) {
+    if (perspective === "subject") {
+      const ids = [callerUuid, callerId, callerEmail].filter(Boolean) as string[];
+      consentsQuery.where`subject_uuid in ${ids} or subject in ${ids}`;
+    } else {
+      consentsQuery.where({ [perspective]: callerId });
+    }
+  }
+  const consentRecords = await srv.run(consentsQuery);
   const authorization_details = await srv.run(
     cds.ql.SELECT.from(AuthorizationDetails)
   );
@@ -372,6 +428,11 @@ async function getGrants(srv: GrantsManagementService, data: Grants) {
         .filter(Boolean)
         .filter(unique);
 
+      const subject_uuids = consents
+        .map((c: any) => c.subject_uuid)
+        .filter(Boolean)
+        .filter(unique);
+
       acc[consent.grant_id!] = {
         consents: consents,
         authorization_details: [
@@ -400,14 +461,19 @@ async function getGrants(srv: GrantsManagementService, data: Grants) {
           : grant?.subject
             ? [grant.subject]
             : undefined) as any,
+        subject_uuid: (subject_uuids.length > 0
+          ? subject_uuids
+          : (grant as any)?.subject_uuid
+            ? [(grant as any).subject_uuid]
+            : undefined) as any,
       };
 
       return acc;
     },
-    {} as Record<string, Grant>
+    {} as Record<string, EnrichedGrant>
   );
 
-  return Object.values(grants).reverse();
+  return (Object.values(grants) as EnrichedGrant[]).reverse();
 }
 
 function unique<T>(value: T, index: number, array: T[]): value is T {

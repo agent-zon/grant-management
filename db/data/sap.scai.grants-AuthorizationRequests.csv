@@ -1,0 +1,12 @@
+ID,requested_actor,grant_id,scope,client_id,status,risk_level,subject
+a0000001-0001-0001-0001-000000000001,urn:agent:expense-assistant,g-100,mcp:expense,expense-app,used,medium,alice
+a0000002-0002-0002-0002-000000000002,urn:agent:expense-assistant,g-101,db:expense-read,expense-app,used,medium,alice
+a0000003-0003-0003-0003-000000000003,urn:agent:expense-assistant,g-103,fs:receipts,expense-app,used,medium,alice
+a0000004-0004-0004-0004-000000000004,urn:agent:expense-assistant,g-104,agent:payment-service,expense-app,used,high,alice
+a0000005-0005-0005-0005-000000000005,urn:agent:expense-assistant,g-105,api:expense,expense-app,used,medium,alice
+a0000006-0006-0006-0006-000000000006,urn:agent:expense-assistant,g-106,agent:audit-service,expense-app,used,high,alice
+a0000007-0007-0007-0007-000000000007,urn:agent:expense-assistant,g-107,db:expense-write,expense-app,used,medium,alice
+a0000008-0008-0008-0008-000000000008,urn:agent:payment-service,g-200,api:payment,payment-app,used,medium,alice
+a0000009-0009-0009-0009-000000000009,urn:agent:audit-service,g-300,agent:compliance-bot,audit-app,used,high,alice
+a0000010-0010-0010-0010-000000000010,urn:agent:audit-service,g-301,db:audit,audit-app,used,medium,alice
+a0000011-0011-0011-0011-000000000011,urn:agent:compliance-bot,g-400,api:compliance,compliance-app,used,medium,alice

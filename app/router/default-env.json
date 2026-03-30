@@ -7,6 +7,16 @@
       "forwardAuthToken": true
     },
     {
+      "name": "mtx-api",
+      "url": "http://localhost:4004",
+      "forwardAuthToken": true
+    },
+    {
+      "name": "portal",
+      "url": "http://localhost:4004",
+      "forwardAuthToken": true
+    },
+    {
       "name": "connection-managment",
       "url": "https://connection-managment-sdyz.bolt.host",
       "forwardAuthToken": true

@@ -2,12 +2,12 @@
 
 global:
   domain: c-127c9ef.stage.kyma.ondemand.com
-  host: agents-approuter-grants.c-127c9ef.stage.kyma.ondemand.com
+  host: "{{ .Release.Name }}-approuter-{{ .Release.Namespace }}.{{ .Values.global.domain }}"
   imagePullSecret:
     name: docker-registry
   image:
     registry: scai-dev.common.repositories.cloud.sap
-    tag: cln
+    tag: v69
   imagePullPolicy: Always
 srv:
   replicaCount: 1
@@ -21,6 +21,8 @@ srv:
         validity-type: DAYS
     destination:
       serviceInstanceName: destination
+    service-manager:
+      serviceInstanceName: service-manager
     github:
       fromSecret: git-credentials
   image:
@@ -50,13 +52,16 @@ srv:
 
 approuter:
   replicaCount: 1
+  startupTimeoutSeconds: 120
   networkSecurity:
     allowNamespaceInternal: true
   expose:
     enabled: true
+    host: "{{ tpl .Values.global.host . }}"
     corsPolicy:
       allowOrigins:
         - regex: ".*-approuter-{{ .Release.Namespace }}.{{ .Values.global.domain }}"
+        - regex: ".*-{{ tpl .Values.global.host . }}"
         - exact: "https://*.{{ tpl .Values.global.domain . }}"
         - exact: "http://localhost:9000"
         - exact: "http://localhost:4338"
@@ -92,6 +97,8 @@ approuter:
         validity: 365
         validity-type: DAYS
 
+    xsuaa:
+      serviceInstanceName: xsuaa
     destination:
       serviceInstanceName: destination
   image:
@@ -114,26 +121,15 @@ approuter:
     - configMapRef:
         name: "{{ .Release.Name }}-approuter-configmap"
   env:
-    # TENANT_HOST_PATTERN: "^(.*)-{{ tpl .Values.global.domain . }}"
-    # TENANT_MODE: "shared"
+    # TENANT_HOST_PATTERN disabled — single-tenant deployment.
+    # Enabling this causes 500 errors when the hostname doesn't contain a tenant subdomain.
     OTEL_EXPORTER_OTLP_ENDPOINT: http://otlp-dashboard:18889
     OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
     OTEL_SERVICE_NAME: approuter
     OTEL_PROPAGATORS: tracecontext,baggage
 
 portal:
-  runAsUser: 1993
-  bindings:
-    auth:
-      serviceInstanceName: identity
-      parameters:
-        credential-type: X509_GENERATED
-        app-identifier: grant-portal
-        validity: 365
-        validity-type: DAYS
-
-    destination:
-      serviceInstanceName: destination
+  runAsUser: 1000
   image:
     repository: grant-management/portal
   resources:
@@ -146,11 +142,16 @@ portal:
       memory: 500M
   health:
     liveness:
-      path: /
+      path: /health
     readiness:
-      path: /
+      path: /health
   networkSecurity:
     allowNamespaceInternal: true
+  expose:
+    enabled: true
+  env:
+    - name: CDS_URL
+      value: "http://{{ .Release.Name }}-srv:8080"
 
 identity:
   serviceOfferingName: identity
@@ -163,7 +164,7 @@ identity:
     xsuaa-cross-consumption: true
     home-url: "https://{{ tpl .Values.global.host . }}/"
     consumed-services:
-      - service-instance-name: agents-destination
+      - service-instance-name: "{{ .Release.Name }}-destination"
     provided-apis:
       - name: grant-management
         description: Grant Management API
@@ -230,53 +231,49 @@ backendDestinations:
     preserveHostHeader: true
     forwardAuthToken: true
 
+  mtx-api:
+    service: sidecar
+    forwardAuthToken: true
+
+  portal:
+    service: portal
+    forwardAuthToken: true
+    preserveHostHeader: true
+
   connection-managment:
     external: true
     name: connection-managment
     url: https://connection-managment-sdyz.bolt.host
-    # # labels: [sketch]
 
   role-propagation:
     external: true
     name: role-propagation
     url: https://light-theme-consent-4b50.bolt.host
-    # labels: [sketch]
 
   consent-requests:
     external: true
     name: consent-requests
     url: https://agent-consent-d3j4.bolt.host/workloads
-    # labels: [sketch]
 
   governance:
     external: true
     name: governance
     url: https://control.ai.authz.id
-    # labels: [sketch]
 
   supply-chain-permission-request:
     external: true
     name: supply-chain-permission-request
     url: https://supplier-contact-app-tb5n.bolt.host
-    # labels: [sketch]
 
   agent-grant-e2e:
     external: true
     name: agent-grant-e2e
     url: https://agent-consent-d3j4.bolt.host
-    # labels: [sketch]
+
   authorization-live-monitor:
     external: true
     name: authorization-live-monitor
     url: https://authorization-layers-jgt9.bolt.host/live-requests
-    # labels: [sketch]
-  # user-portal:
-  #   service: portal
-  #   forwardAuthToken: true
-  #    sap-client: true
-  #    forwardAuthCertificates: true
-  #    HTML5.IASDependencyName: grant-api
-  #    HTML5.ForwardAuthCertificates: true
 
 # Git credentials: ServiceInstance must exist for srv (policies admin). Optional: create from chart.
 gitCredentialsInstance:
@@ -301,7 +298,65 @@ destination:
   parameters:
     version: 1.0.0
 
-postgresql:
-  serviceOfferingName: postgresql-db
-  servicePlanName: development
-  fullnameOverride: grants-postgres
+sidecar:
+  replicaCount: 1
+  bindings:
+    xsuaa:
+      serviceInstanceName: xsuaa
+    saas-registry:
+      serviceInstanceName: saas-registry
+    service-manager:
+      serviceInstanceName: service-manager
+  image:
+    repository: grant-management/sidecar
+  resources:
+    limits:
+      ephemeral-storage: 1G
+      memory: 500M
+    requests:
+      ephemeral-storage: 512M
+      cpu: 250m
+      memory: 216M
+  health:
+    liveness:
+      path: /health
+    readiness:
+      path: /health
+  networkSecurity:
+    allowNamespaceInternal: true
+  env:
+    NODE_ENV: production
+    SUBSCRIPTION_URL: "https://${tenant_subdomain}-{{ tpl .Values.global.host . }}"
+
+xsuaa:
+  serviceOfferingName: xsuaa
+  servicePlanName: application
+  parameters:
+    xsappname: "grant-management-{{ .Release.Namespace }}"
+    tenant-mode: shared
+    scopes:
+      - name: "$XSAPPNAME.mtcallback"
+        description: "Multi-tenancy callback scope"
+        grant-as-authority-to-apps:
+          - "$XSAPPNAME(application, sap-provisioning, tenant-onboarding)"
+
+saas-registry:
+  serviceOfferingName: saas-registry
+  servicePlanName: application
+  parameters:
+    xsappname: "grant-management-{{ .Release.Namespace }}"
+    appName: "grant-management-{{ .Release.Namespace }}"
+    displayName: "Grant Management (Canary - {{ .Release.Namespace }})"
+    description: "Grant Management (Canary - {{ .Release.Namespace }})"
+    category: "AI"
+    appUrls:
+      getDependencies: "https://{{ .Release.Name }}-sidecar-{{ .Release.Namespace }}.{{ .Values.global.domain }}/-/cds/saas-provisioning/dependencies"
+      onSubscription: "https://{{ .Release.Name }}-sidecar-{{ .Release.Namespace }}.{{ .Values.global.domain }}/-/cds/saas-provisioning/tenant/{tenantId}"
+      onSubscriptionAsync: true
+      onUnSubscriptionAsync: true
+      onUpdateDependenciesAsync: true
+      callbackTimeoutMillis: 300000
+
+service-manager:
+  serviceOfferingName: service-manager
+  servicePlanName: container

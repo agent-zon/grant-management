@@ -9,13 +9,14 @@ cuid give the ID:UUID
 // Grants as primary entity - not a projection
 entity Grants: managed {
   key id : String @cds.primary.key; 
-  client_id: String=max(requests.client_id);
-  risk_level:String=max(requests.risk_level);
+  client_id: String;
+  risk_level: String;
   status: String enum { active; revoked; } default 'active';
   revoked_at: DateTime;
   revoked_by: User;
   subject: User;
-  actor: String=consents.request.requested_actor;
+  subject_uuid: String; // IAS user_uuid for stable identity matching across auth contexts
+  actor: String;
   scope:String;
   consents: Composition of many Consents on consents.grant_id = $self.id;
   requests: Composition of many AuthorizationRequests on requests.grant = $self;
@@ -43,6 +44,7 @@ entity Grants: managed {
   subject_token_type: String;
   subject_token: String;
   subject: User;
+  subject_uuid: String; // IAS user_uuid for stable identity matching
   expires_in: Integer;
 
    
@@ -87,6 +89,7 @@ entity Consents:cuid,managed {
   authorization_details: Composition of many AuthorizationDetails on authorization_details.consent = $self;
   duration: Timespan;
   subject: User; //@cds.on.insert: $user;
+  subject_uuid: String; // IAS user_uuid for stable identity matching
   previous_consent: Association to Consents; // Reference to the previous consent for this grant
   @calculated
   redirect_uri: String=request.redirect_uri;
@@ -105,7 +108,7 @@ entity AuthorizationDetails:cuid,managed, AuthorizationDetailMcpTools, Authoriza
 
   identifier: String;
   privileges: array of String;
-  resources: array of String; 
+  resources: array of String;
 }
 
 
@@ -159,15 +162,15 @@ type AuthorizationDetailRequest: MCPToolAuthorizationDetailRequest, FileSystemAu
   type: Association to AuthorizationDetailType;
   locations: array of String;
   actions: array of String;
-
 }
  
 entity AuthorizationDetailType: sap.common.CodeList {
-    key code : String(60) enum { 
+    key code : String(60) enum {
       mcp;
       fs;
       database;
       api;
+      agent_invocation;
       grant_management;
       file_access;
       data_access;
@@ -218,4 +221,27 @@ aspect ApiAuthorizationDetailRequest {
 
 type RARClaim {
   essential: Boolean;
+}
+
+
+// ── Finding rules (evaluated on backend) ────────────────────────────────────
+
+entity FindingRules: cuid, managed {
+  code:        String(100);
+  label:       String;
+  description: String(5000);
+  category:    String enum { sod; excessive_privilege; };
+  severity:    String enum { low; medium; high; critical; } default 'medium';
+  active:      Boolean default true;
+  conditions:  Composition of many FindingConditions on conditions.rule = $self;
+}
+
+entity FindingConditions: cuid {
+  rule:              Association to FindingRules;
+  side:              String enum { A; B; };
+  leafType:          String;
+  labelPattern:      String;
+  sublabelPattern:   String;
+  requireDelegated:  Boolean default false;
+  sourceDetailType:  String;
 }

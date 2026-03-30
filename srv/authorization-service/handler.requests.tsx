@@ -1,5 +1,4 @@
 import cds from "@sap/cds";
-import { ulid } from "ulid";
 import type { AuthorizationService } from "./authorization-service.tsx";
 import { AuthorizationRequests } from "#cds-models/sap/scai/grants/AuthorizationService";
 
@@ -13,17 +12,13 @@ export default async function push(
     scope?: string;
   }>
 ) {
-  //todo:extract subject from token
-  //  const {subject_token_type, subject_token} = req.data;
-  //  const subject = await cds.auth.authenticate(subject_token_type, subject_token);
+  console.log(
+    `🔑 PAR request (grant_id: ${req.data.grant_id ?? "deferred"})`
+  );
 
-  // Generate or use existing grant ID
-  const grantId = req.data.grant_id || `gnt_${ulid()}`;
-  console.log("🔑 Grant ID for request:", grantId);
-
-  // Create authorization request linked to grant
+  // Store the request as-is — grant resolution happens at authorize time
+  // when the resource owner's identity is known.
   const { ID } = await this.insert({
-    grant_id: grantId,
     ...req.data,
     access: req.data.authorization_details
       ? parseAuthorizationDetails(req.data.authorization_details)
@@ -39,12 +34,18 @@ export default async function push(
 }
 
 function parseAuthorizationDetails(authorization_details: string) {
-  return JSON.parse(authorization_details)
-    .filter(Boolean)
-    .map(({ type, ...detail }: { type: string; [key: string]: unknown }) => {
-      return {
-        type_code: type,
-        ...detail,
-      };
-    });
+  const details = JSON.parse(authorization_details).filter(Boolean);
+
+  for (const detail of details) {
+    if (!detail.type) {
+      throw new Error(`Authorization detail missing required field 'type'`);
+    }
+  }
+
+  return details.map(
+    ({ type, ...detail }: { type: string; [key: string]: unknown }) => ({
+      type_code: type,
+      ...detail,
+    })
+  );
 }

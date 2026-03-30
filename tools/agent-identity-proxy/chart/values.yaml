@@ -2,7 +2,7 @@
 
 global:
   domain: c-127c9ef.stage.kyma.ondemand.com
-  host: agent-identity-proxy
+  host: agent-igentity-proxy-grants
   imagePullSecret:
     name: docker-registry
   image:
@@ -11,9 +11,9 @@ global:
   imagePullPolicy: Always
 
 proxy:
-  fullnameOverride: agent-identity-proxy
+  fullnameOverride: agent-igentity-proxy
   image:
-    repository: agent-identity-proxy
+    repository: grant-management/agent-igentity-proxy
   runAsUser: 1001
   bindings:
     auth:
@@ -57,13 +57,13 @@ proxy:
       value: "production"
     # Centralized URL configuration
     - name: GRANT_MANAGEMENT_HOST
-      value: "https://grant-management-srv-tomer-dev.c-127c9ef.stage.kyma.ondemand.com"
+      value: "https://agents-srv-grants.c-127c9ef.stage.kyma.ondemand.com"
     - name: GRANTS_PATH_PREFIX
       value: "/grants-management"
     - name: OAUTH_SERVER_SRV
-      value: "https://grant-management-srv-tomer-dev.c-127c9ef.stage.kyma.ondemand.com"
+      value: "https://agents-srv-grants.c-127c9ef.stage.kyma.ondemand.com"
     - name: APP_ROUTER_BASE
-      value: "https://grant-management-approuter-tomer-dev.c-127c9ef.stage.kyma.ondemand.com"
+      value: "https://agents-approuter-grants.c-127c9ef.stage.kyma.ondemand.com"
     - name: LOG_LEVEL
       value: "info"
     - name: DEFAULT_UPSTREAM_MCP_URL

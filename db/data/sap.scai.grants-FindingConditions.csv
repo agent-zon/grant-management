@@ -1,0 +1,4 @@
+ID,rule_ID,side,leafType,labelPattern,sublabelPattern,requireDelegated,sourceDetailType
+c1a00001-0000-0000-0000-000000000001,f1a00001-0000-0000-0000-000000000001,A,mcp_tool,register_receipt,,false,
+c1a00002-0000-0000-0000-000000000002,f1a00001-0000-0000-0000-000000000001,B,api_endpoint,reimburse-approve.payments.sap,,true,
+c1a00003-0000-0000-0000-000000000003,f1a00002-0000-0000-0000-000000000002,A,db_table,,DELETE,false,

@@ -1,0 +1,12 @@
+id,status,scope,subject
+g-100,active,mcp:expense,alice
+g-101,active,db:expense-read,alice
+g-103,active,fs:receipts,alice
+g-104,active,agent:payment-service,alice
+g-105,active,api:expense,alice
+g-106,active,agent:audit-service,alice
+g-107,active,db:expense-write,alice
+g-200,active,api:payment,alice
+g-300,active,agent:compliance-bot,alice
+g-301,active,db:audit,alice
+g-400,active,api:compliance,alice

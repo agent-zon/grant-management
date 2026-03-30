@@ -10,6 +10,13 @@
       "authenticationType": "none"
     },
     {
+      "source": "^/healthz$",
+      "target": "/health",
+      "destination": "srv-api",
+      "csrfProtection": false,
+      "authenticationType": "none"
+    },
+    {
       "source": "^/api-docs/openapi/(.*)$",
       "target": "/$1",
       "localDir": "./api-docs/openapi",
@@ -63,6 +70,20 @@
       "destination": "srv-api",
       "csrfProtection": false,
       "authenticationType": "none"
+    },
+    {
+      "source": "^/-/cds/(.*)$",
+      "target": "/-/cds/$1",
+      "destination": "mtx-api",
+      "csrfProtection": false,
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/portal(.*)$",
+      "target": "/portal$1",
+      "destination": "portal",
+      "csrfProtection": false,
+      "authenticationType": "ias"
     },
     {
       "source": "^/(.*)$",

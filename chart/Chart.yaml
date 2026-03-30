@@ -13,9 +13,12 @@ dependencies:
   - name: web-application
     alias: approuter
     version: ">0.0.0"
-  # - name: web-application
-  #   alias: portal
-  #   version: ">0.0.0"
+  - name: web-application
+    alias: portal
+    version: ">0.0.0"
+  - name: web-application
+    alias: sidecar
+    version: ">0.0.0"
 
   - name: service-instance
     alias: destination
@@ -23,7 +26,12 @@ dependencies:
   - name: service-instance
     alias: identity
     version: ">0.0.0"
-    
-  # - name: service-instance
-  #   version: ">0.0.0"
-  #   alias: "postgresql"
+  - name: service-instance
+    alias: xsuaa
+    version: ">0.0.0"
+  - name: service-instance
+    alias: saas-registry
+    version: ">0.0.0"
+  - name: service-instance
+    alias: service-manager
+    version: ">0.0.0"

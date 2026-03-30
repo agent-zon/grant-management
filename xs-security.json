@@ -1,0 +1,11 @@
+{
+  "xsappname": "grant-management",
+  "tenant-mode": "shared",
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.mtcallback",
+      "description": "Multi-tenancy callback scope for SaaS Registry",
+      "grant-as-authority-to-apps": ["$XSAPPNAME(application, sap-provisioning, tenant-onboarding)"]
+    }
+  ]
+}

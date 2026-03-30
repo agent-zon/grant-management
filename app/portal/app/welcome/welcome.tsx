@@ -1,4 +1,5 @@
 // Custom logo and branding for Agent Grants platform
+import { Link } from "react-router";
 
 interface WelcomeProps {
   nodeVersion: string;
@@ -96,8 +97,9 @@ export function Welcome({ nodeVersion }: WelcomeProps) {
               </p>
             </div>
             <ul className="space-y-2">
-              {resources.map(({ href, text, icon, description }) => (
+              {resources.map(({ href, text, icon, description, external }) => (
                 <li key={href}>
+                  {external ? (
                   <a
                     className="group flex items-center gap-3 self-stretch p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 border border-transparent hover:border-blue-200 dark:hover:border-blue-700"
                     href={href}
@@ -133,6 +135,41 @@ export function Welcome({ nodeVersion }: WelcomeProps) {
                       />
                     </svg>
                   </a>
+                  ) : (
+                  <Link
+                    className="group flex items-center gap-3 self-stretch p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 border border-transparent hover:border-blue-200 dark:hover:border-blue-700"
+                    to={href}
+                  >
+                    <div className="flex-shrink-0 p-2 rounded-lg bg-white dark:bg-gray-600 shadow-sm group-hover:shadow-md transition-shadow">
+                      {icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-700 dark:group-hover:text-blue-300">
+                        {text}
+                      </p>
+                      {description && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {description}
+                        </p>
+                      )}
+                    </div>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="text-gray-400 group-hover:text-blue-500 transition-colors"
+                    >
+                      <path
+                        d="M9 18l6-6-6-6"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -222,6 +259,26 @@ const resources = [
     ),
   },
   {
+    href: "/agents",
+    text: "Agent Permissions",
+    description: "Visualize agent access and authorization graph",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        className="stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300"
+      >
+        <circle cx="12" cy="5" r="3" />
+        <circle cx="5" cy="19" r="3" />
+        <circle cx="19" cy="19" r="3" />
+        <path d="M12 8v4m-4.5 2.5L10 12m7 2.5L14.5 12" />
+      </svg>
+    ),
+  },
+  {
     href: "/policies",
     text: "Policy Management",
     description: "Manage agent ODRL policies and manifests",
@@ -246,6 +303,7 @@ const resources = [
     href: "/api-docs",
     text: "API Documentation",
     description: "Interactive OpenAPI documentation",
+    external: true,
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"

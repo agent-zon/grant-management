@@ -12,10 +12,6 @@ log:
 requires:
   auth:
     kind: ias
-  db:
-    kind: sqlite
-    credentials:
-      url: db.sqlite
   grant-mcp:
     kind: rest
     credentials:
@@ -27,32 +23,8 @@ requires:
       url: https://github.tools.sap/api/v3
 
   destinations: true
-  "[development]":
-    db:
-      kind: sqlite
-      credentials:
-        url: db.sqlite
-    auth:
-      kind: mocked
-      users:
-        alice:
-          tenant: t1
-          roles:
-            - grant_management_create
-            - grant_management_update
-            - grant_management_replace
-            - grant_management_revoke
-            - grant_management_query
-        bob:
-          tenant: t2
-          roles:
-            - grant_management_create
-            - grant_management_update
-            - grant_management_replace
-            - grant_management_revoke
-            - grant_management_query
 features:
   toggles:
     auth: true
   "[production]":
-    emulate_vcap_services": true
+    emulate_vcap_services: true

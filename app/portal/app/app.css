@@ -26,6 +26,14 @@
     transform 0.2s ease;
 }
 
+/* React Flow nodes are positioned via transform — the global transition above
+   adds a 200ms delay to every drag move. Disable it inside the canvas. */
+.react-flow__node,
+.react-flow__edge,
+.react-flow__viewport {
+  transition: none !important;
+}
+
 /* Custom scrollbar for dark theme */
 ::-webkit-scrollbar {
   width: 8px;
@@ -288,4 +296,68 @@ a:focus-visible {
   .print-only {
     display: block !important;
   }
+}
+
+/* ── SAP Horizon Light Theme (scoped) ──────────────────────────────────────── */
+
+.horizon-theme {
+  --hz-bg: #f5f6f7;
+  --hz-bg-card: #ffffff;
+  --hz-brand: #0070f2;
+  --hz-text: #131e29;
+  --hz-text-secondary: #6b7280;
+  --hz-border: #e5e7eb;
+  --hz-success: #256f3a;
+  --hz-error: #aa0808;
+  --hz-warning: #e76500;
+  --hz-purple: #8b5cf6;
+
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--hz-text);
+  background: var(--hz-bg);
+}
+
+/* React Flow overrides inside Horizon theme */
+.horizon-theme .react-flow__controls {
+  background: var(--hz-bg-card);
+}
+
+.horizon-theme .react-flow__controls-button {
+  background: var(--hz-bg-card);
+  border: none;
+  border-bottom: 1px solid var(--hz-border);
+  fill: var(--hz-text);
+  color: var(--hz-text);
+}
+
+.horizon-theme .react-flow__controls-button:hover {
+  background: var(--hz-bg);
+}
+
+.horizon-theme .react-flow__minimap {
+  background: var(--hz-bg-card);
+}
+
+/* Detail panel slide-in animation */
+@keyframes hz-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.hz-detail-panel {
+  animation: hz-slide-in 0.25s ease-out;
+}
+
+/* Smooth opacity fade for nodes/edges during trace expand/collapse.
+   Positions are driven by JS (requestAnimationFrame) so edges stay in sync. */
+.trace-animating .react-flow__node {
+  transition: opacity 0.35s ease !important;
+}
+
+.trace-animating .react-flow__edge {
+  transition: opacity 0.35s ease !important;
 }

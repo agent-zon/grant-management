@@ -1,173 +1,182 @@
-# Development Guide: Grant Management System Integration
+# Development Guide: Grant Management System
 
 ## Overview
 
-This document outlines the development plan for integrating the Grant Management System with MCP (Model Context Protocol) middleware and testing infrastructure.
+SAP CAP (Cloud Application Programming) application implementing the OAuth 2.0 Grant Management specification (FAPI RFC). Provides consent-based authorization for MCP (Model Context Protocol) agents and other OAuth clients.
 
-## Current State
+## Architecture
 
-### What We Have
-- ✅ SQLite database integration with grant management
-- ✅ Express.js server with domain-based routing structure  
-- ✅ Basic API endpoints for grant CRUD operations
-- ✅ OpenAPI/Swagger documentation
-- ❌ SSR implementation (causing TypeScript/JSX issues)
-- ❌ Node module compatibility issues (better-sqlite3)
-
-### Issues to Fix
-1. **SSR Complexity**: Drop server-side rendering for now, focus on API-first approach
-2. **Module Compatibility**: Fix better-sqlite3 Node.js version mismatch
-3. **TypeScript/JavaScript Mix**: Standardize on JavaScript for server-side code
-4. **Missing Tests**: No automated testing infrastructure
-
-## Development Plan
-
-### Phase 1: Stabilize Core System (30 minutes)
-1. **Drop SSR Implementation**
-   - Remove React SSR components from server
-   - Keep domain-based API routing structure
-   - Simplify to pure API endpoints with basic HTML responses
-
-2. **Fix Module Issues**
-   - Rebuild better-sqlite3 for current Node.js version
-   - Ensure all imports work correctly
-   - Test basic server startup and health endpoints
-
-3. **Create Playwright Tests**
-   - Set up Playwright testing framework
-   - Create tests for API endpoints
-   - Test grant CRUD operations
-   - Test consent flow endpoints
-
-### Phase 2: MCP Integration (45 minutes)
-1. **Analyze MCP Middleware**
-   - Study `mcp-middleware/` consent management system
-   - Understand session-based token management
-   - Map MCP scopes to our grant system
-
-2. **Integrate Systems**
-   - Connect grant management API with MCP consent flow
-   - Implement MCP-compatible endpoints
-   - Add session token validation
-   - Map MCP tool scopes to grant permissions
-
-3. **Update Database Schema**
-   - Add MCP-specific fields to grants table
-   - Support session-based token management
-   - Add tool-scope mapping tables
-
-### Phase 3: Testing & Validation (30 minutes)
-1. **Test with MCP Server Example**
-   - Start `mcp-server-example/` 
-   - Start `mcp-middleware/` with our grant system
-   - Test tool calls requiring consent
-   - Verify consent flow works end-to-end
-
-2. **Integration Tests**
-   - Test agent tool calls without permissions
-   - Test consent request generation
-   - Test user consent approval/denial
-   - Test subsequent authorized tool calls
-
-### Phase 4: Documentation & Commit (15 minutes)
-1. **Update Documentation**
-   - Update README with MCP integration details
-   - Document new API endpoints
-   - Add setup instructions for MCP integration
-
-2. **Commit Changes**
-   - Clean commit with descriptive message
-   - Tag release version
-   - Update changelog
-
-## Technical Architecture
-
-### Current Architecture
 ```
-Frontend (React) → Express API → SQLite Database
+MCP Aggregator ──PAR──> Authorization Service ──consent──> Grant Management Service
+                              │                                    │
+                         IAS Auth                            SQLite / HANA
+                              │                                    │
+                         Consent UI (SSR)                   Governance Graph
+                                                                   │
+                                                            Portal (React SPA)
 ```
 
-### Target Architecture
+### Components
+
+| Component | Path | Description |
+|-----------|------|-------------|
+| **API Server (srv)** | `srv/` | CDS services — OAuth endpoints, grant management, governance graph |
+| **Approuter** | `app/router/` | SAP Approuter — IAS authentication + route forwarding |
+| **Portal** | `app/portal/` | React SPA — governance graph visualization, audit vault |
+| **Sidecar** | `mtx/sidecar/` | Multi-tenancy sidecar (HANA — currently unavailable in cluster) |
+
+### Services
+
+| Service | Path | Purpose |
+|---------|------|---------|
+| `AuthorizationService` | `srv/authorization-service/` | OAuth flow: PAR, authorize, consent, token |
+| `GrantsManagementService` | `srv/grant-management/` | Grants CRUD, list, revoke, governance graph |
+| `McpService` | `srv/mcp-service/` | MCP JSON-RPC proxy |
+| `GrantToolsService` | `srv/grant-tools-service/` | Grant tools service |
+| `DemoService` | `srv/demo-service/` | Interactive OAuth flow demo (xstate) |
+
+## OAuth Flow
+
 ```
-MCP Agent → MCP Middleware → Grant Management API → SQLite Database
-     ↓           ↓                    ↓
-MCP Server ← Consent UI ← Grant Management UI
+1. PAR    — Agent → POST /oauth-server/par
+             Client provides: client_id, requested_actor, authorization_details, redirect_uri
+             Client provides: grant_id (deterministic, generated by client)
+             Returns: { request_uri, expires_in: 90 }
+
+2. Authorize — Resource owner → POST /oauth-server/authorize { request_uri, client_id }
+             User authenticates via IAS, subject set from JWT
+             Uses client-provided grant_id; generates gnt_<ulid> if missing (create_or_merge)
+             For merge: filters tools — only undecided (null) tools shown for consent
+             If all decided → returns { status: "already_granted" }
+             Otherwise → renders consent form
+
+3. Consent — Resource owner approves → PUT /oauth-server/AuthorizationRequests/{id}/consent
+             Creates Consent + AuthorizationDetails records
+             Redirects to callback with authorization code
+
+4. Token   — Agent → POST /oauth-server/token
+             Exchanges code for { access_token, grant_id, authorization_details }
 ```
 
-### Key Components
+### Key Design Decisions
 
-1. **Grant Management API** (`server/domains/grant-simple.js`)
-   - CRUD operations for grants
-   - Session-based token management
-   - MCP scope validation
+- **Client owns grant_id** — The client (e.g. MCP Aggregator) generates the `grant_id` deterministically from known data. The server does not look up existing grants by (subject, actor).
+- **create_or_merge** — `grant_management_action=merge` with no `grant_id` creates a new grant.
+- **Undecided tool detection** — Tools with `null` values in existing grants are treated as undecided and re-presented for consent. Only tools with boolean values (`true`/`false`) are considered decided.
+- **GET ownership check** — Querying a grant by ID requires the caller to be the grant's subject, actor, or hold `grant_admin` role.
 
-2. **MCP Integration Layer** (new)
-   - Translate MCP consent requests to grants
-   - Handle session tokens
-   - Map tool permissions to scopes
+## Data Model
 
-3. **Database Layer** (`server/database.js`)
-   - Grant persistence
-   - Session token storage
-   - Audit logging
+**Core chain**: `Grants` → `Consents` → `AuthorizationDetails`
 
-4. **Testing Layer** (new)
-   - Playwright API tests
-   - End-to-end MCP integration tests
+- **Grants** — `id` (PK, e.g. `gnt_<ULID>`), `client_id`, `status`, `subject`, `actor`, `scope`
+- **AuthorizationRequests** — PAR data: `client_id`, `redirect_uri`, `request_uri`, `grant_id`, `access` (authorization details array)
+- **Consents** — `grant_id`, `subject`, `actor`, `scope`, `previous_consent` (audit chain)
+- **AuthorizationDetails** — `type` (mcp, fs, database, api, agent_invocation), type-specific fields
+
+Schema defined in `db/grants.cds`.
 
 ## File Structure
 
 ```
-agent-grants/
-├── server/
-│   ├── index.js                 # Main Express server
-│   ├── database.js             # SQLite database layer
-│   └── domains/
-│       ├── grant-simple.js     # Grant API endpoints
-│       └── mcp-integration.js  # MCP-specific endpoints (new)
-├── tests/
-│   ├── playwright.config.js    # Playwright configuration (new)
-│   └── api/
-│       ├── grants.spec.js      # Grant API tests (new)
-│       └── mcp-integration.spec.js # MCP integration tests (new)
-├── mcp-middleware/             # External MCP consent system
-├── mcp-server-example/         # External MCP server for testing
-└── docs/
-    ├── DEV-GUIDE.md           # This file
-    └── MCP-INTEGRATION.md     # MCP integration docs (new)
+grant-management/
+├── db/
+│   ├── grants.cds              # Data model
+│   └── data/                   # Seed CSV files (not deployed to production)
+├── srv/
+│   ├── authorization-service/  # OAuth endpoints (PAR, authorize, consent, token)
+│   ├── grant-management/       # Grants CRUD, list, revoke, governance graph
+│   ├── mcp-service/            # MCP JSON-RPC proxy
+│   ├── grant-tools-service/    # Grant tools
+│   ├── demo-service/           # Interactive OAuth demo
+│   ├── render/                 # SSR utilities (React → HTML via CDS)
+│   └── server.js               # Custom CDS server bootstrap
+├── app/
+│   ├── portal/                 # React SPA (Vite, React Router)
+│   └── router/                 # SAP Approuter config
+├── chart/                      # Helm chart (values.yaml, templates)
+├── containerize.yaml           # Docker build config + image tags
+├── GRANT_MANAGEMENT_API.md     # API reference
+└── DEV-GUIDE.md                # This file
 ```
 
-## Success Criteria
+## Local Development
 
-### Phase 1 Success
-- [ ] Server starts without errors
-- [ ] Health endpoint responds
-- [ ] API endpoints work with Playwright tests
-- [ ] Database operations succeed
+```bash
+# Install dependencies
+npm install
 
-### Phase 2 Success  
-- [ ] MCP middleware can call our grant API
-- [ ] Consent requests create grants in our system
-- [ ] Session tokens validate correctly
-- [ ] Tool permissions map to grant scopes
+# Start CDS server (auto-deploys SQLite in-memory)
+npx cds watch
 
-### Phase 3 Success
-- [ ] End-to-end agent tool call flow works
-- [ ] Consent approval creates usable grants
-- [ ] Subsequent tool calls succeed with valid grants
-- [ ] All tests pass
+# Or with IAS auth (requires service bindings)
+npx cds watch --profile hybrid
+```
 
-### Phase 4 Success
-- [ ] Clean git commit with all changes
-- [ ] Documentation is complete and accurate
-- [ ] Setup instructions work for new developers
+See `memory/local-dev.md` for IAS auth setup details.
 
-## Next Steps
+## Build & Deploy
 
-1. Start with Phase 1: Fix the current implementation
-2. Add Playwright testing infrastructure  
-3. Commit stable baseline
-4. Begin MCP integration work
-5. Test end-to-end with MCP server example
+### Prerequisites
+- Docker with buildx
+- kubectl configured for `experiments-1234` cluster
+- Helm 3
 
-This phased approach ensures we have a stable foundation before adding complexity, and allows for testing at each stage.
+### Steps
+
+```bash
+# 1. CDS production build
+npx cds build --production
+
+# 2. Initialize SQLite schema (no seed data for production)
+mv db/data db/data_bak
+npx cds deploy --to sqlite:db.sqlite
+mv db/data_bak db/data
+
+# 3. Build & push images (bump tag in containerize.yaml + chart/values.yaml first)
+docker buildx build --platform linux/amd64 --no-cache \
+  -t scai-dev.common.repositories.cloud.sap/grant-management/api:<TAG> \
+  -f Dockerfile . --push
+
+# Approuter (only if app/router/ changed)
+docker buildx build --platform linux/amd64 --no-cache \
+  -t scai-dev.common.repositories.cloud.sap/grant-management/approuter:<TAG> \
+  app/router --push
+
+# Portal (only if app/portal/ changed)
+docker buildx build --platform linux/amd64 --no-cache \
+  -t scai-dev.common.repositories.cloud.sap/grant-management/portal:<TAG> \
+  app/portal --push
+
+# 4. Deploy via Helm
+helm upgrade agents gen/chart -n grants --reuse-values \
+  --set srv.image.tag=<TAG>
+
+# 5. If pod doesn't restart (same tag override), force it
+kubectl rollout restart deployment/agents-srv -n grants
+kubectl rollout status deployment/agents-srv -n grants
+```
+
+### Deployment Details
+
+- **Namespace**: `grants`
+- **Helm release**: `agents`
+- **Registry**: `scai-dev.common.repositories.cloud.sap`
+- **Image pull policy**: `Always` — same tag pushes override; rollout restart pulls new digest
+- **SQLite**: File-based at `/app/db.sqlite`, embedded in Docker image (no PVC — data lost on pod restart)
+
+## Auth Configuration
+
+- **Production**: IAS (Identity Authentication Service) via `@sap/xssec`
+- **Service-level**: `@requires: ['authenticated-user', 'system-user']`
+- **PAR endpoint**: No additional `@requires` — system clients use client credentials
+- **Admin graph**: `@requires: 'grant_admin'`
+
+## Governance Graph
+
+Two views for visualizing agent permission chains:
+
+- **User view** (`agentGraph`) — scoped to current user as subject
+- **Admin view** (`adminAgentGraph`) — cross-subject, requires `grant_admin` role
+
+Graph algorithm uses BFS to resolve `agent_invocation` delegations recursively (depth limit 10, cycle detection) and evaluates FindingRules for SoD and excessive privilege detection.
