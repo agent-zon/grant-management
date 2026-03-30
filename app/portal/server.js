@@ -1,7 +1,7 @@
 import compression from "compression";
 import express from "express";
 import morgan from "morgan";
-import { createRequestHandler } from "@react-router/express";
+
 
 // Short-circuit the type-checking of the built output.
 const BUILD_PATH = "./build/server/index.js";
@@ -41,11 +41,7 @@ if (DEVELOPMENT) {
   );
   app.use(morgan("tiny"));
   app.use("/portal", express.static("build/client", { maxAge: "1h" }));
-  app.use(
-    createRequestHandler({
-      build: await import(BUILD_PATH),
-    }),
-  );
+  app.use(await import(BUILD_PATH).then((mod) => mod.app));
 }
 
 app.listen(PORT, () => {
