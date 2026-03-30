@@ -57,6 +57,7 @@ export default createMiddleware<McpDestinationEnv & MetaEnv>(async (c, next) => 
   const mergedHeaders = buildMergedHeaders(inboundHeaders, destination);
   const authToken = destination.authTokens?.[0]?.value;
 
+  // @ts-ignore — Hono type mismatch between middleware env and app env
   c.set("mergedHeaders", {
     ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     ...mergedHeaders,

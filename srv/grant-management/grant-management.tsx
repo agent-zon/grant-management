@@ -8,8 +8,6 @@ import {
   Grant,
   Grants,
 } from "#cds-models/sap/scai/grants/GrantsManagementService";
-import { McpHandler } from "../mcp-service/mcp-service.tsx";
-
 // CDS ApplicationService for Grant Detail with path parameter support
 export default class Service extends cds.ApplicationService {
   init() {
