@@ -94,6 +94,7 @@ export async function POST(
         301,
         `${request?.redirect_uri}?code=${consent.request_ID}`
       );
+      return;
     }
   }
   return consent;
