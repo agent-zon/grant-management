@@ -13,4 +13,4 @@ using from './mcp-example/mcp-service';
 
 using from './destination-service/destination-service.cds';
 
-using from './policies-cap/policies-service.cds';
+using from './policies-service/policies-service';
