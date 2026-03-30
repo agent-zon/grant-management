@@ -4,8 +4,8 @@ import {
   ResourceTemplate,
 } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import grant from "@/mcp-service/tools.grant";
-import todo from "@/mcp-service/tools.todo";
+import grant from "@/mcp-example/tools.grant";
+import todo from "@/mcp-example/tools.todo";
 import cds from "@sap/cds";
 import { MCPRequest } from "@types";
 import {

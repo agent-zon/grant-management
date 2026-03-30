@@ -12,10 +12,10 @@ export default async function discoverTools(
 ) {
   const { name: destination } = req.params[0] || req.data as any;
   
-  const url = new URL(`${req.http?.req.protocol}://${req.http?.req.headers.host}/grants/mcp`);
+  const url = new URL(`${req.http?.req.protocol}://${req.http?.req.headers.host}/mcp/${destination}`);
   const transport = new StreamableHTTPClientTransport(url, {
     requestInit: {
-      headers: { Authorization: `Bearer ${cds.context?.user?.authInfo?.token?.jwt}`, "x-destination": destination },
+      headers: { Authorization: `Bearer ${cds.context?.user?.authInfo?.token?.jwt}`},
     }
   });
 
