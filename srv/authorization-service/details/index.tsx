@@ -3,6 +3,7 @@ import api from "./api.tsx";
 import fs from "./fs.tsx";
 import database from "./database.tsx";
 import agent_invocation from "./agent-invocation.tsx";
+import system_connection from "./system-connection.tsx";
 import type { AuthorizationDetailRequest } from "#cds-models/sap/scai/grants";
 import type { AuthorizationDetailProps } from "./types.tsx";
 
@@ -12,6 +13,7 @@ const templates = {
   fs,
   database,
   agent_invocation,
+  system_connection,
 };
 
 export function AuthorizationDetailComponent({
@@ -31,6 +33,7 @@ export function AuthorizationDetailComponent({
         value={type_code!}
       />
 
+      {/* @ts-ignore — component props are type-safe per template, spread is intentional */}
       <Component
         index={index}
         type_code={type_code}
