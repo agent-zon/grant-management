@@ -1,0 +1,40 @@
+{
+    "version": 1,
+    "policies": [
+        {
+            "policy": [
+                "scai",
+                "test"
+            ],
+            "rules": [
+                {
+                    "rule": "grant",
+                    "actions": [
+                        "access"
+                    ],
+                    "resources": [
+                        "tools.add_comment_to_pending_review"
+                    ],
+                    "condition": {
+                        "call": [
+                            "eq"
+                        ],
+                        "args": [
+                            {
+                                "ref": [
+                                    "$app",
+                                    "tools",
+                                    "add_comment_to_pending_review",
+                                    "owner"
+                                ]
+                            },
+                            "d064953"
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "functions": [],
+    "tests": []
+}

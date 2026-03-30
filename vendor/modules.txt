@@ -1,0 +1,19 @@
+# github.com/felixge/httpsnoop v1.0.3
+## explicit; go 1.13
+github.com/felixge/httpsnoop
+# github.com/google/uuid v1.6.0
+## explicit
+github.com/google/uuid
+# github.com/gorilla/handlers v1.5.2
+## explicit; go 1.20
+github.com/gorilla/handlers
+# github.com/gorilla/mux v1.8.1
+## explicit; go 1.20
+github.com/gorilla/mux
+# github.com/sap/cloud-identity-authorizations-golang-library v0.0.0-20250828104625-024081ab4ac7
+## explicit; go 1.23.2
+github.com/sap/cloud-identity-authorizations-golang-library/pkg/ams
+github.com/sap/cloud-identity-authorizations-golang-library/pkg/ams/dcn
+github.com/sap/cloud-identity-authorizations-golang-library/pkg/ams/expression
+github.com/sap/cloud-identity-authorizations-golang-library/pkg/ams/internal
+github.com/sap/cloud-identity-authorizations-golang-library/pkg/ams/util

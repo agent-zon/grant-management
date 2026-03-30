@@ -1,0 +1,38 @@
+{
+    "version": 1,
+    "policies": [
+        {
+            "policy": [
+                "scai",
+                "test2"
+            ],
+            "rules": [
+                {
+                    "rule": "grant",
+                    "actions": [
+                        "access"
+                    ],
+                    "resources": [
+                        "tools.list_commits"
+                    ],
+                    "condition": {
+                        "call": [
+                            "eq"
+                        ],
+                        "args": [
+                            {
+                                "ref": [
+                                    "$app",
+                                    "tools",
+                                    "list_commits",
+                                    "repo"
+                                ]
+                            },
+                            "dummy-ai-repo"
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}
