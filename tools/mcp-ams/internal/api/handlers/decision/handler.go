@@ -135,6 +135,8 @@ func (re *DecisionResource) IsUsageAuthorizedHandler(w http.ResponseWriter, r *h
 		for k, v := range payload.Input {
 			attr := fmt.Sprintf("$app.%s.%s.%s", payload.Primitive, payload.Name, k)
 			authzInput[attr] = expression.ConstantFrom(v)
+			wildcardAttr := fmt.Sprintf("$app.%s.*.%s", payload.Primitive, k)
+			authzInput[wildcardAttr] = expression.ConstantFrom(v)
 		}
 	}
 	authzManager.GetSchema().PurgeInvalidInput(authzInput)

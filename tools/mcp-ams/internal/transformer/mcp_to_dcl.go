@@ -37,11 +37,33 @@ func Transform(mcpSchema models.MCPSchema) (*dcn.SchemaAttribute, error) {
 	}
 	appNode.Nested["tools"] = toolsNode
 
+	// Wildcard entry: union of all tool attributes + common meta attributes
+	wildcardNode := dcn.SchemaAttribute{
+		Type:   "Structure",
+		Nested: make(map[string]dcn.SchemaAttribute),
+	}
+
 	// Process each tool
 	for _, tool := range mcpSchema.Tools {
 		toolNode := transformTool(tool)
 		toolsNode.Nested[tool.Name] = toolNode
+		for attrName, attrDef := range toolNode.Nested {
+			wildcardNode.Nested[attrName] = attrDef
+		}
 	}
+
+	// MCP card _meta attributes used in policies
+	for _, metaAttr := range []string{
+		"riskLevel", "accessLevel", "dataClassification",
+		"category", "environment", "toolName", "enabled",
+		"description", "source", "createdBy",
+	} {
+		if _, exists := wildcardNode.Nested[metaAttr]; !exists {
+			wildcardNode.Nested[metaAttr] = dcn.SchemaAttribute{Type: "String"}
+		}
+	}
+
+	toolsNode.Nested["*"] = wildcardNode
 
 	return root, nil
 }

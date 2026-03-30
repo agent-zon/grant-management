@@ -8,7 +8,7 @@
             ],
             "rules": [
                 {
-                    "rule": "grant",
+                    "effect": "grant",
                     "actions": [
                         "access"
                     ],

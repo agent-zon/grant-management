@@ -24,7 +24,7 @@ import mcp from "./middleware.mcp";
 // Middleware chain (applied to all /:destination/* routes):
 //   1. authMiddleware        — verifies JWT (any issuer, jku/discovery) → c.set("jwtPayload"), c.set("user")
 //   2. metaMiddleware        — extracts SessionMeta from headers/JWT → c.set("meta")
-//   3. destinationMiddleware — resolves BTP destination → c.set("destination"), c.set("mergedHeaders")
+//   3. destinationMiddleware — resolves BTP destination → c.set("destination"), c.set("destination.headers")
 //   4. clientMiddleware      — connects MCP client + listTools → c.set("client"), c.set("remoteTools")
 //   5. grantMiddleware       — fetches authorization_details → c.set("authorization_details")
 // ---------------------------------------------------------------------------

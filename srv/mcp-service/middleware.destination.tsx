@@ -13,7 +13,7 @@ import type { MetaEnv, SessionMeta } from "./middleware.meta";
 //
 // Sets on the Hono context:
 //   c.set("destination", HttpDestination | null) — the resolved destination
-//   c.set("mergedHeaders", Record)               — headers to forward
+//   c.set("destination.headers", Record)               — headers to forward
 //
 // Expects the meta middleware to have run first (c.get("meta")).
 // ---------------------------------------------------------------------------
@@ -57,7 +57,7 @@ export default createMiddleware<McpDestinationEnv & MetaEnv>(async (c, next) => 
   const mergedHeaders = buildMergedHeaders(inboundHeaders, destination);
   const authToken = destination.authTokens?.[0]?.value;
 
-  c.set("mergedHeaders", {
+  c.set("destination.headers", {
     ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     ...mergedHeaders,
   });
