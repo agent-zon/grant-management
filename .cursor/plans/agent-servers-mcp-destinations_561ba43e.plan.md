@@ -26,6 +26,7 @@ todos:
   - id: verify
     content: Run relevant tests for GrantToolsService + MCP flows; fix any CDS/type issues introduced by model changes.
     status: pending
+isProject: false
 ---
 
 # Agent MCP destinations (Phase 1: 1 destination per agent)
@@ -57,7 +58,7 @@ What to copy conceptually:
 
 ## Important constraint: Debug Destination service is NOT a dependency
 
-- The debug destination service under `srv/debug-service/*` is valuable to **understand/test/debug** destination resolution.
+- The debug destination service under `srv/debug-service/`* is valuable to **understand/test/debug** destination resolution.
 - **But the GrantToolsService runtime path MUST NOT depend on it** (no internal calls to its endpoints, no required projections).
 - Destination resolution for MCP proxying/discovery happens directly via Cloud SDK (`useOrFetchDestination`) inside GrantToolsService.
 
@@ -181,6 +182,8 @@ sequenceDiagram
   GTS-->>Agent: result
 ```
 
+
+
 ## Acceptance criteria (Phase 1)
 
 - Each agent has exactly one MCP config: `mcp.kind === 'destination'`, `mcp.name`, `mcp.strategy`.
@@ -199,3 +202,4 @@ sequenceDiagram
   - multiple destinations per agent
   - fan-out listTools/callTool
   - aggregation/merging policies
+

@@ -23,6 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 .env
+env/kube.env
+.kube-remote-config
 
 secret.sh
 gen/
@@ -43,3 +45,6 @@ temp/
 @cds-models
 *-secret.*
 secret/
+
+# Playwright auth state (contains session cookies)
+tests/e2e/.auth/

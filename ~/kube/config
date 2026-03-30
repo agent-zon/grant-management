@@ -1,0 +1,38 @@
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUQ1ekNDQWsrZ0F3SUJBZ0lSQUpOTHZVbHNOWWZnWWNSc2JXOFdsMW93RFFZSktvWklodmNOQVFFTEJRQXcKRFRFTE1Ba0dBMVVFQXhNQ1kyRXdIaGNOTWpVd09EQTFNRGswTVRVeldoY05NelV3T0RBMU1EazBNalV6V2pBTgpNUXN3Q1FZRFZRUURFd0pqWVRDQ0FhSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnR1BBRENDQVlvQ2dnR0JBTDhaCndsdjN4Vjdqc2M4cXFFSktiVUdmL3JQWWErYlh6RjFsNkR2blo3Q1ZRQUdDUndKWmxtMWdtN0FUNnNHQWdoeVoKd1dadHFHNTRtOGpMWmZBeEVCRC91dUdHRmEyeE9panNWVGZsUUVLallPSDBSWnJzdWpFb3UrVFFaSXhBT3BjQgowZmF5ZjhWVmNkNldSSkF0elR6QjJST2FDOW13UGE5ZGxhc2RRVHZqeFAvckpScDUyRENGREx1SlVGZHNDUG01CldsYWFPYVFqMllxSkx3c1pvbGRTSm0yMCtKY0o2bEhnb2doN2NJQnBPeVc1YXdDZlByd1VhbFpkT3dGMGVyTlEKY01xUGtqOWsvdDRRMjhiY0dYb1JqK0dJZzVRTWE2MXU2QmU5R29Sc1UwK1JmWmlUTUlQZUN2bUZzMmErTVFhUgpiWXVRbzcyQ2ZUWmE1elhvOWlOa1BWT1NpdVJjcHMwS005OFJKOHhGQXJQOXMwcjN6WXRXNlVXRG1YbW1DL2lTCm1kMTlXQlJTOTJHMzdWZnl2N2xPdytxL0pRbUtIRk5DU21NYXJYK0dvWTYvTHdnaEpNMWVmN2lUYnVVT05NNXkKVnBLa3oybFA4QlIvWDBsc043dlV2bVZDVFh3cGpFU2lTSUNZZjFYNUllZHlQWjk4SnduaGNFelI0SlRacVFJRApBUUFCbzBJd1FEQU9CZ05WSFE4QkFmOEVCQU1DQWFZd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFCkZnUVVVM3VKbDFSOEZIVllHcDI1emczMGExZFhuNTB3RFFZSktvWklodmNOQVFFTEJRQURnZ0dCQUFMRTBVR1EKNng5c1owSDNtanJDVDE5UlBLejZiS3VzUTMxTzJENUY1K0YxVXBxU1FMN1FwRmI0eStoUHJBQTFXZlNvMmdmQwpyS0h4Z25zd2FCRXNqTjZoSkdZZW9wSWk3cHhrQlpRSnI3N3RHVzNnRitsOEZ1UEI2RUttZkIwQnpRZDErVTFwCkh4aStnb1dkMXE0bFhSUUtsTkxXVFNubEN3c2pEaDBuT2Q2Qm1LZzZDVDgzWkthSmkzQzFDUS9IelpHejI5MmkKckwwNVRlVWtEWVZQcXhMOFJrMENYb0xDQUJ4L05qeHh4czJKU2M2cnRtRDFJTW51Y1FwcXRsMFpOUXN2ZGttQQpoUlhsZVFTOWZndFI1OGdFZHN1ZGMrN2NiMEc1MDM4L3g4WTVqb3hjSFdhdmIxWDlCZlNWcFVNY3h6Wnk5Z01qCm44YmMxZXQ4V0JsU2dxR2pialhIdzhvUEF2QS9xRng0Z2tIRVRrejhLNURIWlRncnBGc2NFcmNPK0xLc0I4Q0sKOE1LR21vaTcwUjVKZTlQSWpvS2RsdkRvUk1uemZnUmQrWVVnREwxVUYrcHBmWnowKzFOQjhxYVkrSWpQVU1mUwpiK0NMcXdPK0lQRmpHcTBockhLSjlpdDEwLzN3NS9yeXRFeDBrRTczYnRnSWVnWmRaZDc3TkRWMThBPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+    server: https://api.c-127c9ef.stage.kyma.ondemand.com
+  name: scai
+contexts:
+- context:
+    cluster: scai
+    namespace: grants
+    user: scai
+  name: scai
+current-context: scai
+kind: Config
+preferences: {}
+users:
+- name: scai
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1beta1
+      args:
+      - get-token
+      - --oidc-issuer-url=https://kymacanary.accounts.ondemand.com
+      - --oidc-client-id=d25a1572-20e8-486f-9a6d-fe36734c4f6d
+      - --oidc-extra-scope=email
+      - --oidc-extra-scope=openid
+      command: kubectl-oidc_login
+      env: null
+      installHint: |
+        kubelogin plugin is required to proceed with authentication
+        # Homebrew (macOS and Linux)
+        brew install int128/kubelogin/kubelogin
+        # Krew (macOS, Linux, Windows and ARM)
+        kubectl krew install oidc-login
+        # Chocolatey (Windows)
+        choco install kubelogin
+      interactiveMode: IfAvailable
+      provideClusterInfo: false

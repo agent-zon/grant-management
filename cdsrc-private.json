@@ -1,0 +1,47 @@
+{
+  "requires": {
+    "[hybrid]": {
+      "auth": {
+        "binding": {
+          "type": "k8s",
+          "name": "agents-srv-auth",
+          "cluster": "https://api.c-127c9ef.stage.kyma.ondemand.com",
+          "instance": "agents-identity",
+          "namespace": "grants",
+          "secret": "agents-srv-auth"
+        },
+        "kind": "ias-auth",
+        "vcap": {
+          "name": "auth"
+        }
+      },
+      "destinations": {
+        "binding": {
+          "type": "k8s",
+          "name": "agents-srv-destination",
+          "cluster": "https://api.c-127c9ef.stage.kyma.ondemand.com",
+          "instance": "agents-destination",
+          "namespace": "grants",
+          "secret": "agents-srv-destination"
+        },
+        "kind": "destinations",
+        "vcap": {
+          "name": "destinations"
+        }
+      },
+      "github": {
+        "binding": {
+          "type": "k8s",
+          "name": "git-credentials",
+          "cluster": "https://api.c-127c9ef.stage.kyma.ondemand.com",
+          "instance": "git-credentials",
+          "namespace": "grants",
+          "secret": "git-credentials"
+        },
+        "vcap": {
+          "name": "github"
+        }
+      }
+    }
+  }
+}

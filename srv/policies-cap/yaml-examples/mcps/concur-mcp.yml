@@ -1,0 +1,121 @@
+$schema: >-
+  https://static.modelcontextprotocol.io/schemas/2025-12-11/server-card.schema.json
+version: '1.0'
+protocolVersions:
+  - '2025-11-25'
+serverInfo:
+  name: concur-mcp
+  title: SAP Concur Travel & Expense MCP Server
+  version: 1.0.0
+  description: MCP server for SAP Concur travel and expense management operations
+  websiteUrl: https://www.concur.com
+transport:
+  type: streamable-http
+  endpoint: /mcp/concur
+capabilities:
+  tools: {}
+  resources: {}
+authentication:
+  required: true
+  schemas:
+    - oauth2
+    - bearer
+_meta:
+  sap/category: travel-expense
+  sap/description: Native MCP server for SAP Concur travel and expense management
+tools:
+  - name: trips.read
+    title: Read Trips
+    description: Retrieve upcoming trips and travel itineraries from Concur
+    inputSchema:
+      type: object
+      properties:
+        tripId:
+          type: string
+          description: Optional trip ID to retrieve specific trip details
+        startDate:
+          type: string
+          format: date
+          description: Optional start date filter for trips
+        endDate:
+          type: string
+          format: date
+          description: Optional end date filter for trips
+    annotations:
+      readOnlyHint: true
+    _meta:
+      createdBy: sap:concur
+      sap/accessLevel: authenticated-user
+      sap/riskLevel: sensitive
+  - name: expenses.create
+    title: Create Expense Report
+    description: Create a new expense report in Concur
+    inputSchema:
+      type: object
+      required:
+        - reportName
+        - expenses
+      properties:
+        reportName:
+          type: string
+          description: Name of the expense report
+        expenses:
+          type: array
+          description: List of expenses to include in the report
+          items:
+            type: object
+            required:
+              - amount
+              - currency
+              - expenseType
+            properties:
+              amount:
+                type: number
+                description: Expense amount
+              currency:
+                type: string
+                description: Currency code (e.g., USD, EUR)
+              expenseType:
+                type: string
+                description: Type of expense (e.g., meal, hotel, transportation)
+              date:
+                type: string
+                format: date
+                description: Date of the expense
+              description:
+                type: string
+                description: Description of the expense
+    annotations:
+      destructiveHint: true
+    _meta:
+      createdBy: sap:concur
+      sap/accessLevel: authenticated-user
+      sap/riskLevel: critical
+  - name: receipts.attach
+    title: Attach Receipt
+    description: Attach a receipt image to an expense entry
+    inputSchema:
+      type: object
+      required:
+        - expenseId
+        - receiptData
+      properties:
+        expenseId:
+          type: string
+          description: ID of the expense to attach the receipt to
+        receiptData:
+          type: string
+          format: base64
+          description: Base64-encoded receipt image data
+        mimeType:
+          type: string
+          description: MIME type of the receipt image (e.g., image/jpeg, image/png)
+          default: image/jpeg
+    annotations:
+      destructiveHint: true
+    _meta:
+      createdBy: sap:concur
+      sap/accessLevel: authenticated-user
+      sap/riskLevel: sensitive
+resources: []
+prompts: []

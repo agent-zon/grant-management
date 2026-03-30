@@ -1,9 +1,40 @@
 {
+  "HTML5.DynamicDestination": true,
   "destinations": [
     {
       "name": "srv-api",
       "url": "http://localhost:4004",
       "forwardAuthToken": true
-    } 
+    },
+    {
+      "name": "connection-managment",
+      "url": "https://connection-managment-sdyz.bolt.host",
+      "forwardAuthToken": true
+    },
+    {
+      "name": "role-propagation",
+      "url": "https://light-theme-consent-4b50.bolt.host",
+      "forwardAuthToken": true
+    },
+    {
+      "name": "consent-requests",
+      "url": "https://agent-consent-d3j4.bolt.host/workloads",
+      "forwardAuthToken": true
+    },
+    {
+      "name": "governance",
+      "url": "https://control.ai.authz.id",
+      "forwardAuthToken": true
+    },
+    {
+      "name": "supply-chain-permission-request",
+      "url": "https://supplier-contact-app-tb5n.bolt.host",
+      "forwardAuthToken": true
+    },
+    {
+      "name": "agent-grant-e2e",
+      "url": "https://agent-consent-d3j4.bolt.host",
+      "forwardAuthToken": true
+    }
   ]
 }

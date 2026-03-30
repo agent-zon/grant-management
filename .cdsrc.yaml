@@ -20,7 +20,12 @@ requires:
     kind: rest
     credentials:
       destination: grant-mcp
-  
+
+  github:
+    kind: rest
+    credentials:
+      url: https://github.tools.sap/api/v3
+
   destinations: true
   "[development]":
     db:

@@ -1,6 +1,14 @@
 {
   "welcomeFile": "./api-docs/index.html",
   "routes": [
+    
+    {
+      "source": "^/health$",
+      "target": "/health.html",
+      "localDir": ".",
+      "csrfProtection": false,
+      "authenticationType": "none"
+    },
     {
       "source": "^/api-docs/openapi/(.*)$",
       "target": "/$1",
@@ -15,7 +23,6 @@
       "csrfProtection": false,
       "authenticationType": "ias"
     },
-
     {
       "source": "^/auth/debug(.*)$",
       "target": "/$1",
@@ -31,7 +38,6 @@
       "csrfProtection": false,
       "authenticationType": "ias"
     },
-
     {
       "source": "^/user-api(.*)",
       "target": "$1",
@@ -39,7 +45,25 @@
       "authenticationType": "ias",
       "service": "sap-approuter-userapi"
     },
-
+    {
+      "source": "^/destination/([^/]+)(.*)$",
+      "target": "$2",
+      "destination": "$1",
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/html/([^/]+)(.*)$",
+      "target": "$2",
+      "destination": "$1",
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/sketches(.*)$",
+      "target": "sketches$1",
+      "destination": "srv-api",
+      "csrfProtection": false,
+      "authenticationType": "none"
+    },
     {
       "source": "^/(.*)$",
       "target": "$1",

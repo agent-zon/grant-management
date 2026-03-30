@@ -7,7 +7,7 @@ global:
     name: docker-registry
   image:
     registry: scai-dev.common.repositories.cloud.sap
-    tag: v35
+    tag: cln
   imagePullPolicy: Always
 srv:
   replicaCount: 1
@@ -21,6 +21,8 @@ srv:
         validity-type: DAYS
     destination:
       serviceInstanceName: destination
+    github:
+      fromSecret: git-credentials
   image:
     repository: grant-management/api
   resources:
@@ -105,9 +107,9 @@ approuter:
       memory: 500M
   health:
     liveness:
-      path: /
+      path: /health
     readiness:
-      path: /
+      path: /health
   envFrom:
     - configMapRef:
         name: "{{ .Release.Name }}-approuter-configmap"
@@ -228,6 +230,46 @@ backendDestinations:
     preserveHostHeader: true
     forwardAuthToken: true
 
+  connection-managment:
+    external: true
+    name: connection-managment
+    url: https://connection-managment-sdyz.bolt.host
+    # # labels: [sketch]
+
+  role-propagation:
+    external: true
+    name: role-propagation
+    url: https://light-theme-consent-4b50.bolt.host
+    # labels: [sketch]
+
+  consent-requests:
+    external: true
+    name: consent-requests
+    url: https://agent-consent-d3j4.bolt.host/workloads
+    # labels: [sketch]
+
+  governance:
+    external: true
+    name: governance
+    url: https://control.ai.authz.id
+    # labels: [sketch]
+
+  supply-chain-permission-request:
+    external: true
+    name: supply-chain-permission-request
+    url: https://supplier-contact-app-tb5n.bolt.host
+    # labels: [sketch]
+
+  agent-grant-e2e:
+    external: true
+    name: agent-grant-e2e
+    url: https://agent-consent-d3j4.bolt.host
+    # labels: [sketch]
+  authorization-live-monitor:
+    external: true
+    name: authorization-live-monitor
+    url: https://authorization-layers-jgt9.bolt.host/live-requests
+    # labels: [sketch]
   # user-portal:
   #   service: portal
   #   forwardAuthToken: true
@@ -235,6 +277,23 @@ backendDestinations:
   #    forwardAuthCertificates: true
   #    HTML5.IASDependencyName: grant-api
   #    HTML5.ForwardAuthCertificates: true
+
+# Git credentials: ServiceInstance must exist for srv (policies admin). Optional: create from chart.
+gitCredentialsInstance:
+  enabled: false
+  name: git-credentials
+  externalName: git-credentials
+  serviceOfferingName: ""
+  servicePlanName: ""
+  parameters: {}
+
+# Explicit ServiceBinding (apiVersion: services.cloud.sap.com/v1). Set enabled: true to create it.
+gitCredentialsBinding:
+  enabled: false
+  bindingName: git-credentials
+  serviceInstanceName: git-credentials
+  externalName: git-credentials
+  secretName: git-credentials
 
 destination:
   serviceOfferingName: destination

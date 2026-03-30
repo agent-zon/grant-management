@@ -1,71 +1,55 @@
 namespace sap.scai.debug;
 //destination debug service, endpoints to query and to create destinations
+ 
 
-// @odata.draft.enabled
-// @cds.persistence.skip
-entity Destinations {
-    key     name        : String(100) not null;
-    url                     : String;
-    authentication          : String(100);
-    proxyType               : String(100);
-    sapClient               : String(1000);
-    username                : String(1000);
-    password                : String;
-    isTrustingAllCertificates : Boolean;
-    clientId                : String;
-    clientSecret            : String;
-    tokenServiceUrl         : String;
-    tokenServiceUser        : String;
-    tokenServicePassword    : String;
-    type                    : String;
-    isTestDestination       : Boolean;
-    cloudConnectorLocationId: String;
-    systemUser              : String;
-    forwardAuthToken        : Boolean;
-    mtls                    : Boolean;
-    authTokens               : many {
+aspect DestinationVirtual  {
+    key  name        : String(100);
+    
+    virtual url : String;
+    virtual authentication : String(100);
+    virtual proxyType : String(100);
+    virtual sapClient : String(1000);
+    virtual username : String(1000);
+    virtual password : String;
+    virtual isTrustingAllCertificates : Boolean;
+    virtual clientId : String;
+    virtual clientSecret : String;
+    virtual tokenServiceUrl : String;
+    virtual tokenServiceUser : String;
+    virtual tokenServicePassword : String;
+    virtual type : String;
+    virtual isTestDestination : Boolean;
+    virtual cloudConnectorLocationId : String;
+    virtual systemUser : String;
+    virtual forwardAuthToken : Boolean;
+    virtual mtls : Boolean;
+    virtual authTokens : many {
         type        : String;
         value       : String;
         expiresIn   : String;
         error       : String;
-        http_header : {
-            name   : String; //replace key as it reserved word
-            value : String;
-        }; 
+        http_header : Map; 
     }
- } 
+    
+ }
 
-entity DestinationVirtual {
-    key     name        : String(100);
-     
-    virtual destination : {
-                url                       : String;
-                authentication            : String(100);
-                proxyType                 : String(100);
-                sapClient                 : String(1000);
-                username                  : String(1000);
-                password                  : String;
-                isTrustingAllCertificates : Boolean;
-                clientId                  : String;
-                clientSecret              : String;
-                tokenServiceUrl           : String;
-                tokenServiceUser          : String;
-                tokenServicePassword      : String;
-                type                      : String;
-                isTestDestination         : Boolean;
-                cloudConnectorLocationId  : String;
-                systemUser                : String;
-                forwardAuthToken          : Boolean;
-                mtls                      : Boolean;
-                authTokens                : many {
-                    type        : String;
-                    value       : String;
-                    expiresIn   : String;
-                    error       : String;
-                    http_header : Map; 
-                }
 
-            }
+aspect MCPDiscovery {
+   virtual tools : many {
+        name        : String not null;
+        description : String;
+        inputSchema : Map not null;
+        outputSchema : Map not null;
+        annotations : Map ;
+        _meta : Map not null;
+    }
+   virtual discoveryError : String;
 }
 
- 
+ entity MCPResource {
+    key     name        : String(100);
+}
+
+extend MCPResource with DestinationVirtual;
+
+extend MCPResource with MCPDiscovery;
