@@ -329,9 +329,48 @@ async function getGrant(_srv: GrantsManagementService, { id, ...grant }: Grant) 
     id,
     ...grant,
     scope: aggregatedScope,
-    authorization_details,
+    authorization_details: aggregateDetails(authorization_details),
     consents: consentRecords,
   } as Grant;
+}
+
+/** Merge consent-level details into one entry per (type + merge key) */
+function aggregateDetails(details: any[]): any[] {
+  const grouped = new Map<string, any>();
+
+  for (const d of details) {
+    const type = d.type || "unknown";
+    // Merge key depends on type: server for MCP, system for system_connection, type for others
+    const key = type === "mcp" ? `${type}::${d.server || ""}`
+      : type === "system_connection" ? `${type}::${d.system || ""}`
+      : type === "api" ? `${type}::${(d.urls || []).join(",")}`
+      : `${type}::${d.ID}`;
+
+    const existing = grouped.get(key);
+    if (!existing) {
+      grouped.set(key, { ...d });
+      continue;
+    }
+
+    // Merge type-specific fields
+    if (type === "mcp" && d.tools) {
+      existing.tools = { ...existing.tools, ...d.tools };
+    }
+    if (type === "system_connection" && d.connection_scopes) {
+      const scopes = new Set([...(existing.connection_scopes || []), ...d.connection_scopes]);
+      existing.connection_scopes = [...scopes];
+    }
+    if (type === "api") {
+      existing.urls = [...new Set([...(existing.urls || []), ...(d.urls || [])])];
+      existing.protocols = [...new Set([...(existing.protocols || []), ...(d.protocols || [])])];
+    }
+    if (type === "database") {
+      existing.tables = [...new Set([...(existing.tables || []), ...(d.tables || [])])];
+      existing.schemas = [...new Set([...(existing.schemas || []), ...(d.schemas || [])])];
+    }
+  }
+
+  return [...grouped.values()];
 }
 
 function getRiskColor(level: string) {
