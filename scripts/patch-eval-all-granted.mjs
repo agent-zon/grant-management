@@ -4,9 +4,8 @@
  * (for UI demos when live eval denies everything).
  *
  * Handles:
- *   - Nested: {agent}/eval/{policySlug}/{resource}.json with top-level `tools[]`
- *   - Variant: {agent}/eval/{variant}/{policySlug}/{resource}.json (same shape)
- *   - Legacy: {agent}/eval/{policySlug}.json with `resources.{name}.tools[]`
+ *   - Primary: {agent}/eval/{policySlug}.json with `resources.{name}.tools[]`
+ *   - Old nested files under eval/ (top-level `tools[]` per file) if still present
  *
  * Usage:
  *   npx cds bind --profile hybrid --exec -- node scripts/patch-eval-all-granted.mjs

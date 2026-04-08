@@ -26,7 +26,7 @@ function policyQualifiedName(p: DcnPolicy): string {
   return (p.policy ?? []).join(".");
 }
 
-/** Resolve policy qualified name for eval paths: agent/eval/{slug}/{resourceSlug}.json (or legacy agent/eval/{slug}.json). */
+/** Resolve qualified policy name from DCN + activePolicy query (matches eval file stem). */
 function resolveEvalPolicyQualifiedName(dcn: DcnContainer | undefined, activePolicy: string): { qualified: string; error?: string } {
   if (!dcn?.policies?.length) {
     return { qualified: "", error: "no policies in DCN" };
@@ -51,13 +51,10 @@ type EvalToolRow = {
   condition?: string;
 };
 
-type PersistEvalArtifact = {
+/** One file per active policy: agent/eval/{policySlug}.json */
+type PersistEvalPerPolicyArtifact = {
+  activePolicy?: string;
   resources?: Record<string, { tools?: EvalToolRow[] }>;
-};
-
-/** Nested eval: eval/{policySlug}/{resourceSlug}.json */
-type PersistEvalNestedArtifact = {
-  tools?: EvalToolRow[];
 };
 
 async function loadToolDecisionsFromEval(
@@ -73,7 +70,7 @@ async function loadToolDecisionsFromEval(
   if (evalError || !qualifiedPolicy || !agentId) {
     const note =
       evalError ||
-      (!agentId ? "missing agent" : "open actas / pick policy, then ensure agent/eval/{policy}/{resource}.json exists in repo");
+      (!agentId ? "missing agent" : "open actas / pick policy, then ensure agent/eval/{activePolicySlug}.json exists in repo");
     return liveTools.map((t) => ({
       name: t.name,
       title: t.title || t.name,
@@ -85,31 +82,25 @@ async function loadToolDecisionsFromEval(
 
   const octokit = await getOctokit();
   const slug = policyEvalFileSlug(qualifiedPolicy);
-  const resourceSlug = policyEvalFileSlug(resourceName);
-  const nestedPath = `${agentId}/eval/${slug}/${resourceSlug}.json`;
-  const legacyPath = `${agentId}/eval/${slug}.json`;
+  const evalPath = `${agentId}/eval/${qualifiedPolicy}/${resourceName}.json`;
+  console.log("fetching eval file", evalPath);
+  console.log("ref", ref);
+  console.log("GIT", GIT);
   let rows: EvalToolRow[] = [];
   try {
-    const { data } = await octokit.rest.repos.getContent({ ...GIT, path: nestedPath, ref });
+    const { data } = await octokit.rest.repos.getContent({ ...GIT, path: evalPath, ref });
     const content = Buffer.from((data as { content?: string }).content ?? "", "base64").toString("utf-8");
-    const art = JSON.parse(content) as PersistEvalNestedArtifact;
-    rows = Array.isArray(art.tools) ? art.tools : [];
+    const art = JSON.parse(content) as PersistEvalPerPolicyArtifact;
+    const block = art.resources?.[resourceName];
+    rows = Array.isArray(art?.tools) ? art.tools : [];
   } catch {
-    try {
-      const { data } = await octokit.rest.repos.getContent({ ...GIT, path: legacyPath, ref });
-      const content = Buffer.from((data as { content?: string }).content ?? "", "base64").toString("utf-8");
-      const art = JSON.parse(content) as PersistEvalArtifact;
-      const block = art.resources?.[resourceName];
-      rows = Array.isArray(block?.tools) ? block.tools : [];
-    } catch {
-      return liveTools.map((t) => ({
-        name: t.name,
-        title: t.title || t.name,
-        description: t.description || "",
-        status: "unevaluated" as const,
-        evalNote: `no Git file ${nestedPath} or legacy ${legacyPath} (run persist:mcp-ams-eval)`,
-      }));
-    }
+    return liveTools.map((t) => ({
+      name: t.name,
+      title: t.title || t.name,
+      description: t.description || "",
+      status: "unevaluated" as const,
+      evalNote: ` ${evalPath} (seed:eval-per-policy or persist eval to per-policy file)`,
+    }));
   }
 
   const byName = new Map(rows.map((r) => [r.name, r]));
@@ -121,12 +112,12 @@ async function loadToolDecisionsFromEval(
         title: t.title || t.name,
         description: t.description || "",
         status: "unevaluated" as const,
-        evalNote: "not in persisted eval",
+        evalNote: "eval missing for resource",
       };
     }
     let status: ToolDecision["status"] = "denied";
-    if (row.granted) status = "granted";
-    else if (row.denied) status = "denied";
+    if (row.denied) status = "denied";
+    else if (row.granted) status = "granted";
     else status = "conditional";
     return {
       name: t.name,
@@ -145,7 +136,7 @@ const STATUS_STYLE = {
   unevaluated:  { dot: "bg-slate-400", text: "text-slate-500" },
 } as const;
 
-/** GET .../resources/{name}/tools → tool list from Git agent/eval/{policy}/{resource}.json (legacy: eval/{policy}.json). */
+/** GET .../resources/{name}/tools → Git agent/eval/{activePolicySlug}.json → resources[resourceName].tools */
 export async function Tools(this: any, req: cds.Request<{ resource: ResourceEntry & McpCard; dcn?: DcnContainer; agentId?: string; version?: string }>) {
   const { resource, dcn, agentId, version } = req.data || {};
   const activePolicyFromQuery =
@@ -189,7 +180,7 @@ export async function Tools(this: any, req: cds.Request<{ resource: ResourceEntr
               {granted} granted{denied > 0 ? ` · ${denied} denied` : ""}{conditional > 0 ? ` · ${conditional} conditional` : ""}
               {unevaluated > 0 ? (
                 <span className="text-rose-600 font-medium">
-                  {` · ${unevaluated} from Git eval only — missing or stale agent/eval/*.json`}
+                  {` · ${unevaluated} missing ${resource?.name}`}
                 </span>
               ) : null}
             </p>

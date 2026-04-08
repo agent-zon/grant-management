@@ -92,7 +92,7 @@
     "persist:mcp-ams-eval:go": "USE_GO_EVAL=1 npx cds bind --profile hybrid --exec -- node scripts/persist-mcp-ams-eval.mjs",
     "persist:mcp-ams-eval:variants": "npx cds bind --profile hybrid --exec -- node scripts/persist-mcp-ams-eval-variants.mjs",
     "patch:eval-all-granted": "npx cds bind --profile hybrid --exec -- node scripts/patch-eval-all-granted.mjs",
-    "seed:eval-demo-granted": "npx cds bind --profile hybrid --exec -- node scripts/seed-eval-demo-granted.mjs",
+    "seed:eval-per-policy": "npx cds bind --profile hybrid --exec -- node scripts/seed-eval-per-policy.mjs",
     "bind:resolve": "npx cds env requires --resolve-bindings --profile hybrid",
     "bind:list": "npx cds bind --list",
     "bind:remove": "npx cds bind --remove",

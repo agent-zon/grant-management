@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * Runs persist-mcp-ams-eval.mjs three times so GitHub eval artifacts land under different variant paths:
- *  1. privileged-mode — PERSIST_EVAL_ENV grant.privileged_mode true (full DCN + eval writes)
- *  2. obo-actas — minimal env; OBO policies get $env.actas.on_behalf_of_user from Go (skip DCN)
- *  3. work-hours — inject time.hour + work.inside_business_hours (skip DCN)
+ * Runs persist-mcp-ams-eval.mjs three times with different PERSIST_EVAL_ENV (merged eval per policy).
+ * Writes `{agent}/eval/{policySlug}.json` each time — last successful run wins on that branch.
+ *  1. privileged-mode — grant.privileged_mode true (full DCN + eval)
+ *  2. obo-actas — OBO policies get actas in Go (skip DCN)
+ *  3. work-hours — time / business hours (skip DCN)
  *
  * Forward args after -- to the persist script, e.g.:
  *   node scripts/persist-mcp-ams-eval-variants.mjs -- --agent agent-123 --ref main

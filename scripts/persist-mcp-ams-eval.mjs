@@ -3,8 +3,8 @@
  * Git + AMS eval pipeline (no Git inside mcp-ams):
  *  1. Read {agent}/policies.json from GitHub → Go normalize-dcn-policies → {agent}/dcn/policies.json (legal rules, schemas stripped).
  *  2. For each {agent}/mcps/*.yaml → Go mcp-to-dcn-schema → {agent}/dcn/schema/{resourceSlug}.json
- *  3. Merge normalized policies + per-resource schema → eval → {agent}/eval/{variant}/{policySlug}/{resourceSlug}.json
- *     If --eval-variant is omitted, path is {agent}/eval/{policySlug}/{resourceSlug}.json (no variant segment).
+ *  3. Merge normalized policies + per-resource schema → eval → one file per policy: {agent}/eval/{policySlug}.json
+ *     (resources[resourceName].tools). Optional --eval-variant is stored in JSON only (same path; last run wins).
  *
  * --skip-dcn  Skip writing dcn/policies.json and dcn/schema/* (use after a full run when only eval files differ).
  *
@@ -330,6 +330,9 @@ async function runOneEval(postBody) {
   }
 }
 
+/** @type {Map<string, { qualified: string, resources: Record<string, { tools: unknown[] }> }>} */
+const evalAccumulator = new Map();
+
 for (const yamlEntry of toProcess) {
   const resourceName = yamlEntry.name.replace(YAML_EXT, "");
   const resourceSlug = policyEvalFileSlug(resourceName);
@@ -433,34 +436,41 @@ for (const yamlEntry of toProcess) {
   }
 
   const byPolicy = Array.isArray(evalJson.byPolicy) ? evalJson.byPolicy : [];
-  const now = new Date().toISOString();
 
   for (const slice of byPolicy) {
     const q = slice.policy;
     const rows = slice.tools;
     if (!q || !Array.isArray(rows)) continue;
     const polSlug = policyEvalFileSlug(q);
-    const variantSeg = evalVariantSlug ? `${evalVariantSlug}/` : "";
-    const evalPath = `${agentId}/eval/${variantSeg}${polSlug}/${resourceSlug}.json`;
-    const art = {
-      policy: q,
-      resource: resourceName,
-      ref,
-      evalVariant: evalVariantSlug || "default",
-      updatedAt: now,
-      tools: rows,
-    };
-    try {
-      await putRepoFile(
-        evalPath,
-        `${JSON.stringify(art, null, 2)}\n`,
-        `eval[${evalVariantSlug || "default"}]: ${agentId} ${resourceName} ${q} @ ${ref}`,
-      );
-      written++;
-      console.log(`[persist-mcp-ams-eval] wrote ${evalPath}`);
-    } catch (e) {
-      console.error(`[persist-mcp-ams-eval] write ${evalPath}: ${e.message || e}`);
+    let entry = evalAccumulator.get(polSlug);
+    if (!entry) {
+      entry = { qualified: q, resources: {} };
+      evalAccumulator.set(polSlug, entry);
     }
+    entry.resources[resourceName] = { tools: rows };
+  }
+}
+
+const flushTime = new Date().toISOString();
+for (const [polSlug, entry] of evalAccumulator) {
+  const evalPath = `${agentId}/eval/${polSlug}.json`;
+  const art = {
+    activePolicy: entry.qualified,
+    ref,
+    evalVariant: evalVariantSlug || "default",
+    updatedAt: flushTime,
+    resources: entry.resources,
+  };
+  try {
+    await putRepoFile(
+      evalPath,
+      `${JSON.stringify(art, null, 2)}\n`,
+      `eval: merge ${agentId} ${polSlug} @ ${ref}`,
+    );
+    written++;
+    console.log(`[persist-mcp-ams-eval] wrote ${evalPath}`);
+  } catch (e) {
+    console.error(`[persist-mcp-ams-eval] write ${evalPath}: ${e.message || e}`);
   }
 }
 

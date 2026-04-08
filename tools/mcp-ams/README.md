@@ -9,7 +9,7 @@ PoC HTTP service that exposes SAP AMS-style authorization checks for MCP tools.
   1. **`go run ./cmd/normalize-dcn-policies`** → **`{agent}/dcn/policies.json`** (normalized rules with `rule: grant|deny`; tool schemas stripped).
   2. Per **`{agent}/mcps/*.yaml`**: **`go run ./cmd/mcp-to-dcn-schema`** → **`{agent}/dcn/schema/{resourceSlug}.json`**.
   3. Merges normalized policies + that resource’s schema → AMS eval (**`USE_GO_EVAL=1`** uses `go run ./cmd/eval-policies`; else HTTP **`POST /policies/{ref}/evaluate`**).
-  4. Writes **`{agent}/eval/{policySlug}/{resourceSlug}.json`** (one file per policy × resource). CAP still reads **`{agent}/policies.json`** for the rules UI; eval rows load from the nested eval path first, then legacy **`eval/{policySlug}.json`** `resources{}`.
+  4. Writes **`{agent}/eval/{policySlug}.json`** (one file per policy, `resources[resourceName].tools`). CAP reads the same path for the tools panel (`activePolicy` → slug).
 
 ### CLI tools (stdin → stdout)
 
@@ -73,7 +73,7 @@ npm run hybrid:mcp-ams
 
 ## Node policies-service (Git-only)
 
-CAP reads **`{agentId}/policies.json`** and tool decisions from **`{agentId}/eval/{policySlug}/{resourceSlug}.json`** (fallback: **`eval/{policySlug}.json`** `resources`) via Octokit only (no HTTP to mcp-ams).
+CAP reads **`{agentId}/policies.json`** and tool decisions from **`{agentId}/eval/{policySlug}.json`** (`resources[resourceName].tools`; `policySlug` = dotted qualified name with `/` → `_`) via Octokit only (no HTTP to mcp-ams). Demo data: **`npm run seed:eval-per-policy`**.
 
 Refresh eval artifacts:
 
