@@ -7,7 +7,7 @@ import { RESOURCES, RESOURCES_PANE,  RESOURCES_CARD, RESOURCES_TOGGLE, RESOURCES
 import { RESOURCES_CONNECT_PICKER, ADD_RESOURCE } from "./handler.resources.connect";
 import { ADD_RULE, REMOVE_RULE, RULES } from "./handler.policy.rules";
 import { CONSTRAINTS, CONSTRAINT_VALUES, RESOURCE_CONSTRAINTS, RESOURCE_CONSTRAINT_VALUES } from "./handler.policy.constraints";
-import { TEST } from "./handler.agents.test";
+import { TEST_WITH_ACTAS as TEST, ACTAS } from "./handler.agents.actas";
 import { Tools } from "./handler.resources.tools";
 import { USE } from "./handler.agents.use";
 import { agentsDataMiddleware, paramsToData } from "./middleware.agents";
@@ -60,7 +60,7 @@ export default class PoliciesService extends cds.ApplicationService {
 
     this.before(["*"], versions, paramsToData);
     this.before(["UPDATE", "CREATE", "publish"], versions, compose(paramsToData, agentsDataMiddleware,policyMiddleware, resourcesMiddleware,pushMiddleware));
-    this.before(["resources", "rules", "constraints", "values", "test", "use", "addRule", "removeRule"], versions, compose(paramsToData, agentsDataMiddleware,policyMiddleware, resourcesMiddleware));
+    this.before(["resources", "rules", "constraints", "values", "test", "use", "addRule", "removeRule", "actas"], versions, compose(paramsToData, agentsDataMiddleware,policyMiddleware, resourcesMiddleware));
     this.before(["title", "publisher","publish" ], versions, compose(paramsToData, agentsDataMiddleware));
   
     this.on("READ", versions, GET_PANEL);
@@ -76,6 +76,7 @@ export default class PoliciesService extends cds.ApplicationService {
     this.on("addRule", versions, ADD_RULE);
     this.on("removeRule", versions, REMOVE_RULE);
     this.on("test", versions, TEST);
+    this.on("actas", versions, ACTAS);
     this.on("use", versions, USE);
 
     return super.init();

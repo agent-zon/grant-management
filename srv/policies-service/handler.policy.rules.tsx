@@ -154,7 +154,7 @@ function UsedPolicySection({ use, pol, policyIndex, agentId, version }: {
 // ---------------------------------------------------------------------------
 
 export async function ADD_RULE(this: any, req: cds.Request) {
-  const { dcn: dcnRaw, action, target, constraint, constraintValue, policy: pName } = req.data;
+  const { dcn: dcnRaw, action, target, constraint, constraintValue, policy: pName, agentId, version } = req.data as any;
   const container = parseDcn(dcnRaw);
   const ruleType = action === "deny" ? "deny" : "grant";
   const resource = target?.trim() || "agent.artifacts";
@@ -177,11 +177,14 @@ export async function ADD_RULE(this: any, req: cds.Request) {
 
   req.data.dcn = container;
   await pushMiddleware.call(this, req);
+  req.http?.res?.setHeader("HX-Trigger", JSON.stringify({ "policy-updated": { agent: agentId, version: version } }));
+
   return RULES(req);
 }
 
 export async function REMOVE_RULE(this: any, req: cds.Request) {
   const d = req.data as any;
+  const { agentId, version } = req.data;
   const container = parseDcn(d.dcn);
   const pi = Number(d.removePolicyIndex);
   const ri = Number(d.removeRuleIndex);
@@ -191,6 +194,7 @@ export async function REMOVE_RULE(this: any, req: cds.Request) {
   }
   req.data.dcn = container;
   await pushMiddleware.call(this, req);
+  req.http?.res?.setHeader("HX-Trigger", JSON.stringify({ "policy-updated": { agent: agentId, version: version } }));
   return RULES(req);
 }
 
@@ -202,7 +206,6 @@ export async function RULES(req: cds.Request) {
   const totalRules = policies.reduce((s, p) => s + (p.rules?.length ?? 0), 0);
   const policyNames = policies.map((p) => (p.policy ?? []).join("."));
   const defaultIndex = policies.indexOf(defaultPol!);
-
   return render(
     req,
     <div

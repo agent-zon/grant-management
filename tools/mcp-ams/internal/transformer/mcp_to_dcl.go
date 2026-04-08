@@ -129,7 +129,7 @@ func mapJSONTypeToDCLAttribute(prop models.InputSchema) (string, error) {
 	switch prop.Type {
 	case "string":
 		return "String", nil
-	case "number":
+	case "number", "integer":
 		return "Number", nil
 	case "boolean":
 		return "Bool", nil

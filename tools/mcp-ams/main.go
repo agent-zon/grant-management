@@ -1,7 +1,6 @@
 package main
 
 import (
-	_ "embed"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -12,34 +11,32 @@ import (
 	"github.com/sap/cloud-identity-authorizations-golang-library/pkg/ams/dcn"
 
 	"mcp-ams/internal/api"
-	"mcp-ams/internal/db"
 	"mcp-ams/internal/db/entity"
+	"mcp-ams/internal/examples"
+	"mcp-ams/internal/inmem"
 	"mcp-ams/internal/models"
 	"mcp-ams/internal/transformer"
 )
 
-//go:embed internal/examples/github-mcp.json
-var mcpJSON []byte
-
-func main() {
-	// Parse MCP Schema
+func mustTransformSchema() dcn.SchemaAttribute {
 	var mcpSchema models.MCPSchema
-	if err := json.Unmarshal(mcpJSON, &mcpSchema); err != nil {
+	if err := json.Unmarshal(examples.GitHubMCP, &mcpSchema); err != nil {
 		log.Fatalf("Error parsing MCP schema: %v", err)
 	}
-
-	// Transform to DCL
 	dcnSchema, err := transformer.Transform(mcpSchema)
 	if err != nil {
 		log.Fatalf("Error transforming schema: %v", err)
 	}
+	return *dcnSchema
+}
 
+func main() {
 	dcnSchemaContainer := dcn.DcnContainer{
 		Version: 1,
 		Schemas: []dcn.Schema{
 			{
 				QualifiedName: []string{"schema"},
-				Definition:    *dcnSchema,
+				Definition:    mustTransformSchema(),
 			},
 		},
 	}
@@ -53,14 +50,11 @@ func main() {
 	fmt.Println("Transformed AMS DCL Schema:")
 	fmt.Println(string(dclJSON))
 
-	toolNames := transformer.ExtractToolNames(mcpSchema)
-	githubMCPID := "11111111-1111-1111-1111-111111111111"
-	inMemDB := db.NewInMemoryDB()
-	inMemDB.McpServers[githubMCPID] = entity.Instance{
-		ID:        githubMCPID,
-		Schema:    *dcnSchema,
-		Resources: toolNames,
+	inMemDB, err := inmem.NewServerDB()
+	if err != nil {
+		log.Fatalf("Error building in-memory DB: %v", err)
 	}
+	githubMCPID := inmem.DefaultMCPServerID
 	for _, dcnPol := range LoadPolicies("client/testdata") {
 		inMemDB.Policies[githubMCPID] = append(inMemDB.Policies[githubMCPID], entity.Policy{
 			ID:          uuid.New(),
@@ -71,9 +65,9 @@ func main() {
 		)
 	}
 
-	// Start HTTP server
+	// Start HTTP server (no GitHub in-process: eval uses inline DCN from clients; persist is done by scripts/CAP).
 	port := getEnvOrDefault("PORT", "8687")
-	server := api.NewServer(port, inMemDB)
+	server := api.NewServer(port, inMemDB, nil)
 
 	fmt.Printf("\nStarting HTTP server on port %s...\n", port)
 

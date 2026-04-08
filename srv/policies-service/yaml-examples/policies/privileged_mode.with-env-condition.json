@@ -1,0 +1,30 @@
+{
+  "policy": ["privileged_mode"],
+  "description": "Elevated access to finance-sensitive tools (requires env.grant.privileged_mode)",
+  "rules": [
+    {
+      "rule": "grant",
+      "actions": ["access"],
+      "resources": ["commerce-mcp.tools"],
+      "condition": {
+        "call": ["eq"],
+        "args": [
+          { "ref": ["$env", "grant", "privileged_mode"] },
+          true
+        ]
+      }
+    },
+    {
+      "rule": "grant",
+      "actions": ["access"],
+      "resources": ["ariba-mcp.artifacts"],
+      "condition": {
+        "call": ["eq"],
+        "args": [
+          { "ref": ["$env", "grant", "privileged_mode"] },
+          true
+        ]
+      }
+    }
+  ]
+}

@@ -38,7 +38,7 @@ export async function TEST(this: any, req: cds.Request) {
           className="relative space-y-5 content-fade-in"
           hx-get={`agents/{agent}/versions/{version}/tools`}
           hx-vals="js:{ version: event?.detail?.version, agent: event?.detail?.agent }"
-          hx-trigger="agent-selected from:body"
+          hx-trigger="agent-selected from:body, context-update from:body, policy-updated from:body"
           hx-swap="innerHTML"
           hx-select="#tools-section"
         >
@@ -49,7 +49,12 @@ export async function TEST(this: any, req: cds.Request) {
             <ul className="space-y-1.5 max-h-48 overflow-y-auto pr-1 gap-2">
               {resources.map((t, i) => (
                 <li key={`${t.server}-${t.name}-${i}`} className="flex items-start gap-2 text-sm">
-                  <div hx-get={`${t.slug}/tools`} hx-trigger="load" hx-swap="outerHTML" hx-vals="js:{  }">
+                  <div
+                    hx-get={`${t.slug}/tools`}
+                    hx-trigger="load, context-update from:body"
+                    hx-swap="outerHTML"
+                    hx-vals={`js:{ version: event?.detail?.version ?? ${JSON.stringify(version)}, agent: event?.detail?.agent ?? ${JSON.stringify(agentId)}, resource: event?.detail?.resource ?? ${JSON.stringify(t.name)}, activePolicy: event?.detail?.activePolicy != null ? String(event.detail.activePolicy) : '' }`}
+                  >
                     <div className="skeleton bg-white opacity-50 p-2 rounded-lg">
                       <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">
                         {t.name}

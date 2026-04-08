@@ -32,6 +32,7 @@ service PoliciesService {
       function publisher(version: $self)                                                                                               returns String;
       action   publish(version: $self, dcn: String) returns String;
       function test(version: $self) returns String;
+      action   actas(version: $self, activePolicy: String, mockHour: Integer) returns String;
       function use(version: $self) returns String;
 
     };

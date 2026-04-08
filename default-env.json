@@ -1,6 +1,7 @@
 {
   "ENABLE_FORWARD_CORPORATE_IDP_TOKEN": "true",
   "BASE_API_URL": "http://localhost:9000",
+  "AMS_URL": "http://127.0.0.1:8687",
   "destinations": [
     {
       "name": "srv-api",
