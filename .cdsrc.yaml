@@ -37,20 +37,12 @@ requires:
       users:
         alice:
           tenant: t1
-          roles:
-            - grant_management_create
-            - grant_management_update
-            - grant_management_replace
-            - grant_management_revoke
-            - grant_management_query
+          policies:
+            - cap.grant_management_by_subject
         bob:
           tenant: t2
-          roles:
-            - grant_management_create
-            - grant_management_update
-            - grant_management_replace
-            - grant_management_revoke
-            - grant_management_query
+          policies:
+            - cap.grant_management_by_subject
 features:
   toggles:
     auth: true

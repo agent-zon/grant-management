@@ -54,7 +54,11 @@ type EvalToolRow = {
 /** One file per active policy: agent/eval/{policySlug}.json */
 type PersistEvalPerPolicyArtifact = {
   activePolicy?: string;
-  resources?: Record<string, { tools?: EvalToolRow[] }>;
+  resources?: Record<string, EvalArtifactResource>;
+};
+
+type EvalArtifactResource = {
+  tools?: EvalToolRow[];
 };
 
 async function loadToolDecisionsFromEval(
@@ -90,8 +94,7 @@ async function loadToolDecisionsFromEval(
   try {
     const { data } = await octokit.rest.repos.getContent({ ...GIT, path: evalPath, ref });
     const content = Buffer.from((data as { content?: string }).content ?? "", "base64").toString("utf-8");
-    const art = JSON.parse(content) as PersistEvalPerPolicyArtifact;
-    const block = art.resources?.[resourceName];
+    const art = JSON.parse(content) as EvalArtifactResource;
     rows = Array.isArray(art?.tools) ? art.tools : [];
   } catch {
     return liveTools.map((t) => ({

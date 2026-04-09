@@ -11,7 +11,13 @@ using sap.scai.grants as grants from '../../db/grants.cds';
 service AuthorizationService {
      @cds.redirection.target
     entity AuthorizationRequests as projection on grants.AuthorizationRequests;
-    @requires: ['authenticated-user', 'system-user'] 
+    @cds.redirection.target
+    /** Default signed-in user + technical user; READ scoped with subject = $user. (AMS pseudo-roles skip AMS row-weaving; @ams.attributes remains for optional IAS policies.) */
+    @restrict: [
+        { grant: ['CREATE'], to: ['authenticated-user', 'system-user'] },
+        { grant: ['READ'], to: ['authenticated-user'], where: 'subject = $user' },
+        { grant: ['READ'], to: ['system-user'] }
+    ]
     entity Consents as projection on grants.Consents;
  
     

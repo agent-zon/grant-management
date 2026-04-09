@@ -16,9 +16,5 @@ modules:
         - docker buildx build --platform linux/amd64 -t grant-management/approuter:cln app/router
   - name: grant-management-ams-policies-deployer
     build-parameters:
-      buildpack:
-        type: nodejs
-        builder: builder-jammy-base
-        path: gen/policies
-        env:
-          BP_NODE_RUN_SCRIPTS: ""
+      commands:
+        - docker buildx build --platform linux/amd64 -t grant-management-ams-policies-deployer:cln -f Dockerfile.ams-policies-deployer gen/policies

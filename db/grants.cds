@@ -6,6 +6,8 @@ managed give the createdBy createdAt, modifiedBy modifiedAt
 cuid give the ID:UUID
 */ 
 @cds.autoexpose :true
+/** Same AMS attribute as Consents: instance conditions use resource subject (IAS user id). */
+@ams.attributes: { subject: (subject) }
 // Grants as primary entity - not a projection
 entity Grants: managed {
   key id : String @cds.primary.key; 
@@ -75,6 +77,8 @@ entity GrantUsage:cuid,managed {
   
  
 @cds.autoexpose :true
+/** Maps consent.subject for AMS instance-based READ (restrict rows to the authenticated principal via IAS policies). */
+@ams.attributes: { subject: (subject) }
 entity Consents:cuid,managed {
   @mandatory
   key grant_id: String;

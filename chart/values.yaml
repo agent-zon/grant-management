@@ -2,7 +2,9 @@
 
 global:
   domain: c-127c9ef.stage.kyma.ondemand.com
-  host: agents-approuter-grants.c-127c9ef.stage.kyma.ondemand.com
+  host: ams-approuter-grants.c-127c9ef.stage.kyma.ondemand.com
+  # Must match the approuter APIRule host (Release.Name / Namespace), not a stale hostname.
+  # host: "{{ .Release.Name }}-approuter-{{ .Release.Namespace }}.{{ .Values.global.domain }}"
   imagePullSecret:
     name: docker-registry
   image:
@@ -47,9 +49,13 @@ srv:
       value: "destinations"
     - name: BASE_API_URL
       value: "https://{{ tpl .Values.global.host . }}"
+  # Exposed URL for srv-api destination: https://<exposeHost>.<global.domain> (default exposeHost, no ".cert" segment).
+  # Do not set host to "... .cert" unless your cluster gateway TLS actually covers *.cert.<domain>; the stage wildcard
+  # is typically *.<domain> only — a ".cert." hostname causes approuter → srv TLS verification failures (502).
   expose:
-    gateway: "{{ .Release.Namespace }}/kyma-mtls-gateway"
-    host: "{{ .Release.Name }}-srv-{{ .Release.Namespace }}.cert"
+    enabled: true
+    # gateway: "{{ .Release.Namespace }}/kyma-mtls-gateway"
+    # host: "{{ .Release.Name }}-srv-{{ .Release.Namespace }}.cert"
 
 approuter:
   replicaCount: 1
@@ -85,8 +91,8 @@ approuter:
       allowHeaders:
         - "*"
       allowCredentials: true
-    gateway: "{{ .Release.Namespace }}/kyma-mtls-gateway"
-    host: "{{ .Release.Name }}-approuter-{{ .Release.Namespace }}.cert"
+    # gateway: "{{ .Release.Namespace }}/kyma-mtls-gateway"
+    # host: "{{ .Release.Name }}-approuter-{{ .Release.Namespace }}.cert"
 
   bindings:
     auth:
@@ -212,30 +218,31 @@ identity:
         - https://*.{{ tpl .Values.global.domain . }}/*/logout.html
     authorization:
       enabled: true
-
+    
 backendDestinations:
   srv-api:
     service: srv
     forwardAuthToken: true
-    preserveHostHeader: true
+    # Kyma/Istio APIRule for srv matches the srv hostname; forwarding the browser Host (approuter) can break routing (502).
+    preserveHostHeader: false
 
   grant-management:
     service: srv
     forwardAuthToken: true
-    preserveHostHeader: true
+    preserveHostHeader: false
     authentication: OAuth2TokenExchange
     IASDependencyName: grant-management
 
   grant-api:
     service: srv
     forwardAuthToken: true
-    preserveHostHeader: true
+    preserveHostHeader: false
     authentication: OAuth2UserTokenExchange
     IASDependencyName: grant-api
 
   grant-mcp:
     service: srv
-    preserveHostHeader: true
+    preserveHostHeader: false
     forwardAuthToken: true
 
   connection-managment:
