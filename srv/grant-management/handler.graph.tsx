@@ -53,6 +53,7 @@ interface FrontendGrant {
   scope?: string;
   description?: string;
   granted_at?: string;
+  approved_by?: string;
   authorization_details: FrontendDetail[];
 }
 
@@ -522,6 +523,7 @@ async function buildGraph(
       scope: (fg.grant as any).scope ?? undefined,
       description: undefined,
       granted_at: (fg.grant as any).createdAt ?? undefined,
+      approved_by: (fg.grant as any).subject ?? undefined,
       authorization_details: grantDetails,
     });
   }

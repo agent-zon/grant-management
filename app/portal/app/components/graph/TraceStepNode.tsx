@@ -140,7 +140,7 @@ function buildDetailLines(
       const tools = detail.tools ?? [];
       const granted = tools.filter((t) => t.granted).length;
       return [
-        `${detail.server} (${detail.transport ?? "stdio"})`,
+        `${detail.server}${detail.transport ? ` (${detail.transport})` : ""}`,
         `${tools.length} tools (${granted} granted)`,
       ];
     }
