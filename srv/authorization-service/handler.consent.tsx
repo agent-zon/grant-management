@@ -12,6 +12,7 @@ import { AuthorizationDetails } from "#cds-models/sap/scai/grants/GrantsManageme
 import { isNativeError } from "node:util/types";
 import callback from "./handler.callback.tsx";
 import { signConsentJWT } from "../jwt/index.js";
+import { emitGraphChange } from "../events/graph-events.js";
 
 type ConsentHandler = cds.CRUDEventHandler.On<Consent, void | Consent | Error>;
 
@@ -115,6 +116,13 @@ export async function POST(
         body: new URLSearchParams({ webhook_token: webhookJwt }),
       }).catch(err => console.warn("[webhook] call failed:", err));
     }
+
+    // Notify SSE subscribers that the graph changed
+    emitGraphChange({
+      grant_id: consent.grant_id!,
+      actor: request?.requested_actor || "",
+      event: "consent_approved",
+    });
 
     // For system_connection: check if we need JWT proof-of-consent redirect
     const consentDetails = await cds.run(

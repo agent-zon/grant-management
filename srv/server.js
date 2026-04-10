@@ -97,6 +97,31 @@ cds.on("bootstrap", (app) => {
     res.json(await getJWKS());
   });
 
+  // ── SSE: live graph updates ─────────────────────────────────────────
+  app.get("/graph-events", async (req, res) => {
+    const selectedActor = req.query.actor;
+    if (!selectedActor) return res.status(400).json({ error: "actor query param required" });
+
+    const { addConnection, computeRelevantActors } = await import("./events/graph-events.js");
+    const relevantActors = await computeRelevantActors(selectedActor);
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+
+    const heartbeat = setInterval(() => res.write(": heartbeat\n\n"), 30000);
+
+    const conn = {
+      selectedActor,
+      relevantActors,
+      send: (data) => res.write(`event: graph-change\ndata: ${JSON.stringify(data)}\n\n`),
+    };
+    const remove = addConnection(conn);
+
+    req.on("close", () => { clearInterval(heartbeat); remove(); });
+  });
+
   // ── GET /oauth-server/authorize → rewrite to POST for CDS handler ──
   app.get("/oauth-server/authorize", (req, res, next) => {
     req.method = "POST";

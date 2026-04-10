@@ -11,7 +11,7 @@ import {
 } from "@xyflow/react";
 import type { GraphNode } from "../components/graph/graph-types";
 import "@xyflow/react/dist/style.css";
-import { Form, useLoaderData, useSearchParams } from "react-router";
+import { Form, useLoaderData, useSearchParams, useRevalidator } from "react-router";
 import type { Route } from "./+types/agents.graph";
 import type {
   ApiGrant,
@@ -112,6 +112,15 @@ export default function AgentsGraphPage() {
   const animFrameRef = useRef(0);
   const nodesRef = useRef<GraphNode[]>([]);
   const initialViewportRef = useRef<{ x: number; y: number; zoom: number } | null>(null);
+  const revalidator = useRevalidator();
+
+  // SSE: live graph updates
+  useEffect(() => {
+    if (!selectedActor) return;
+    const es = new EventSource(`/graph-events?actor=${encodeURIComponent(selectedActor)}`);
+    es.addEventListener("graph-change", () => revalidator.revalidate());
+    return () => es.close();
+  }, [selectedActor]);
 
   const graphData = useMemo(() => {
     if (!selectedActor || grants.length === 0) return null;
