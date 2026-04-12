@@ -11,7 +11,7 @@ import {
 } from "@xyflow/react";
 import type { GraphNode } from "../components/graph/graph-types";
 import "@xyflow/react/dist/style.css";
-import { Form, useLoaderData, useSearchParams } from "react-router";
+import { Form, useLoaderData, useSearchParams, useRevalidator } from "react-router";
 import type { Route } from "./+types/agents.graph";
 import type {
   ApiGrant,
@@ -112,6 +112,35 @@ export default function AgentsGraphPage() {
   const animFrameRef = useRef(0);
   const nodesRef = useRef<GraphNode[]>([]);
   const initialViewportRef = useRef<{ x: number; y: number; zoom: number } | null>(null);
+  const revalidator = useRevalidator();
+
+  // WebSocket: live graph updates (goes through approuter → portal WS hub → CDS events)
+  useEffect(() => {
+    if (!selectedActor || typeof window === "undefined") return;
+    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${proto}//${window.location.host}/portal/ws/graph?actor=${encodeURIComponent(selectedActor)}`;
+    let ws: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout>;
+
+    function connect() {
+      ws = new WebSocket(wsUrl);
+      ws.onmessage = () => revalidator.revalidate();
+      ws.onclose = () => { reconnectTimer = setTimeout(connect, 3000); };
+    }
+    connect();
+
+    // Refresh data when returning to the page (e.g., after approving consent in same tab)
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible") revalidator.revalidate();
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      clearTimeout(reconnectTimer);
+      ws?.close();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [selectedActor]);
 
   const graphData = useMemo(() => {
     if (!selectedActor || grants.length === 0) return null;
@@ -127,15 +156,8 @@ export default function AgentsGraphPage() {
 
   // Keep a live ref so handlers always read the latest positions
   nodesRef.current = nodes;
-
-  useMemo(() => {
-    if (graphData) {
-      setNodes(graphData.nodes);
-      setEdges(graphData.edges);
-      selectionsRef.current = new Map();
-      setPanelLeaves([]);
-    }
-  }, [graphData, setNodes, setEdges]);
+  const prevNodeIdsRef = useRef<Set<string>>(new Set());
+  const newNodeIdsRef = useRef<Set<string>>(new Set());
 
   // Cancel running animation on unmount
   useEffect(() => () => cancelAnimationFrame(animFrameRef.current), []);
@@ -220,6 +242,42 @@ export default function AgentsGraphPage() {
     },
     [setNodes]
   );
+
+  // Animate graph updates: new nodes pop in, existing nodes slide to make room
+  useEffect(() => {
+    if (!graphData) return;
+    const prevIds = prevNodeIdsRef.current;
+    const newIds = new Set(graphData.nodes.map((n) => n.id));
+
+    if (prevIds.size === 0) {
+      setNodes(graphData.nodes);
+      setEdges(graphData.edges);
+    } else {
+      const freshIds = new Set<string>();
+      for (const id of newIds) {
+        if (!prevIds.has(id)) freshIds.add(id);
+      }
+      newNodeIdsRef.current = freshIds;
+
+      const markedNodes = graphData.nodes.map((n) =>
+        freshIds.has(n.id) ? { ...n, data: { ...n.data, isNew: true } } : n
+      );
+
+      setEdges(graphData.edges);
+      animatePositions(nodesRef.current, markedNodes, 450, () => {
+        setTimeout(() => {
+          newNodeIdsRef.current = new Set();
+          setNodes((prev) =>
+            prev.map((n) => n.data?.isNew ? { ...n, data: { ...n.data, isNew: false } } : n)
+          );
+        }, 500);
+      });
+    }
+
+    prevNodeIdsRef.current = newIds;
+    selectionsRef.current = new Map();
+    setPanelLeaves([]);
+  }, [graphData, setNodes, setEdges, animatePositions]);
 
   /**
    * Fit the viewport to all current nodes.

@@ -105,6 +105,7 @@ function extractLeavesFromDetail(
       description: grant.description,
       granted_at: grant.granted_at,
       expires_at: grant.expires_at,
+      approved_by: grant.approved_by,
     },
     authorizationDetail: delegation
       ? delegation.invocationDetail

@@ -19,7 +19,7 @@ const leafIcons = {
 } as const;
 
 export function LeafNode({ data }: NodeProps) {
-  const { leaf, selected, dimmed } = data as LeafNodeData;
+  const { leaf, selected, dimmed, isNew } = data as LeafNodeData & { isNew?: boolean };
   const color = getTypeColor(leaf.sourceDetailType);
   const Icon = leafIcons[leaf.leafType];
   const badge = getLeafTypeLabel(leaf.leafType);
@@ -28,6 +28,7 @@ export function LeafNode({ data }: NodeProps) {
   return (
     <div
       data-testid="leaf-node"
+      className={isNew ? "leaf-pop-in" : ""}
       style={{
         background: isDenied
           ? "#fef2f2"

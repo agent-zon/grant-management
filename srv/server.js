@@ -12,6 +12,8 @@ import fs from "fs";
 import path from "path";
 import bodyParser from "body-parser";
 import methodOverride from "method-override";
+import { getJWKS } from "./jwt/index.js";
+import { addConnection, computeRelevantActors } from "./events/graph-events.js";
 import React from "react";
 import { getRequestListener } from "@hono/node-server";
 import mcpApp from "./mcp-service/app.tsx";
@@ -93,8 +95,34 @@ cds.on("bootstrap", (app) => {
 
   // ── JWKS endpoint ────────────────────────────────────────────────────
   app.get("/.well-known/jwks.json", async (_req, res) => {
-    const { getJWKS } = await import("./jwt/index.js");
     res.json(await getJWKS());
+  });
+
+  // ── SSE: live graph updates (internal — consumed by portal WS hub) ──
+  app.get("/graph-events", async (req, res) => {
+    const selectedActor = req.query.actor;
+    if (!selectedActor) return res.status(400).json({ error: "actor query param required" });
+
+    // Wildcard: portal subscribes to ALL events
+    const isWildcard = selectedActor === "*";
+    const relevantActors = isWildcard ? new Set(["*"]) : await computeRelevantActors(selectedActor);
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.flushHeaders();
+
+    const heartbeat = setInterval(() => res.write(": heartbeat\n\n"), 30000);
+
+    const conn = {
+      selectedActor,
+      relevantActors,
+      send: (data) => res.write(`event: graph-change\ndata: ${JSON.stringify(data)}\n\n`),
+    };
+    const remove = addConnection(conn);
+
+    req.on("close", () => { clearInterval(heartbeat); remove(); });
   });
 
   // ── GET /oauth-server/authorize → rewrite to POST for CDS handler ──

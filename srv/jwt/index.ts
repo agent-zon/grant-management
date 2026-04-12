@@ -1,27 +1,37 @@
-import { SignJWT, exportJWK, calculateJwkThumbprint, generateKeyPair } from "jose";
+import cds from "@sap/cds";
+import { SignJWT, importPKCS8, importX509, exportJWK, calculateJwkThumbprint } from "jose";
 import type { JWK } from "jose";
+import crypto from "crypto";
 
-// Key material MUST live on globalThis — not module-level variables.
-// Reason: server.js loads this via `await import('./jwt/index.js')` (dynamic ESM import)
-// while CDS handlers load it via tsx-transpiled imports. These resolve to separate
-// module instances with separate module-scoped variables. globalThis is the only
-// shared namespace that guarantees both code paths see the same key pair.
-const KEYS = globalThis as typeof globalThis & {
-  __consent_privateKey?: CryptoKey;
-  __consent_publicJwk?: JWK;
-  __consent_kid?: string;
-};
+// Key material loaded from IAS service binding (X.509 certificate).
+// All pods mount the same binding → same key → JWTs verify on any pod.
+let privateKey: CryptoKey | null = null;
+let publicJwk: JWK | null = null;
+let kid: string | null = null;
 
-async function ensureKeyPair() {
-  if (KEYS.__consent_privateKey && KEYS.__consent_publicJwk && KEYS.__consent_kid) return;
-  const { privateKey: priv, publicKey: pub } = await generateKeyPair("ES256");
-  KEYS.__consent_privateKey = priv;
-  KEYS.__consent_publicJwk = await exportJWK(pub);
-  KEYS.__consent_publicJwk.alg = "ES256";
-  KEYS.__consent_publicJwk.use = "sig";
-  KEYS.__consent_kid = await calculateJwkThumbprint(KEYS.__consent_publicJwk);
-  KEYS.__consent_publicJwk.kid = KEYS.__consent_kid;
-  console.log("[JWT] Key pair initialized, kid:", KEYS.__consent_kid);
+async function ensureKeys() {
+  if (privateKey && publicJwk && kid) return;
+
+  const credentials = cds.requires?.auth?.credentials;
+  if (!credentials?.key || !credentials?.certificate) {
+    throw new Error("IAS credentials not available — bind an Identity service instance");
+  }
+
+  // IAS provides PKCS#1 (BEGIN RSA PRIVATE KEY). Convert to PKCS#8 for jose.
+  let keyPem = credentials.key as string;
+  if (keyPem.includes("BEGIN RSA PRIVATE KEY")) {
+    const keyObj = crypto.createPrivateKey(keyPem);
+    keyPem = keyObj.export({ type: "pkcs8", format: "pem" }) as string;
+  }
+
+  privateKey = await importPKCS8(keyPem, "RS256");
+  const publicKey = await importX509(credentials.certificate, "RS256");
+  publicJwk = await exportJWK(publicKey);
+  publicJwk.alg = "RS256";
+  publicJwk.use = "sig";
+  kid = await calculateJwkThumbprint(publicJwk);
+  publicJwk.kid = kid;
+  console.log("[JWT] Key loaded from IAS binding, kid:", kid);
 }
 
 export interface ConsentJWTClaims {
@@ -37,7 +47,7 @@ export interface ConsentJWTClaims {
 }
 
 export async function signConsentJWT(claims: ConsentJWTClaims): Promise<string> {
-  await ensureKeyPair();
+  await ensureKeys();
   const payload: Record<string, unknown> = {
     grant_id: claims.grant_id,
     actor: claims.actor,
@@ -50,15 +60,15 @@ export async function signConsentJWT(claims: ConsentJWTClaims): Promise<string> 
   if (claims.event) payload.event = claims.event;
 
   return new SignJWT(payload)
-    .setProtectedHeader({ alg: "ES256", kid: KEYS.__consent_kid! })
+    .setProtectedHeader({ alg: "RS256", kid: kid! })
     .setSubject(claims.sub)
     .setIssuer("grant-management")
     .setIssuedAt()
     .setExpirationTime("60s")
-    .sign(KEYS.__consent_privateKey!);
+    .sign(privateKey!);
 }
 
 export async function getJWKS(): Promise<{ keys: JWK[] }> {
-  await ensureKeyPair();
-  return { keys: [KEYS.__consent_publicJwk!] };
+  await ensureKeys();
+  return { keys: [publicJwk!] };
 }

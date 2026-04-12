@@ -425,6 +425,11 @@ function GrantStepContent({ leaf }: { leaf: LeafResource }) {
           {grant.description}
         </div>
       )}
+      {grant.approved_by && (
+        <div style={{ fontSize: 12, color: "#6b7280" }}>
+          <strong>Approved by:</strong> {grant.approved_by}
+        </div>
+      )}
       {grant.granted_at && (
         <div style={{ fontSize: 11, color: "#9ca3af" }}>
           Granted: {new Date(grant.granted_at).toLocaleString()}

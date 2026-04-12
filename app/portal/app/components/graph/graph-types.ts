@@ -82,6 +82,7 @@ export interface ApiGrant {
   description?: string;
   granted_at?: string;
   expires_at?: string;
+  approved_by?: string;
   authorization_details: AuthorizationDetail[];
 }
 
@@ -96,6 +97,7 @@ export interface AuthorizationTrace {
     description?: string;
     granted_at?: string;
     expires_at?: string;
+    approved_by?: string;
   };
   authorizationDetail: AuthorizationDetail;
   delegation?: {
