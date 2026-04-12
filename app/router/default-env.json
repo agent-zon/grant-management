@@ -13,7 +13,7 @@
     },
     {
       "name": "portal",
-      "url": "http://localhost:4004",
+      "url": "http://localhost:3000",
       "forwardAuthToken": true
     },
     {
