@@ -13,7 +13,7 @@ interface Connection {
   send: (data: GraphChangeEvent) => void;
 }
 
-const REDIS_URL = process.env.REDIS_URL || "redis://mcp-aggregator-redis:6379";
+const REDIS_URL = process.env.REDIS_URL || "redis://agents-redis:6379";
 const CHANNEL = "graph-events";
 
 // Local SSE connections (per-pod — each pod has its own SSE clients)

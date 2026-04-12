@@ -50,7 +50,7 @@ srv:
     - name: BASE_API_URL
       value: "https://{{ tpl .Values.global.host . }}"
     - name: REDIS_URL
-      value: "redis://mcp-aggregator-redis:6379"
+      value: "redis://{{ .Release.Name }}-redis:6379"
 
 approuter:
   replicaCount: 1
@@ -362,3 +362,6 @@ saas-registry:
 service-manager:
   serviceOfferingName: service-manager
   servicePlanName: container
+
+redis:
+  enabled: true
