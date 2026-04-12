@@ -1,6 +1,7 @@
 import cds from "@sap/cds";
 import { SignJWT, importPKCS8, importX509, exportJWK, calculateJwkThumbprint } from "jose";
 import type { JWK } from "jose";
+import crypto from "crypto";
 
 // Key material loaded from IAS service binding (X.509 certificate).
 // All pods mount the same binding → same key → JWTs verify on any pod.
@@ -16,7 +17,14 @@ async function ensureKeys() {
     throw new Error("IAS credentials not available — bind an Identity service instance");
   }
 
-  privateKey = await importPKCS8(credentials.key, "RS256");
+  // IAS provides PKCS#1 (BEGIN RSA PRIVATE KEY). Convert to PKCS#8 for jose.
+  let keyPem = credentials.key as string;
+  if (keyPem.includes("BEGIN RSA PRIVATE KEY")) {
+    const keyObj = crypto.createPrivateKey(keyPem);
+    keyPem = keyObj.export({ type: "pkcs8", format: "pem" }) as string;
+  }
+
+  privateKey = await importPKCS8(keyPem, "RS256");
   const publicKey = await importX509(credentials.certificate, "RS256");
   publicJwk = await exportJWK(publicKey);
   publicJwk.alg = "RS256";
