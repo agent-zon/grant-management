@@ -1,5 +1,8 @@
 {
   "welcomeFile": "./api-docs/index.html",
+  "websockets": {
+    "enabled": true
+  },
   "routes": [
     
     {

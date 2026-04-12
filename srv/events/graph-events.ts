@@ -16,8 +16,10 @@ const connections = new Set<Connection>();
 
 export function emitGraphChange(data: GraphChangeEvent) {
   for (const conn of connections) {
-    if (!conn.relevantActors.has(data.actor)) continue;
-    conn.send(data);
+    // Wildcard subscribers get everything (portal WS hub)
+    if (conn.relevantActors.has("*") || conn.relevantActors.has(data.actor)) {
+      conn.send(data);
+    }
   }
 }
 

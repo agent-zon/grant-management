@@ -114,12 +114,25 @@ export default function AgentsGraphPage() {
   const initialViewportRef = useRef<{ x: number; y: number; zoom: number } | null>(null);
   const revalidator = useRevalidator();
 
-  // SSE: live graph updates
+  // WebSocket: live graph updates (goes through approuter → portal WS hub → CDS events)
   useEffect(() => {
-    if (!selectedActor) return;
-    const es = new EventSource(`/graph-events?actor=${encodeURIComponent(selectedActor)}`);
-    es.addEventListener("graph-change", () => revalidator.revalidate());
-    return () => es.close();
+    if (!selectedActor || typeof window === "undefined") return;
+    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${proto}//${window.location.host}/portal/ws/graph?actor=${encodeURIComponent(selectedActor)}`;
+    let ws: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout>;
+
+    function connect() {
+      ws = new WebSocket(wsUrl);
+      ws.onmessage = () => revalidator.revalidate();
+      ws.onclose = () => { reconnectTimer = setTimeout(connect, 3000); };
+    }
+    connect();
+
+    return () => {
+      clearTimeout(reconnectTimer);
+      ws?.close();
+    };
   }, [selectedActor]);
 
   const graphData = useMemo(() => {
