@@ -12,7 +12,11 @@ interface Connection {
   send: (data: GraphChangeEvent) => void;
 }
 
-const connections = new Set<Connection>();
+// Must use globalThis — server.js and CDS handler files resolve to separate
+// module instances even with static imports (different transpilation paths).
+const G = globalThis as typeof globalThis & { __graphConnections?: Set<Connection> };
+if (!G.__graphConnections) G.__graphConnections = new Set();
+const connections = G.__graphConnections;
 
 export function emitGraphChange(data: GraphChangeEvent) {
   console.log(`[SSE] Emitting graph-change: ${data.event} for actor=${data.actor}, ${connections.size} connections`);
