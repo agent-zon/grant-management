@@ -15,6 +15,7 @@ interface Connection {
 const connections = new Set<Connection>();
 
 export function emitGraphChange(data: GraphChangeEvent) {
+  console.log(`[SSE] Emitting graph-change: ${data.event} for actor=${data.actor}, ${connections.size} connections`);
   for (const conn of connections) {
     // Wildcard subscribers get everything (portal WS hub)
     if (conn.relevantActors.has("*") || conn.relevantActors.has(data.actor)) {
