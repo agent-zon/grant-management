@@ -115,12 +115,14 @@ function connectToGraphEvents() {
       const lines = buffer.split("\n");
       buffer = lines.pop() || "";
       let eventData = null;
-      for (const line of lines) {
+      for (const rawLine of lines) {
+        const line = rawLine.replace(/\r$/, "");
         if (line.startsWith("data: ")) {
           eventData = line.slice(6);
         }
         if (line === "" && eventData) {
-          try { broadcastToClients(JSON.parse(eventData)); } catch {}
+          console.log("[WS] SSE event received:", eventData.slice(0, 80));
+          try { broadcastToClients(JSON.parse(eventData)); } catch (e) { console.warn("[WS] SSE parse error:", e.message); }
           eventData = null;
         }
       }
@@ -128,6 +130,16 @@ function connectToGraphEvents() {
 
     res.on("end", () => {
       console.log("[WS] CDS SSE closed, reconnecting in 2s");
+      setTimeout(connectToGraphEvents, 2000);
+    });
+
+    res.on("error", (err) => {
+      console.warn(`[WS] CDS SSE stream error: ${err.message}, reconnecting in 2s`);
+      setTimeout(connectToGraphEvents, 2000);
+    });
+
+    res.on("close", () => {
+      console.log("[WS] CDS SSE connection closed, reconnecting in 2s");
       setTimeout(connectToGraphEvents, 2000);
     });
   });

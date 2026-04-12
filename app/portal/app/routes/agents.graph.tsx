@@ -129,9 +129,16 @@ export default function AgentsGraphPage() {
     }
     connect();
 
+    // Refresh data when returning to the page (e.g., after approving consent in same tab)
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible") revalidator.revalidate();
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     return () => {
       clearTimeout(reconnectTimer);
       ws?.close();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [selectedActor]);
 
