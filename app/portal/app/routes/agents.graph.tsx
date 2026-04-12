@@ -149,15 +149,47 @@ export default function AgentsGraphPage() {
 
   // Keep a live ref so handlers always read the latest positions
   nodesRef.current = nodes;
+  const prevNodeIdsRef = useRef<Set<string>>(new Set());
+  const newNodeIdsRef = useRef<Set<string>>(new Set());
 
-  useMemo(() => {
-    if (graphData) {
+  useEffect(() => {
+    if (!graphData) return;
+    const prevIds = prevNodeIdsRef.current;
+    const newIds = new Set(graphData.nodes.map((n) => n.id));
+
+    if (prevIds.size === 0) {
+      // Initial load — set directly, no animation
       setNodes(graphData.nodes);
       setEdges(graphData.edges);
-      selectionsRef.current = new Map();
-      setPanelLeaves([]);
+    } else {
+      // Update — find new nodes and animate
+      const freshIds = new Set<string>();
+      for (const id of newIds) {
+        if (!prevIds.has(id)) freshIds.add(id);
+      }
+      newNodeIdsRef.current = freshIds;
+
+      // Mark new nodes with data flag for CSS pop animation
+      const markedNodes = graphData.nodes.map((n) =>
+        freshIds.has(n.id) ? { ...n, data: { ...n.data, isNew: true } } : n
+      );
+
+      setEdges(graphData.edges);
+      animatePositions(nodesRef.current, markedNodes, 450, () => {
+        // Clear isNew flag after animation completes
+        setTimeout(() => {
+          newNodeIdsRef.current = new Set();
+          setNodes((prev) =>
+            prev.map((n) => n.data?.isNew ? { ...n, data: { ...n.data, isNew: false } } : n)
+          );
+        }, 500);
+      });
     }
-  }, [graphData, setNodes, setEdges]);
+
+    prevNodeIdsRef.current = newIds;
+    selectionsRef.current = new Map();
+    setPanelLeaves([]);
+  }, [graphData, setNodes, setEdges, animatePositions]);
 
   // Cancel running animation on unmount
   useEffect(() => () => cancelAnimationFrame(animFrameRef.current), []);
