@@ -49,6 +49,8 @@ srv:
       value: "destinations"
     - name: BASE_API_URL
       value: "https://{{ tpl .Values.global.host . }}"
+    - name: REDIS_URL
+      value: "redis://mcp-aggregator-redis:6379"
 
 approuter:
   replicaCount: 1

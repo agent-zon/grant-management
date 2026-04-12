@@ -1,4 +1,5 @@
 import cds from "@sap/cds";
+import { createClient, type RedisClientType } from "redis";
 
 export interface GraphChangeEvent {
   grant_id: string;
@@ -12,25 +13,71 @@ interface Connection {
   send: (data: GraphChangeEvent) => void;
 }
 
-// Must use globalThis — server.js and CDS handler files resolve to separate
-// module instances even with static imports (different transpilation paths).
-const G = globalThis as typeof globalThis & { __graphConnections?: Set<Connection> };
-if (!G.__graphConnections) G.__graphConnections = new Set();
-const connections = G.__graphConnections;
+const REDIS_URL = process.env.REDIS_URL || "redis://mcp-aggregator-redis:6379";
+const CHANNEL = "graph-events";
 
-export function emitGraphChange(data: GraphChangeEvent) {
-  console.log(`[SSE] Emitting graph-change: ${data.event} for actor=${data.actor}, ${connections.size} connections`);
-  for (const conn of connections) {
-    // Wildcard subscribers get everything (portal WS hub)
+// Local SSE connections (per-pod — each pod has its own SSE clients)
+const localConnections = new Set<Connection>();
+
+let publisher: RedisClientType | null = null;
+let subscriber: RedisClientType | null = null;
+let redisReady = false;
+let redisInitializing = false;
+
+async function ensureRedis() {
+  if (redisReady || redisInitializing) return;
+  redisInitializing = true;
+
+  try {
+    publisher = createClient({ url: REDIS_URL }) as RedisClientType;
+    publisher.on("error", (e: Error) => console.warn("[Redis] pub error:", e.message));
+    await publisher.connect();
+
+    subscriber = publisher.duplicate() as RedisClientType;
+    subscriber.on("error", (e: Error) => console.warn("[Redis] sub error:", e.message));
+    await subscriber.connect();
+
+    await subscriber.subscribe(CHANNEL, (message: string) => {
+      try {
+        const data = JSON.parse(message) as GraphChangeEvent;
+        broadcastToLocal(data);
+      } catch {}
+    });
+
+    redisReady = true;
+    console.log(`[Redis] Connected to ${REDIS_URL}, subscribed to ${CHANNEL}`);
+  } catch (e: any) {
+    console.warn(`[Redis] Connection failed: ${e.message}. Falling back to in-memory only.`);
+    publisher = null;
+    subscriber = null;
+    redisInitializing = false;
+  }
+}
+
+function broadcastToLocal(data: GraphChangeEvent) {
+  for (const conn of localConnections) {
     if (conn.relevantActors.has("*") || conn.relevantActors.has(data.actor)) {
       conn.send(data);
     }
   }
 }
 
+export async function emitGraphChange(data: GraphChangeEvent) {
+  console.log(`[SSE] Emitting graph-change: ${data.event} for actor=${data.actor}`);
+
+  if (redisReady && publisher) {
+    // Publish to Redis — all pods (including this one) will receive via subscriber
+    await publisher.publish(CHANNEL, JSON.stringify(data));
+  } else {
+    // Fallback: in-memory only (single pod)
+    broadcastToLocal(data);
+  }
+}
+
 export function addConnection(conn: Connection): () => void {
-  connections.add(conn);
-  return () => connections.delete(conn);
+  ensureRedis(); // fire-and-forget
+  localConnections.add(conn);
+  return () => localConnections.delete(conn);
 }
 
 /**
