@@ -43,7 +43,8 @@
     "tsx": "^4.20.6",
     "ulid": "^3.0.1",
     "xstate": "^5.22.1",
-    "zod": "^4.0"
+    "zod": "^4.0",
+    "vscode-jsonrpc": "^8.2.0"
   },
   "devDependencies": {
     "@cap-js/cds-test": "^0.4.0",
@@ -56,16 +57,19 @@
     "@types/express-serve-static-core": "^5.0.7",
     "@types/jest": "^30.0.0",
     "@types/morgan": "^1.9.10",
-    "@types/node": "^20.19.25",
+    "@types/node": "^22.0.0",
     "@types/node-fetch": "^2.6.13",
     "cap-js-mockdata": "^0.0.3",
     "ctz": "^0.2.7",
     "ias-token": "workspace:*",
     "tailwindcss": "^4.1.4",
-    "tsx": "^4.20.6",
-    "typescript": "^5.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
     "vite": "^7.1.6",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "eslint": "^10.0.3",
+    "nodemon": "^3.1.14",
+    "typescript-eslint": "^8.57.1"
   },
   "scripts": {
     "start": "npx cds-tsx serve",
@@ -73,8 +77,11 @@
     "debug": "npx cds debug ",
     "serve": "npm run serve:approuter & npm run serve:cds",
     "serve:cds": "npx cds serve --profile dev",
+    "serve:cds:local": "cross-env cds_requires_auth_kind=mocked npx cds serve --profile dev",
+    "serve:cds:hybrid": "npx cds bind --profile hybrid --exec -- npx cds serve --profile hybrid",
     "dev:approuter": "node --import tsx app/router/custom-server.js",
     "serve:approuter": "node --import tsx app/router/custom-server.js",
+    "serve:approuter:local": "cross-env XSAPP_CONFIG=xs-app.local.json node --import tsx app/router/custom-server.js",
     "serve:approuter:plain": "node node_modules/@sap/approuter/approuter.js --workingDir app/router --port 9000",
     "hybrid": "npx cds bind --exec -- npm run serve",
     "hybrid:approuter": "npx cds bind --exec -- node --import tsx app/router/custom-server.js",
@@ -90,8 +97,9 @@
     "bind:destination": "cds bind -2 agents-destination-auth --on k8s",
     "bind:github": "npx cds bind github -2 git-credentials --on k8s",
     "bind:resolve": "npx cds env requires --resolve-bindings --profile hybrid",
-    "bind:list": "npx cds bind --list",
+    "bind:list": "node -e \"const fs=require('node:fs');const p='.cdsrc-private.json';if(fs.existsSync(p)){process.stdout.write(fs.readFileSync(p,'utf8'));}else{console.log('No .cdsrc-private.json found yet. Run a bind command first.');}\"",
     "bind:remove": "npx cds bind --remove",
+    "bind:all": "npm run bind:auth && npm run bind:destination && npm run bind:github && npm run bind:srv && npm run bind:router",
     "setup:local": "npm run bind:all && npm run serve:hybrid",
     "setup:dev": "npm install && npm run bind:auth && npm run serve",
     "deploy": "npm run build:push && npm run deploy:helm",
@@ -149,7 +157,11 @@
     "pipeline:srv": "pwsh ./scripts/pipeline/pipeline.ps1 -Target srv",
     "pipeline:sidecar": "pwsh ./scripts/pipeline/pipeline.ps1 -Target sidecar",
     "pipeline:approuter": "pwsh ./scripts/pipeline/pipeline.ps1 -Target approuter",
-    "seed:grants": "npx cds-tsx scripts/seed-agent-grants.ts"
+    "seed:grants": "npx cds-tsx scripts/seed-agent-grants.ts",
+    "aspire:lint": "eslint apphost.ts",
+    "aspire:start": "aspire run",
+    "aspire:build": "tsc -p tsconfig.apphost.json",
+    "aspire:dev": "tsc --watch -p tsconfig.apphost.json"
   },
   "workspaces": [
     "app/router",
@@ -161,5 +173,8 @@
     "#cds-ssr": "./srv/render/index.js",
     "@/*": "./srv/*",
     "@types": "./types/index.d.ts"
+  },
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24"
   }
 }

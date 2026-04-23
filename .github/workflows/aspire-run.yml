@@ -1,0 +1,48 @@
+name: aspire-run
+
+on:
+  push:
+    branches:
+      - main
+      - "cursor/**"
+  pull_request:
+
+jobs:
+  aspire-smoke:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/cds-zon/dev
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install project dependencies
+        run: npm install
+
+      - name: Install Aspire CLI
+        run: |
+          curl -sSL https://aspire.dev/install.sh -o aspire-install.sh
+          chmod +x aspire-install.sh
+          ./aspire-install.sh --install-path "$HOME/.aspire/bin"
+          echo "$HOME/.aspire/bin" >> "$GITHUB_PATH"
+
+      - name: Verify AppHost TypeScript compiles
+        run: npm run aspire:build
+
+      - name: Start Aspire in local-only mode
+        env:
+          ASPIRE_LOCAL_ONLY: "1"
+          SKIP_BIND: "1"
+          ASPIRE_ENABLE_APPROUTER: "0"
+        run: |
+          set -euo pipefail
+          aspire run --detach --format Json | tee aspire-run.json
+          sleep 45
+          aspire ps --format Json --resources
+          # Aspire CLI sometimes reports stop failure even after successful process termination.
+          # Treat stop as best-effort and verify with aspire ps afterwards.
+          aspire stop --all || true
+          aspire ps --format Json

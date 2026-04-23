@@ -30,6 +30,44 @@ Recommended command:
 ./scripts/pipeline/pipeline.ps1
 ```
 
+## Aspire Local Orchestration
+
+This repository is now Aspire-enabled (TypeScript AppHost) so the default local
+developer flow can be started with:
+
+```bash
+aspire run
+```
+
+By default this orchestrates:
+
+- CAP service (`cds`) via project npm scripts
+- AppRouter (`approuter`)
+- Optional portal resource (`ASPIRE_ENABLE_PORTAL=1`)
+
+### Typical local modes
+
+**Run everything without IAS/K8s bindings (works on any machine):**
+
+```bash
+ASPIRE_LOCAL_ONLY=1 SKIP_BIND=1 aspire run
+```
+
+This uses `app/router/xs-app.local.json` and disables IAS authentication for
+local smoke testing (still useful for testing AppRouter destination routing).
+
+**Run with hybrid bindings from Kyma/K8s:**
+
+```bash
+export KUBECONFIG="$PWD/.kube-remote-config"   # or your own kubeconfig path
+aspire run
+```
+
+Use Aspire dashboard commands on the `cds` resource to execute bind operations
+such as `bind-auth`, `bind-destination`, and `bind-all`.
+
+For full setup details see [docs/LOCAL_ASPIRE.md](docs/LOCAL_ASPIRE.md).
+
 ## ✨ Features
 
 - **OAuth 2.0 Grant Management API**: Full implementation of the Grant Management specification using SAP CAP framework

@@ -3,9 +3,9 @@
  * - /sketches - Hono+HTMX tile dashboard of sketch destinations
  * - /sketch - proxy to destinations with HTML base URL rewrite
  */
-import { createRequire } from "module";
 import { getRequestListener } from "@hono/node-server";
-import { dirname } from "path";
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 import { createSketchMiddleware } from "./sketch-proxy.js";
 import { sketches } from "./sketches/index.tsx";
@@ -29,7 +29,12 @@ ar.first.use("/html", (req, res, next) => {
   sketchMiddleware(req, res, next).catch(next);
 });
 
+const xsappConfig = process.env.XSAPP_CONFIG
+  ? JSON.parse(readFileSync(resolve(__dirname, process.env.XSAPP_CONFIG), "utf-8"))
+  : undefined;
+
 ar.start({
   workingDir: __dirname,
   port: process.env.PORT || 9000,
+  ...(xsappConfig ? { xsappConfig } : {}),
 });
