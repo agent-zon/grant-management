@@ -20,7 +20,6 @@ const approuterRunScript =
   (localMode ? "serve:approuter:local" : "serve:approuter");
 
 const portalRunScript = process.env.PORTAL_RUN_SCRIPT ?? "dev";
-const runPortal = process.env.ASPIRE_ENABLE_PORTAL === "1";
 const effectiveKubeconfig =
   process.env.KUBECONFIG ?? process.env.REMOTE_KUBECONFIG ?? "";
 const enableApprouter =
@@ -131,9 +130,15 @@ const cds = await builder
       },
     },
   );
+  //should add to environment variables of refenced app   "destinations": [
+  //   {
+  //     "name": "srv-api",
+  //     "url": "<cds service url>",
+  //     "forwardAuthToken": true
+  //   }
+  // ]
 
-const approuter = enableApprouter
-  ? await builder
+const approuter =  await builder
       .addExecutable("approuter", "npm", rootDir, ["run", approuterRunScript])
       .withHttpEndpoint({ env: "PORT", port: 9000, isProxied: false })
       .withExternalHttpEndpoints()
@@ -141,25 +146,23 @@ const approuter = enableApprouter
       .withEnvironment("NODE_ENV", "development")
       .withEnvironment("KUBECONFIG", effectiveKubeconfig)
       .waitFor(cds)
-  : null;
 
-if (runPortal) {
   const portal = await builder
     .addExecutable("portal", "npm", rootDir, ["run", portalRunScript, "-w", "portal"])
     .withHttpEndpoint({ env: "PORT", port: 3000, isProxied: false })
     .withExternalHttpEndpoints()
+    
     .withEnvironment("NODE_ENV", "development")
     .withEnvironment("CDS_URL", "http://localhost:4004")
     .withEnvironment("KUBECONFIG", effectiveKubeconfig)
     .withReference(cds)
     .waitFor(cds);
 
-  if (approuter) {
+
     await approuter.withReference(portal, {
       name: "portal",
       optional: true,
     });
-  }
-}
+
 
 await builder.build().run();
