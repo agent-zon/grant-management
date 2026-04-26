@@ -1,0 +1,77 @@
+{
+  "welcomeFile": "./api-docs/index.html",
+  "websockets": {
+    "enabled": true
+  },
+  "routes": [
+    {
+      "source": "^/health$",
+      "target": "/health.html",
+      "localDir": ".",
+      "csrfProtection": false,
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/api-docs/openapi/(.*)$",
+      "target": "/$1",
+      "localDir": "./api-docs/openapi",
+      "csrfProtection": false,
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/api-docs(.*)$",
+      "target": "/index.html",
+      "localDir": "./api-docs",
+      "csrfProtection": false,
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/auth/debug(.*)$",
+      "target": "/$1",
+      "localDir": "./auth",
+      "csrfProtection": false,
+      "cacheControl": "no-cache, no-store, must-revalidate",
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/destination/([^/]+)(.*)$",
+      "target": "$2",
+      "destination": "$1",
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/html/([^/]+)(.*)$",
+      "target": "$2",
+      "destination": "$1",
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/sketches(.*)$",
+      "target": "sketches$1",
+      "destination": "srv-api",
+      "csrfProtection": false,
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/-/cds/(.*)$",
+      "target": "/-/cds/$1",
+      "destination": "mtx-api",
+      "csrfProtection": false,
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/portal(.*)$",
+      "target": "/portal$1",
+      "destination": "portal",
+      "csrfProtection": false,
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/(.*)$",
+      "target": "$1",
+      "destination": "srv-api",
+      "csrfProtection": false,
+      "authenticationType": "none"
+    }
+  ]
+}
